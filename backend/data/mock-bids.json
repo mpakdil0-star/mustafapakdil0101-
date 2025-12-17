@@ -1,0 +1,78 @@
+[
+  {
+    "id": "mock-bid-1765986490383",
+    "jobPostId": "mock-1765986412715",
+    "electricianId": "mock-user-mpakdil0-electrician-com-ELECTRICIAN",
+    "amount": "1100",
+    "estimatedDuration": 4,
+    "estimatedStartDate": "22.22.2025",
+    "message": "Lbıkvıvıvu",
+    "status": "ACCEPTED",
+    "createdAt": "2025-12-17T15:48:10.383Z",
+    "updatedAt": "2025-12-17T15:48:10.383Z",
+    "electrician": {
+      "id": "mock-user-mpakdil0-electrician-com-ELECTRICIAN",
+      "fullName": "mpakdil0",
+      "profileImageUrl": null
+    },
+    "jobPost": {
+      "id": "mock-1765986412715",
+      "title": "Ugghj",
+      "description": "Jogıgıguguhıbıbıbıbıbıbuvugu",
+      "status": "OPEN",
+      "location": {
+        "address": "Jj",
+        "city": "Ankara",
+        "district": "Keçiören",
+        "neighborhood": "Etlik",
+        "latitude": 41.0082,
+        "longitude": 28.9784
+      },
+      "citizen": {
+        "id": "mock-user-mpakdil0-gmail-com-CITIZEN",
+        "fullName": "mpakdil0",
+        "profileImageUrl": null
+      }
+    },
+    "ownerId": "mock-user-mpakdil0-electrician-com-ELECTRICIAN",
+    "acceptedAt": "2025-12-17T15:49:40.834Z"
+  },
+  {
+    "id": "mock-bid-1765987207447",
+    "jobPostId": "mock-1765987120987",
+    "electricianId": "mock-user-mpakdil0-electrician-com-ELECTRICIAN",
+    "amount": "3600",
+    "estimatedDuration": 4,
+    "estimatedStartDate": "12.12.2025",
+    "message": "Kabul ediyorum",
+    "status": "ACCEPTED",
+    "createdAt": "2025-12-17T16:00:07.447Z",
+    "updatedAt": "2025-12-17T16:01:15.782Z",
+    "electrician": {
+      "id": "mock-user-mpakdil0-electrician-com-ELECTRICIAN",
+      "fullName": "mpakdil0",
+      "profileImageUrl": null
+    },
+    "jobPost": {
+      "id": "mock-1765987120987",
+      "title": "Evimde",
+      "description": "Denemedeneme denemedeneme",
+      "status": "OPEN",
+      "location": {
+        "address": "Huzur evleri",
+        "city": "Bursa",
+        "district": "Osmangazi",
+        "neighborhood": "Hamitler",
+        "latitude": 41.0082,
+        "longitude": 28.9784
+      },
+      "citizen": {
+        "id": "mock-user-mpakdil0-gmail-com-CITIZEN",
+        "fullName": "mpakdil0",
+        "profileImageUrl": null
+      }
+    },
+    "ownerId": "mock-user-mpakdil0-electrician-com-ELECTRICIAN",
+    "acceptedAt": "2025-12-17T16:01:15.782Z"
+  }
+]

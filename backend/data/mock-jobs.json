@@ -1,0 +1,61 @@
+[
+  {
+    "id": "mock-1765986412715",
+    "citizenId": "mock-user-mpakdil0-gmail-com-CITIZEN",
+    "title": "Ugghj",
+    "description": "Jogıgıguguhıbıbıbıbıbıbuvugu",
+    "category": "Elektrik Tesisatı",
+    "subcategory": null,
+    "location": {
+      "address": "Jj",
+      "city": "Ankara",
+      "district": "Keçiören",
+      "neighborhood": "Etlik",
+      "latitude": 41.0082,
+      "longitude": 28.9784
+    },
+    "urgencyLevel": "MEDIUM",
+    "estimatedBudget": "1000",
+    "status": "COMPLETED",
+    "images": [],
+    "viewCount": 0,
+    "bidCount": 0,
+    "createdAt": "2025-12-17T15:46:52.715Z",
+    "updatedAt": "2025-12-17T15:49:40.837Z",
+    "citizen": {
+      "id": "mock-user-mpakdil0-gmail-com-CITIZEN",
+      "fullName": "mpakdil0",
+      "profileImageUrl": null
+    },
+    "completedAt": "2025-12-17T15:50:09.838Z"
+  },
+  {
+    "id": "mock-1765987120987",
+    "citizenId": "mock-user-mpakdil0-gmail-com-CITIZEN",
+    "title": "Evimde",
+    "description": "Denemedeneme denemedeneme",
+    "category": "Elektrik Tesisatı",
+    "subcategory": "Pano",
+    "location": {
+      "address": "Huzur evleri",
+      "city": "Bursa",
+      "district": "Osmangazi",
+      "neighborhood": "Hamitler",
+      "latitude": 41.0082,
+      "longitude": 28.9784
+    },
+    "urgencyLevel": "MEDIUM",
+    "estimatedBudget": "3600",
+    "status": "IN_PROGRESS",
+    "images": [],
+    "viewCount": 0,
+    "bidCount": 0,
+    "createdAt": "2025-12-17T15:58:40.987Z",
+    "updatedAt": "2025-12-17T16:01:15.784Z",
+    "citizen": {
+      "id": "mock-user-mpakdil0-gmail-com-CITIZEN",
+      "fullName": "mpakdil0",
+      "profileImageUrl": null
+    }
+  }
+]

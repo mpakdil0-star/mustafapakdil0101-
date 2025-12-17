@@ -1,0 +1,25 @@
+BACKEND BAŞLATMA TALİMATLARI
+============================
+
+1. YENİ BİR TERMİNAL/POWERSHELL PENCERESİ AÇIN
+
+2. ŞU KOMUTLARI ÇALIŞTIRIN:
+
+   cd C:\Users\hp\OneDrive\Desktop\Elektrikçiler\backend
+   npm run dev
+
+3. TERMINAL'DE ŞUNU GÖRMELİSİNİZ (10-15 saniye içinde):
+
+   🚀 Server is running on port 3000
+   📱 Server accessible at http://0.0.0.0:3000
+   💻 Local access: http://localhost:3000
+   🌐 Network access: http://192.168.1.62:3000
+
+4. BU MESAJI GÖRDÜĞÜNÜZDE BACKEND ÇALIŞIYOR DEMEKTİR!
+
+5. EXPO GO'DA UYGULAMAYI YENİLEYİN
+
+ÖNEMLİ:
+- Terminal'i KAPATMAYIN, backend çalışmaya devam etsin
+- Hata mesajı görürseniz, terminal'deki tam hatayı paylaşın
+
