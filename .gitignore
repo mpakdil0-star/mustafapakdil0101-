@@ -1,0 +1,16 @@
+# Backend directory - this should not be in mobile builds
+backend/
+
+# Data directories  
+data/
+
+# Documentation
+*.md
+*.bat
+*.txt
+
+# Node modules at root
+node_modules/
+
+# Logs
+*.log
