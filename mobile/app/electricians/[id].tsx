@@ -1,327 +1,912 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Linking,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image, Modal } from 'react-native';
+import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useAppSelector } from '../../hooks/redux';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import { VerificationBadge } from '../../components/common/VerificationBadge';
 import { colors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
-import { typography } from '../../constants/typography';
-import { mockElectriciansMap } from '../../constants/mockElectricians';
-import api from '../../services/api';
+import { fonts } from '../../constants/typography';
+import { userService } from '../../services/userService';
+import { getFileUrl } from '../../constants/api';
+import { AuthGuardModal } from '../../components/common/AuthGuardModal';
+import { MOCK_ELECTRICIANS } from '../../data/mockElectricians';
+import favoriteService from '../../services/favoriteService';
 
 export default function ElectricianDetailScreen() {
-  const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const [startingChat, setStartingChat] = useState(false);
+    const router = useRouter();
+    const { id } = useLocalSearchParams<{ id: string }>();
+    const { user } = useAppSelector((state) => state.auth);
 
-  const electrician = id ? mockElectriciansMap[id] : null;
+    const [electrician, setElectrician] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [showAuthModal, setShowAuthModal] = useState(false);
+    const [pendingAction, setPendingAction] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [favoriteLoading, setFavoriteLoading] = useState(false);
+    const [showFavoriteModal, setShowFavoriteModal] = useState(false);
+    const [favoriteModalType, setFavoriteModalType] = useState<'added' | 'removed'>('added');
 
-  const handleCall = () => {
-    if (electrician?.phone) {
-      Linking.openURL(`tel:${electrician.phone.replace(/\s/g, '')}`);
-    }
-  };
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        type?: 'success' | 'error' | 'warning' | 'info' | 'confirm';
+        buttons?: { text: string; onPress: () => void; variant?: 'primary' | 'secondary' | 'danger' | 'ghost' }[];
+    }>({ visible: false, title: '', message: '' });
 
-  const handleMessage = async () => {
-    if (!id) return;
+    const showAlert = (title: string, message: string, type: any = 'info', buttons?: any[]) => {
+        setAlertConfig({ visible: true, title, message, type, buttons });
+    };
 
-    setStartingChat(true);
-    try {
-      // Konuşma başlat veya mevcut konuşmayı getir
-      const response = await api.post('/conversations', {
-        recipientId: id,
-      });
+    useEffect(() => {
+        const fetchDetail = async () => {
+            if (!id) return;
+            try {
+                setIsLoading(true);
 
-      if (response.data.success && response.data.data.conversation) {
-        const conversationId = response.data.data.conversation.id;
-        router.push(`/messages/${conversationId}`);
-      } else {
-        Alert.alert('Hata', 'Konuşma başlatılamadı. Lütfen tekrar deneyin.');
-      }
-    } catch (error: any) {
-      console.error('Error starting conversation:', error);
-      // Database yoksa mock konuşma ID'si ile yönlendir
-      if (error.response?.status === 503 || error.code === 'ERR_NETWORK') {
-        Alert.alert(
-          'Veritabanı Bağlantısı Yok',
-          'Mesajlaşma için veritabanı bağlantısı gereklidir.',
-          [{ text: 'Tamam' }]
+                // MOCK VERI KONTROLÜ
+                // Önce ID'ye göre mock var mı kontrol et
+                let mockItem = MOCK_ELECTRICIANS.find(e => e.id === id);
+
+                // Eğer id 'local-mock-' ile başlıyorsa index üzerinden bul (fallback)
+                if (!mockItem && id.startsWith('local-mock-')) {
+                    const mockIndex = parseInt(id.replace('local-mock-', ''));
+                    mockItem = MOCK_ELECTRICIANS[mockIndex % MOCK_ELECTRICIANS.length];
+                }
+
+                if (mockItem) {
+                    // Mock veriyi backend yapısına benzet
+                    const transformedMock = {
+                        id: mockItem.id, // Use the correct ID
+                        fullName: mockItem.name,
+                        profileImageUrl: mockItem.imageUrl,
+                        isVerified: mockItem.isVerified,
+                        electricianProfile: {
+                            specialties: mockItem.services || [],
+                            ratingAverage: mockItem.rating,
+                            totalReviews: mockItem.reviewCount,
+                            experienceYears: parseInt(mockItem.experience) || 5,
+                            bio: mockItem.about,
+                            responseTimeAvg: mockItem.responseTime,
+                            completedJobsCount: mockItem.completedJobs,
+                            verificationStatus: mockItem.isVerified ? 'VERIFIED' : 'PENDING'
+                        },
+                        locations: [{ city: mockItem.city, district: mockItem.location.split(',')[0] }],
+                        reviewsReceived: mockItem.latestReview ? [{
+                            id: 'mock-review-1',
+                            rating: 5,
+                            comment: mockItem.latestReview.comment,
+                            createdAt: new Date().toISOString(),
+                            reviewer: {
+                                fullName: mockItem.latestReview.user,
+                                profileImageUrl: null
+                            }
+                        }] : []
+                    };
+                    setElectrician(transformedMock);
+                    setIsLoading(false);
+                    return;
+                }
+
+                const response = await userService.getElectricianById(id);
+                if (response.success) {
+                    setElectrician(response.data);
+                } else {
+                    setError(response.error?.message || 'Veri yüklenemedi');
+                }
+            } catch (err: any) {
+                setError(err.message || 'Bir hata oluştu');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchDetail();
+    }, [id]);
+
+    // Check if electrician is in favorites
+    useEffect(() => {
+        const checkFavoriteStatus = async () => {
+            if (!id || !user) return;
+            try {
+                const result = await favoriteService.checkFavorite(id);
+                setIsFavorite(result.isFavorite);
+            } catch (error) {
+                console.log('Error checking favorite status:', error);
+            }
+        };
+        checkFavoriteStatus();
+    }, [id, user]);
+
+    const handleToggleFavorite = async () => {
+        if (!user) {
+            setPendingAction('favorite');
+            setShowAuthModal(true);
+            return;
+        }
+
+        if (!id) return;
+
+        setFavoriteLoading(true);
+        try {
+            if (isFavorite) {
+                await favoriteService.removeFavorite(id);
+                setIsFavorite(false);
+                setFavoriteModalType('removed');
+                setShowFavoriteModal(true);
+            } else {
+                await favoriteService.addFavorite(id);
+                setIsFavorite(true);
+                setFavoriteModalType('added');
+                setShowFavoriteModal(true);
+            }
+        } catch (error: any) {
+            showAlert('Hata', error.message || 'İşlem başarısız oldu.', 'error');
+        } finally {
+            setFavoriteLoading(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={styles.loadingText}>Profil yükleniyor...</Text>
+            </View>
         );
-      } else {
-        Alert.alert('Hata', 'Bir sorun oluştu. Lütfen tekrar deneyin.');
-      }
-    } finally {
-      setStartingChat(false);
     }
-  };
 
-  if (!electrician) {
+    if (error || !electrician) {
+        return (
+            <View style={styles.errorContainer}>
+                <Text style={styles.errorIcon}>⚠️</Text>
+                <Text style={styles.errorTitle}>{error || 'Usta Bulunamadı'}</Text>
+                <Button
+                    title="Geri Dön"
+                    onPress={() => router.back()}
+                    variant="primary"
+                />
+            </View>
+        );
+    }
+
+    const profile = electrician.electricianProfile || {};
+    const locationStr = electrician.locations?.length > 0
+        ? `${electrician.locations[0].district}, ${electrician.locations[0].city}`
+        : 'Konum belirtilmemiş';
+
+    // Güven skoru hesaplama (demo mantığı)
+    const trustScore = 85 + (electrician.isVerified ? 10 : 0) + (profile.ratingAverage >= 4.5 ? 5 : 0);
+
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorIcon}>⚠️</Text>
-        <Text style={styles.errorTitle}>Elektrikçi Bulunamadı</Text>
-        <Text style={styles.errorText}>Elektrikçi bilgileri yüklenemedi.</Text>
-        <Button
-          title="Geri Dön"
-          onPress={() => router.back()}
-          variant="primary"
-          style={styles.backButton}
-        />
-      </View>
+        <ScrollView
+            style={styles.container}
+            contentContainerStyle={styles.content}
+            showsVerticalScrollIndicator={false}
+        >
+            {/* Profile Card */}
+            <Card style={styles.profileCard} elevated>
+                <View style={styles.profileHeader}>
+                    <View style={styles.avatar}>
+                        {electrician.profileImageUrl ? (
+                            <Image
+                                source={{ uri: getFileUrl(electrician.profileImageUrl) || '' }}
+                                style={styles.avatarImage}
+                            />
+                        ) : (
+                            <Text style={styles.avatarText}>{electrician.fullName.charAt(0)}</Text>
+                        )}
+                    </View>
+                    <View style={styles.profileInfo}>
+                        <View style={styles.nameRow}>
+                            <Text style={styles.name} numberOfLines={1}>{electrician.fullName}</Text>
+                            {electrician.isVerified && (
+                                <VerificationBadge
+                                    status={profile.verificationStatus || "APPROVED"}
+                                    licenseVerified={true}
+                                    size="medium"
+                                />
+                            )}
+                            <TouchableOpacity
+                                style={[styles.headerFavoriteBtn, isFavorite && styles.headerFavoriteBtnActive]}
+                                onPress={handleToggleFavorite}
+                                disabled={favoriteLoading}
+                                activeOpacity={0.7}
+                            >
+                                {favoriteLoading ? (
+                                    <ActivityIndicator size="small" color={isFavorite ? colors.white : colors.error} />
+                                ) : (
+                                    <Ionicons
+                                        name={isFavorite ? "heart" : "heart-outline"}
+                                        size={18}
+                                        color={isFavorite ? colors.white : colors.error}
+                                    />
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                        <Text style={styles.specialty}>
+                            {profile.specialties?.join(', ') || 'Elektrik Ustası'}
+                        </Text>
+                        <View style={styles.metaRow}>
+                            <Ionicons name="location" size={14} color={colors.textSecondary} />
+                            <Text style={styles.location}>{locationStr}</Text>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Stats Row */}
+                <View style={styles.statsRow}>
+                    <View style={styles.statItem}>
+                        <View style={styles.ratingContainer}>
+                            <Ionicons name="star" size={16} color={colors.warning} />
+                            <Text style={styles.statValue}>
+                                {profile.ratingAverage ? Number(profile.ratingAverage).toFixed(1) : '0.0'}
+                            </Text>
+                        </View>
+                        <Text style={styles.statLabel}>{profile.totalReviews || 0} değerlendirme</Text>
+                    </View>
+                    <View style={styles.statDivider} />
+                    <View style={styles.statItem}>
+                        <Text style={styles.statValue}>{profile.completedJobsCount || 0}</Text>
+                        <Text style={styles.statLabel}>Tamamlanan İş</Text>
+                    </View>
+                    <View style={styles.statDivider} />
+                    <View style={styles.statItem}>
+                        <Text style={styles.statValue}>{profile.experienceYears || 0}</Text>
+                        <Text style={styles.statLabel}>Deneyim (Yıl)</Text>
+                    </View>
+                </View>
+            </Card>
+
+            {/* Trust Score Section */}
+            <Card style={[styles.sectionCard, styles.trustCard]}>
+                <LinearGradient
+                    colors={[colors.primary + '10', colors.primary + '05']}
+                    style={styles.trustGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                >
+                    <View style={styles.trustInfo}>
+                        <Text style={styles.trustLabel}>Güven Skoru</Text>
+                        <View style={styles.trustValueRow}>
+                            <Text style={styles.trustValue}>%{trustScore}</Text>
+                            <Ionicons name="shield-checkmark" size={18} color={colors.primary} />
+                        </View>
+                    </View>
+                    <View style={styles.trustProgressWrapper}>
+                        <View style={styles.trustProgressBar}>
+                            <View style={[styles.trustProgressFill, { width: `${trustScore}%` }]} />
+                        </View>
+                        <Text style={styles.trustStatus}>Yüksek Güvenilirlik</Text>
+                    </View>
+                </LinearGradient>
+            </Card>
+
+
+            {/* Services */}
+            <Card style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>Sunduğu Hizmetler</Text>
+                {profile.specialties?.map((service: string, index: number) => (
+                    <View key={index} style={styles.serviceItem}>
+                        <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+                        <Text style={styles.serviceText}>{service}</Text>
+                    </View>
+                )) || (
+                        <Text style={styles.emptyText}>Hizmet detayları henüz girilmemiş.</Text>
+                    )}
+            </Card>
+
+            {/* Response Time & Availability */}
+            <Card style={styles.sectionCard}>
+                <View style={styles.responseTimeContainer}>
+                    <View style={styles.responseItem}>
+                        <Ionicons name="time-outline" size={20} color={colors.info} />
+                        <View>
+                            <Text style={styles.responseTimeLabel}>Ortalama Yanıt</Text>
+                            <Text style={styles.responseTimeValue}>
+                                {profile.responseTimeAvg || '2'} saat
+                            </Text>
+                        </View>
+                    </View>
+                    <View style={styles.statDividerVertical} />
+                    <View style={styles.responseItem}>
+                        <Ionicons name="flash-outline" size={20} color={colors.warning} />
+                        <View>
+                            <Text style={styles.responseTimeLabel}>Hızlı Servis</Text>
+                            <Text style={styles.availabilityValue}>Aktif</Text>
+                        </View>
+                    </View>
+                </View>
+            </Card>
+
+            {/* Recent Reviews */}
+            <View style={styles.reviewsHeaderSection}>
+                <Text style={styles.sectionTitle}>Müşteri Yorumları</Text>
+                {electrician.reviewsReceived?.length > 0 && (
+                    <TouchableOpacity onPress={() => {/* Tümünü gör */ }}>
+                        <Text style={styles.seeAllText}>Tümünü Gör</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+
+            {electrician.reviewsReceived?.length > 0 ? (
+                electrician.reviewsReceived.map((review: any, index: number) => (
+                    <Card key={index} style={styles.reviewCardSmall}>
+                        <View style={styles.reviewHeader}>
+                            <Image
+                                source={{ uri: getFileUrl(review.reviewer?.profileImageUrl) || '' }}
+                                style={styles.reviewerAvatar}
+                            />
+                            <View style={styles.reviewerInfo}>
+                                <Text style={styles.reviewerName}>{review.reviewer?.fullName || 'Anonim Kullanıcı'}</Text>
+                                <View style={styles.reviewRatingStars}>
+                                    {[1, 2, 3, 4, 5].map((s) => (
+                                        <Ionicons
+                                            key={s}
+                                            name={s <= review.rating ? "star" : "star-outline"}
+                                            size={12}
+                                            color={colors.warning}
+                                        />
+                                    ))}
+                                </View>
+                            </View>
+                            <Text style={styles.reviewDate}>
+                                {new Date(review.createdAt).toLocaleDateString('tr-TR')}
+                            </Text>
+                        </View>
+                        <Text style={styles.reviewComment} numberOfLines={3}>
+                            {review.comment}
+                        </Text>
+                    </Card>
+                ))
+            ) : (
+                <Card style={styles.emptyReviewsCard}>
+                    <Ionicons name="chatbubbles-outline" size={32} color={colors.textLight} />
+                    <Text style={styles.emptyReviewsText}>Henüz değerlendirme yapılmamış.</Text>
+                </Card>
+            )}
+
+            {/* Action Buttons */}
+            <View style={styles.actionButtons}>
+                <Button
+                    title="İş Teklifi Gönder"
+                    onPress={() => {
+                        if (!user) {
+                            setPendingAction(`/jobs/create?electricianId=${electrician.id}`);
+                            setShowAuthModal(true);
+                            return;
+                        }
+                        router.push({ pathname: '/jobs/create', params: { electricianId: electrician.id } });
+                    }}
+                    variant="primary"
+                    fullWidth
+                    icon={<Ionicons name="briefcase" size={20} color={colors.white} />}
+                />
+            </View>
+
+            <AuthGuardModal
+                visible={showAuthModal}
+                onClose={() => setShowAuthModal(false)}
+                onLogin={() => {
+                    setShowAuthModal(false);
+                    if (pendingAction) {
+                        router.push({
+                            pathname: '/(auth)/login',
+                            params: { redirectTo: pendingAction }
+                        });
+                    }
+                }}
+                onRegister={() => {
+                    setShowAuthModal(false);
+                    if (pendingAction) {
+                        router.push({
+                            pathname: '/(auth)/register',
+                            params: { redirectTo: pendingAction }
+                        });
+                    }
+                }}
+                title="Giriş Gerekiyor"
+                message="Usta ile iletişime geçebilmek için giriş yapmanız veya kayıt olmanız gerekmektedir."
+            />
+
+            {/* Favorite Success Modal - Glass Glow Theme */}
+            <Modal visible={showFavoriteModal} transparent animationType="fade">
+                <View style={styles.modalOverlay}>
+                    <LinearGradient
+                        colors={['rgba(255,255,255,0.98)', 'rgba(248, 250, 252, 0.95)']}
+                        style={styles.favoriteModal}
+                    >
+                        <View style={styles.favoriteIconWrapper}>
+                            <View style={[styles.favoriteIconGlow, favoriteModalType === 'removed' && { backgroundColor: '#94A3B8' }]} />
+                            <LinearGradient
+                                colors={favoriteModalType === 'added' ? ['#EF4444', '#DC2626'] : ['#64748B', '#475569']}
+                                style={styles.favoriteIconBox}
+                            >
+                                <Ionicons
+                                    name={favoriteModalType === 'added' ? "heart" : "heart-dislike"}
+                                    size={32}
+                                    color={colors.white}
+                                />
+                            </LinearGradient>
+                        </View>
+
+                        <Text style={styles.favoriteModalTitle}>
+                            {favoriteModalType === 'added' ? 'Favorilere Eklendi! ❤️' : 'Favorilerden Kaldırıldı'}
+                        </Text>
+                        <Text style={styles.favoriteModalMessage}>
+                            {favoriteModalType === 'added'
+                                ? `${electrician?.fullName} favorilerinize eklendi. Profil > Favori Ustalarım'dan ulaşabilirsiniz.`
+                                : `${electrician?.fullName} favorilerinizden çıkarıldı.`
+                            }
+                        </Text>
+
+                        <TouchableOpacity
+                            style={styles.favoriteModalBtn}
+                            onPress={() => setShowFavoriteModal(false)}
+                            activeOpacity={0.8}
+                        >
+                            <LinearGradient
+                                colors={favoriteModalType === 'added' ? [colors.primary, colors.primaryDark] : ['#64748B', '#475569']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.favoriteModalBtnGradient}
+                            >
+                                <Text style={styles.favoriteModalBtnText}>Tamam</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </LinearGradient>
+                </View>
+            </Modal>
+
+            <PremiumAlert
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                buttons={alertConfig.buttons}
+                onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+            />
+        </ScrollView>
     );
-  }
-
-  return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Profile Header Card */}
-      <Card style={styles.headerCard} elevated>
-        <View style={styles.profileHeader}>
-          <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>
-              {electrician.fullName.charAt(0).toUpperCase()}
-            </Text>
-          </View>
-          <View style={styles.profileInfo}>
-            <Text style={styles.name}>{electrician.fullName}</Text>
-            <View style={styles.ratingContainer}>
-              <Text style={styles.ratingIcon}>⭐</Text>
-              <Text style={styles.rating}>{electrician.rating}</Text>
-              <Text style={styles.reviewCount}>
-                ({electrician.reviewCount} değerlendirme)
-              </Text>
-            </View>
-          </View>
-        </View>
-      </Card>
-
-      {/* Phone Number Card */}
-      <Card style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>📞 İletişim</Text>
-        <View style={styles.phoneContainer}>
-          <Text style={styles.phoneNumber}>{electrician.phone}</Text>
-          <Button
-            title="Ara"
-            onPress={handleCall}
-            variant="primary"
-            size="small"
-            style={styles.callButton}
-          />
-        </View>
-      </Card>
-
-      {/* About Card */}
-      {electrician.about && (
-        <Card style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Hakkında</Text>
-          <Text style={styles.aboutText}>{electrician.about}</Text>
-        </Card>
-      )}
-
-      {/* Specialties Card */}
-      <Card style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>⚡ Uzmanlık Alanları</Text>
-        <View style={styles.specialtiesContainer}>
-          {electrician.specialties.map((specialty: string, index: number) => (
-            <View key={index} style={styles.specialtyTag}>
-              <Text style={styles.specialtyText}>{specialty}</Text>
-            </View>
-          ))}
-        </View>
-      </Card>
-
-      {/* Location & Experience Card */}
-      <Card style={styles.sectionCard}>
-        <View style={styles.metaContainer}>
-          <View style={styles.metaItem}>
-            <Text style={styles.metaIcon}>📍</Text>
-            <Text style={styles.metaText}>{electrician.location}</Text>
-          </View>
-          <View style={styles.metaItem}>
-            <Text style={styles.metaIcon}>⚡</Text>
-            <Text style={styles.metaText}>{electrician.experience}</Text>
-          </View>
-        </View>
-      </Card>
-
-      {/* Action Buttons */}
-      <View style={styles.actionButtons}>
-        <Button
-          title={startingChat ? "Yükleniyor..." : "📱 Mesaj Gönder"}
-          onPress={handleMessage}
-          variant="outline"
-          style={styles.messageButton}
-          loading={startingChat}
-          disabled={startingChat}
-        />
-      </View>
-    </ScrollView>
-  );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundLight,
-  },
-  content: {
-    padding: spacing.screenPadding,
-    paddingBottom: spacing.xl,
-  },
-  headerCard: {
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  avatarText: {
-    ...typography.h3,
-    color: colors.white,
-    fontWeight: 'bold',
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  name: {
-    ...typography.h4,
-    color: colors.text,
-    marginBottom: spacing.xs,
-    fontWeight: 'bold',
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ratingIcon: {
-    fontSize: 18,
-    marginRight: spacing.xs,
-  },
-  rating: {
-    ...typography.h6,
-    color: colors.text,
-    fontWeight: '600',
-    marginRight: spacing.xs,
-  },
-  reviewCount: {
-    ...typography.body2,
-    color: colors.textSecondary,
-  },
-  sectionCard: {
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  sectionTitle: {
-    ...typography.h6,
-    color: colors.text,
-    marginBottom: spacing.md,
-    fontWeight: '600',
-  },
-  phoneContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  phoneNumber: {
-    ...typography.body1,
-    color: colors.text,
-    fontWeight: '600',
-    flex: 1,
-  },
-  callButton: {
-    marginLeft: spacing.md,
-    minWidth: 80,
-  },
-  aboutText: {
-    ...typography.body1,
-    color: colors.text,
-    lineHeight: 22,
-  },
-  specialtiesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-  specialtyTag: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.primaryLight + '30',
-    borderRadius: spacing.radius.md,
-  },
-  specialtyText: {
-    ...typography.body2,
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  metaContainer: {
-    gap: spacing.md,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  metaIcon: {
-    fontSize: 20,
-    marginRight: spacing.sm,
-  },
-  metaText: {
-    ...typography.body1,
-    color: colors.textSecondary,
-  },
-  actionButtons: {
-    marginTop: spacing.md,
-    gap: spacing.sm,
-  },
-  messageButton: {
-    width: '100%',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.xl,
-    backgroundColor: colors.backgroundLight,
-  },
-  errorIcon: {
-    fontSize: 64,
-    marginBottom: spacing.md,
-  },
-  errorTitle: {
-    ...typography.h4,
-    color: colors.text,
-    marginBottom: spacing.xs,
-    textAlign: 'center',
-  },
-  errorText: {
-    ...typography.body2,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: spacing.xl,
-  },
-  backButton: {
-    minWidth: 150,
-  },
+    container: {
+        flex: 1,
+        backgroundColor: colors.backgroundLight,
+    },
+    content: {
+        padding: spacing.screenPadding,
+        paddingBottom: spacing.xxl,
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: spacing.xl,
+    },
+    errorIcon: {
+        fontSize: 64,
+        marginBottom: spacing.md,
+    },
+    errorTitle: {
+        fontFamily: fonts.semiBold,
+        fontSize: 18,
+        color: colors.text,
+        marginBottom: spacing.xl,
+    },
+    profileCard: {
+        padding: spacing.lg,
+        marginBottom: spacing.md,
+    },
+    profileHeader: {
+        flexDirection: 'row',
+        marginBottom: spacing.lg,
+    },
+    avatar: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        backgroundColor: colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: spacing.md,
+    },
+    avatarText: {
+        fontFamily: fonts.bold,
+        fontSize: 32,
+        color: colors.white,
+    },
+    profileInfo: {
+        flex: 1,
+    },
+    nameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 6,
+    },
+    name: {
+        fontFamily: fonts.bold,
+        fontSize: 20,
+        color: colors.text,
+    },
+    specialty: {
+        fontFamily: fonts.medium,
+        fontSize: 14,
+        color: colors.textSecondary,
+        marginBottom: 8,
+    },
+    metaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    location: {
+        fontFamily: fonts.regular,
+        fontSize: 13,
+        color: colors.textSecondary,
+    },
+    statsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        paddingTop: spacing.lg,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+    },
+    statItem: {
+        alignItems: 'center',
+    },
+    ratingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginBottom: 4,
+    },
+    statValue: {
+        fontFamily: fonts.bold,
+        fontSize: 18,
+        color: colors.text,
+        marginBottom: 4,
+    },
+    statLabel: {
+        fontFamily: fonts.regular,
+        fontSize: 11,
+        color: colors.textSecondary,
+        textAlign: 'center',
+    },
+    statDivider: {
+        width: 1,
+        backgroundColor: colors.border,
+    },
+    sectionCard: {
+        padding: spacing.lg,
+        marginBottom: spacing.md,
+    },
+    sectionTitle: {
+        fontFamily: fonts.semiBold,
+        fontSize: 16,
+        color: colors.text,
+        marginBottom: spacing.md,
+    },
+    aboutText: {
+        fontFamily: fonts.regular,
+        fontSize: 14,
+        color: colors.textSecondary,
+        lineHeight: 22,
+    },
+    serviceItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        marginBottom: spacing.sm,
+    },
+    serviceText: {
+        fontFamily: fonts.medium,
+        fontSize: 14,
+        color: colors.text,
+        flex: 1,
+    },
+    responseTimeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+    },
+    responseTimeText: {
+        flex: 1,
+    },
+    responseTimeLabel: {
+        fontFamily: fonts.regular,
+        fontSize: 13,
+        color: colors.textSecondary,
+        marginBottom: 2,
+    },
+    responseTimeValue: {
+        fontFamily: fonts.semiBold,
+        fontSize: 16,
+        color: colors.info,
+    },
+    actionButtons: {
+        gap: spacing.md,
+        marginTop: spacing.xl,
+    },
+    messageButton: {
+        borderColor: colors.primary,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.backgroundLight,
+    },
+    loadingText: {
+        marginTop: spacing.md,
+        fontFamily: fonts.medium,
+        color: colors.textSecondary,
+    },
+    avatarImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 36,
+    },
+    trustCard: {
+        padding: 0,
+        overflow: 'hidden',
+        borderWidth: 0,
+    },
+    trustGradient: {
+        padding: spacing.lg,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    trustInfo: {
+        flex: 1,
+    },
+    trustLabel: {
+        fontFamily: fonts.medium,
+        fontSize: 12,
+        color: colors.textSecondary,
+        marginBottom: 4,
+    },
+    trustValueRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    trustValue: {
+        fontFamily: fonts.bold,
+        fontSize: 24,
+        color: colors.primary,
+    },
+    trustProgressWrapper: {
+        width: 120,
+        alignItems: 'flex-end',
+    },
+    trustProgressBar: {
+        width: '100%',
+        height: 6,
+        backgroundColor: colors.primary + '20',
+        borderRadius: 3,
+        marginBottom: 6,
+        overflow: 'hidden',
+    },
+    trustProgressFill: {
+        height: '100%',
+        backgroundColor: colors.primary,
+        borderRadius: 3,
+    },
+    trustStatus: {
+        fontFamily: fonts.bold,
+        fontSize: 10,
+        color: colors.success,
+    },
+    statDividerVertical: {
+        width: 1,
+        height: '60%',
+        backgroundColor: colors.border,
+    },
+    responseItem: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        paddingVertical: spacing.xs,
+    },
+    availabilityValue: {
+        fontFamily: fonts.bold,
+        fontSize: 16,
+        color: colors.success,
+    },
+    reviewsHeaderSection: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: spacing.lg,
+        marginBottom: spacing.md,
+        paddingHorizontal: 4,
+    },
+    seeAllText: {
+        fontFamily: fonts.bold,
+        fontSize: 13,
+        color: colors.primary,
+    },
+    reviewCardSmall: {
+        padding: spacing.md,
+        marginBottom: spacing.sm,
+    },
+    reviewHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    reviewerAvatar: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: colors.border,
+    },
+    reviewerInfo: {
+        flex: 1,
+        marginLeft: spacing.sm,
+    },
+    reviewerName: {
+        fontFamily: fonts.bold,
+        fontSize: 14,
+        color: colors.text,
+        marginBottom: 2,
+    },
+    reviewRatingStars: {
+        flexDirection: 'row',
+        gap: 2,
+    },
+    reviewDate: {
+        fontFamily: fonts.regular,
+        fontSize: 11,
+        color: colors.textLight,
+    },
+    reviewComment: {
+        fontFamily: fonts.regular,
+        fontSize: 13,
+        color: colors.textSecondary,
+        marginTop: spacing.sm,
+        lineHeight: 18,
+    },
+    emptyReviewsCard: {
+        padding: spacing.xl,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+    },
+    emptyReviewsText: {
+        fontFamily: fonts.medium,
+        fontSize: 13,
+        color: colors.textLight,
+    },
+    emptyText: {
+        fontFamily: fonts.regular,
+        fontSize: 13,
+        color: colors.textLight,
+        fontStyle: 'italic',
+    },
+    actionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    favoriteButton: {
+        width: 56,
+        height: 56,
+        borderRadius: 16,
+        backgroundColor: colors.error + '10',
+        borderWidth: 2,
+        borderColor: colors.error + '30',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    favoriteButtonActive: {
+        backgroundColor: colors.error,
+        borderColor: colors.error,
+    },
+    mainActionButton: {
+        flex: 1,
+    },
+    // Header favorite button (next to name)
+    headerFavoriteBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 10,
+        backgroundColor: colors.error + '10',
+        borderWidth: 1.5,
+        borderColor: colors.error + '30',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: 'auto',
+    },
+    headerFavoriteBtnActive: {
+        backgroundColor: colors.error,
+        borderColor: colors.error,
+    },
+    // Favorite Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(15, 23, 42, 0.6)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+    },
+    favoriteModal: {
+        width: '100%',
+        borderRadius: 32,
+        padding: 32,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.5)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 20 },
+        shadowOpacity: 0.2,
+        shadowRadius: 30,
+        elevation: 20,
+    },
+    favoriteIconWrapper: {
+        width: 90,
+        height: 90,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    favoriteIconGlow: {
+        position: 'absolute',
+        width: 70,
+        height: 70,
+        backgroundColor: '#EF4444',
+        borderRadius: 35,
+        opacity: 0.25,
+        transform: [{ scale: 1.5 }],
+    },
+    favoriteIconBox: {
+        width: 64,
+        height: 64,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1,
+    },
+    favoriteModalTitle: {
+        fontFamily: fonts.extraBold,
+        fontSize: 22,
+        color: colors.text,
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    favoriteModalMessage: {
+        fontFamily: fonts.medium,
+        fontSize: 14,
+        color: colors.textSecondary,
+        textAlign: 'center',
+        lineHeight: 21,
+        marginBottom: 24,
+        paddingHorizontal: 10,
+    },
+    favoriteModalBtn: {
+        width: '100%',
+        height: 52,
+        borderRadius: 16,
+        overflow: 'hidden',
+    },
+    favoriteModalBtnGradient: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    favoriteModalBtnText: {
+        fontFamily: fonts.bold,
+        fontSize: 15,
+        color: colors.white,
+    },
 });
-

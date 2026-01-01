@@ -24,6 +24,11 @@ export interface Bid {
     id: string;
     fullName: string;
     profileImageUrl?: string | null;
+    electricianProfile?: {
+      verificationStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+      licenseVerified?: boolean;
+      licenseNumber?: string;
+    };
   };
   jobPost?: {
     id: string;
@@ -46,8 +51,22 @@ export interface Bid {
 
 export const bidService = {
   async createBid(data: CreateBidData) {
-    const response = await apiClient.post(API_ENDPOINTS.BIDS, data);
-    return response.data.data.bid;
+    console.log('📤 Creating bid...');
+    console.log('   Endpoint:', API_ENDPOINTS.BIDS);
+    console.log('   Data:', JSON.stringify(data, null, 2));
+    try {
+      const response = await apiClient.post(API_ENDPOINTS.BIDS, data);
+      console.log('✅ Bid created successfully:', response.data);
+      return response.data.data.bid;
+    } catch (error: any) {
+      console.error('❌ Bid creation failed!');
+      console.error('   Status:', error.response?.status);
+      console.error('   URL:', error.config?.url);
+      console.error('   Base URL:', error.config?.baseURL);
+      console.error('   Full URL:', `${error.config?.baseURL}${error.config?.url}`);
+      console.error('   Error:', error.response?.data || error.message);
+      throw error;
+    }
   },
 
   async getBidById(id: string) {
@@ -71,8 +90,22 @@ export const bidService = {
   },
 
   async acceptBid(id: string) {
-    const response = await apiClient.post(`${API_ENDPOINTS.BIDS}/${id}/accept`);
-    return response.data.data.bid;
+    console.log(`📤 Accepting bid: ${id}...`);
+    try {
+      const response = await apiClient.post(`${API_ENDPOINTS.BIDS}/${id}/accept`);
+      console.log('✅ Bid accepted successfully:', response.data);
+      return response.data.data.bid;
+    } catch (error: any) {
+      console.error('❌ Bid acceptance failed!');
+      console.error('   Error Message:', error.message);
+      if (error.response) {
+        console.error('   Response Status:', error.response.status);
+        console.error('   Response Data:', JSON.stringify(error.response.data));
+      } else if (error.request) {
+        console.error('   Request made but no response received');
+      }
+      throw error;
+    }
   },
 
   async rejectBid(id: string) {

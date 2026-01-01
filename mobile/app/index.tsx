@@ -20,8 +20,8 @@ export default function Index() {
           // Authenticated - go to main app
           router.replace('/(tabs)');
         } catch {
-          // Not authenticated - show login screen
-          router.replace('/(auth)/login');
+          // Not authenticated - show welcome screen with persona choice
+          router.replace('/(auth)/welcome');
         } finally {
           setIsChecking(false);
         }

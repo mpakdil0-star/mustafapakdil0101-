@@ -1,5 +1,5 @@
 # Backend directory - this should not be in mobile builds
-backend/
+# backend/
 
 # Data directories  
 data/

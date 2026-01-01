@@ -20,7 +20,21 @@ export default function ElectriciansLayout() {
         animation: 'slide_from_right',
         headerBackButtonDisplayMode: 'minimal',
       }}
-    />
+    >
+      <Stack.Screen
+        name="index"
+        options={{
+          title: 'Elektrikçiler',
+          headerTitle: 'Öne Çıkan Ustalar'
+        }}
+      />
+      <Stack.Screen
+        name="[id]"
+        options={{
+          title: 'Elektrikçi Detay',
+        }}
+      />
+    </Stack>
   );
 }
 

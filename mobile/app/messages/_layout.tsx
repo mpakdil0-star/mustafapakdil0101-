@@ -5,6 +5,7 @@ export default function MessagesLayout() {
     return (
         <Stack
             screenOptions={{
+                headerShown: false,
                 headerStyle: {
                     backgroundColor: colors.primary,
                 },

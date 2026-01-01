@@ -1,0 +1,28 @@
+# Exclude backend completely
+backend/**
+backend/
+
+# Exclude data directories
+data/**
+data/
+
+# Exclude node_modules at root (mobile has its own)
+/node_modules/**
+/node_modules/
+
+# Exclude git
+.git/**
+.git/
+
+# Exclude all documentation and batch files
+*.md
+*.bat
+*.txt
+
+# Exclude specific files
+network_info.txt
+package.json
+package-lock.json
+
+# Only include mobile directory
+!mobile/**

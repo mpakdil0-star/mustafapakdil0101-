@@ -89,7 +89,9 @@ const bidSlice = createSlice({
     // Fetch Job Bids
     builder
       .addCase(fetchJobBids.pending, (state) => {
-        state.isLoading = true;
+        if (state.jobBids.length === 0) {
+          state.isLoading = true;
+        }
         state.error = null;
       })
       .addCase(fetchJobBids.fulfilled, (state, action) => {
@@ -104,7 +106,9 @@ const bidSlice = createSlice({
     // Fetch My Bids
     builder
       .addCase(fetchMyBids.pending, (state) => {
-        state.isLoading = true;
+        if (state.myBids.length === 0) {
+          state.isLoading = true;
+        }
         state.error = null;
       })
       .addCase(fetchMyBids.fulfilled, (state, action) => {

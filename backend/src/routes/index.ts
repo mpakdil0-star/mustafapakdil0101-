@@ -1,0 +1,35 @@
+import { Router } from 'express';
+import authRoutes from './authRoutes';
+import userRoutes from './userRoutes';
+import jobRoutes from './jobRoutes';
+import bidRoutes from './bidRoutes';
+import conversationRoutes from './conversationRoutes';
+import messageRoutes from './messageRoutes';
+import notificationRoutes from './notificationRoutes';
+import locationRoutes from './locationRoutes';
+import favoriteRoutes from './favoriteRoutes';
+import paymentRoutes from './paymentRoutes';
+
+const router = Router();
+
+// Health check
+router.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'API is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
+router.use('/jobs', jobRoutes);
+router.use('/bids', bidRoutes);
+router.use('/conversations', conversationRoutes);
+router.use('/messages', messageRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/locations', locationRoutes);
+router.use('/favorites', favoriteRoutes);
+router.use('/payments', paymentRoutes);
+
+export default router;

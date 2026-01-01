@@ -6,10 +6,12 @@ import {
   Modal,
   FlatList,
   StyleSheet,
+  TextInput,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
-import { typography } from '../../constants/typography';
+import { typography, fonts } from '../../constants/typography';
 
 interface PickerProps {
   label: string;
@@ -33,6 +35,11 @@ export const Picker: React.FC<PickerProps> = ({
   disabled = false,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredOptions = options.filter((option) =>
+    option.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <View style={styles.container}>
@@ -41,14 +48,19 @@ export const Picker: React.FC<PickerProps> = ({
           {label} {required && <Text style={styles.required}>*</Text>}
         </Text>
       )}
-      
+
       <TouchableOpacity
         style={[
           styles.picker,
           error && styles.pickerError,
           disabled && styles.pickerDisabled,
         ]}
-        onPress={() => !disabled && setModalVisible(true)}
+        onPress={() => {
+          if (!disabled) {
+            setSearchQuery('');
+            setModalVisible(true);
+          }
+        }}
         activeOpacity={disabled ? 1 : 0.7}
         disabled={disabled}
       >
@@ -84,8 +96,26 @@ export const Picker: React.FC<PickerProps> = ({
               </TouchableOpacity>
             </View>
 
+            {/* Search Input */}
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={20} color={colors.textSecondary} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder={`${label} ara...`}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoFocus
+                placeholderTextColor={colors.textLight}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <Ionicons name="close-circle" size={18} color={colors.textLight} />
+                </TouchableOpacity>
+              )}
+            </View>
+
             <FlatList
-              data={options}
+              data={filteredOptions}
               keyExtractor={(item) => item}
               renderItem={({ item }) => (
                 <TouchableOpacity
@@ -111,9 +141,10 @@ export const Picker: React.FC<PickerProps> = ({
               )}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyText}>Seçenek bulunamadı</Text>
+                  <Text style={styles.emptyText}>Sonuç bulunamadı</Text>
                 </View>
               }
+              keyboardShouldPersistTaps="handled"
             />
           </View>
         </View>
@@ -184,7 +215,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopLeftRadius: spacing.radius.lg,
     borderTopRightRadius: spacing.radius.lg,
-    maxHeight: '70%',
+    height: '80%',
     paddingBottom: spacing.xl,
   },
   modalHeader: {
@@ -194,11 +225,31 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
+    marginBottom: spacing.sm,
   },
   modalTitle: {
-    ...typography.h6,
+    ...typography.h4Style,
     color: colors.text,
     fontWeight: '600',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.backgroundLight,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderRadius: spacing.radius.md,
+    height: 48,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.text,
+    marginLeft: spacing.xs,
   },
   closeButton: {
     padding: spacing.xs,
@@ -242,4 +293,3 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
 });
-

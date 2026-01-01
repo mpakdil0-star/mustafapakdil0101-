@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,16 +6,20 @@ import {
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
+import { PremiumAlert } from '../../../../components/common/PremiumAlert';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAppDispatch, useAppSelector } from '../../../../hooks/redux';
 import { fetchBidById } from '../../../../store/slices/bidSlice';
+import { messageService } from '../../../../services/messageService';
 import { Card } from '../../../../components/common/Card';
 import { Button } from '../../../../components/common/Button';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../../../constants/colors';
 import { spacing } from '../../../../constants/spacing';
-import { typography } from '../../../../constants/typography';
+import { typography, fonts } from '../../../../constants/typography';
+import { PremiumHeader } from '../../../../components/common/PremiumHeader';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function BidDetailScreen() {
   const router = useRouter();
@@ -24,6 +28,18 @@ export default function BidDetailScreen() {
   const { currentBid, isLoading, error } = useAppSelector((state) => state.bids);
   const { user } = useAppSelector((state) => state.auth);
   const isOwner = user?.userType === 'CITIZEN';
+
+  const [alertConfig, setAlertConfig] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type?: 'success' | 'error' | 'warning' | 'info' | 'confirm';
+    buttons?: { text: string; onPress: () => void; variant?: 'primary' | 'secondary' | 'danger' | 'ghost' }[];
+  }>({ visible: false, title: '', message: '' });
+
+  const showAlert = (title: string, message: string, type: any = 'info', buttons?: any[]) => {
+    setAlertConfig({ visible: true, title, message, type, buttons });
+  };
 
   useEffect(() => {
     if (bidId) {
@@ -85,205 +101,214 @@ export default function BidDetailScreen() {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Back Button Header */}
-      <View style={styles.backHeaderContainer}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.backButtonIcon}>←</Text>
-          <Text style={styles.backButtonText}>Geri</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      <PremiumHeader
+        title="Teklif Detayı"
+        subtitle={currentBid.jobPost?.title || 'İlan Özeti'}
+        showBackButton
+      />
 
-      {/* Bid Header Card */}
-      <Card style={styles.headerCard} elevated>
-        <View style={styles.headerRow}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.bidTitle}>Teklif Detayı</Text>
-            <View
-              style={[
-                styles.statusBadge,
-                { backgroundColor: getStatusColor(currentBid.status) + '20' },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.statusText,
-                  { color: getStatusColor(currentBid.status) },
-                ]}
-              >
-                {getStatusText(currentBid.status)}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+
+        {/* Bid Header Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <LinearGradient
+              colors={colors.gradientPrimary as any}
+              style={styles.titleIndicator}
+            />
+            <Text style={styles.sectionTitleBold}>Genel Bakış</Text>
+          </View>
+          <Card style={styles.headerCard} elevated>
+            <View style={styles.headerRow}>
+              <View style={styles.headerLeft}>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    { backgroundColor: getStatusColor(currentBid.status) + '15' },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusText,
+                      { color: getStatusColor(currentBid.status) },
+                    ]}
+                  >
+                    {getStatusText(currentBid.status)}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.bidAmountContainer}>
+                <Text style={styles.amountValue}>
+                  {typeof currentBid.amount === 'string'
+                    ? parseFloat(currentBid.amount).toFixed(0)
+                    : currentBid.amount}{' '}
+                  ₺
+                </Text>
+              </View>
+            </View>
+          </Card>
+        </View>
+
+        {/* Details Sections */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <LinearGradient
+              colors={colors.gradientPrimary as any}
+              style={styles.titleIndicator}
+            />
+            <Text style={styles.sectionTitleBold}>Detaylar</Text>
+          </View>
+
+          <Card style={styles.detailsCard} elevated>
+            <View style={styles.infoRow}>
+              <View style={styles.infoLabelGroup}>
+                <Ionicons name="person-outline" size={18} color={colors.primary} />
+                <Text style={styles.infoLabel}>Elektrikçi</Text>
+              </View>
+              <Text style={styles.infoValue}>
+                {currentBid.electrician?.fullName || 'Elektrikçi'}
               </Text>
             </View>
-          </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.infoRow}>
+              <View style={styles.infoLabelGroup}>
+                <Ionicons name="time-outline" size={18} color={colors.primary} />
+                <Text style={styles.infoLabel}>Tahmini Süre</Text>
+              </View>
+              <Text style={styles.infoValue}>
+                {currentBid.estimatedDuration} saat
+              </Text>
+            </View>
+
+            {currentBid.estimatedStartDate && (
+              <>
+                <View style={styles.divider} />
+                <View style={styles.infoRow}>
+                  <View style={styles.infoLabelGroup}>
+                    <Ionicons name="calendar-outline" size={18} color={colors.primary} />
+                    <Text style={styles.infoLabel}>Başlangıç</Text>
+                  </View>
+                  <Text style={styles.infoValue}>
+                    {new Date(currentBid.estimatedStartDate).toLocaleDateString('tr-TR', {
+                      day: 'numeric',
+                      month: 'long',
+                    })}
+                  </Text>
+                </View>
+              </>
+            )}
+          </Card>
         </View>
 
-        <View style={styles.amountContainer}>
-          <Text style={styles.amountLabel}>Teklif Tutarı</Text>
-          <Text style={styles.amountValue}>
-            {typeof currentBid.amount === 'string'
-              ? parseFloat(currentBid.amount).toFixed(0)
-              : currentBid.amount}{' '}
-            ₺
-          </Text>
-        </View>
-      </Card>
-
-      {/* Electrician Info Card */}
-      <Card style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>👤 Elektrikçi Bilgileri</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Ad Soyad:</Text>
-          <Text style={styles.infoValue}>
-            {currentBid.electrician?.fullName || 'Elektrikçi'}
-          </Text>
-        </View>
-      </Card>
-
-      {/* Bid Details Card */}
-      <Card style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>📋 Teklif Detayları</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Tahmini Süre:</Text>
-          <Text style={styles.infoValue}>
-            {currentBid.estimatedDuration} saat
-          </Text>
-        </View>
-        {currentBid.estimatedStartDate && (
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Tahmini Başlangıç:</Text>
-            <Text style={styles.infoValue}>
-              {new Date(currentBid.estimatedStartDate).toLocaleDateString('tr-TR', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </Text>
+        {/* Message Section */}
+        {currentBid.message && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeaderRow}>
+              <LinearGradient
+                colors={colors.gradientPrimary as any}
+                style={styles.titleIndicator}
+              />
+              <Text style={styles.sectionTitleBold}>Mesaj</Text>
+            </View>
+            <Card style={styles.messageCard} elevated>
+              <Text style={styles.messageText}>{currentBid.message}</Text>
+            </Card>
           </View>
         )}
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Oluşturulma:</Text>
-          <Text style={styles.infoValue}>
-            {new Date(currentBid.createdAt).toLocaleDateString('tr-TR', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })}
-          </Text>
-        </View>
-      </Card>
 
-      {/* Message Card */}
-      {currentBid.message && (
-        <Card style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>💬 Mesaj</Text>
-          <Text style={styles.messageText}>{currentBid.message}</Text>
-        </Card>
-      )}
-
-      {/* Job Info Card */}
-      {currentBid.jobPost && (
-        <Card style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>💼 İş Bilgileri</Text>
-          <Text style={styles.jobTitle}>{currentBid.jobPost.title}</Text>
-          <Text style={styles.jobDescription} numberOfLines={3}>
-            {currentBid.jobPost.description}
-          </Text>
-          {currentBid.jobPost.location && (
-            <View style={styles.locationRow}>
-              <Text style={styles.locationIcon}>📍</Text>
-              <Text style={styles.locationText}>
-                {currentBid.jobPost.location.district}, {currentBid.jobPost.location.city}
-              </Text>
-            </View>
-          )}
-        </Card>
-      )}
-
-      {/* Action Buttons */}
-      {isOwner && currentBid.status === 'PENDING' && currentBid.jobPost?.status === 'OPEN' && (
+        {/* Action Buttons */}
         <View style={styles.actionButtons}>
-          <Button
-            title="Mesaj Gönder"
-            onPress={() => {
-              Alert.alert('Yakında', 'Mesajlaşma özelliği yakında eklenecek');
-            }}
-            variant="outline"
-            fullWidth
-            style={styles.messageButton}
-          />
+          {currentBid.status === 'ACCEPTED' && (
+            <Button
+              title="Mesaj Gönder"
+              onPress={async () => {
+                try {
+                  // Konuşma başlat veya mevcut olanı bul
+                  const response = await messageService.sendMessage({
+                    receiverId: currentBid.electricianId,
+                    content: 'Merhaba, teklifinizi kabul ettim. İş ile ilgili detayları buradan konuşabiliriz.',
+                    bidId: currentBid.id,
+                    jobId: currentBid.jobPostId
+                  });
+
+                  if (response?.conversationId) {
+                    router.push(`/messages/${response.conversationId}`);
+                  } else {
+                    showAlert('Hata', 'Mesajlaşma başlatılamadı.', 'error');
+                  }
+                } catch (error: any) {
+                  console.error('Start chat error:', error);
+                  showAlert('Hata', 'Mesajlaşma şu an kullanılamıyor.', 'error');
+                }
+              }}
+              variant="primary"
+              fullWidth
+              icon={<Ionicons name="chatbubbles-outline" size={20} color={colors.white} />}
+              style={styles.messageButton}
+            />
+          )}
         </View>
-      )}
-    </ScrollView>
+      </ScrollView>
+
+      <PremiumAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        buttons={alertConfig.buttons}
+        onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundLight,
+    backgroundColor: colors.backgroundDark,
+  },
+  scrollView: {
+    flex: 1,
   },
   content: {
     padding: spacing.screenPadding,
-    paddingTop: 0,
+    paddingTop: spacing.md,
     paddingBottom: spacing.xxl,
-  },
-  backHeaderContainer: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.screenPadding,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-    marginHorizontal: -spacing.screenPadding,
-    marginBottom: spacing.md,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-  },
-  backButtonIcon: {
-    fontSize: 24,
-    color: colors.white,
-    marginRight: spacing.xs,
-    fontWeight: 'bold',
-  },
-  backButtonText: {
-    ...typography.body1,
-    color: colors.white,
-    fontWeight: '600',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.backgroundLight,
+    backgroundColor: colors.backgroundDark,
   },
   loadingText: {
     ...typography.body2,
     color: colors.textSecondary,
     marginTop: spacing.md,
+    fontFamily: fonts.medium,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl,
-    backgroundColor: colors.backgroundLight,
+    backgroundColor: colors.backgroundDark,
   },
   errorIcon: {
     fontSize: 64,
     marginBottom: spacing.md,
   },
   errorTitle: {
-    ...typography.h4,
+    ...typography.h4Style,
     color: colors.text,
+    fontFamily: fonts.bold,
     marginBottom: spacing.xs,
     textAlign: 'center',
   },
@@ -292,115 +317,107 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: spacing.xl,
+    fontFamily: fonts.regular,
+  },
+  section: {
+    marginBottom: spacing.xl,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  titleIndicator: {
+    width: 4,
+    height: 18,
+    borderRadius: 2,
+    marginRight: spacing.sm,
+  },
+  sectionTitleBold: {
+    ...typography.h4Style,
+    color: colors.text,
+    fontFamily: fonts.bold,
   },
   headerCard: {
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
+    padding: spacing.md,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.md,
+    alignItems: 'center',
   },
   headerLeft: {
     flex: 1,
   },
-  bidTitle: {
-    ...typography.h4,
-    color: colors.text,
-    fontWeight: '700',
-    marginBottom: spacing.sm,
+  bidAmountContainer: {
+    backgroundColor: colors.primary + '10',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 12,
+  },
+  amountValue: {
+    ...typography.h3Style,
+    color: colors.primary,
+    fontFamily: fonts.bold,
   },
   statusBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: spacing.radius.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: 10,
     alignSelf: 'flex-start',
   },
   statusText: {
-    ...typography.caption,
-    fontWeight: '600',
+    fontSize: 13,
+    fontFamily: fonts.bold,
   },
-  amountContainer: {
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
-    alignItems: 'center',
-  },
-  amountLabel: {
-    ...typography.body2,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  amountValue: {
-    ...typography.h2,
-    color: colors.primary,
-    fontWeight: '800',
-  },
-  sectionCard: {
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  sectionTitle: {
-    ...typography.h5,
-    color: colors.text,
-    marginBottom: spacing.md,
-    fontWeight: '700',
+  detailsCard: {
+    padding: spacing.md,
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.md,
-    paddingVertical: spacing.xs,
+    paddingVertical: 4,
+  },
+  infoLabelGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   infoLabel: {
     ...typography.body2,
     color: colors.textSecondary,
-    fontWeight: '500',
+    fontFamily: fonts.medium,
   },
   infoValue: {
     ...typography.body1,
     color: colors.text,
-    fontWeight: '600',
+    fontFamily: fonts.bold,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.borderLight,
+    marginVertical: spacing.sm,
+  },
+  messageCard: {
+    padding: spacing.md,
   },
   messageText: {
     ...typography.body1,
     color: colors.text,
-    lineHeight: 24,
-  },
-  jobTitle: {
-    ...typography.h6,
-    color: colors.text,
-    fontWeight: '700',
-    marginBottom: spacing.sm,
-  },
-  jobDescription: {
-    ...typography.body2,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-    lineHeight: 20,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  locationIcon: {
-    fontSize: 16,
-    marginRight: spacing.xs,
-  },
-  locationText: {
-    ...typography.body2,
-    color: colors.textSecondary,
+    lineHeight: 22,
+    fontFamily: fonts.regular,
+    fontStyle: 'italic',
   },
   actionButtons: {
-    marginTop: spacing.md,
-    gap: spacing.sm,
+    marginTop: spacing.lg,
   },
   messageButton: {
-    marginTop: spacing.xs,
+    borderRadius: 16,
+    height: 56,
+  },
+  backButton: {
+    minWidth: 150,
   },
 });
 

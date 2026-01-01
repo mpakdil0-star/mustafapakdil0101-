@@ -4,10 +4,10 @@ import { API_ENDPOINTS } from '../constants/api';
 export interface Notification {
   id: string;
   userId: string;
-  type: 'BID_RECEIVED' | 'BID_ACCEPTED' | 'BID_REJECTED' | 'MESSAGE_RECEIVED' | 'JOB_UPDATED';
+  type: 'BID_RECEIVED' | 'BID_ACCEPTED' | 'BID_REJECTED' | 'MESSAGE_RECEIVED' | 'JOB_UPDATED' | 'new_job_available' | 'new_message';
   title: string;
   message: string;
-  read: boolean;
+  isRead: boolean;
   relatedId?: string; // jobId, bidId, messageId, etc.
   createdAt: string;
 }

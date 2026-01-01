@@ -1,22 +1,52 @@
 import { Tabs } from 'expo-router';
-// import { useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../constants/colors';
+import { colors as staticColors } from '../../constants/colors';
+import { useAppColors } from '../../hooks/useAppColors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppSelector } from '../../hooks/redux';
+import api from '../../services/api';
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
-  const { user } = useAppSelector((state) => state.auth);
-  const isElectrician = user?.userType === 'ELECTRICIAN';
+  const { user, guestRole, isAuthenticated } = useAppSelector((state) => state.auth);
+  const colors = useAppColors();
+  const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
+  const isGuest = !user;
+
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+
+  // Fetch unread message count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (!isAuthenticated) return;
+      try {
+        const response = await api.get('/conversations');
+        if (response.data.success) {
+          const conversations = response.data.data?.conversations || response.data.data || [];
+          const totalUnread = conversations.reduce((acc: number, conv: any) => acc + (conv.unreadCount || 0), 0);
+          setUnreadMessagesCount(totalUnread);
+        }
+      } catch (error) {
+        // Silently fail - badge won't show but app continues working
+        console.log('Could not fetch unread count');
+      }
+    };
+
+    fetchUnreadCount();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
   const renderHomeIcon = ({ focused }: { focused: boolean }) => (
     <Ionicons
       name={focused ? "home" : "home-outline"}
       size={22}
-      color={focused ? colors.primary : colors.textSecondary}
+      color={focused ? colors.primary : colors.textLight}
     />
   );
 
@@ -24,58 +54,71 @@ export default function TabsLayout() {
     <Ionicons
       name={focused ? "briefcase" : "briefcase-outline"}
       size={22}
-      color={focused ? colors.secondary : colors.textSecondary}
+      color={focused ? colors.primary : colors.textLight}
     />
   );
 
   const renderMessagesIcon = ({ focused }: { focused: boolean }) => (
-    <Ionicons
-      name={focused ? "chatbubbles" : "chatbubbles-outline"}
-      size={22}
-      color={focused ? colors.info : colors.textSecondary}
-    />
+    <View style={styles.iconContainer}>
+      <Ionicons
+        name={focused ? "chatbubbles" : "chatbubbles-outline"}
+        size={22}
+        color={focused ? colors.primary : colors.textLight}
+      />
+      {unreadMessagesCount > 0 && (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>
+            {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+          </Text>
+        </View>
+      )}
+    </View>
   );
 
   const renderProfileIcon = ({ focused }: { focused: boolean }) => (
     <Ionicons
       name={focused ? "person" : "person-outline"}
       size={22}
-      color={focused ? colors.success : colors.textSecondary}
+      color={focused ? colors.primary : colors.textLight}
     />
   );
 
   return (
     <Tabs
       screenOptions={{
-        headerShown: true,
+        headerShown: false,
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarInactiveTintColor: colors.textLight,
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          borderTopWidth: 0.5,
-          height: 56 + insets.bottom,
-          paddingBottom: insets.bottom + 2,
-          paddingTop: 6,
+          backgroundColor: staticColors.white,
+          borderTopColor: staticColors.borderLight,
+          borderTopWidth: 1,
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom + 8,
+          paddingTop: 8,
           position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
+          elevation: 20,
+          shadowColor: colors.primary,
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 12,
         },
         tabBarLabelStyle: {
-          fontFamily: fonts.medium,
-          fontSize: 11,
-          marginTop: 2,
+          fontFamily: fonts.bold,
+          fontSize: 10,
         },
         headerStyle: {
           backgroundColor: colors.primary,
           elevation: 0,
           shadowOpacity: 0,
         },
-        headerTintColor: colors.white,
+        headerTintColor: staticColors.white,
         headerTitleStyle: {
-          fontFamily: fonts.semiBold,
-          fontSize: 17,
+          fontFamily: fonts.bold,
+          fontSize: 18,
         },
         headerShadowVisible: false,
       }}
@@ -115,3 +158,26 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -6,
+    right: -10,
+    backgroundColor: staticColors.error,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    fontFamily: fonts.bold,
+    fontSize: 10,
+    color: staticColors.white,
+  },
+});

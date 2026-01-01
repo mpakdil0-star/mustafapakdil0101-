@@ -7,8 +7,18 @@ interface User {
   fullName: string;
   userType: string;
   phone?: string;
+  city?: string;
+  district?: string;
   profileImageUrl?: string;
   isVerified: boolean;
+  specialties?: string[];
+  electricianProfile?: {
+    creditBalance: number;
+    specialties: string[];
+    bio: string;
+    experienceYears: number;
+    isAvailable: boolean;
+  };
 }
 
 interface AuthState {
@@ -17,6 +27,7 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
+  guestRole: 'CITIZEN' | 'ELECTRICIAN' | null;
 }
 
 const initialState: AuthState = {
@@ -25,6 +36,7 @@ const initialState: AuthState = {
   isLoading: false,
   isAuthenticated: false,
   error: null,
+  guestRole: null,
 };
 
 const handleAuthError = (error: any, defaultMessage: string) => {
@@ -86,6 +98,14 @@ const authSlice = createSlice({
       state.user = action.payload;
       state.isAuthenticated = true;
     },
+    setGuestRole: (state, action: PayloadAction<'CITIZEN' | 'ELECTRICIAN' | null>) => {
+      state.guestRole = action.payload;
+    },
+    updateCreditBalance: (state, action: PayloadAction<number>) => {
+      if (state.user && state.user.electricianProfile) {
+        state.user.electricianProfile.creditBalance = action.payload;
+      }
+    },
   },
   extraReducers: (builder) => {
     // Register & Login (aynı mantık)
@@ -135,6 +155,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, setUser } = authSlice.actions;
+export const { clearError, setUser, setGuestRole, updateCreditBalance } = authSlice.actions;
 export default authSlice.reducer;
 

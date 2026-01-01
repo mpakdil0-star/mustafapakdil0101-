@@ -23,8 +23,8 @@ export interface Message {
 
 export interface Conversation {
   id: string;
-  participant1Id: string;
-  participant2Id: string;
+  participant1Id?: string;
+  participant2Id?: string;
   lastMessage?: Message;
   unreadCount: number;
   createdAt: string;
@@ -35,6 +35,11 @@ export interface Conversation {
     profileImageUrl?: string | null;
   };
   participant2?: {
+    id: string;
+    fullName: string;
+    profileImageUrl?: string | null;
+  };
+  otherUser?: {
     id: string;
     fullName: string;
     profileImageUrl?: string | null;
@@ -77,7 +82,7 @@ export const messageService = {
   },
 
   async sendMessage(data: CreateMessageData) {
-    const response = await apiClient.post(API_ENDPOINTS.MESSAGES || '/messages', data);
+    const response = await apiClient.post('/messages', data);
     return response.data.data?.message;
   },
 

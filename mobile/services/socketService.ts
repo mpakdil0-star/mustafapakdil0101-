@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import * as SecureStore from 'expo-secure-store';
-import { API_BASE_URL } from '../constants/api';
+import { API_BASE_URL, WS_BASE_URL } from '../constants/api';
 
 const API_TOKEN_KEY = 'auth_token';
 
@@ -8,7 +8,9 @@ interface MessageData {
     id: string;
     conversationId: string;
     senderId: string;
+    receiverId: string;
     content: string;
+    read: boolean;
     messageType: string;
     createdAt: string;
     sender: {
@@ -23,6 +25,7 @@ interface NotificationData {
     conversationId?: string;
     senderName?: string;
     preview?: string;
+    message?: MessageData;
 }
 
 // Bid notification interfaces
@@ -36,7 +39,8 @@ interface BidNotificationData {
     message: string;
 }
 
-type MessageHandler = (data: { message: MessageData }) => void;
+export type { MessageData, NotificationData, BidNotificationData };
+export type MessageHandler = (data: { message: MessageData }) => void;
 type TypingHandler = (data: { conversationId: string; userId: string }) => void;
 type ReadHandler = (data: { conversationId: string; readBy: string }) => void;
 type NotificationHandler = (data: NotificationData) => void;
@@ -57,6 +61,12 @@ class SocketService {
     private bidNotificationHandlers: Set<BidNotificationHandler> = new Set();
 
     async connect(): Promise<boolean> {
+        // Eğer zaten bağlıysa tekrar deneme
+        if (this.socket?.connected) {
+            console.log('🔌 Socket: Zaten bağlı.');
+            return true;
+        }
+
         try {
             const token = await SecureStore.getItemAsync(API_TOKEN_KEY);
 
@@ -66,15 +76,24 @@ class SocketService {
             }
 
             // Base URL'den WebSocket URL oluştur
-            const wsUrl = API_BASE_URL.replace('/api/v1', '');
+            const wsUrl = WS_BASE_URL;
+            console.log('🔌 Socket: Bağlanmaya çalışılan adres:', wsUrl);
+            // console.log('🔌 Socket: Kullanılan Token:', token.substring(0, 10) + '...');
+
+            // Varsa eski soketi temizle
+            if (this.socket) {
+                this.socket.disconnect();
+                this.socket.removeAllListeners();
+            }
 
             this.socket = io(wsUrl, {
                 auth: { token },
-                transports: ['websocket'],
                 reconnection: true,
                 reconnectionAttempts: this.maxReconnectAttempts,
-                reconnectionDelay: 1000,
-                timeout: 10000,
+                reconnectionDelay: 2000,
+                timeout: 5000, // Timeout süresini düşür
+                transports: ['polling', 'websocket'], // Polling ile başla (daha güvenilir)
+                forceNew: true
             });
 
             this.setupEventListeners();
@@ -88,17 +107,17 @@ class SocketService {
                 });
 
                 this.socket?.on('connect_error', (error) => {
-                    console.error('🔌 Socket connection error:', error.message);
+                    // Sessizce arka planda denemeye devam et
                     this.isConnected = false;
-                    resolve(false);
                 });
 
                 // Timeout
                 setTimeout(() => {
-                    if (!this.isConnected) {
+                    if (!this.isConnected && this.reconnectAttempts > 3) {
+                        console.warn('🔌 Socket: Bağlantı kurulamadı, arka planda denenmeye devam edecek.');
                         resolve(false);
                     }
-                }, 10000);
+                }, 15000);
             });
         } catch (error) {
             console.error('🔌 Socket connection failed:', error);

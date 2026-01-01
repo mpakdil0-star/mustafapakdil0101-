@@ -1,7 +1,9 @@
 import { Stack, useRouter } from 'expo-router';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
+import { fonts } from '../../constants/typography';
 
 export default function ProfileLayout() {
   const router = useRouter();
@@ -15,7 +17,7 @@ export default function ProfileLayout() {
       }}
       style={styles.backButton}
     >
-      <Text style={styles.backIcon}>←</Text>
+      <Ionicons name="chevron-back" size={20} color={colors.white} />
       <Text style={styles.backText}>Geri</Text>
     </TouchableOpacity>
   );
@@ -23,19 +25,9 @@ export default function ProfileLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: {
-          backgroundColor: colors.primary,
-        },
-        headerTintColor: colors.white,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-        headerShadowVisible: false,
-        headerLeft: () => <BackButton />, // Custom back button is safer for visibility
-        headerBackVisible: false, // Hide native one to avoid duplicates
-        headerBackTitle: 'Geri',
+        headerShown: false, // Her sayfa kendi PremiumHeader'ını kullanacak
         contentStyle: {
-          backgroundColor: colors.backgroundLight,
+          backgroundColor: '#F8FAFC',
         },
       }}
     >
@@ -101,19 +93,16 @@ const styles = StyleSheet.create({
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: spacing.sm,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-  },
-  backIcon: {
-    fontSize: 24,
-    color: colors.white,
-    marginRight: 4,
-    fontWeight: 'bold',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginLeft: spacing.sm,
   },
   backText: {
     color: colors.white,
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 13,
+    fontFamily: fonts.bold,
+    marginLeft: 2,
   },
 });

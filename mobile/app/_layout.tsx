@@ -9,6 +9,10 @@ import { InteractionManager, View, Text } from 'react-native';
 import { RootState } from '../store/store';
 import { useFonts } from 'expo-font';
 import { fontFiles } from '../constants/typography';
+import { socketService } from '../services/socketService';
+import { authService } from '../services/authService';
+import { PremiumAlert } from '../components/common/PremiumAlert';
+import { Alert } from 'react-native';
 
 // Prevent splash from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -18,6 +22,18 @@ function RootLayoutNav() {
   const segments = useSegments();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [isNavigationReady, setIsNavigationReady] = useState(false);
+
+  const [alertConfig, setAlertConfig] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type?: 'success' | 'error' | 'warning' | 'info' | 'confirm';
+    buttons?: { text: string; onPress: () => void; variant?: 'primary' | 'secondary' | 'danger' | 'ghost' }[];
+  }>({ visible: false, title: '', message: '' });
+
+  const showAlert = (title: string, message: string, type: any = 'info', buttons?: any[]) => {
+    setAlertConfig({ visible: true, title, message, type, buttons });
+  };
 
   useEffect(() => {
     const interaction = InteractionManager.runAfterInteractions(() => {
@@ -30,30 +46,206 @@ function RootLayoutNav() {
   useEffect(() => {
     if (!isNavigationReady) return;
 
-    const inAuthGroup = segments[0] === '(auth)';
-
-    if (segments.length === 0) return;
-
-    if (!isAuthenticated && !inAuthGroup) {
+    const checkOnboarding = async () => {
       try {
-        router.replace('/(auth)/login');
+        const { getItemAsync } = await import('expo-secure-store');
+        const hasSeenOnboarding = await getItemAsync('has_seen_onboarding');
+
+        if (!hasSeenOnboarding) {
+          router.replace('/onboarding');
+          return true;
+        }
+        return false;
       } catch (error) {
-        console.warn('Navigation error, will retry:', error);
+        console.warn('Onboarding check failed:', error);
+        return false;
       }
-    } else if (isAuthenticated && inAuthGroup) {
-      try {
-        router.replace('/(tabs)');
-      } catch (error) {
-        console.warn('Navigation error, will retry:', error);
+    };
+
+    const runNavigationLogic = async () => {
+      const inAuthGroup = segments[0] === '(auth)';
+      const isOnboarding = segments[0] === 'onboarding';
+
+      // Check onboarding first if not already there
+      if (!isOnboarding) {
+        const redirectedToOnboarding = await checkOnboarding();
+        if (redirectedToOnboarding) return;
       }
-    }
+
+      // If we are at root, or not in a specific group, we might need a default redirect
+      // but expo-router usually handles the initial route. 
+      // The following logic handles auth-based redirection.
+
+      if (!segments.length) return;
+
+      // Allow guests to browse everything in tabs
+      if (isAuthenticated && inAuthGroup) {
+        // Connect socket if authenticated and in auth group (redirecting to tabs)
+        socketService.connect();
+        try {
+          router.replace('/(tabs)');
+        } catch (error) {
+          console.warn('Navigation error, will retry:', error);
+        }
+      } else if (isAuthenticated) {
+        // Ensure socket is connected if authenticated anywhere else
+        socketService.connect();
+      }
+    };
+
+    runNavigationLogic();
   }, [isAuthenticated, segments, isNavigationReady, router]);
 
-  return <Slot />;
+  // Global Socket Notification Listener
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Register Push Token on login
+    authService.registerPushToken();
+
+    // Foreground Push Notification Listener
+    let pushSubscription: any;
+
+    // Using dynamic import for notifications
+    const setupNotifications = async () => {
+      try {
+        const { Platform } = await import('react-native');
+        const Constants = (await import('expo-constants')).default;
+
+        // Skip if Expo Go on Android
+        if (Constants.appOwnership === 'expo' && Platform.OS === 'android') {
+          return null;
+        }
+
+        const Notifications = await import('expo-notifications');
+        return Notifications.addNotificationReceivedListener(notification => {
+          console.log('📬 Background/Push Notification received in foreground:', notification);
+        });
+      } catch (err) {
+        console.warn('Push Notifications listener setup failed:', err);
+        return null;
+      }
+    };
+
+    setupNotifications().then(sub => {
+      if (sub) pushSubscription = sub;
+    });
+
+    const unsubscribe = socketService.onNotification((data: any) => {
+      console.log('🔔 Global Notification received:', data);
+
+      if (data.type === 'new_job_available') {
+        showAlert(
+          '🔔 Yeni İş İlanı!',
+          `${data.locationPreview} bölgesinde yeni bir ${data.category} ilanı açıldı: "${data.title}"`,
+          'info',
+          [
+            { text: 'Kapat', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },
+            {
+              text: 'Detayları Gör',
+              variant: 'primary',
+              onPress: () => {
+                setAlertConfig(prev => ({ ...prev, visible: false }));
+                router.push(`/jobs/${data.jobId}`);
+              }
+            }
+          ]
+        );
+      } else if (data.type === 'new_message' && segments[0] !== 'messages') {
+        // Only show if NOT already in chat
+        showAlert(
+          '💬 Yeni Mesaj',
+          `${data.senderName}: ${data.preview}`,
+          'info',
+          [
+            { text: 'Kapat', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },
+            {
+              text: 'Cevapla',
+              variant: 'primary',
+              onPress: () => {
+                setAlertConfig(prev => ({ ...prev, visible: false }));
+                router.push(`/messages/${data.conversationId}`);
+              }
+            }
+          ]
+        );
+      }
+    });
+
+    // Bid notification listener - for citizens to see new bids
+    const unsubscribeBids = socketService.onBidNotification((data: any) => {
+      console.log('📢 Bid Notification received:', data);
+
+      if (data.type === 'bid_received') {
+        showAlert(
+          '💰 Yeni Teklif Aldınız!',
+          `"${data.jobTitle}" ilanınıza ${data.electricianName} tarafından ${data.amount}₺ teklif verildi.`,
+          'info',
+          [
+            { text: 'Kapat', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },
+            {
+              text: 'Teklifleri Gör',
+              variant: 'primary',
+              onPress: () => {
+                setAlertConfig(prev => ({ ...prev, visible: false }));
+                router.push(`/jobs/${data.jobPostId}`);
+              }
+            }
+          ]
+        );
+      } else if (data.type === 'bid_accepted') {
+        showAlert(
+          '✅ Teklifiniz Kabul Edildi!',
+          data.message || `"${data.jobTitle}" için teklifiniz kabul edildi.`,
+          'success',
+          [
+            {
+              text: 'Harika!', variant: 'primary', onPress: () => {
+                setAlertConfig(prev => ({ ...prev, visible: false }));
+                router.push(`/jobs/${data.jobPostId}`);
+              }
+            }
+          ]
+        );
+      } else if (data.type === 'bid_rejected') {
+        showAlert(
+          '❌ Teklifiniz Reddedildi',
+          data.message || `"${data.jobTitle}" için teklifiniz reddedildi.`,
+          'error',
+          [
+            { text: 'Tamam', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }
+          ]
+        );
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeBids();
+    };
+  }, [isAuthenticated, segments]);
+
+  return (
+    <>
+      <Slot />
+      <PremiumAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        buttons={alertConfig.buttons}
+        onClose={() => setAlertConfig((prev: any) => ({ ...prev, visible: false }))}
+      />
+    </>
+  );
 }
+
+// Global Error Handler removed due to incompatibility
+// const setJSExceptionHandler...
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fontFiles);
+  const [lastError, setLastError] = useState<string | null>(null);
 
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded || fontError) {
@@ -61,8 +253,18 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) {
-    return null; // Still loading fonts
+  // Catch component errors
+  if (fontError) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#0f172a', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+        <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>Yazı Tipi Yükleme Hatası</Text>
+        <Text style={{ color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginTop: 10 }}>{fontError.message}</Text>
+      </View>
+    );
+  }
+
+  if (!fontsLoaded) {
+    return null;
   }
 
   return (

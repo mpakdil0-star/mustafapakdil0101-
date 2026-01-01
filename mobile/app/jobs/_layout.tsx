@@ -5,7 +5,7 @@ export default function JobsLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: true,
+        headerShown: false,
         headerStyle: {
           backgroundColor: colors.primary,
         },
@@ -14,18 +14,13 @@ export default function JobsLayout() {
           fontWeight: '600',
           fontSize: 18,
         },
-        headerBackTitleVisible: false,
         headerShadowVisible: false,
         presentation: 'card',
         animation: 'slide_from_right',
-        headerBackButtonDisplayMode: 'minimal',
       }}
     >
       <Stack.Screen
         name="[id]/index"
-        options={{
-          headerShown: false, // Custom back button in component
-        }}
       />
     </Stack>
   );

@@ -54,7 +54,7 @@ const notificationSlice = createSlice({
     },
     addNotification: (state, action) => {
       state.notifications.unshift(action.payload);
-      if (!action.payload.read) {
+      if (!action.payload.isRead) {
         state.unreadCount += 1;
       }
     },
@@ -69,7 +69,7 @@ const notificationSlice = createSlice({
       .addCase(fetchNotifications.fulfilled, (state, action) => {
         state.isLoading = false;
         state.notifications = action.payload;
-        state.unreadCount = action.payload.filter((n: Notification) => !n.read).length;
+        state.unreadCount = action.payload.filter((n: Notification) => !n.isRead).length;
       })
       .addCase(fetchNotifications.rejected, (state, action) => {
         state.isLoading = false;
@@ -80,8 +80,8 @@ const notificationSlice = createSlice({
     builder
       .addCase(markNotificationAsRead.fulfilled, (state, action) => {
         const notification = state.notifications.find((n) => n.id === action.payload);
-        if (notification && !notification.read) {
-          notification.read = true;
+        if (notification && !notification.isRead) {
+          notification.isRead = true;
           state.unreadCount = Math.max(0, state.unreadCount - 1);
         }
       });
@@ -90,7 +90,7 @@ const notificationSlice = createSlice({
     builder
       .addCase(markAllNotificationsAsRead.fulfilled, (state) => {
         state.notifications.forEach((notification) => {
-          notification.read = true;
+          notification.isRead = true;
         });
         state.unreadCount = 0;
       });
@@ -99,7 +99,7 @@ const notificationSlice = createSlice({
     builder
       .addCase(deleteNotification.fulfilled, (state, action) => {
         const notification = state.notifications.find((n) => n.id === action.payload);
-        if (notification && !notification.read) {
+        if (notification && !notification.isRead) {
           state.unreadCount = Math.max(0, state.unreadCount - 1);
         }
         state.notifications = state.notifications.filter((n) => n.id !== action.payload);

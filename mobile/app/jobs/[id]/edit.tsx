@@ -11,16 +11,21 @@ import {
     Platform,
     TouchableOpacity,
 } from 'react-native';
+import { PremiumAlert } from '../../../components/common/PremiumAlert';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { useAppDispatch, useAppSelector } from '../../../hooks/redux';
 import { fetchJobById, fetchMyJobs } from '../../../store/slices/jobSlice';
 import { Card } from '../../../components/common/Card';
 import { Button } from '../../../components/common/Button';
 import { Picker } from '../../../components/common/Picker';
-import { colors } from '../../../constants/colors';
+import { colors as staticColors } from '../../../constants/colors';
 import { spacing } from '../../../constants/spacing';
-import { typography } from '../../../constants/typography';
+import { typography, fonts } from '../../../constants/typography';
+import { useAppColors } from '../../../hooks/useAppColors';
+import { PremiumHeader } from '../../../components/common/PremiumHeader';
 import { API_BASE_URL } from '../../../constants/api';
 import {
     CITY_NAMES,
@@ -35,6 +40,7 @@ const JOB_CATEGORIES = [
     'Priz ve Anahtar',
     'Elektrik Panosu',
     'Kablo Çekimi',
+    'Uydu Sistemleri',
     'Elektrik Kontrolü',
     'Diğer',
 ];
@@ -51,6 +57,7 @@ export default function EditJobScreen() {
     const dispatch = useAppDispatch();
     const { currentJob, isLoading: jobLoading } = useAppSelector((state) => state.jobs);
     const { user } = useAppSelector((state) => state.auth);
+    const colors = useAppColors();
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -65,6 +72,18 @@ export default function EditJobScreen() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [dataLoaded, setDataLoaded] = useState(false);
+
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        type?: 'success' | 'error' | 'warning' | 'info' | 'confirm';
+        buttons?: { text: string; onPress: () => void; variant?: 'primary' | 'secondary' | 'danger' | 'ghost' }[];
+    }>({ visible: false, title: '', message: '' });
+
+    const showAlert = (title: string, message: string, type: any = 'info', buttons?: any[]) => {
+        setAlertConfig({ visible: true, title, message, type, buttons });
+    };
 
     // Mevcut iş verilerini yükle
     useEffect(() => {
@@ -110,8 +129,8 @@ export default function EditJobScreen() {
 
         if (!description.trim()) {
             newErrors.description = 'Açıklama zorunludur';
-        } else if (description.trim().length < 20) {
-            newErrors.description = 'Açıklama en az 20 karakter olmalıdır';
+        } else if (description.trim().length < 5) {
+            newErrors.description = 'Açıklama en az 5 karakter olmalıdır';
         }
 
         if (!category) {
@@ -171,21 +190,23 @@ export default function EditJobScreen() {
             const data = await response.json();
 
             if (data.success) {
-                Alert.alert('Başarılı', 'İlan başarıyla güncellendi!', [
+                showAlert('Başarılı', 'İlan başarıyla güncellendi!', 'success', [
                     {
                         text: 'Tamam',
+                        variant: 'primary',
                         onPress: () => {
+                            setAlertConfig(prev => ({ ...prev, visible: false }));
                             dispatch(fetchMyJobs());
                             router.back();
                         },
                     },
                 ]);
             } else {
-                Alert.alert('Hata', data.error?.message || 'İlan güncellenemedi');
+                showAlert('Hata', data.error?.message || 'İlan güncellenemedi', 'error');
             }
         } catch (error: any) {
             console.error('Update error:', error);
-            Alert.alert('Hata', error.message || 'Bir hata oluştu');
+            showAlert('Hata', error.message || 'Bir hata oluştu', 'error');
         } finally {
             setIsSubmitting(false);
         }
@@ -193,324 +214,361 @@ export default function EditJobScreen() {
 
     if (jobLoading && !dataLoaded) {
         return (
-            <View style={styles.loadingContainer}>
+            <View style={[styles.loadingContainer, { backgroundColor: colors.backgroundDark }]}>
                 <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={styles.loadingText}>İlan bilgileri yükleniyor...</Text>
+                <Text style={[styles.loadingText, { color: colors.textSecondary }]}>İlan bilgileri yükleniyor...</Text>
             </View>
         );
     }
 
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={100}
-        >
+        <View style={styles.container}>
+            <PremiumHeader
+                title="İlanı Düzenle"
+                subtitle={category || 'İlan bilgilerinizi güncelleyin'}
+                showBackButton
+            />
+
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Form Card */}
-                <Card style={styles.formCard}>
-                    <Text style={styles.formTitle}>✏️ İlanı Düzenle</Text>
-
-                    {/* Title Input */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>
-                            Başlık <Text style={styles.required}>*</Text>
-                        </Text>
-                        <TextInput
-                            style={[styles.input, errors.title && styles.inputError]}
-                            placeholder="Örn: Ev Elektrik Tesisatı Arızası"
-                            value={title}
-                            onChangeText={(text) => {
-                                setTitle(text);
-                                if (errors.title) setErrors({ ...errors, title: '' });
-                            }}
-                            placeholderTextColor={colors.textLight}
+                {/* Basic Info Section */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeaderRow}>
+                        <LinearGradient
+                            colors={colors.gradientPrimary as any}
+                            style={styles.titleIndicator}
                         />
-                        {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
+                        <Text style={[styles.sectionTitleBold, { color: colors.text }]}>Temel Bilgiler</Text>
                     </View>
+                    <Card style={styles.formCard} elevated>
 
-                    {/* Description Input */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>
-                            Açıklama <Text style={styles.required}>*</Text>
-                        </Text>
-                        <TextInput
-                            style={[styles.textArea, errors.description && styles.inputError]}
-                            placeholder="İş hakkında detaylı bilgi verin..."
-                            value={description}
-                            onChangeText={(text) => {
-                                setDescription(text);
-                                if (errors.description) setErrors({ ...errors, description: '' });
-                            }}
-                            multiline
-                            numberOfLines={6}
-                            textAlignVertical="top"
-                            placeholderTextColor={colors.textLight}
-                        />
-                        {errors.description && (
-                            <Text style={styles.errorText}>{errors.description}</Text>
-                        )}
-                    </View>
-
-                    {/* Category Selection */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>
-                            Kategori <Text style={styles.required}>*</Text>
-                        </Text>
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            style={styles.categoryScroll}
-                        >
-                            {JOB_CATEGORIES.map((cat) => (
-                                <TouchableOpacity
-                                    key={cat}
-                                    style={[
-                                        styles.categoryChip,
-                                        category === cat && styles.categoryChipSelected,
-                                    ]}
-                                    onPress={() => {
-                                        setCategory(cat);
-                                        if (errors.category) setErrors({ ...errors, category: '' });
-                                    }}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.categoryChipText,
-                                            category === cat && styles.categoryChipTextSelected,
-                                        ]}
-                                    >
-                                        {cat}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                        {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
-                    </View>
-
-                    {/* Location Section */}
-                    <View style={styles.sectionDivider}>
-                        <Text style={styles.sectionTitle}>📍 Konum Bilgileri</Text>
-                    </View>
-
-                    {/* City Picker */}
-                    <Picker
-                        label="Şehir"
-                        placeholder="Şehir seçiniz"
-                        value={city}
-                        options={CITY_NAMES}
-                        onValueChange={setCity}
-                        error={errors.city}
-                        required
-                    />
-
-                    {/* District Picker */}
-                    <Picker
-                        label="İlçe"
-                        placeholder={city ? 'İlçe seçiniz' : 'Önce şehir seçiniz'}
-                        value={district}
-                        options={districtOptions}
-                        onValueChange={setDistrict}
-                        error={errors.district}
-                        required
-                        disabled={!city || districtOptions.length === 0}
-                    />
-
-                    {/* Address Input */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>
-                            Adres <Text style={styles.required}>*</Text>
-                        </Text>
-                        <TextInput
-                            style={[styles.textArea, errors.address && styles.inputError]}
-                            placeholder="Sokak, cadde, bina no, daire no..."
-                            value={address}
-                            onChangeText={(text) => {
-                                setAddress(text);
-                                if (errors.address) setErrors({ ...errors, address: '' });
-                            }}
-                            multiline
-                            numberOfLines={3}
-                            textAlignVertical="top"
-                            placeholderTextColor={colors.textLight}
-                        />
-                        {errors.address && <Text style={styles.errorText}>{errors.address}</Text>}
-                    </View>
-
-                    {/* Urgency Level */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Aciliyet Seviyesi</Text>
-                        <View style={styles.urgencyContainer}>
-                            {URGENCY_LEVELS.map((level) => (
-                                <TouchableOpacity
-                                    key={level.value}
-                                    style={[
-                                        styles.urgencyButton,
-                                        urgencyLevel === level.value && styles.urgencyButtonSelected,
-                                    ]}
-                                    onPress={() => setUrgencyLevel(level.value as any)}
-                                >
-                                    <Text style={styles.urgencyIcon}>{level.icon}</Text>
-                                    <Text
-                                        style={[
-                                            styles.urgencyText,
-                                            urgencyLevel === level.value && styles.urgencyTextSelected,
-                                        ]}
-                                    >
-                                        {level.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                        {/* Title Input */}
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: colors.text }]}>
+                                Başlık <Text style={styles.required}>*</Text>
+                            </Text>
+                            <TextInput
+                                style={[styles.input, { color: colors.text, backgroundColor: colors.backgroundDark }, errors.title && styles.inputError]}
+                                placeholder="Örn: Ev Elektrik Tesisatı Arızası"
+                                value={title}
+                                onChangeText={(text) => {
+                                    setTitle(text);
+                                    if (errors.title) setErrors({ ...errors, title: '' });
+                                }}
+                                placeholderTextColor={staticColors.textLight}
+                            />
+                            {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
                         </View>
-                    </View>
 
-                    {/* Budget Input */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Tahmini Bütçe (₺)</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Örn: 2500 (Opsiyonel)"
-                            value={estimatedBudget}
-                            onChangeText={(text) => setEstimatedBudget(text.replace(/[^0-9.]/g, ''))}
-                            keyboardType="numeric"
-                            placeholderTextColor={colors.textLight}
+                        {/* Description Input */}
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: colors.text }]}>
+                                Açıklama <Text style={styles.required}>*</Text>
+                            </Text>
+                            <TextInput
+                                style={[styles.textArea, { color: colors.text, backgroundColor: colors.backgroundDark }, errors.description && styles.inputError]}
+                                placeholder="İş hakkında detaylı bilgi verin..."
+                                value={description}
+                                onChangeText={(text) => {
+                                    setDescription(text);
+                                    if (errors.description) setErrors({ ...errors, description: '' });
+                                }}
+                                multiline
+                                numberOfLines={6}
+                                textAlignVertical="top"
+                                placeholderTextColor={staticColors.textLight}
+                            />
+                            {errors.description && (
+                                <Text style={styles.errorText}>{errors.description}</Text>
+                            )}
+                        </View>
+
+                        {/* Category Selection */}
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: colors.text }]}>
+                                Kategori <Text style={styles.required}>*</Text>
+                            </Text>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                style={styles.categoryScroll}
+                            >
+                                {JOB_CATEGORIES.map((cat) => (
+                                    <TouchableOpacity
+                                        key={cat}
+                                        style={[
+                                            styles.categoryChip,
+                                            category === cat && [styles.categoryChipSelected, { backgroundColor: colors.primary, borderColor: colors.primary }],
+                                        ]}
+                                        onPress={() => {
+                                            setCategory(cat);
+                                            if (errors.category) setErrors({ ...errors, category: '' });
+                                        }}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.categoryChipText,
+                                                category === cat && [styles.categoryChipTextSelected, { color: staticColors.white }],
+                                            ]}
+                                        >
+                                            {cat}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                            {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
+                        </View>
+                    </Card>
+                </View>
+
+                {/* Location Section */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeaderRow}>
+                        <LinearGradient
+                            colors={colors.gradientPrimary as any}
+                            style={styles.titleIndicator}
                         />
+                        <Text style={[styles.sectionTitleBold, { color: colors.text }]}>Konum Bilgileri</Text>
                     </View>
-                </Card>
+                    <Card style={styles.formCard} elevated>
+
+                        {/* City Picker */}
+                        <Picker
+                            label="Şehir"
+                            placeholder="Şehir seçiniz"
+                            value={city}
+                            options={CITY_NAMES}
+                            onValueChange={setCity}
+                            error={errors.city}
+                            required
+                        />
+
+                        {/* District Picker */}
+                        <Picker
+                            label="İlçe"
+                            placeholder={city ? 'İlçe seçiniz' : 'Önce şehir seçiniz'}
+                            value={district}
+                            options={districtOptions}
+                            onValueChange={setDistrict}
+                            error={errors.district}
+                            required
+                            disabled={!city || districtOptions.length === 0}
+                        />
+
+                        {/* Address Input */}
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: colors.text }]}>
+                                Adres <Text style={styles.required}>*</Text>
+                            </Text>
+                            <TextInput
+                                style={[styles.textArea, { color: colors.text, backgroundColor: colors.backgroundDark }, errors.address && styles.inputError]}
+                                placeholder="Sokak, cadde, bina no, daire no..."
+                                value={address}
+                                onChangeText={(text) => {
+                                    setAddress(text);
+                                    if (errors.address) setErrors({ ...errors, address: '' });
+                                }}
+                                multiline
+                                numberOfLines={3}
+                                textAlignVertical="top"
+                                placeholderTextColor={staticColors.textLight}
+                            />
+                            {errors.address && <Text style={styles.errorText}>{errors.address}</Text>}
+                        </View>
+
+                        {/* Urgency Level */}
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: colors.text }]}>Aciliyet Seviyesi</Text>
+                            <View style={styles.urgencyContainer}>
+                                {URGENCY_LEVELS.map((level) => (
+                                    <TouchableOpacity
+                                        key={level.value}
+                                        style={[
+                                            styles.urgencyButton,
+                                            urgencyLevel === level.value && [styles.urgencyButtonSelected, { backgroundColor: colors.primary, borderColor: colors.primary }],
+                                        ]}
+                                        onPress={() => setUrgencyLevel(level.value as any)}
+                                    >
+                                        <Text style={styles.urgencyIcon}>{level.icon}</Text>
+                                        <Text
+                                            style={[
+                                                styles.urgencyText,
+                                                { color: colors.text },
+                                                urgencyLevel === level.value && [styles.urgencyTextSelected, { color: staticColors.white }],
+                                            ]}
+                                        >
+                                            {level.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+
+                        {/* Budget Input */}
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: colors.text }]}>Tahmini Bütçe (₺)</Text>
+                            <TextInput
+                                style={[styles.input, { color: colors.text, backgroundColor: colors.backgroundDark }]}
+                                placeholder="Örn: 2500 (Opsiyonel)"
+                                value={estimatedBudget}
+                                onChangeText={(text) => setEstimatedBudget(text.replace(/[^0-9.]/g, ''))}
+                                keyboardType="numeric"
+                                placeholderTextColor={staticColors.textLight}
+                            />
+                        </View>
+                    </Card>
+                </View>
 
                 {/* Submit Buttons */}
                 <View style={styles.buttonContainer}>
                     <Button
                         title="İptal"
                         onPress={() => router.back()}
-                        variant="outline"
+                        variant="secondary"
                         style={styles.cancelButton}
                     />
-                    <Button
-                        title={isSubmitting ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
+                    <TouchableOpacity
                         onPress={handleSubmit}
-                        variant="primary"
                         disabled={isSubmitting}
-                        style={styles.submitButton}
-                    />
+                        activeOpacity={0.8}
+                        style={styles.submitButtonWrapper}
+                    >
+                        <LinearGradient
+                            colors={colors.gradientPrimary as any}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.submitButtonGradient}
+                        >
+                            <Text style={styles.submitButtonText}>
+                                {isSubmitting ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
+                            </Text>
+                            <Ionicons name="save-outline" size={20} color={staticColors.white} />
+                        </LinearGradient>
+                    </TouchableOpacity>
                 </View>
             </ScrollView>
-        </KeyboardAvoidingView>
+
+            <PremiumAlert
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                buttons={alertConfig.buttons}
+                onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+            />
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.backgroundLight,
+        backgroundColor: '#F8FAFC',
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.backgroundLight,
     },
     loadingText: {
         ...typography.body2,
-        color: colors.textSecondary,
         marginTop: spacing.md,
+        fontFamily: fonts.medium,
     },
     scrollView: {
         flex: 1,
     },
     content: {
         padding: spacing.screenPadding,
+        paddingTop: spacing.md,
         paddingBottom: spacing.xxl,
     },
-    formCard: {
-        padding: spacing.lg,
+    section: {
+        marginBottom: spacing.xl,
+    },
+    sectionHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
         marginBottom: spacing.md,
     },
-    formTitle: {
-        ...typography.h4,
-        color: colors.text,
-        marginBottom: spacing.lg,
+    titleIndicator: {
+        width: 4,
+        height: 18,
+        borderRadius: 2,
+        marginRight: spacing.sm,
+    },
+    sectionTitleBold: {
+        ...typography.h4Style,
+        fontFamily: fonts.bold,
+    },
+    formCard: {
+        padding: spacing.md,
     },
     inputGroup: {
         marginBottom: spacing.lg,
     },
     label: {
         ...typography.body2,
-        color: colors.text,
-        fontWeight: '600',
+        fontFamily: fonts.bold,
         marginBottom: spacing.xs,
     },
     required: {
-        color: colors.error,
+        color: staticColors.error,
     },
     input: {
         ...typography.body1,
-        color: colors.text,
-        backgroundColor: colors.surface,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: spacing.radius.md,
+        borderRadius: 12,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
         minHeight: 48,
+        fontFamily: fonts.medium,
+        borderWidth: 1,
+        borderColor: staticColors.borderLight,
     },
     textArea: {
         ...typography.body1,
-        color: colors.text,
-        backgroundColor: colors.surface,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: spacing.radius.md,
+        borderRadius: 12,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
         minHeight: 120,
+        fontFamily: fonts.regular,
+        borderWidth: 1,
+        borderColor: staticColors.borderLight,
     },
     inputError: {
-        borderColor: colors.error,
+        borderColor: staticColors.error,
+        backgroundColor: staticColors.error + '05',
     },
     errorText: {
         ...typography.caption,
-        color: colors.error,
+        color: staticColors.error,
         marginTop: spacing.xs,
+        fontFamily: fonts.medium,
     },
     categoryScroll: {
         marginVertical: spacing.xs,
     },
     categoryChip: {
         paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
-        borderRadius: spacing.radius.round,
-        backgroundColor: colors.surface,
+        paddingVertical: 8,
+        borderRadius: 12,
+        backgroundColor: staticColors.white,
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: staticColors.borderLight,
         marginRight: spacing.sm,
     },
     categoryChipSelected: {
-        backgroundColor: colors.primary,
-        borderColor: colors.primary,
     },
     categoryChipText: {
-        ...typography.body2,
-        color: colors.text,
+        fontSize: 13,
+        color: staticColors.textSecondary,
+        fontFamily: fonts.medium,
     },
     categoryChipTextSelected: {
-        color: colors.white,
-        fontWeight: '600',
-    },
-    sectionDivider: {
-        marginTop: spacing.md,
-        marginBottom: spacing.md,
-        paddingTop: spacing.md,
-        borderTopWidth: 1,
-        borderTopColor: colors.borderLight,
-    },
-    sectionTitle: {
-        ...typography.h6,
-        color: colors.text,
+        fontFamily: fonts.bold,
     },
     urgencyContainer: {
         flexDirection: 'row',
@@ -522,38 +580,50 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: spacing.sm,
-        paddingHorizontal: spacing.md,
-        borderRadius: spacing.radius.md,
-        backgroundColor: colors.surface,
+        paddingVertical: 12,
+        borderRadius: 12,
+        backgroundColor: staticColors.white,
         borderWidth: 1,
-        borderColor: colors.border,
-        gap: spacing.xs,
+        borderColor: staticColors.borderLight,
+        gap: 6,
     },
     urgencyButtonSelected: {
-        backgroundColor: colors.primary,
-        borderColor: colors.primary,
     },
     urgencyIcon: {
         fontSize: 16,
     },
     urgencyText: {
-        ...typography.body2,
-        color: colors.text,
+        fontSize: 13,
+        fontFamily: fonts.medium,
     },
     urgencyTextSelected: {
-        color: colors.white,
-        fontWeight: '600',
+        fontFamily: fonts.bold,
     },
     buttonContainer: {
         flexDirection: 'row',
         gap: spacing.md,
-        marginTop: spacing.md,
+        marginTop: spacing.lg,
+        alignItems: 'center',
     },
     cancelButton: {
         flex: 1,
+        height: 56,
     },
-    submitButton: {
+    submitButtonWrapper: {
         flex: 2,
+        borderRadius: 16,
+        overflow: 'hidden',
+    },
+    submitButtonGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 56,
+        gap: 8,
+    },
+    submitButtonText: {
+        color: staticColors.white,
+        fontFamily: fonts.bold,
+        fontSize: 15,
     },
 });

@@ -73,7 +73,9 @@ const jobSlice = createSlice({
     // Fetch Jobs
     builder
       .addCase(fetchJobs.pending, (state) => {
-        state.isLoading = true;
+        if (state.jobs.length === 0) {
+          state.isLoading = true;
+        }
         state.error = null;
       })
       .addCase(fetchJobs.fulfilled, (state, action) => {
@@ -103,7 +105,9 @@ const jobSlice = createSlice({
     // Fetch My Jobs
     builder
       .addCase(fetchMyJobs.pending, (state) => {
-        state.isLoading = true;
+        if (state.myJobs.length === 0) {
+          state.isLoading = true;
+        }
         state.error = null;
       })
       .addCase(fetchMyJobs.fulfilled, (state, action) => {

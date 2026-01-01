@@ -3,10 +3,12 @@ import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator } f
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../../components/common/Card';
-import { colors } from '../../constants/colors';
+import { colors as staticColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
-import { typography } from '../../constants/typography';
 import api from '../../services/api';
+import { PremiumHeader } from '../../components/common/PremiumHeader';
+import { fonts } from '../../constants/typography';
+import { useAppColors } from '../../hooks/useAppColors';
 
 interface HistoryJob {
     id: string;
@@ -37,6 +39,7 @@ export default function HistoryScreen() {
     const [jobs, setJobs] = useState<HistoryJob[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const colors = useAppColors();
 
     const fetchHistory = useCallback(async () => {
         try {
@@ -77,16 +80,16 @@ export default function HistoryScreen() {
     };
 
     const renderItem = ({ item }: { item: HistoryJob }) => (
-        <Card style={styles.card} onPress={() => router.push(`/jobs/${item.id}`)}>
+        <View style={[styles.card, { shadowColor: colors.primary }]}>
             <View style={styles.header}>
-                <Text style={styles.serviceName}>{item.title}</Text>
+                <Text style={styles.serviceName} numberOfLines={1}>{item.title}</Text>
                 <View style={[
                     styles.statusBadge,
-                    { backgroundColor: item.status === 'COMPLETED' ? colors.successLight : colors.errorLight }
+                    { backgroundColor: item.status === 'COMPLETED' ? staticColors.success + '15' : staticColors.error + '15' }
                 ]}>
                     <Text style={[
                         styles.status,
-                        { color: item.status === 'COMPLETED' ? colors.success : colors.error }
+                        { color: item.status === 'COMPLETED' ? staticColors.success : staticColors.error }
                     ]}>
                         {item.status === 'COMPLETED' ? 'Tamamlandı' : 'İptal Edildi'}
                     </Text>
@@ -95,33 +98,43 @@ export default function HistoryScreen() {
 
             <Text style={styles.category}>{item.category}</Text>
 
-            {(item.electrician || item.citizen) && (
-                <View style={styles.row}>
-                    <Ionicons name="person-outline" size={16} color={colors.textSecondary} />
-                    <Text style={styles.personName}>
-                        {item.electrician?.fullName || item.citizen?.fullName}
+            <View style={styles.metaContainer}>
+                {(item.electrician || item.citizen) && (
+                    <View style={styles.metaItem}>
+                        <View style={styles.metaIconWrapper}>
+                            <Ionicons name="person-outline" size={12} color={colors.textLight} />
+                        </View>
+                        <Text style={styles.metaText}>
+                            {item.electrician?.fullName || item.citizen?.fullName}
+                        </Text>
+                    </View>
+                )}
+
+                <View style={styles.metaItem}>
+                    <View style={styles.metaIconWrapper}>
+                        <Ionicons name="calendar-outline" size={12} color={colors.textLight} />
+                    </View>
+                    <Text style={styles.metaText}>
+                        {formatDate(item.status === 'COMPLETED' ? item.completedAt : item.cancelledAt)}
                     </Text>
                 </View>
-            )}
 
-            <View style={styles.row}>
-                <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
-                <Text style={styles.value}>
-                    {formatDate(item.status === 'COMPLETED' ? item.completedAt : item.cancelledAt)}
-                </Text>
+                {item.status === 'COMPLETED' && item.hasReview && item.rating && (
+                    <View style={styles.metaItem}>
+                        <Ionicons name="star" size={12} color={staticColors.warning} />
+                        <Text style={[styles.metaText, { color: staticColors.warning, fontFamily: fonts.bold }]}>
+                            {item.rating}/5
+                        </Text>
+                    </View>
+                )}
             </View>
 
-            {item.status === 'COMPLETED' && item.hasReview && item.rating && (
-                <View style={styles.row}>
-                    <Ionicons name="star" size={16} color={colors.warning} />
-                    <Text style={styles.rating}>{item.rating}/5 puan verildi</Text>
-                </View>
-            )}
-
             {item.cancellationReason && (
-                <View style={styles.reasonContainer}>
-                    <Text style={styles.reasonLabel}>İptal Nedeni:</Text>
-                    <Text style={styles.reasonText}>{item.cancellationReason}</Text>
+                <View style={[styles.reasonContainer, { backgroundColor: staticColors.error + '08' }]}>
+                    <Ionicons name="alert-circle-outline" size={14} color={staticColors.error} />
+                    <Text style={styles.reasonText} numberOfLines={2}>
+                        {item.cancellationReason}
+                    </Text>
                 </View>
             )}
 
@@ -129,39 +142,37 @@ export default function HistoryScreen() {
 
             <View style={styles.footer}>
                 <Text style={styles.priceLabel}>Toplam Tutar</Text>
-                <Text style={styles.price}>{formatPrice(item.finalPrice)}</Text>
+                <Text style={[styles.price, { color: colors.primary }]}>{formatPrice(item.finalPrice)}</Text>
             </View>
-        </Card>
+        </View>
     );
-
-    if (loading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
-            </View>
-        );
-    }
 
     return (
         <View style={styles.container}>
+            <PremiumHeader title="Geçmiş İşlerim" showBackButton />
+
             <FlatList
                 data={jobs}
                 renderItem={renderItem}
                 keyExtractor={item => item.id}
                 contentContainerStyle={styles.content}
+                showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={onRefresh}
                         colors={[colors.primary]}
+                        tintColor={colors.primary}
                     />
                 }
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
-                        <Ionicons name="time-outline" size={64} color={colors.textSecondary} />
+                        <View style={[styles.emptyIconContainer, { shadowColor: colors.primary }]}>
+                            <Ionicons name="time-outline" size={60} color={colors.primary + '40'} />
+                        </View>
                         <Text style={styles.emptyTitle}>Henüz Geçmiş İş Yok</Text>
                         <Text style={styles.emptyText}>
-                            Tamamladığınız veya iptal edilen işler burada görünecektir.
+                            Tamamladığınız veya iptal edilen işler burada listelenecektir.
                         </Text>
                     </View>
                 }
@@ -173,89 +184,94 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.backgroundLight,
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: colors.backgroundLight,
+        backgroundColor: '#F8FAFC',
     },
     content: {
-        padding: spacing.md,
+        padding: spacing.lg,
         flexGrow: 1,
     },
     card: {
-        padding: spacing.md,
-        marginBottom: spacing.md,
+        borderRadius: 24,
+        padding: 16,
+        marginBottom: 16,
+        backgroundColor: staticColors.white,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.05,
+        shadowRadius: 12,
+        elevation: 3,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: spacing.xs,
+        marginBottom: 4,
     },
     serviceName: {
-        ...typography.h6,
-        color: colors.text,
+        fontFamily: fonts.bold,
+        fontSize: 16,
+        color: staticColors.text,
         flex: 1,
-        marginRight: spacing.sm,
+        marginRight: 10,
+        letterSpacing: -0.5,
     },
     statusBadge: {
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.xs,
-        borderRadius: spacing.radius.sm,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 10,
     },
     status: {
-        ...typography.caption,
-        fontWeight: 'bold',
+        fontFamily: fonts.bold,
+        fontSize: 11,
     },
     category: {
-        ...typography.caption,
-        color: colors.textSecondary,
-        marginBottom: spacing.sm,
+        fontFamily: fonts.medium,
+        fontSize: 12,
+        color: staticColors.textSecondary,
+        marginBottom: 12,
     },
-    row: {
+    metaContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 12,
+        marginBottom: 12,
+    },
+    metaItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: spacing.xs,
+        gap: 6,
     },
-    personName: {
-        ...typography.body2,
-        color: colors.text,
-        marginLeft: spacing.sm,
+    metaIconWrapper: {
+        width: 20,
+        height: 20,
+        borderRadius: 6,
+        backgroundColor: '#F1F5F9',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    value: {
-        ...typography.body2,
-        color: colors.textSecondary,
-        marginLeft: spacing.sm,
-    },
-    rating: {
-        ...typography.body2,
-        color: colors.warning,
-        marginLeft: spacing.sm,
-        fontWeight: '600',
+    metaText: {
+        fontFamily: fonts.medium,
+        fontSize: 12,
+        color: staticColors.textSecondary,
     },
     reasonContainer: {
-        backgroundColor: colors.errorLight,
-        padding: spacing.sm,
-        borderRadius: spacing.radius.sm,
-        marginTop: spacing.sm,
-    },
-    reasonLabel: {
-        ...typography.caption,
-        color: colors.error,
-        fontWeight: 'bold',
-        marginBottom: 2,
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 10,
+        borderRadius: 12,
+        marginBottom: 12,
+        gap: 8,
     },
     reasonText: {
-        ...typography.caption,
-        color: colors.error,
+        fontFamily: fonts.medium,
+        fontSize: 12,
+        color: staticColors.error,
+        flex: 1,
     },
     divider: {
         height: 1,
-        backgroundColor: colors.border,
-        marginVertical: spacing.sm,
+        backgroundColor: staticColors.borderLight,
+        marginVertical: 12,
+        opacity: 0.5,
     },
     footer: {
         flexDirection: 'row',
@@ -263,30 +279,45 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     priceLabel: {
-        ...typography.body2,
-        color: colors.textSecondary,
+        fontFamily: fonts.medium,
+        fontSize: 13,
+        color: staticColors.textSecondary,
     },
     price: {
-        ...typography.h5,
-        color: colors.primary,
-        fontWeight: 'bold',
+        fontFamily: fonts.extraBold,
+        fontSize: 18,
     },
     emptyContainer: {
         flex: 1,
-        padding: spacing.xl,
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: spacing.xl * 2,
+        paddingVertical: 100,
+        paddingHorizontal: 40,
+    },
+    emptyIconContainer: {
+        width: 110,
+        height: 110,
+        borderRadius: 55,
+        backgroundColor: staticColors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.05,
+        shadowRadius: 15,
+        elevation: 4,
     },
     emptyTitle: {
-        ...typography.h5,
-        color: colors.text,
-        marginTop: spacing.md,
-        marginBottom: spacing.sm,
+        fontFamily: fonts.bold,
+        fontSize: 20,
+        color: staticColors.text,
+        marginBottom: 8,
     },
     emptyText: {
-        ...typography.body1,
-        color: colors.textSecondary,
+        fontFamily: fonts.medium,
+        fontSize: 14,
+        color: staticColors.textSecondary,
         textAlign: 'center',
+        lineHeight: 22,
     },
 });

@@ -1,0 +1,266 @@
+import { Request, Response, NextFunction } from 'express';
+import { register, login, refreshToken, generateTokens } from '../services/authService';
+import { ValidationError, UnauthorizedError } from '../utils/errors';
+import prisma, { isDatabaseAvailable } from '../config/database';
+import { AuthRequest } from '../middleware/auth';
+import { mockStorage } from '../utils/mockStorage';
+
+export const registerController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, password, fullName, phone, userType } = req.body;
+
+    if (!email || !password || !fullName || !userType || !phone) {
+      throw new ValidationError('Missing required fields');
+    }
+
+    try {
+      const result = await register({
+        email,
+        password,
+        fullName,
+        phone,
+        userType,
+      });
+
+      res.status(201).json({
+        success: true,
+        data: result,
+      });
+    } catch (dbError: any) {
+      const isConnectionError =
+        dbError.message?.includes('connect') ||
+        dbError.message?.includes('database') ||
+        dbError.message?.includes('Can\'t reach database') ||
+        dbError.code === 'P1001' ||
+        dbError.code === 'P1017' ||
+        dbError.name === 'PrismaClientInitializationError' ||
+        dbError.constructor.name === 'PrismaClientInitializationError';
+
+      if (isConnectionError) {
+        console.warn('⚠️ Database connection failed, saving to persistent mock storage');
+        // Make ID deterministic based on email AND userType
+        const sanitizedEmail = email.replace(/[^a-zA-Z0-9]/g, '-');
+        const mockUserId = `mock-user-${sanitizedEmail}-${userType}`;
+
+        // Save user data to persistent mockStorage
+        const userData = mockStorage.updateProfile(mockUserId, { fullName, email,
+          phone: phone || '',
+          isVerified: userType === 'ELECTRICIAN' && !!phone
+        });
+
+        const tokens = generateTokens({ id: mockUserId, email, userType });
+
+        return res.status(201).json({
+          success: true,
+          data: {
+            user: mockStorage.getFullUser(mockUserId, userType),
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+          },
+        });
+      }
+      throw dbError;
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const loginController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      throw new ValidationError('Email and password are required');
+    }
+
+    try {
+      const result = await login({ email, password });
+
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (dbError: any) {
+      const isConnectionError =
+        dbError.message?.includes('connect') ||
+        dbError.message?.includes('database') ||
+        dbError.message?.includes('Can\'t reach database') ||
+        dbError.code === 'P1001' ||
+        dbError.code === 'P1017' ||
+        dbError.name === 'PrismaClientInitializationError' ||
+        dbError.constructor.name === 'PrismaClientInitializationError';
+
+      if (isConnectionError) {
+        console.warn('⚠️ Database connection failed, checking mock storage for login');
+
+        // Initial guess for the ID
+        const sanitizedEmail = email.replace(/[^a-zA-Z0-9]/g, '-');
+        let mockUserType = 'CITIZEN';
+        if (email.includes('admin')) {
+          mockUserType = 'ADMIN';
+        } else if (email.includes('electrician')) {
+          mockUserType = 'ELECTRICIAN';
+        }
+        let mockUserId = `mock-user-${sanitizedEmail}-${mockUserType}`;
+
+        // Check if user exists in mockStorage
+        const allMockUsers = mockStorage.getAllUsers();
+        const existingUser = allMockUsers.find(u => u.email === email);
+
+        if (!existingUser) {
+          // User not found - they need to register first
+          return res.status(401).json({
+            success: false,
+            error: {
+              message: 'Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı. Lütfen önce kayıt olun.',
+              code: 'USER_NOT_FOUND'
+            },
+          });
+        }
+
+        // Use the existing user's ID and type if found
+        mockUserId = existingUser.id;
+        mockUserType = (existingUser.userType as any) || mockUserType;
+
+        // User exists, proceed with mock login using their ACTUAL stored data
+        const tokens = generateTokens({ id: mockUserId, email, userType: mockUserType });
+        return res.json({
+          success: true,
+          data: {
+            user: existingUser,
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+          },
+        });
+      }
+      throw dbError;
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const refreshTokenController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { refreshToken: token } = req.body;
+
+    if (!token) {
+      throw new ValidationError('Refresh token is required');
+    }
+
+    try {
+      const tokens = await refreshToken(token);
+
+      res.json({
+        success: true,
+        data: tokens,
+      });
+    } catch (error: any) {
+      // Hata loglama
+      console.error('❌ Refresh token error:', error.message);
+      if (error instanceof UnauthorizedError) {
+        console.error('   Reason: UnauthorizedError - token invalid or expired');
+      } else {
+        console.error('   Error type:', error.constructor?.name);
+        console.error('   Error details:', error);
+      }
+
+      // UnauthorizedError ise (token geçersiz), olduğu gibi döndür
+      if (error instanceof UnauthorizedError || (error instanceof Error && error.message.includes('Invalid refresh token'))) {
+        return res.status(401).json({
+          success: false,
+          error: {
+            message: 'Invalid or expired refresh token',
+          },
+        });
+      }
+
+      // Diğer hataları next'e gönder
+      throw error;
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const meController = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: { message: 'Unauthorized' },
+      });
+    }
+
+    // FAST PATH: Skip Prisma if database is not available or user is mock
+    if (!isDatabaseAvailable || req.user.id.startsWith('mock-')) {
+      const userData = mockStorage.getFullUser(req.user.id, req.user.userType);
+      return res.json({
+        success: true,
+        data: { user: userData },
+      });
+    }
+
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: {
+          id: true,
+          email: true,
+          fullName: true,
+          city: true,
+          phone: true,
+          userType: true,
+          profileImageUrl: true,
+          isVerified: true,
+          createdAt: true,
+          updatedAt: true,
+          electricianProfile: true, // Profile ve bakiye bilgisini ekle
+        },
+      });
+
+      res.json({
+        success: true,
+        data: { user },
+      });
+    } catch (dbError: any) {
+      const isConnectionError =
+        dbError.message?.includes('connect') ||
+        dbError.message?.includes('database') ||
+        dbError.message?.includes('Can\'t reach database') ||
+        dbError.code === 'P1001' ||
+        dbError.code === 'P1017' ||
+        dbError.name === 'PrismaClientInitializationError' ||
+        dbError.constructor.name === 'PrismaClientInitializationError';
+
+      if (isConnectionError || req.user.id.startsWith('mock-')) {
+        console.warn('⚠️ Database connection failed, returning mock user data for /auth/me');
+        return res.json({
+          success: true,
+          data: { user: mockStorage.getFullUser(req.user.id, req.user.userType) },
+        });
+      }
+      throw dbError;
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+

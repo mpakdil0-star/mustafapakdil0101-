@@ -132,5 +132,72 @@ export const authService = {
   async logout() {
     await apiService.clearTokens();
   },
+
+  async registerPushToken() {
+    try {
+      // check if running in Expo Go on Android
+      const { Platform } = await import('react-native');
+      const Constants = (await import('expo-constants')).default;
+      const isExpoGo = Constants.appOwnership === 'expo';
+
+      if (isExpoGo && Platform.OS === 'android') {
+        console.warn('Push Notification: Remote notifications are not supported in Expo Go on Android. Use a development build to test push notifications.');
+        return;
+      }
+
+      // Lazy load only if NOT in Expo Go Android
+      const Notifications = await import('expo-notifications');
+      const Device = await import('expo-device');
+
+      if (!Device.isDevice) {
+        console.warn('Push Notification: Must use physical device for Push Notifications');
+        return;
+      }
+
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== 'granted') {
+        const { Alert } = await import('react-native');
+        await new Promise((resolve) => {
+          Alert.alert(
+            'Bildirim İzni',
+            'Yeni iş ilanlarından ve mesajlardan anında haberdar olmak için bildirimlere izin vermeniz önerilir.',
+            [
+              { text: 'Şimdi Değil', style: 'cancel', onPress: () => resolve(null) },
+              { text: 'Devam Et', onPress: () => resolve(null) }
+            ]
+          );
+        });
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus !== 'granted') {
+        console.warn('Push Notification: Failed to get push token for push notification!');
+        return;
+      }
+
+      const token = (await Notifications.getExpoPushTokenAsync()).data;
+
+      console.log('Push Notification: Generated token:', token);
+
+      // Send to backend
+      await apiClient.post('/users/push-token', { pushToken: token });
+
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FF231F7C',
+        });
+      }
+
+      return token;
+    } catch (error) {
+      console.error('Push Notification Registration Error:', error);
+    }
+  },
 };
 

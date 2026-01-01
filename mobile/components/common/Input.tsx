@@ -5,11 +5,14 @@ import {
   Text,
   StyleSheet,
   TextInputProps,
+  StyleProp,
   ViewStyle,
+  TextStyle,
 } from 'react-native';
-import { colors } from '../../constants/colors';
+import { colors as staticColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
+import { useAppColors } from '../../hooks/useAppColors';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -17,7 +20,9 @@ interface InputProps extends TextInputProps {
   helperText?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
-  containerStyle?: ViewStyle;
+  containerStyle?: StyleProp<ViewStyle>;
+  labelStyle?: StyleProp<TextStyle>;
+  inputContainerStyle?: StyleProp<ViewStyle>;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -27,25 +32,31 @@ export const Input: React.FC<InputProps> = ({
   leftIcon,
   rightIcon,
   containerStyle,
+  labelStyle,
+  inputContainerStyle,
   style,
   ...props
 }) => {
+  const colors = useAppColors();
   return (
     <View style={[styles.container, containerStyle]}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && <Text style={[styles.label, { color: colors.text }, labelStyle]}>{label}</Text>}
       <View
         style={[
           styles.inputContainer,
-          error && styles.inputContainerError,
-          props.editable === false && styles.inputContainerDisabled,
+          { backgroundColor: colors.backgroundLight, borderColor: colors.border },
+          inputContainerStyle,
+          error ? styles.inputContainerError : null,
+          props.editable === false ? [styles.inputContainerDisabled, { backgroundColor: colors.backgroundDark }] : null,
         ]}
       >
         {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
         <TextInput
           style={[
             styles.input,
-            leftIcon && styles.inputWithLeftIcon,
-            rightIcon && styles.inputWithRightIcon,
+            { color: colors.text },
+            leftIcon ? styles.inputWithLeftIcon : null,
+            rightIcon ? styles.inputWithRightIcon : null,
             style,
           ]}
           placeholderTextColor={colors.textLight}
@@ -54,7 +65,7 @@ export const Input: React.FC<InputProps> = ({
         {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
       </View>
       {(error || helperText) && (
-        <Text style={[styles.helperText, error && styles.errorText]}>
+        <Text style={[styles.helperText, { color: colors.textSecondary }, error ? styles.errorText : null]}>
           {error || helperText}
         </Text>
       )}
@@ -69,32 +80,27 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: fonts.semiBold,
     fontSize: 14,
-    color: colors.text,
     marginBottom: spacing.sm,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.backgroundLight,
     borderRadius: spacing.radius.md,
     borderWidth: 1,
-    borderColor: colors.border,
     paddingHorizontal: spacing.lg,
     minHeight: 48,
   },
   inputContainerError: {
-    borderColor: colors.error,
-    backgroundColor: colors.errorLight + '20',
+    borderColor: staticColors.error,
+    backgroundColor: staticColors.errorLight + '20',
   },
   inputContainerDisabled: {
-    backgroundColor: colors.backgroundDark,
     opacity: 0.6,
   },
   input: {
     flex: 1,
     fontFamily: fonts.regular,
     fontSize: 15,
-    color: colors.text,
     paddingVertical: spacing.md,
   },
   inputWithLeftIcon: {
@@ -112,10 +118,9 @@ const styles = StyleSheet.create({
   helperText: {
     fontFamily: fonts.regular,
     fontSize: 12,
-    color: colors.textSecondary,
     marginTop: spacing.xs,
   },
   errorText: {
-    color: colors.error,
+    color: staticColors.error,
   },
 });

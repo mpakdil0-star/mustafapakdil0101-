@@ -1,152 +1,183 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
+import { useRouter, useFocusEffect, Stack } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAppSelector } from '../../../hooks/redux';
 import { Card } from '../../../components/common/Card';
 import { Button } from '../../../components/common/Button';
-import { colors } from '../../../constants/colors';
+import { colors as staticColors } from '../../../constants/colors';
 import { spacing } from '../../../constants/spacing';
-import { typography } from '../../../constants/typography';
-
-// Vatandaş için tek adres (mock)
-const CITIZEN_ADDRESS = {
-    id: '1',
-    title: 'Ev Adresim',
-    city: 'İstanbul',
-    district: 'Kadıköy',
-    neighborhood: 'Caferağa',
-    details: 'Moda Caddesi No:123 D:4',
-};
-
-// Elektrikçi için birden fazla adres (mock)
-const ELECTRICIAN_ADDRESSES = [
-    {
-        id: '1',
-        title: 'Ev',
-        city: 'İstanbul',
-        district: 'Kadıköy',
-        neighborhood: 'Caferağa',
-        details: 'Moda Caddesi No:123 D:4',
-    },
-    {
-        id: '2',
-        title: 'İş',
-        city: 'İstanbul',
-        district: 'Beşiktaş',
-        neighborhood: 'Levent',
-        details: 'Büyükdere Caddesi No:456 Plaza Kat:3',
-    },
-];
+import { typography, fonts } from '../../../constants/typography';
+import { useAppColors } from '../../../hooks/useAppColors';
+import apiClient from '../../../services/api';
+import { API_ENDPOINTS } from '../../../constants/api';
+import { PremiumHeader } from '../../../components/common/PremiumHeader';
+import { PremiumAlert } from '../../../components/common/PremiumAlert';
 
 export default function AddressesScreen() {
     const router = useRouter();
     const { user } = useAppSelector((state) => state.auth);
     const isElectrician = user?.userType === 'ELECTRICIAN';
+    const colors = useAppColors();
+
+    const [locations, setLocations] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        type?: 'success' | 'error' | 'warning' | 'info' | 'confirm';
+        buttons?: { text: string; onPress: () => void; variant?: 'primary' | 'secondary' | 'danger' | 'ghost' }[];
+    }>({ visible: false, title: '', message: '' });
+
+    const showAlert = (title: string, message: string, type: any = 'info', buttons?: any[]) => {
+        setAlertConfig({ visible: true, title, message, type, buttons });
+    };
+
+    const fetchLocations = async () => {
+        try {
+            setLoading(true);
+            const response = await apiClient.get(API_ENDPOINTS.LOCATIONS);
+            setLocations(response.data.data || []);
+        } catch (error) {
+            console.error('Failed to fetch locations:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchLocations();
+        }, [])
+    );
 
     const handleEdit = (id: string) => {
         router.push({ pathname: '/profile/addresses/edit', params: { id } });
     };
 
     const handleDelete = (id: string) => {
-        Alert.alert(
-            'Adresi Sil',
-            'Bu adresi silmek istediğinize emin misiniz?',
+        showAlert(
+            isElectrician ? 'Hizmet Bölgesini Sil' : 'Adresi Sil',
+            `Bu ${isElectrician ? 'hizmet bölgesini' : 'adresi'} silmek istediğinize emin misiniz?`,
+            'confirm',
             [
-                { text: 'İptal', style: 'cancel' },
+                { text: 'İptal', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },
                 {
                     text: 'Sil',
-                    style: 'destructive',
-                    onPress: () => console.log('Delete address:', id)
+                    variant: 'danger',
+                    onPress: async () => {
+                        try {
+                            setAlertConfig(prev => ({ ...prev, visible: false }));
+                            await apiClient.delete(`${API_ENDPOINTS.LOCATIONS}/${id}`);
+                            fetchLocations();
+                        } catch (error) {
+                            console.error('Failed to delete location:', error);
+                            showAlert('Hata', 'Silme işlemi başarısız oldu.', 'error');
+                        }
+                    }
                 },
             ]
         );
     };
 
-    // Vatandaş için tek adres görünümü
-    if (!isElectrician) {
-        return (
-            <ScrollView style={styles.container} contentContainerStyle={styles.singleAddressContent}>
-                <Card style={styles.addressCard}>
-                    <View style={styles.addressHeader}>
-                        <View style={styles.titleContainer}>
-                            <Text style={styles.icon}>📍</Text>
-                            <Text style={styles.addressTitle}>{CITIZEN_ADDRESS.title}</Text>
-                        </View>
-                    </View>
-
-                    <Text style={styles.addressText}>
-                        {CITIZEN_ADDRESS.details}
-                    </Text>
-                    <Text style={styles.locationText}>
-                        {CITIZEN_ADDRESS.neighborhood}, {CITIZEN_ADDRESS.district} / {CITIZEN_ADDRESS.city}
-                    </Text>
-
-                    <Button
-                        title="Adresi Düzenle"
-                        onPress={() => handleEdit(CITIZEN_ADDRESS.id)}
-                        variant="outline"
-                        fullWidth
-                        style={styles.editButton}
-                    />
-                </Card>
-            </ScrollView>
-        );
-    }
-
-    // Elektrikçi için çoklu adres görünümü
-    const renderAddressItem = ({ item }: { item: typeof ELECTRICIAN_ADDRESSES[0] }) => (
-        <Card style={styles.addressCard}>
+    const renderAddressItem = ({ item }: { item: any }) => (
+        <Card variant="default" style={[styles.addressCard, { shadowColor: colors.primary }]}>
             <View style={styles.addressHeader}>
                 <View style={styles.titleContainer}>
-                    <Text style={styles.icon}>📍</Text>
-                    <Text style={styles.addressTitle}>{item.title}</Text>
+                    <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
+                        <Ionicons name="location" size={20} color={colors.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.addressTitle}>{item.city} / {item.district}</Text>
+                        <Text style={styles.addressSubtitle}>{item.neighborhood || 'Merkez'}</Text>
+                    </View>
                 </View>
                 <View style={styles.actions}>
                     <TouchableOpacity
                         onPress={() => handleEdit(item.id)}
-                        style={styles.actionButton}
+                        style={[styles.actionButton, { backgroundColor: colors.primary + '10' }]}
+                        activeOpacity={0.6}
                     >
-                        <Text style={styles.editIcon}>✎</Text>
+                        <Ionicons name="pencil" size={16} color={colors.primary} />
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => handleDelete(item.id)}
-                        style={styles.actionButton}
+                        style={[styles.actionButton, { backgroundColor: staticColors.error + '10' }]}
+                        activeOpacity={0.6}
                     >
-                        <Text style={styles.deleteIcon}>🗑️</Text>
+                        <Ionicons name="trash-outline" size={16} color={staticColors.error} />
                     </TouchableOpacity>
                 </View>
             </View>
 
-            <Text style={styles.addressText}>
-                {item.details}
-            </Text>
-            <Text style={styles.locationText}>
-                {item.neighborhood}, {item.district} / {item.city}
-            </Text>
+            <View style={styles.divider} />
+
+            <View style={styles.addressDetailRow}>
+                <View style={styles.mapIconWrapper}>
+                    <Ionicons name="map-outline" size={14} color={staticColors.textLight} />
+                </View>
+                <Text style={styles.addressText} numberOfLines={2}>
+                    {item.address}
+                </Text>
+            </View>
         </Card>
     );
 
     return (
         <View style={styles.container}>
-            <FlatList
-                data={ELECTRICIAN_ADDRESSES}
-                renderItem={renderAddressItem}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.listContent}
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>Henüz kayıtlı bir adresiniz yok.</Text>
-                    </View>
-                }
+            <PremiumHeader
+                title={isElectrician ? 'Hizmet Bölgeleri' : 'Adreslerim'}
+                showBackButton
             />
+
+            {loading && locations.length === 0 ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                </View>
+            ) : (
+                <FlatList
+                    data={locations}
+                    renderItem={renderAddressItem}
+                    keyExtractor={(item) => item.id}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <View style={[styles.emptyIconContainer, { shadowColor: colors.primary }]}>
+                                <Ionicons name="map-outline" size={60} color={colors.primary + '40'} />
+                            </View>
+                            <Text style={styles.emptyTitle}>
+                                {isElectrician ? 'Henüz Bölge Yok' : 'Henüz Adres Yok'}
+                            </Text>
+                            <Text style={styles.emptyText}>
+                                {isElectrician
+                                    ? 'Hizmet bölgesi ekleyerek o bölgedeki yeni işlerden anlık bildirim alabilirsiniz.'
+                                    : 'Kayıtlı bir adresiniz bulunmamaktadır. Yeni bir adres ekleyerek zaman kazanabilirsiniz.'}
+                            </Text>
+                        </View>
+                    }
+                />
+            )}
 
             <View style={styles.footer}>
                 <Button
-                    title="Yeni Adres Ekle"
+                    title={isElectrician ? "Yeni Bölge Ekle" : "Yeni Adres Ekle"}
                     onPress={() => router.push('/profile/addresses/add')}
                     fullWidth
+                    style={styles.addButton}
+                    icon={<Ionicons name="add-circle" size={22} color={staticColors.white} />}
                 />
             </View>
+            <PremiumAlert
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                buttons={alertConfig.buttons}
+                onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+            />
         </View>
     );
 }
@@ -154,82 +185,137 @@ export default function AddressesScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.backgroundLight,
+        backgroundColor: '#F8FAFC',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     listContent: {
-        padding: spacing.md,
-        paddingBottom: spacing.xxl + 80, // Space for footer
+        padding: spacing.lg,
+        paddingBottom: 110,
     },
     addressCard: {
-        marginBottom: spacing.md,
-        padding: spacing.md,
+        marginBottom: 16,
+        padding: 16,
+        borderRadius: 24,
+        backgroundColor: staticColors.white,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.05,
+        shadowRadius: 12,
+        elevation: 3,
     },
     addressHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: spacing.sm,
+        alignItems: 'flex-start',
+        marginBottom: 12,
     },
     titleContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        flex: 1,
     },
-    icon: {
-        fontSize: 20,
-        marginRight: spacing.xs,
+    iconCircle: {
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
     },
     addressTitle: {
-        ...typography.h4,
-        color: colors.text,
+        fontFamily: fonts.bold,
+        fontSize: 16,
+        color: staticColors.text,
+        letterSpacing: -0.3,
+    },
+    addressSubtitle: {
+        fontFamily: fonts.medium,
+        fontSize: 13,
+        color: staticColors.textSecondary,
     },
     actions: {
         flexDirection: 'row',
+        gap: 8,
     },
     actionButton: {
-        padding: spacing.xs,
-        marginLeft: spacing.xs,
-    },
-    editIcon: {
-        fontSize: 18,
-        color: colors.primary,
-    },
-    deleteIcon: {
-        fontSize: 18,
-        color: colors.error,
-    },
-    addressText: {
-        ...typography.body1,
-        color: colors.text,
-        marginBottom: spacing.xs,
-    },
-    locationText: {
-        ...typography.body2,
-        color: colors.textSecondary,
-    },
-    emptyContainer: {
-        padding: spacing.xl,
+        width: 36,
+        height: 36,
+        borderRadius: 12,
+        justifyContent: 'center',
         alignItems: 'center',
     },
+    divider: {
+        height: 1,
+        backgroundColor: staticColors.borderLight,
+        marginVertical: 12,
+        opacity: 0.5,
+    },
+    addressDetailRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    mapIconWrapper: {
+        width: 24,
+        height: 24,
+        borderRadius: 6,
+        backgroundColor: '#F1F5F9',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    addressText: {
+        fontFamily: fonts.medium,
+        fontSize: 13,
+        color: staticColors.textSecondary,
+        flex: 1,
+        lineHeight: 18,
+    },
+    emptyContainer: {
+        paddingVertical: 60,
+        alignItems: 'center',
+        paddingHorizontal: 30,
+    },
+    emptyIconContainer: {
+        width: 110,
+        height: 110,
+        borderRadius: 55,
+        backgroundColor: staticColors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.05,
+        shadowRadius: 15,
+        elevation: 4,
+    },
+    emptyTitle: {
+        fontFamily: fonts.bold,
+        fontSize: 20,
+        color: staticColors.text,
+        marginBottom: 8,
+    },
     emptyText: {
-        ...typography.body1,
-        color: colors.textSecondary,
+        fontFamily: fonts.medium,
+        fontSize: 14,
+        color: staticColors.textSecondary,
+        textAlign: 'center',
+        lineHeight: 22,
     },
     footer: {
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
-        padding: spacing.md,
-        backgroundColor: colors.backgroundLight,
+        padding: spacing.lg,
+        paddingBottom: Platform.OS === 'ios' ? 44 : 30,
+        backgroundColor: 'rgba(248, 250, 252, 0.95)',
         borderTopWidth: 1,
-        borderTopColor: colors.border,
-        paddingBottom: spacing.xl, // Safe area for bottom
+        borderTopColor: 'rgba(255, 255, 255, 0.8)',
     },
-    singleAddressContent: {
-        padding: spacing.md,
-        flexGrow: 1,
-    },
-    editButton: {
-        marginTop: spacing.lg,
+    addButton: {
+        borderRadius: 18,
     },
 });

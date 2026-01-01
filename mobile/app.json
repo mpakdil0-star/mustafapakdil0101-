@@ -1,39 +1,64 @@
 {
   "expo": {
     "name": "Elektrikçiler",
-    "slug": "elektrikciler",
+    "slug": "elektrikciler-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": [
-      "**/*"
+      "**/*",
+      "!assets/images/header_bg.png",
+      "!assets/images/onboarding_trust_secure_neon.png",
+      "!assets/images/onboarding_get_offers_neon.png"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.elektrikciler.app"
+      "bundleIdentifier": "com.elektrikciler.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Arıza fotoğrafları çekebilmeniz için kameraya erişim izni gerekiyor.",
+        "NSPhotoLibraryUsageDescription": "Galeriden fotoğraf seçebilmeniz için kütüphaneye erişim izni gerekiyor.",
+        "NSLocationWhenInUseUsageDescription": "Size en yakın iş ilanlarını ve elektrikçileri göstermek için konum izni gerekiyor."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.elektrikciler.app"
+      "package": "com.elektrikciler.app",
+      "permissions": [
+        "NOTIFICATIONS",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "plugins": [
       "expo-router",
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "color": "#6200EE"
+        }
+      ]
     ],
     "scheme": "elektrikciler",
     "platforms": [
       "ios",
       "android"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0a664c35-3716-4aac-9e81-995c360ccdb1"
+      }
+    }
   }
 }

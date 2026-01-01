@@ -41,8 +41,10 @@ export interface Job {
     max: number;
   } | null;
   preferredTime?: string | null;
-  status: 'DRAFT' | 'OPEN' | 'BIDDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  status: 'DRAFT' | 'OPEN' | 'BIDDING' | 'IN_PROGRESS' | 'PENDING_CONFIRMATION' | 'COMPLETED' | 'CANCELLED';
   images: string[];
+  assignedElectricianId?: string | null;
+  acceptedBidId?: string | null;
   viewCount: number;
   bidCount: number;
   createdAt: string;
@@ -52,6 +54,7 @@ export interface Job {
     id: string;
     fullName: string;
     profileImageUrl?: string | null;
+    phone?: string | null;
   };
 }
 
@@ -66,6 +69,10 @@ export const jobService = {
     category?: string;
     city?: string;
     district?: string;
+    districts?: string[];
+    lat?: number;
+    lng?: number;
+    radius?: number;
     page?: number;
     limit?: number;
   }) {
@@ -74,6 +81,13 @@ export const jobService = {
     if (filters?.category) params.append('category', filters.category);
     if (filters?.city) params.append('city', filters.city);
     if (filters?.district) params.append('district', filters.district);
+    // Support for multiple districts
+    if (filters?.districts && filters.districts.length > 0) {
+      params.append('districts', filters.districts.join(','));
+    }
+    if (filters?.lat) params.append('lat', filters.lat.toString());
+    if (filters?.lng) params.append('lng', filters.lng.toString());
+    if (filters?.radius) params.append('radius', filters.radius.toString());
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
@@ -98,6 +112,11 @@ export const jobService = {
 
   async deleteJob(id: string) {
     const response = await apiClient.delete(API_ENDPOINTS.JOB_DETAIL(id));
+    return response.data.data;
+  },
+
+  async completeJob(id: string, review?: { rating: number, comment: string }) {
+    const response = await apiClient.post(`${API_ENDPOINTS.JOB_DETAIL(id)}/complete`, review);
     return response.data.data;
   },
 };
