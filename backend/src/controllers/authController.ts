@@ -46,6 +46,30 @@ export const registerController = async (
         const sanitizedEmail = email.replace(/[^a-zA-Z0-9]/g, '-');
         const mockUserId = `mock-user-${sanitizedEmail}-${userType}`;
 
+        const allUsers = mockStorage.getAllUsers();
+
+        // Email check
+        if (allUsers.find(u => u.email === email)) {
+          return res.status(409).json({
+            success: false,
+            error: {
+              message: 'Bu e-posta adresi ile kayıtlı bir kullanıcı zaten mevcut.',
+              code: 'EMAIL_ALREADY_EXISTS'
+            },
+          });
+        }
+
+        // Phone check
+        if (phone && allUsers.find(u => u.phone === phone)) {
+          return res.status(409).json({
+            success: false,
+            error: {
+              message: 'Bu telefon numarası ile kayıtlı bir kullanıcı zaten mevcut.',
+              code: 'PHONE_ALREADY_EXISTS'
+            },
+          });
+        }
+
         // Save user data to persistent mockStorage
         const userData = mockStorage.updateProfile(mockUserId, {
           fullName, email,
