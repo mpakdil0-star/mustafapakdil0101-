@@ -120,17 +120,13 @@ class ApiService {
           }
         }
 
-        // Show detailed error alert for debugging
+        // Show detailed error alert for debugging (Removed for production UX)
         const errorMessage = (error.response?.data as any)?.message || error.message || 'Bilinmeyen Hata';
         const statusCode = error.response?.status || 'No Status';
         const url = error.config?.url || 'Unknown URL';
 
-        // Sadece 401 (Login gerekir) hatalarında sessiz kal, diğerlerinde popup göster
-        if (statusCode !== 401 && statusCode !== 403) {
-          Alert.alert(
-            'Bağlantı Hatası Detayı',
-            `URL: ${url}\nKod: ${statusCode}\nHata: ${errorMessage}\n\nLütfen bu ekranın görüntüsünü alıp geliştiriciye iletin.`
-          );
+        if (__DEV__) {
+          console.warn(`[API ERROR] ${url} (${statusCode}): ${errorMessage}`);
         }
 
         return Promise.reject(error);
