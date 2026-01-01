@@ -141,7 +141,6 @@ export const authService = {
       const isExpoGo = Constants.appOwnership === 'expo';
 
       if (isExpoGo && Platform.OS === 'android') {
-        console.warn('Push Notification: Remote notifications are not supported in Expo Go on Android. Use a development build to test push notifications.');
         return;
       }
 

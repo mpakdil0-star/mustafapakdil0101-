@@ -103,6 +103,15 @@ function RootLayoutNav() {
     // Register Push Token on login
     const requestNotificationPermission = async () => {
       try {
+        const { Platform } = await import('react-native');
+        const Constants = (await import('expo-constants')).default;
+
+        // CRITICAL: SDK 53+ removed push support from Expo Go Android
+        // We MUST NOT even import the module to avoid the error stack
+        if (Platform.OS === 'android' && Constants.appOwnership === 'expo') {
+          return;
+        }
+
         const Notifications = await import('expo-notifications');
         const { status } = await Notifications.getPermissionsAsync();
 
