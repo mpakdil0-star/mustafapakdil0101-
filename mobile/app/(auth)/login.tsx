@@ -130,7 +130,8 @@ export default function LoginScreen() {
           [
             {
               text: 'İptal',
-              style: 'cancel'
+              style: 'cancel',
+              onPress: () => setAlertConfig(prev => ({ ...prev, visible: false }))
             },
             {
               text: 'Kayıt Ol',

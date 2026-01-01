@@ -5,6 +5,7 @@
 
 interface MockUserStore {
     [userId: string]: {
+        passwordHash?: string;
         creditBalance: number;
         experienceYears: number;
         specialties: string[];
@@ -58,6 +59,7 @@ export const mockStorage = {
         if (!mockStore[userId]) {
             // Default initial values
             mockStore[userId] = {
+                passwordHash: undefined,
                 creditBalance: 0,
                 experienceYears: 0,
                 specialties: [],
@@ -83,9 +85,11 @@ export const mockStorage = {
         verificationStatus?: string | null,
         documentType?: string,
         submittedAt?: string,
-        documentUrl?: string | null
+        documentUrl?: string | null,
+        passwordHash?: string
     }) => {
         const store = mockStorage.get(userId);
+        if (data.passwordHash !== undefined) store.passwordHash = data.passwordHash;
         if (data.experienceYears !== undefined) store.experienceYears = data.experienceYears;
         if (data.specialties !== undefined) store.specialties = data.specialties;
         if (data.fullName !== undefined) store.fullName = data.fullName;
@@ -121,6 +125,7 @@ export const mockStorage = {
             id: userId,
             fullName: (store.fullName && store.fullName.trim() !== '') ? store.fullName : 'Test Kullanıcısı',
             email: store.email || 'mock@example.com',
+            passwordHash: store.passwordHash,
             phone: store.phone || '',
             userType: userType,
             profileImageUrl: store.profileImageUrl || null,

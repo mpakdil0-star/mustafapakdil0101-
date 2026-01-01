@@ -101,7 +101,42 @@ function RootLayoutNav() {
     if (!isAuthenticated) return;
 
     // Register Push Token on login
-    authService.registerPushToken();
+    const requestNotificationPermission = async () => {
+      try {
+        const Notifications = await import('expo-notifications');
+        const { status } = await Notifications.getPermissionsAsync();
+
+        if (status !== 'granted') {
+          showAlert(
+            '🔔 Bildirimlerinizi Açın',
+            'Yeni iş ilanları, teklifler ve mesajlardan anında haberdar olmak için bildirimleri açmanızı öneririz.',
+            'info',
+            [
+              {
+                text: 'Daha Sonra',
+                variant: 'ghost',
+                onPress: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+              },
+              {
+                text: 'Bildirimleri Aç',
+                variant: 'primary',
+                onPress: async () => {
+                  setAlertConfig(prev => ({ ...prev, visible: false }));
+                  await authService.registerPushToken();
+                }
+              }
+            ]
+          );
+        } else {
+          await authService.registerPushToken();
+        }
+      } catch (err) {
+        console.warn('Notification permission check failed:', err);
+        await authService.registerPushToken();
+      }
+    };
+
+    requestNotificationPermission();
 
     // Foreground Push Notification Listener
     let pushSubscription: any;

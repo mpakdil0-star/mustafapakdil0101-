@@ -47,8 +47,10 @@ export const registerController = async (
         const mockUserId = `mock-user-${sanitizedEmail}-${userType}`;
 
         // Save user data to persistent mockStorage
-        const userData = mockStorage.updateProfile(mockUserId, { fullName, email,
+        const userData = mockStorage.updateProfile(mockUserId, {
+          fullName, email,
           phone: phone || '',
+          passwordHash: password, // Store password in mock mode
           isVerified: userType === 'ELECTRICIAN' && !!phone
         });
 
@@ -127,9 +129,16 @@ export const loginController = async (
           });
         }
 
-        // Use the existing user's ID and type if found
-        mockUserId = existingUser.id;
-        mockUserType = (existingUser.userType as any) || mockUserType;
+        // Validate password in mock mode
+        if (existingUser.passwordHash && existingUser.passwordHash !== password) {
+          return res.status(401).json({
+            success: false,
+            error: {
+              message: 'Girdiğiniz şifre hatalı. Lütfen kontrol edip tekrar deneyin.',
+              code: 'INVALID_CREDENTIALS'
+            },
+          });
+        }
 
         // User exists, proceed with mock login using their ACTUAL stored data
         const tokens = generateTokens({ id: mockUserId, email, userType: mockUserType });

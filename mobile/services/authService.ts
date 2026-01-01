@@ -157,18 +157,9 @@ export const authService = {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
+      // Note: Premium themed modal is handled in the UI layer (_layout.tsx)
+      // before this service is called, to ensure consistent UX.
       if (existingStatus !== 'granted') {
-        const { Alert } = await import('react-native');
-        await new Promise((resolve) => {
-          Alert.alert(
-            'Bildirim İzni',
-            'Yeni iş ilanlarından ve mesajlardan anında haberdar olmak için bildirimlere izin vermeniz önerilir.',
-            [
-              { text: 'Şimdi Değil', style: 'cancel', onPress: () => resolve(null) },
-              { text: 'Devam Et', onPress: () => resolve(null) }
-            ]
-          );
-        });
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
