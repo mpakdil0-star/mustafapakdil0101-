@@ -114,12 +114,16 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
 
                 // Mock veya veritabanı yoksa direkt gönder (Client-side broadcast)
                 if (!isDatabaseAvailable || userId.startsWith('mock-') || conversationId.startsWith('mock-')) {
+                    const { mockStore } = require('../utils/mockStore');
+
                     const mockMessage = {
                         id: `mock-socket-msg-${Date.now()}`,
                         conversationId,
                         senderId: userId,
+                        receiverId: 'mock-recipient', // conversation'dan bulunmalı
                         content,
                         messageType,
+                        isRead: false,
                         createdAt: new Date().toISOString(),
                         sender: {
                             id: userId,
@@ -128,11 +132,21 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                         },
                     };
 
+                    // Find conversation for better data integrity if possible
+                    const conversation = mockStore.getConversation(conversationId);
+                    if (conversation) {
+                        const receiverId = conversation.participant1Id === userId ? conversation.participant2Id : conversation.participant1Id;
+                        mockMessage.receiverId = receiverId;
+                    }
+
+                    // Save to mockStore
+                    mockStore.saveMessage(mockMessage);
+
                     io.to(`conversation:${conversationId}`).emit('new_message', {
                         message: mockMessage
                     });
 
-                    console.log(`💬 Mock message sent in conversation ${conversationId}`);
+                    console.log(`💬 Mock message sent & saved via socket in conversation ${conversationId}`);
                     return;
                 }
 
