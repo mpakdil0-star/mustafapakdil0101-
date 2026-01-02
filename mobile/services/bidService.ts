@@ -59,12 +59,16 @@ export const bidService = {
       console.log('✅ Bid created successfully:', response.data);
       return response.data.data.bid;
     } catch (error: any) {
+      // Sadece geliştirme ortamında ve kritik hatalarda log basalım
+      // Kullanıcı hataları (400 Bad Request gibi) zaten frontend'de handle ediliyor.
+      /*
       console.error('❌ Bid creation failed!');
       console.error('   Status:', error.response?.status);
       console.error('   URL:', error.config?.url);
       console.error('   Base URL:', error.config?.baseURL);
       console.error('   Full URL:', `${error.config?.baseURL}${error.config?.url}`);
       console.error('   Error:', error.response?.data || error.message);
+      */
       throw error;
     }
   },
