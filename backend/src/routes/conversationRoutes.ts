@@ -438,10 +438,13 @@ router.post('/:id/messages', async (req: AuthRequest, res: Response, next: NextF
 
     try {
       if (!isDatabaseAvailable || req.user.id.startsWith('mock-') || id.startsWith('mock-')) {
-        const mockMsg = {
-          id: `mock-sent-${Date.now()}`,
+        const { mockStore } = require('../utils/mockStore');
+
+        const messageData = {
+          id: `mock-msg-${Date.now()}`,
           conversationId: id,
           senderId: req.user.id,
+          receiverId: 'mock-recipient', // conversation'dan bulunmalı ama şimdilik simple
           recipientId: 'mock-recipient',
           content,
           messageType,
@@ -449,9 +452,29 @@ router.post('/:id/messages', async (req: AuthRequest, res: Response, next: NextF
           createdAt: new Date().toISOString(),
           sender: { id: req.user.id, fullName: 'Siz', profileImageUrl: null }
         };
+
+        // Find conversation to get real receiverId
+        const conversation = mockStore.getConversation(id);
+        if (conversation) {
+          const receiverId = conversation.participant1Id === req.user.id ? conversation.participant2Id : conversation.participant1Id;
+          messageData.receiverId = receiverId;
+          messageData.recipientId = receiverId;
+
+          // Send socket notification
+          const { notifyUser } = require('../server');
+          notifyUser(receiverId, 'new_message', {
+            ...messageData,
+            title: 'Yeni Mesaj 💬',
+            message: content?.substring(0, 50) + (content?.length > 50 ? '...' : '')
+          });
+        }
+
+        mockStore.saveMessage(messageData);
+        console.log(`✅ [MESSAGE] HTTP Fallback: Message saved to mockStore for conv: ${id}`);
+
         return res.status(201).json({
           success: true,
-          data: { message: mockMsg },
+          data: { message: messageData },
         });
       }
 
