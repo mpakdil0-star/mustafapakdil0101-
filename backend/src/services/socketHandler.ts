@@ -116,23 +116,27 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                 if (!isDatabaseAvailable || userId.startsWith('mock-') || conversationId.startsWith('mock-')) {
                     const { mockStore } = require('../utils/mockStore');
 
+                    // Kullanıcı bilgilerini al
+                    const { mockStorage } = require('../utils/mockStorage');
+                    const senderUser = mockStorage.get(userId);
+
                     const mockMessage = {
                         id: `mock-socket-msg-${Date.now()}`,
                         conversationId,
                         senderId: userId,
-                        receiverId: 'mock-recipient', // conversation'dan bulunmalı
+                        receiverId: 'mock-recipient',
                         content,
                         messageType,
                         isRead: false,
                         createdAt: new Date().toISOString(),
                         sender: {
                             id: userId,
-                            fullName: 'Siz (Mock)',
-                            profileImageUrl: null,
+                            fullName: senderUser?.fullName || 'Kullanıcı',
+                            profileImageUrl: senderUser?.profileImageUrl || null,
                         },
                     };
 
-                    // Find conversation for better data integrity if possible
+                    // Find conversation to set correct receiverId
                     const conversation = mockStore.getConversation(conversationId);
                     if (conversation) {
                         const receiverId = conversation.participant1Id === userId ? conversation.participant2Id : conversation.participant1Id;
