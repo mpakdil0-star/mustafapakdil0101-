@@ -146,8 +146,9 @@ export default function LoginScreen() {
   };
 
   const handleTestLogin = async (role: 'citizen' | 'electrician') => {
-    const testEmail = role === 'citizen' ? 'citizen@test.com' : 'electrician@test.com';
-    const testPassword = 'test123';
+    // Demo hesapları - mock mode'da otomatik olarak oluşturulur
+    const testEmail = role === 'citizen' ? 'demo@vatandas.com' : 'demo@usta.com';
+    const testPassword = '123456';
 
     setEmail(testEmail);
     setPassword(testPassword);
@@ -160,7 +161,20 @@ export default function LoginScreen() {
         router.replace('/(tabs)');
       }
     } catch (err: any) {
-      showAlert('Test Giriş Hatası', err || 'Giriş yapılamadı.', 'error');
+      // Eğer kullanıcı yoksa, otomatik kayıt yap
+      showAlert(
+        'Demo Giriş',
+        'Demo hesabı oluşturuluyor...',
+        'info'
+      );
+
+      // Kayıt sayfasına yönlendir ve pre-fill yap
+      router.push({
+        pathname: '/(auth)/register',
+        params: {
+          initialRole: role === 'citizen' ? 'CITIZEN' : 'ELECTRICIAN'
+        }
+      });
     }
   };
 
