@@ -128,7 +128,49 @@ export default function CreateBidScreen() {
     } catch (err: any) {
       // Rollback optimistic update on error
       dispatch(updateCreditBalance(currentBalance));
-      showAlert('Hata', err.message || 'Bir hata oluştu', 'error');
+
+      let errorMessage = err.message || 'Bir hata oluştu';
+
+      // Hata mesajı JSON string ise parse etmeye çalış
+      try {
+        // Eğer mesaj "Error: " ile başlıyorsa temizle
+        const cleanMessage = errorMessage.replace(/^Error:\s*/, '');
+        if (cleanMessage.trim().startsWith('{')) {
+          const parsed = JSON.parse(cleanMessage);
+          if (parsed.error && parsed.error.message) {
+            errorMessage = parsed.error.message;
+          }
+        }
+      } catch (e) {
+        console.log('Error parsing error message:', e);
+      }
+
+      // Kredi hatası kontrolü
+      if (errorMessage.toLowerCase().includes('yetersiz kredi') || errorMessage.toLowerCase().includes('kredi')) {
+        showAlert(
+          'Yetersiz Kredi ⚠️',
+          errorMessage,
+          'warning',
+          [
+            {
+              text: 'Hemen Doğrula',
+              onPress: () => {
+                setAlertConfig(prev => ({ ...prev, visible: false }));
+                // Kısa bir gecikme ile yönlendir ki modal kapansın
+                setTimeout(() => router.push('/(tabs)/profile'), 300);
+              },
+              variant: 'primary'
+            },
+            {
+              text: 'İptal',
+              onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })),
+              variant: 'ghost'
+            }
+          ]
+        );
+      } else {
+        showAlert('Hata', errorMessage, 'error');
+      }
     }
   };
 
