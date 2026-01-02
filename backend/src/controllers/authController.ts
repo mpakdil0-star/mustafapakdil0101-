@@ -128,16 +128,6 @@ export const loginController = async (
       if (isConnectionError) {
         console.warn('⚠️ Database connection failed, checking mock storage for login');
 
-        // Initial guess for the ID
-        const sanitizedEmail = email.replace(/[^a-zA-Z0-9]/g, '-');
-        let mockUserType = 'CITIZEN';
-        if (email.includes('admin')) {
-          mockUserType = 'ADMIN';
-        } else if (email.includes('electrician')) {
-          mockUserType = 'ELECTRICIAN';
-        }
-        let mockUserId = `mock-user-${sanitizedEmail}-${mockUserType}`;
-
         // Check if user exists in mockStorage
         const allMockUsers = mockStorage.getAllUsers();
         const existingUser = allMockUsers.find(u => u.email === email);
@@ -164,7 +154,13 @@ export const loginController = async (
           });
         }
 
-        // User exists, proceed with mock login using their ACTUAL stored data
+        // User exists - use their ACTUAL id and userType from mockStorage
+        const mockUserId = existingUser.id;
+        const mockUserType = existingUser.userType;
+
+        console.log(`✅ Mock login successful: ${mockUserId} as ${mockUserType}`);
+
+        // Generate tokens with correct user data
         const tokens = generateTokens({ id: mockUserId, email, userType: mockUserType });
         return res.json({
           success: true,
