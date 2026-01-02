@@ -6,77 +6,10 @@ import { isDatabaseAvailable } from '../config/database';
 import { mockStore } from '../utils/mockStore';
 
 // Mock veriler için yardımcı fonksiyonlar
-const getMockConversations = (userId: string) => [
-  {
-    id: 'mock-conv-1',
-    otherUser: {
-      id: 'mock-electrician-1',
-      fullName: 'Ahmet Usta',
-      profileImageUrl: null,
-      userType: 'ELECTRICIAN'
-    },
-    jobPost: { id: 'mock-job-1', title: 'Mutfak Tadilatı' },
-    lastMessage: {
-      id: 'mock-msg-1',
-      content: 'Fiyat konusunda anlaştık mı?',
-      createdAt: new Date().toISOString(),
-      senderId: 'mock-electrician-1',
-      isRead: false
-    },
-    lastMessagePreview: 'Fiyat konusunda anlaştık mı?',
-    lastMessageAt: new Date().toISOString(),
-    unreadCount: mockStore.getUnreadCount('mock-conv-1'),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'mock-conv-2',
-    otherUser: {
-      id: 'mock-citizen-1',
-      fullName: 'Mehmet Bey',
-      profileImageUrl: null,
-      userType: 'CITIZEN'
-    },
-    jobPost: { id: 'mock-job-2', title: 'Priz Arızası' },
-    lastMessage: {
-      id: 'mock-msg-2',
-      content: 'Yarın sabah 10 gibi gelebilir misiniz?',
-      createdAt: new Date(Date.now() - 3600000).toISOString(),
-      senderId: 'mock-citizen-1',
-      isRead: true
-    },
-    lastMessagePreview: 'Yarın sabah 10 gibi gelebilir misiniz?',
-    lastMessageAt: new Date(Date.now() - 3600000).toISOString(),
-    unreadCount: mockStore.getUnreadCount('mock-conv-2'),
-    createdAt: new Date(Date.now() - 3600000).toISOString(),
-    updatedAt: new Date(Date.now() - 3600000).toISOString()
-  }
-];
+// Mock veriler için yardımcı fonksiyonlar
+const getMockConversations = (userId: string) => [];
 
-const getMockMessages = (convId: string, userId: string) => [
-  {
-    id: 'mock-msg-101',
-    conversationId: convId,
-    senderId: 'mock-user-1',
-    recipientId: 'mock-user-2',
-    content: 'Merhaba, ilanınızla ilgileniyorum.',
-    messageType: 'TEXT',
-    isRead: true,
-    createdAt: new Date(Date.now() - 7200000).toISOString(),
-    sender: { id: 'mock-user-1', fullName: 'Gönderen Kullanıcı', profileImageUrl: null }
-  },
-  {
-    id: 'mock-msg-102',
-    conversationId: convId,
-    senderId: userId,
-    recipientId: 'mock-user-1',
-    content: 'Tabii, buyrun sorun nedir?',
-    messageType: 'TEXT',
-    isRead: true,
-    createdAt: new Date(Date.now() - 3600000).toISOString(),
-    sender: { id: userId, fullName: 'Siz', profileImageUrl: null }
-  }
-];
+const getMockMessages = (convId: string, userId: string) => [];
 
 const router = Router();
 
