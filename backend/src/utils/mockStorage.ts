@@ -95,8 +95,8 @@ const initDemoAccounts = () => {
     saveToDisk();
 };
 
-// Initialize demo accounts on startup
-initDemoAccounts();
+// Initialize demo accounts on startup - DISABLED per user request
+// initDemoAccounts();
 
 export const mockStorage = {
     get: (userId: string) => {
@@ -104,7 +104,7 @@ export const mockStorage = {
             // Default initial values
             mockStore[userId] = {
                 passwordHash: undefined,
-                creditBalance: 0,
+                creditBalance: 5, // Yeni kullanıcılara başlangıç hediyesi
                 experienceYears: 0,
                 specialties: [],
                 fullName: undefined,
