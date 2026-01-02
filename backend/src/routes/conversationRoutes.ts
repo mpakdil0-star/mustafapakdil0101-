@@ -7,9 +7,9 @@ import { mockStore } from '../utils/mockStore';
 
 // Mock veriler için yardımcı fonksiyonlar
 // Mock veriler için yardımcı fonksiyonlar
-const getMockConversations = (userId: string) => [];
+const getMockConversations = (userId: string): any[] => [];
 
-const getMockMessages = (convId: string, userId: string) => [];
+const getMockMessages = (convId: string, userId: string): any[] => [];
 
 const router = Router();
 
