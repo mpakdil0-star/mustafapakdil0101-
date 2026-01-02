@@ -151,16 +151,22 @@ export default function ProfileScreen() {
         setIsLoading(true);
         try {
           const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+          console.log('📸 [PHOTO UPLOAD] Uploading photo...');
           const updatedUser = await authService.uploadAvatarBase64(base64Image);
+          console.log('📸 [PHOTO UPLOAD] Backend response:', JSON.stringify(updatedUser, null, 2));
+          console.log('📸 [PHOTO UPLOAD] User type in response:', updatedUser.userType);
           dispatch(setUser(updatedUser));
+          console.log('📸 [PHOTO UPLOAD] Redux state updated');
           showAlert('Başarılı', 'Profil fotoğrafı güncellendi', 'success');
         } catch (error: any) {
+          console.error('📸 [PHOTO UPLOAD] Error:', error);
           showAlert('Hata', error.message || 'Fotoğraf yüklenemedi', 'error');
         } finally {
           setIsLoading(false);
         }
       }
     } catch (error) {
+      console.error('📸 [PHOTO UPLOAD] Picker error:', error);
       showAlert('Hata', 'Fotoğraf seçilirken bir hata oluştu', 'error');
       setIsLoading(false);
     }
