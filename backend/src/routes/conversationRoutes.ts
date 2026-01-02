@@ -112,9 +112,34 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
 
         if (storedConversations.length > 0) {
           console.log(`💬 [CONVERSATIONS] Found ${storedConversations.length} stored conversations for ${req.user.id}`);
+
+          // Enrich conversations with otherUser details
+          const { mockStorage: userStorage } = require('../utils/mockStorage');
+
+          const enrichedConversations = storedConversations.map((conv: any) => {
+            const otherUserId = conv.participant1Id === req.user!.id ? conv.participant2Id : conv.participant1Id;
+
+            // Determine userType from ID suffix
+            let otherUserType = 'CITIZEN';
+            if (otherUserId.endsWith('-ELECTRICIAN')) otherUserType = 'ELECTRICIAN';
+            else if (otherUserId.endsWith('-ADMIN')) otherUserType = 'ADMIN';
+
+            const otherUserData = userStorage.getFullUser(otherUserId, otherUserType);
+
+            return {
+              ...conv,
+              otherUser: {
+                id: otherUserData.id,
+                fullName: otherUserData.fullName,
+                profileImageUrl: otherUserData.profileImageUrl,
+                userType: otherUserData.userType
+              }
+            };
+          });
+
           return res.json({
             success: true,
-            data: { conversations: storedConversations },
+            data: { conversations: enrichedConversations },
           });
         }
 
