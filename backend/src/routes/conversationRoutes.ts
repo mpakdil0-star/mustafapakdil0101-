@@ -105,6 +105,20 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
       // Veritabanı bağlantısı yoksa veya mock kullanıcı ise mock verileri dön
       if (!isDatabaseAvailable || req.user.id.startsWith('mock-')) {
         console.warn('⚠️ Konuşmalar için mock veriler dönülüyor');
+
+        // Get conversations from mockStore first
+        const { mockStore: store } = require('../utils/mockStore');
+        const storedConversations = store.getConversationsByUserId(req.user.id);
+
+        if (storedConversations.length > 0) {
+          console.log(`💬 [CONVERSATIONS] Found ${storedConversations.length} stored conversations for ${req.user.id}`);
+          return res.json({
+            success: true,
+            data: { conversations: storedConversations },
+          });
+        }
+
+        // Fall back to default mock conversations if none stored
         return res.json({
           success: true,
           data: { conversations: getMockConversations(req.user.id) },
@@ -119,6 +133,18 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
     } catch (dbError: any) {
       // Database bağlantısı yoksa mock liste döndür
       console.warn('Database error, returning mock conversations:', dbError.message);
+
+      // Try mockStore first
+      const { mockStore: store } = require('../utils/mockStore');
+      const storedConversations = store.getConversationsByUserId(req.user.id);
+
+      if (storedConversations.length > 0) {
+        return res.json({
+          success: true,
+          data: { conversations: storedConversations },
+        });
+      }
+
       res.json({
         success: true,
         data: { conversations: getMockConversations(req.user.id) },
@@ -268,6 +294,27 @@ router.get('/:id/messages', async (req: AuthRequest, res: Response, next: NextFu
 
     try {
       if (!isDatabaseAvailable || req.user.id.startsWith('mock-') || id.startsWith('mock-')) {
+        //  Get messages from mockStore first
+        const { mockStore: store } = require('../utils/mockStore');
+        const storedMessages = store.getMessages(id);
+
+        if (storedMessages.length > 0) {
+          console.log(`✉️ [MESSAGES] Found ${storedMessages.length} stored messages for conversation: ${id}`);
+          return res.json({
+            success: true,
+            data: {
+              messages: storedMessages,
+              pagination: {
+                page: 1,
+                limit: 50,
+                total: storedMessages.length,
+                totalPages: 1
+              }
+            },
+          });
+        }
+
+        // Fall back to default mock messages
         const mockMessages = getMockMessages(id, req.user.id);
         return res.json({
           success: true,
@@ -298,6 +345,25 @@ router.get('/:id/messages', async (req: AuthRequest, res: Response, next: NextFu
       const isConnectionError = error.message?.includes('connect') || error.code === 'P1001';
 
       if (isConnectionError || id.startsWith('mock-')) {
+        //  Try mockStore first
+        const { mockStore: store } = require('../utils/mockStore');
+        const storedMessages = store.getMessages(id);
+
+        if (storedMessages.length > 0) {
+          return res.json({
+            success: true,
+            data: {
+              messages: storedMessages,
+              pagination: {
+                page: 1,
+                limit: 50,
+                total: storedMessages.length,
+                totalPages: 1
+              }
+            },
+          });
+        }
+
         const mockMessages = getMockMessages(id, req.user.id);
         return res.json({
           success: true,

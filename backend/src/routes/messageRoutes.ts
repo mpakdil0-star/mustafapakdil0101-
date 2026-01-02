@@ -14,22 +14,45 @@ router.post('/', async (req, res) => {
 
     console.log(`✉️ [MESSAGE] From ${userId} to ${receiverId} - Content: ${content?.substring(0, 20)}...`);
 
-    // Her zaman bir conversationId dön ki mobil uygulama yönlendirme yapabilsin
-    // jobId varsa o işe özel konuşma ID'si oluştur, yoksa alıcıya özel
-    const conversationId = jobId ? `mock-conv-${jobId}` : `mock-conv-u-${receiverId}`;
+    // Find or create conversation between sender and receiver
+    const { mockStore } = require('../utils/mockStore');
+    let conversation = mockStore.findConversationByParticipants(userId, receiverId);
 
+    if (!conversation) {
+      // Create new conversation
+      const conversationId = jobId ? `mock-conv-${jobId}` : `mock-conv-${userId}-${receiverId}`;
+      conversation = {
+        id: conversationId,
+        participant1Id: userId,
+        participant2Id: receiverId,
+        jobPostId: jobId || null,
+        bidId: bidId || null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastMessage: null,
+        lastMessageAt: null,
+      };
+      mockStore.saveConversation(conversation);
+      console.log(`💬 [MESSAGE] Created new conversation: ${conversationId}`);
+    }
+
+    // Create and save message
     const messageData = {
       id: `mock-msg-${Date.now()}`,
-      conversationId: conversationId,
+      conversationId: conversation.id,
       senderId: userId,
       receiverId: receiverId,
       recipientId: receiverId,
       content: content || '',
       createdAt: new Date().toISOString(),
-      isRead: false
+      isRead: false,
+      messageType: 'TEXT'
     };
 
-    // Bildirim gönder (Arka planda çalışsın)
+    mockStore.saveMessage(messageData);
+    console.log(`✅ [MESSAGE] Message saved to mockStore`);
+
+    // Send real-time notification
     const { notifyUser } = require('../server');
     notifyUser(receiverId, 'new_message', {
       ...messageData,
@@ -41,6 +64,7 @@ router.post('/', async (req, res) => {
       success: true,
       data: {
         message: messageData,
+        conversationId: conversation.id
       },
     });
   } catch (error: any) {
