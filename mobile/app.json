@@ -36,7 +36,16 @@
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
-      ]
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": ""
+        }
+      },
+      "locationPermissions": {
+        "locationWhenInUsePermission": "Size en yakın iş ilanlarını ve elektrikçileri göstermek için konum izni gerekiyor.",
+        "locationAlwaysAndWhenInUsePermission": "Size en yakın iş ilanlarını ve elektrikçileri göstermek için konum izni gerekiyor."
+      }
     },
     "plugins": [
       "expo-router",
