@@ -126,7 +126,6 @@ export default function CreateBidScreen() {
       dispatch(fetchMyBids());
       dispatch(getMe()); // Sync with server to verify balance
     } catch (err: any) {
-    } catch (err: any) {
       // Rollback optimistic update on error
       dispatch(updateCreditBalance(currentBalance));
 
