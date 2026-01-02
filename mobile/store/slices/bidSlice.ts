@@ -39,17 +39,45 @@ export const fetchBidById = createAsyncThunk(
 
 export const createBid = createAsyncThunk(
   'bids/createBid',
-  async (data: CreateBidData) => {
-    return await bidService.createBid(data);
+  async (data: CreateBidData, { rejectWithValue }) => {
+    try {
+      return await bidService.createBid(data);
+    } catch (error: any) {
+      // Backend error response formatını ilet: { error: { message: "..." }, success: false }
+      if (error.response && error.response.data) {
+        return rejectWithValue(error.response.data);
+      }
+      return rejectWithValue({ error: { message: error.message } });
+    }
   }
 );
 
-export const updateBid = createAsyncThunk(
-  'bids/updateBid',
-  async ({ id, data }: { id: string; data: Partial<CreateBidData> }) => {
-    return await bidService.updateBid(id, data);
-  }
-);
+// ... (updates to other thunks if needed, but focusing on createBid) ...
+
+// In extraReducers:
+// Create Bid
+builder
+  .addCase(createBid.pending, (state) => {
+    state.isLoading = true;
+    state.error = null;
+  })
+  .addCase(createBid.fulfilled, (state, action) => {
+    state.isLoading = false;
+    state.jobBids.unshift(action.payload);
+    state.myBids.unshift(action.payload);
+  })
+  .addCase(createBid.rejected, (state, action) => {
+    state.isLoading = false;
+    // action.payload should be the data passed to rejectWithValue
+    const payload = action.payload as any;
+    if (payload && payload.error && payload.error.message) {
+      state.error = payload.error.message;
+    } else if (payload && payload.message) {
+      state.error = payload.message;
+    } else {
+      state.error = action.error.message || 'Failed to create bid';
+    }
+  });
 
 export const acceptBid = createAsyncThunk('bids/acceptBid', async (id: string) => {
   return await bidService.acceptBid(id);
