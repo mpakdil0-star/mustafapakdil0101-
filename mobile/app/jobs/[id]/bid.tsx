@@ -84,12 +84,16 @@ export default function CreateBidScreen() {
     if (jobId) dispatch(fetchJobById(jobId));
   }, [jobId, dispatch]);
 
+  // Error handling is managed manually in handleSubmit to show custom popups for credit issues.
+  // The generic listener below caused duplicate alerts.
+  /*
   useEffect(() => {
     if (error) {
       showAlert('Hata', error, 'error');
       dispatch(clearError());
     }
   }, [error, dispatch]);
+  */
 
   const handleSubmit = async () => {
     if (!amount || parseFloat(amount) <= 0) {
