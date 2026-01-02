@@ -129,20 +129,27 @@ export default function CreateBidScreen() {
       // Rollback optimistic update on error
       dispatch(updateCreditBalance(currentBalance));
 
-      let errorMessage = err.message || 'Bir hata oluştu';
+      let errorMessage = 'Bir hata oluştu';
+      if (err?.message) errorMessage = err.message;
+      else if (typeof err === 'string') errorMessage = err;
+      else try { errorMessage = JSON.stringify(err); } catch (e) { }
 
-      // Hata mesajı JSON string ise parse etmeye çalış
+      console.log('Original Error Message:', errorMessage);
+
+      // JSON parse denemesi (String içindeki JSON'ı bul)
       try {
-        // Eğer mesaj "Error: " ile başlıyorsa temizle
-        const cleanMessage = errorMessage.replace(/^Error:\s*/, '');
-        if (cleanMessage.trim().startsWith('{')) {
-          const parsed = JSON.parse(cleanMessage);
+        const firstBrace = errorMessage.indexOf('{');
+        const lastBrace = errorMessage.lastIndexOf('}');
+
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          const jsonPart = errorMessage.substring(firstBrace, lastBrace + 1);
+          const parsed = JSON.parse(jsonPart);
           if (parsed.error && parsed.error.message) {
             errorMessage = parsed.error.message;
           }
         }
       } catch (e) {
-        console.log('Error parsing error message:', e);
+        console.log('Error parsing JSON from error message:', e);
       }
 
       // Kredi hatası kontrolü
