@@ -46,6 +46,15 @@ if (fs.existsSync(DATA_FILE)) {
     }
 }
 
+
+const saveToDisk = () => {
+    try {
+        fs.writeFileSync(DATA_FILE, JSON.stringify(mockStore, null, 2), 'utf8');
+    } catch (error) {
+        console.error('❌ Failed to save mock data:', error);
+    }
+};
+
 // Initialize demo accounts for testing (can be removed after testing)
 const initDemoAccounts = () => {
     const demoAccounts = [
@@ -88,14 +97,6 @@ const initDemoAccounts = () => {
 
 // Initialize demo accounts on startup
 initDemoAccounts();
-
-const saveToDisk = () => {
-    try {
-        fs.writeFileSync(DATA_FILE, JSON.stringify(mockStore, null, 2), 'utf8');
-    } catch (error) {
-        console.error('❌ Failed to save mock data:', error);
-    }
-};
 
 export const mockStorage = {
     get: (userId: string) => {
