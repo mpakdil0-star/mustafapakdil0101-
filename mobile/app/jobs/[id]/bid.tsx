@@ -126,30 +126,48 @@ export default function CreateBidScreen() {
       dispatch(fetchMyBids());
       dispatch(getMe()); // Sync with server to verify balance
     } catch (err: any) {
+    } catch (err: any) {
       // Rollback optimistic update on error
       dispatch(updateCreditBalance(currentBalance));
 
       let errorMessage = 'Bir hata oluştu';
-      if (err?.message) errorMessage = err.message;
-      else if (typeof err === 'string') errorMessage = err;
-      else try { errorMessage = JSON.stringify(err); } catch (e) { }
 
-      console.log('Original Error Message:', errorMessage);
+      // 1. Check if err is the direct backend response object { error: { message: "..." } }
+      if (err?.error?.message) {
+        errorMessage = err.error.message;
+      }
+      // 2. Check standard Error object
+      else if (err?.message) {
+        errorMessage = err.message;
+      }
+      // 3. Fallback to string handling
+      else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      else {
+        try { errorMessage = JSON.stringify(err); } catch (e) { }
+      }
 
-      // JSON parse denemesi (String içindeki JSON'ı bul)
-      try {
-        const firstBrace = errorMessage.indexOf('{');
-        const lastBrace = errorMessage.lastIndexOf('}');
+      console.log('Processed Error Message:', errorMessage);
 
-        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-          const jsonPart = errorMessage.substring(firstBrace, lastBrace + 1);
-          const parsed = JSON.parse(jsonPart);
-          if (parsed.error && parsed.error.message) {
-            errorMessage = parsed.error.message;
+      // JSON parse denemesi (String içindeki JSON'ı bul - eğer hala string ise)
+      if (typeof errorMessage === 'string') {
+        try {
+          const firstBrace = errorMessage.indexOf('{');
+          const lastBrace = errorMessage.lastIndexOf('}');
+
+          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+            const jsonPart = errorMessage.substring(firstBrace, lastBrace + 1);
+            const parsed = JSON.parse(jsonPart);
+            if (parsed.error && parsed.error.message) {
+              errorMessage = parsed.error.message;
+            } else if (parsed.message) {
+              errorMessage = parsed.message;
+            }
           }
+        } catch (e) {
+          // ignore
         }
-      } catch (e) {
-        console.log('Error parsing JSON from error message:', e);
       }
 
       // Kredi hatası kontrolü
