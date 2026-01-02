@@ -121,8 +121,11 @@ export const uploadAvatarBase64 = async (req: Request, res: Response, next: Next
             });
             console.log('Database updated');
         } catch (dbError: any) {
+            // For mock users, extract userType from userId
+            const userType = userId.endsWith('-ADMIN') ? 'ADMIN' :
+                (userId.endsWith('-ELECTRICIAN') ? 'ELECTRICIAN' : 'CITIZEN');
             // Return consistent mock user with new profile image from storage
-            updatedUser = mockStorage.getFullUser(userId, user.userType);
+            updatedUser = mockStorage.getFullUser(userId, userType);
         }
 
         console.log('Returning user:', updatedUser);
