@@ -52,10 +52,12 @@ export const createBid = createAsyncThunk(
   }
 );
 
-// ... (updates to other thunks if needed, but focusing on createBid) ...
-
-
-
+export const updateBid = createAsyncThunk(
+  'bids/updateBid',
+  async ({ id, data }: { id: string; data: Partial<CreateBidData> }) => {
+    return await bidService.updateBid(id, data);
+  }
+);
 export const acceptBid = createAsyncThunk('bids/acceptBid', async (id: string) => {
   return await bidService.acceptBid(id);
 });
