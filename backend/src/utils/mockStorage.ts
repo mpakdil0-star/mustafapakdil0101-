@@ -107,8 +107,8 @@ export const mockStorage = {
                 creditBalance: 5, // Yeni kullanıcılara başlangıç hediyesi
                 experienceYears: 0,
                 specialties: [],
-                fullName: undefined,
-                phone: '',
+                fullName: 'Test Kullanıcısı',
+                phone: '05551234567', // Varsayılan test numarası
                 email: userId.includes('@') ? (userId.includes('mock-user-') ? userId.split('-').filter(p => p.includes('.')).join('.') || userId : userId) : 'mock@example.com',
                 isVerified: false,
                 verificationStatus: null
