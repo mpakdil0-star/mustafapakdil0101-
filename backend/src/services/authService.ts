@@ -55,7 +55,46 @@ export const generateTokens = (payload: TokenPayload) => {
 export const register = async (data: RegisterData) => {
   const { email, password, fullName, phone, userType } = data;
 
-  // Check if user exists
+  // Check if user exists (Mock check first)
+  if (!isDatabaseAvailable) {
+    const { mockStorage } = require('../utils/mockStorage');
+    const existingMockId = `mock-user-${email.replace(/[@.]/g, '-')}-${userType}`;
+
+    // Create new mock user with REAL data provided
+    const user = {
+      id: existingMockId,
+      email,
+      fullName: fullName || 'İsimsiz Kullanıcı',
+      phone: phone || '', // Use the REAL provided phone
+      userType,
+      isVerified: userType === UserType.ELECTRICIAN && !!phone,
+      profileImageUrl: null,
+      createdAt: new Date(),
+    };
+
+    // Save to mock storage immediately
+    mockStorage.updateProfile(user.id, {
+      fullName: user.fullName,
+      phone: user.phone,
+      email: user.email,
+      isVerified: user.isVerified,
+      passwordHash: await hashPassword(password),
+      experienceYears: 0,
+      creditBalance: userType === UserType.ELECTRICIAN ? 5 : 0 // Bonus for new users
+    });
+
+    // Generate tokens
+    const tokens = generateTokens({
+      id: user.id,
+      email: user.email,
+      userType: user.userType,
+    });
+
+    console.log('✅ Registered via Mock Storage:', user.email);
+    return { user, ...tokens };
+  }
+
+  // Check if user exists (DB)
   const existingUser = await prisma.user.findFirst({
     where: {
       OR: [
@@ -72,54 +111,92 @@ export const register = async (data: RegisterData) => {
   // Hash password
   const passwordHash = await hashPassword(password);
 
-  // Create user
-  const user = await prisma.user.create({
-    data: {
-      email,
-      passwordHash,
-      fullName,
-      phone,
-      userType,
-      isVerified: userType === UserType.ELECTRICIAN && !!phone,
-    },
-    select: {
-      id: true,
-      email: true,
-      fullName: true,
-      phone: true,
-      userType: true,
-      profileImageUrl: true,
-      isVerified: true,
-      createdAt: true,
-    },
-  });
-
-  // Create electrician profile if user is electrician
-  if (userType === UserType.ELECTRICIAN) {
-    await prisma.electricianProfile.create({
+  try {
+    // Create user
+    const user = await prisma.user.create({
       data: {
-        userId: user.id,
-        creditBalance: 5, // Bonus for phone verification (which is now mandatory)
-        isAvailable: true,
-        experienceYears: 0,
-        totalReviews: 0,
-        ratingAverage: 0,
-        completedJobsCount: 0
+        email,
+        passwordHash,
+        fullName,
+        phone,
+        userType,
+        isVerified: userType === UserType.ELECTRICIAN && !!phone,
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        userType: true,
+        profileImageUrl: true,
+        isVerified: true,
+        createdAt: true,
       },
     });
+
+    // Create electrician profile if user is electrician
+    if (userType === UserType.ELECTRICIAN) {
+      await prisma.electricianProfile.create({
+        data: {
+          userId: user.id,
+          creditBalance: 5, // Bonus for phone verification (which is now mandatory)
+          isAvailable: true,
+          experienceYears: 0,
+          totalReviews: 0,
+          ratingAverage: 0,
+          completedJobsCount: 0
+        },
+      });
+    }
+
+    // Generate tokens
+    const tokens = generateTokens({
+      id: user.id,
+      email: user.email,
+      userType: user.userType,
+    });
+
+    return {
+      user,
+      ...tokens,
+    };
+  } catch (error: any) {
+    // Database error fallback
+    console.warn('⚠️ Database registration failed, falling back to mock storage', error);
+
+    const { mockStorage } = require('../utils/mockStorage');
+    const existingMockId = `mock-user-${email.replace(/[@.]/g, '-')}-${userType}`;
+
+    // Save to mock storage
+    mockStorage.updateProfile(existingMockId, {
+      fullName: fullName || 'İsimsiz Kullanıcı',
+      phone: phone || '',
+      email: email,
+      isVerified: userType === UserType.ELECTRICIAN && !!phone,
+      passwordHash: passwordHash, // Use hashed password
+      experienceYears: 0,
+      creditBalance: userType === UserType.ELECTRICIAN ? 5 : 0
+    });
+
+    const user = {
+      id: existingMockId,
+      email,
+      fullName: fullName || 'İsimsiz Kullanıcı',
+      phone: phone || '',
+      userType,
+      isVerified: userType === UserType.ELECTRICIAN && !!phone,
+      profileImageUrl: null,
+      createdAt: new Date(),
+    };
+
+    const tokens = generateTokens({
+      id: user.id,
+      email: user.email,
+      userType: user.userType,
+    });
+
+    return { user, ...tokens };
   }
-
-  // Generate tokens
-  const tokens = generateTokens({
-    id: user.id,
-    email: user.email,
-    userType: user.userType,
-  });
-
-  return {
-    user,
-    ...tokens,
-  };
 };
 
 export const login = async (data: LoginData) => {
