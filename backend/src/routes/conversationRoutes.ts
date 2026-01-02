@@ -126,8 +126,16 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
 
             const otherUserData = userStorage.getFullUser(otherUserId, otherUserType);
 
+            // Get unread count
+            // Not: Mock store conversation bazlı tutuyor, gerçekçi olması için lastMessage gonderen ben isem 0 dönmeli
+            let unreadCount = store.getUnreadCount(conv.id);
+            if (conv.lastMessage?.senderId === req.user!.id) {
+              unreadCount = 0;
+            }
+
             return {
               ...conv,
+              unreadCount: unreadCount,
               otherUser: {
                 id: otherUserData.id,
                 fullName: otherUserData.fullName,
