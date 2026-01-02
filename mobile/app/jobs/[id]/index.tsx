@@ -111,10 +111,13 @@ export default function JobDetailScreen() {
     });
 
     return () => {
+      // Don't clear job data on unmount to prevent "stuck loading" when navigating back
+      // If we clear, the user sees a spinner when returning from messages/bids
+      // Stale-while-revalidate is better UX
       if (hasStartedLoading.current) {
         hasStartedLoading.current = false;
-        dispatch(clearCurrentJob());
-        dispatch(clearJobBids());
+        // dispatch(clearCurrentJob());
+        // dispatch(clearJobBids());
       }
       unsub();
     };
