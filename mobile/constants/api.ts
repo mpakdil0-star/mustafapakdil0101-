@@ -28,7 +28,7 @@ const getLocalhostAddress = () => {
 };
 
 const LOCALHOST = getLocalhostAddress();
-const PORT = '3002';
+const PORT = '3001';
 const API_VERSION = 'v1';
 
 // Tünel Adresi (Nihai)

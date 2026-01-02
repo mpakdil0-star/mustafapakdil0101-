@@ -67,7 +67,7 @@ app.use((req, res) => {
   });
 });
 
-const PORT = 3002; // FORCE PORT to 3002 to resolve EADDRINUSE
+const PORT = config.port || 3001;
 
 async function startServer() {
   try {
