@@ -46,6 +46,49 @@ if (fs.existsSync(DATA_FILE)) {
     }
 }
 
+// Initialize demo accounts for testing (can be removed after testing)
+const initDemoAccounts = () => {
+    const demoAccounts = [
+        {
+            userId: 'mock-user-demo-vatandas-com-CITIZEN',
+            data: {
+                passwordHash: '123456',
+                creditBalance: 0,
+                experienceYears: 0,
+                specialties: [],
+                fullName: 'Demo Vatandaş',
+                phone: '05551234567',
+                email: 'demo@vatandas.com',
+                isVerified: true
+            }
+        },
+        {
+            userId: 'mock-user-demo-usta-com-ELECTRICIAN',
+            data: {
+                passwordHash: '123456',
+                creditBalance: 50, // Başlangıç kredisi
+                experienceYears: 5,
+                specialties: ['Ev Elektrik', 'Pano Bakım'],
+                fullName: 'Demo Elektrikçi',
+                phone: '05559876543',
+                email: 'demo@usta.com',
+                isVerified: true
+            }
+        }
+    ];
+
+    demoAccounts.forEach(account => {
+        if (!mockStore[account.userId]) {
+            mockStore[account.userId] = account.data as any;
+            console.log(`✅ Demo account created: ${account.data.email}`);
+        }
+    });
+    saveToDisk();
+};
+
+// Initialize demo accounts on startup
+initDemoAccounts();
+
 const saveToDisk = () => {
     try {
         fs.writeFileSync(DATA_FILE, JSON.stringify(mockStore, null, 2), 'utf8');
