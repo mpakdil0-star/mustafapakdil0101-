@@ -45,6 +45,17 @@
       "locationPermissions": {
         "locationWhenInUsePermission": "Size en yakın iş ilanlarını ve elektrikçileri göstermek için konum izni gerekiyor.",
         "locationAlwaysAndWhenInUsePermission": "Size en yakın iş ilanlarını ve elektrikçileri göstermek için konum izni gerekiyor."
+      },
+      "permissions": {
+        "CAMERA": {
+          "description": "Arıza fotoğrafları çekebilmeniz için kameraya erişim izni gerekiyor."
+        },
+        "READ_EXTERNAL_STORAGE": {
+          "description": "Galeriden fotoğraf seçebilmeniz için depolama alanına erişim izni gerekiyor."
+        },
+        "WRITE_EXTERNAL_STORAGE": {
+          "description": "Fotoğrafları kaydedebilmek için depolama alanına yazma izni gerekiyor."
+        }
       }
     },
     "plugins": [
