@@ -319,6 +319,27 @@ export default function LoginScreen() {
                   <Text style={styles.guestLinkText}>Giriş yapmadan devam et</Text>
                 </TouchableOpacity>
               </View>
+
+              {/* Test Buttons - Only in Development */}
+              {__DEV__ && (
+                <View style={styles.testSection}>
+                  <Text style={styles.testTitle}>Demo Giriş</Text>
+                  <View style={styles.testButtonsRow}>
+                    <TouchableOpacity
+                      style={[styles.testBtn, { backgroundColor: '#10B981' }]}
+                      onPress={() => handleTestLogin('citizen')}
+                    >
+                      <Text style={styles.testBtnText}>Vatandaş</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.testBtn, { backgroundColor: colors.primary }]}
+                      onPress={() => handleTestLogin('electrician')}
+                    >
+                      <Text style={styles.testBtnText}>Elektrikçi</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
             </Animated.View>
           </View>
         </View>
