@@ -3,6 +3,7 @@ import { isDatabaseAvailable } from '../config/database';
 import { jobService } from '../services/jobService';
 import { AuthRequest } from '../middleware/auth';
 import { ValidationError } from '../utils/errors';
+import { mockStorage } from '../utils/mockStorage';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -189,6 +190,7 @@ export const createJobController = async (
             id: req.user.id,
             fullName: req.user.email ? req.user.email.split('@')[0] : 'Kullanıcı',
             profileImageUrl: null,
+            phone: mockStorage.get(req.user.id)?.phone || '05555555555',
           },
         };
 
@@ -208,8 +210,32 @@ export const createJobController = async (
 
         // Bildirim Gönder: İlgili bölgedeki elektrikçilere haber ver
         const { notifyUser } = require('../server');
-        // Not: Gerçek senaryoda burada sadece o bölgedeki pushToken'ları çekip göndermek gerekir.
-        // Şimdilik global bir yayın veya yetkili ustalara simülasyon yapıyoruz.
+        const { addMockNotification } = require('../routes/notificationRoutes');
+        const { getAllMockUsers } = require('../utils/mockStorage');
+
+        // Get all electrician users and send them notification
+        const allUsers = getAllMockUsers();
+        const electricians = Object.entries(allUsers).filter(([id, data]: [string, any]) =>
+          id.includes('ELECTRICIAN')
+        );
+
+        // Create notification for each electrician
+        electricians.forEach(([userId, userData]: [string, any]) => {
+          const notification = {
+            id: `mock-notif-${Date.now()}-${userId}`,
+            userId,
+            type: 'new_job_available',
+            title: 'Yeni İş İlanı! ⚡',
+            message: `${jobData.location?.district || jobData.location?.city || 'Yakınınızda'} yeni bir ilan var: ${jobData.title}`,
+            isRead: false,
+            relatedId: mockJob.id,
+            relatedType: 'JOB',
+            createdAt: new Date().toISOString()
+          };
+          addMockNotification(userId, notification);
+        });
+
+        // Also send socket notification
         notifyUser('all_electricians', 'new_job_available', {
           title: 'Yeni İş İlanı! ⚡',
           message: `${jobData.location?.district || jobData.location?.city || 'Yakınınızda'} yeni bir ilan var: ${jobData.title}`,
@@ -293,9 +319,33 @@ export const getJobByIdController = async (
         data: { job },
       });
     } catch (dbError: any) {
-      // (Simplified dbError handling for brevity, preserving logic)
-      if (id.startsWith('mock-')) {
+      // Check if it's a database/mock error
+      const isConnectionError =
+        !isDatabaseAvailable ||
+        dbError.message?.includes('Database not available') ||
+        dbError.message?.includes('Mock ID detected') ||
+        dbError.message?.includes('connect') ||
+        dbError.message?.includes('database') ||
+        dbError.message?.includes("Can't reach database") ||
+        dbError.code === 'MOCK_ID' ||
+        dbError.code === 'P1001' ||
+        dbError.code === 'P1017' ||
+        dbError.name === 'PrismaClientInitializationError' ||
+        dbError.constructor?.name === 'PrismaClientInitializationError';
+
+      if (isConnectionError || id.startsWith('mock-')) {
+        // Try to find in mock storage
         let job = jobStoreById.get(id) || getMockJobs().jobs.find(j => j.id === id);
+
+        if (!job) {
+          // Try fallback ID formats
+          const numericId = id.match(/\d+/)?.[0];
+          if (numericId) {
+            const fallbackId = `mock-${numericId}`;
+            job = jobStoreById.get(fallbackId) || getMockJobs().jobs.find(j => j.id === fallbackId);
+          }
+        }
+
         if (job) {
           if (isGuest) job = maskJobData(job);
           const { _count, ...jobWithoutCount } = job;
@@ -305,6 +355,7 @@ export const getJobByIdController = async (
           });
         }
       }
+
       throw dbError;
     }
   } catch (error) {
@@ -1005,6 +1056,20 @@ export const completeJobController = async (
         mockReview.id = `mock-review-${Date.now()}`;
         mockJob.hasReview = true;
         mockJob.review = mockReview;
+      }
+
+      // 3. Increment electrician's completedJobsCount in mockStorage
+      const electricianId = mockJob.assignedElectricianId || mockJob.acceptedElectricianId;
+      if (electricianId) {
+        const { mockStorage } = require('../utils/mockStorage');
+        const electricianData = mockStorage.get(electricianId);
+        if (electricianData) {
+          const currentCount = electricianData.completedJobsCount || 0;
+          mockStorage.set(electricianId, {
+            ...electricianData,
+            completedJobsCount: currentCount + 1
+          });
+        }
       }
 
       jobStoreById.set(id, mockJob);

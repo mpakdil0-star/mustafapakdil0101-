@@ -60,6 +60,21 @@ router.post('/', async (req, res) => {
       message: content?.substring(0, 50) + (content?.length > 50 ? '...' : '')
     });
 
+    // Create notification in notification center
+    const { addMockNotification } = require('./notificationRoutes');
+    const notification = {
+      id: `mock-notif-${Date.now()}-msg`,
+      userId: receiverId,
+      type: 'MESSAGE_RECEIVED',
+      title: 'Yeni Mesaj 💬',
+      message: content?.substring(0, 80) + (content?.length > 80 ? '...' : ''),
+      isRead: false,
+      relatedId: conversation.id,
+      relatedType: 'CONVERSATION',
+      createdAt: new Date().toISOString()
+    };
+    addMockNotification(receiverId, notification);
+
     res.json({
       success: true,
       data: {

@@ -55,9 +55,16 @@ class ApiService {
       async (error: AxiosError) => {
         const originalRequest = error.config as any;
         const is401 = error.response?.status === 401;
-        const isAuthMe = originalRequest?.url?.includes('/auth/me');
-        const isPublicEndpoint = originalRequest?.url?.includes('/jobs') &&
-          !originalRequest?.url?.includes('/my-jobs') &&
+        const url = originalRequest?.url || '';
+
+        // Check if this is an auth endpoint (login, register, refresh-token)
+        const isAuthEndpoint = url.includes('/auth/login') ||
+          url.includes('/auth/register') ||
+          url.includes('/auth/refresh-token') ||
+          url.includes('/auth/me');
+
+        const isPublicEndpoint = url.includes('/jobs') &&
+          !url.includes('/my-jobs') &&
           originalRequest?.method === 'get';
 
         // Public endpoint'lerde 401 alınırsa, token'ı kaldır ve tekrar dene
@@ -71,8 +78,8 @@ class ApiService {
           }
         }
 
-        // Token refresh logic
-        const shouldRefreshToken = is401 && !isAuthMe && !isPublicEndpoint && !originalRequest._retry;
+        // Token refresh logic - EXCLUDE auth endpoints
+        const shouldRefreshToken = is401 && !isAuthEndpoint && !isPublicEndpoint && !originalRequest._retry;
 
         if (shouldRefreshToken) {
           originalRequest._retry = true;
@@ -123,10 +130,10 @@ class ApiService {
         // Show detailed error alert for debugging (Removed for production UX)
         const errorMessage = (error.response?.data as any)?.message || error.message || 'Bilinmeyen Hata';
         const statusCode = error.response?.status || 'No Status';
-        const url = error.config?.url || 'Unknown URL';
+        const errorUrl = error.config?.url || 'Unknown URL';
 
         if (__DEV__) {
-          console.warn(`[API ERROR] ${url} (${statusCode}): ${errorMessage}`);
+          console.warn(`[API ERROR] ${errorUrl} (${statusCode}): ${errorMessage}`);
         }
 
         return Promise.reject(error);

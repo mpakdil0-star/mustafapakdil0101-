@@ -4,6 +4,7 @@ import { AuthRequest } from '../middleware/auth';
 import { isDatabaseAvailable } from '../config/database';
 import { jobStoreById, saveMockJobs } from './jobController';
 import { notifyUser } from '../server';
+import { mockStorage } from '../utils/mockStorage';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -174,6 +175,7 @@ export const createBidController = async (
             id: req.user.id,
             fullName: req.user.email.split('@')[0] || 'Mock Electrician',
             profileImageUrl: null,
+            phone: mockStorage.get(req.user.id)?.phone || '05555555555',
             electricianProfile: {
               verificationStatus: 'APPROVED',
               licenseVerified: true,
@@ -208,6 +210,36 @@ export const createBidController = async (
         // Also store in global store and save to disk
         bidStoreById.set(mockBid.id, mockBid);
         saveMockBids();
+
+        // Create notification for job owner (citizen)
+        const { addMockNotification } = require('../routes/notificationRoutes');
+        if (job?.citizenId) {
+          const notification = {
+            id: `mock-notif-${Date.now()}-bid`,
+            userId: job.citizenId,
+            type: 'BID_RECEIVED',
+            title: 'Yeni Teklif',
+            message: `${mockBid.electrician?.fullName || 'Bir elektrikçi'} ilanınıza ${bidData.amount} ₺ teklif verdi.`,
+            isRead: false,
+            relatedId: bidData.jobPostId, // Use jobPostId not bid ID!
+            relatedType: 'JOB', // Changed from BID to JOB
+            createdAt: new Date().toISOString()
+          };
+          addMockNotification(job.citizenId, notification);
+
+          // Also send socket notification for real-time update
+          console.log(`📢 [SOCKET] Sending bid_received notification to ${job.citizenId}`);
+          notifyUser(job.citizenId, 'bid_received', {
+            type: 'bid_received',
+            bidId: mockBid.id,
+            jobPostId: bidData.jobPostId,
+            jobTitle: job.title || 'İş İlanı',
+            amount: bidData.amount,
+            electricianName: mockBid.electrician?.fullName || 'Elektrikçi',
+            message: `${mockBid.electrician?.fullName || 'Bir elektrikçi'} iş ilanınıza ${bidData.amount} ₺ teklif verdi.`,
+          });
+          console.log(`✅ [SOCKET] bid_received notification sent successfully`);
+        }
 
         console.log(`🎉 [MOCK BID] Bid created successfully. User ${req.user.id} new balance: ${currentBalance - 1}`);
 
@@ -530,6 +562,23 @@ export const acceptBidController = async (
         job.updatedAt = new Date().toISOString();
         jobStoreById.set(job.id, job);
         saveMockJobs();
+      }
+
+      // Create notification for electrician
+      const { addMockNotification } = require('../routes/notificationRoutes');
+      if (acceptedBid.electricianId) {
+        const notification = {
+          id: `mock-notif-${Date.now()}-accept`,
+          userId: acceptedBid.electricianId,
+          type: 'BID_ACCEPTED',
+          title: 'Teklifiniz Kabul Edildi! 🎉',
+          message: `${acceptedBid.amount} ₺ teklifiniz kabul edildi. İşe başlayabilirsiniz!`,
+          isRead: false,
+          relatedId: acceptedBid.jobPostId, // Use jobPostId not bid ID!
+          relatedType: 'JOB', // Changed from BID to JOB
+          createdAt: new Date().toISOString()
+        };
+        addMockNotification(acceptedBid.electricianId, notification);
       }
 
       return res.json({ success: true, data: { bid: acceptedBid } });

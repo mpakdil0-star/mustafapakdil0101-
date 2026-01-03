@@ -328,7 +328,74 @@ export default function CreateJobScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    // Comprehensive validation with popup
+    const validationErrors: string[] = [];
+
+    // 1. Title validation
+    if (!title.trim()) {
+      validationErrors.push('• Başlık girilmedi');
+    } else if (title.trim().length < 5) {
+      validationErrors.push('• Başlık en az 5 karakter olmalı');
+    } else if (title.length > 100) {
+      validationErrors.push('• Başlık en fazla 100 karakter olabilir');
+    }
+
+    // 2. Description validation
+    if (!description.trim()) {
+      validationErrors.push('• Açıklama girilmedi');
+    } else if (description.trim().length < 5) {
+      validationErrors.push('• Açıklama en az 5 karakter olmalı');
+    } else if (description.length > 500) {
+      validationErrors.push('• Açıklama en fazla 500 karakter olabilir');
+    }
+
+    // 3. Category validation
+    if (!category) {
+      validationErrors.push('• Kategori seçilmedi');
+    }
+
+    // 4. City validation
+    if (!city.trim()) {
+      validationErrors.push('• Şehir seçilmedi');
+    }
+
+    // 5. District validation
+    if (!district.trim()) {
+      validationErrors.push('• İlçe seçilmedi');
+    }
+
+    // 6. Neighborhood validation
+    if (!neighborhood.trim()) {
+      validationErrors.push('• Mahalle seçilmedi');
+    }
+
+    // 7. Address validation
+    if (!address.trim()) {
+      validationErrors.push('• Detaylı adres girilmedi');
+    } else if (address.trim().length < 10) {
+      validationErrors.push('• Detaylı adres en az 10 karakter olmalı');
+    } else if (address.length > 200) {
+      validationErrors.push('• Detaylı adres en fazla 200 karakter olabilir');
+    }
+
+    // 8. Budget validation (optional but if entered, must be valid)
+    if (estimatedBudget && parseFloat(estimatedBudget) <= 0) {
+      validationErrors.push('• Bütçe geçerli bir sayı olmalı');
+    }
+
+    // If there are validation errors, show them in a popup
+    if (validationErrors.length > 0) {
+      // Also set inline errors for visual feedback
+      validateForm();
+
+      showAlert(
+        'Eksik veya Hatalı Bilgiler',
+        'Lütfen aşağıdaki alanları kontrol edin:\n\n' + validationErrors.join('\n'),
+        'warning',
+        [{ text: 'Tamam', variant: 'primary', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }]
+      );
+      return;
+    }
 
     if (!isAuthenticated || !user) {
       showAlert(

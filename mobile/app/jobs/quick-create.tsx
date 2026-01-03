@@ -284,15 +284,62 @@ export default function QuickCreateScreen() {
     };
 
     const handleSubmit = async () => {
+        console.log('🔍 handleSubmit called');
+        console.log('📋 Current form state:', { selectedType, city, district, address: address?.length, description: description?.length });
+
+        // Comprehensive validation
+        const validationErrors: string[] = [];
+
+        // 1. Check emergency type selection
         if (!selectedType) {
-            showAlert('Uyarı', 'Lütfen arıza tipini seçin', 'warning');
+            validationErrors.push('• Arıza tipi seçilmedi');
+        }
+
+        // 2. Check city
+        if (!city) {
+            validationErrors.push('• Şehir seçilmedi');
+        }
+
+        // 3. Check district
+        if (!district) {
+            validationErrors.push('• İlçe seçilmedi');
+        }
+
+        // 4. Check neighborhood
+        if (!neighborhood) {
+            validationErrors.push('• Mahalle seçilmedi');
+        }
+
+        // 5. Check address (minimum 10 characters)
+        if (!address || address.trim().length < 10) {
+            validationErrors.push('• Detaylı adres en az 10 karakter olmalı');
+        }
+
+        // 6. Check description character limit (max 500)
+        if (description.length > 500) {
+            validationErrors.push('• Açıklama en fazla 500 karakter olabilir');
+        }
+
+        // 7. Check address character limit (max 200)
+        if (address.length > 200) {
+            validationErrors.push('• Adres en fazla 200 karakter olabilir');
+        }
+
+        console.log('❗ Validation errors:', validationErrors);
+
+        // If there are validation errors, show them in a popup
+        if (validationErrors.length > 0) {
+            console.log('🚨 Showing validation alert popup');
+            showAlert(
+                'Eksik Bilgiler',
+                'Lütfen aşağıdaki alanları kontrol edin:\n\n' + validationErrors.join('\n'),
+                'warning',
+                [{ text: 'Tamam', variant: 'primary', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }]
+            );
             return;
         }
 
-        if (!city || !district) {
-            showAlert('Uyarı', 'Lütfen il ve ilçe seçimi yapın', 'warning');
-            return;
-        }
+        console.log('✅ Validation passed, creating job...');
 
         const typeInfo = EMERGENCY_TYPES.find(t => t.id === selectedType);
 
@@ -300,7 +347,7 @@ export default function QuickCreateScreen() {
             const jobData = {
                 title: `🚨 ACİL: ${typeInfo?.label}`,
                 description: description.trim() || `Acil elektrik arızası: ${typeInfo?.label}. Hızlı müdahale bekliyorum.`,
-                category: getCategoryFromType(selectedType),
+                category: getCategoryFromType(selectedType!), // Non-null assertion - already validated above
                 location: {
                     address: address || 'Adres detayda belirtilecek',
                     city: city,

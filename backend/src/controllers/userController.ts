@@ -890,18 +890,21 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
                 data: {
                     id: id,
                     fullName: mockData.fullName || 'Ahmet Yılmaz',
-                    profileImageUrl: null,
+                    profileImageUrl: mockData.profileImageUrl || null,
+                    phone: mockData.phone || null,
+                    city: mockData.city || 'İstanbul',
                     isVerified: mockData.isVerified ?? true,
                     electricianProfile: {
                         specialties: mockData.specialties.length > 0 ? mockData.specialties : ['Tesisat', 'Arıza', 'Aydınlatma', 'Pano'],
                         ratingAverage: 4.8,
                         totalReviews: isKnownMockUser ? 0 : 124,
                         experienceYears: mockData.experienceYears || (isKnownMockUser ? 0 : 12),
+                        bio: mockData.bio || null,
                         verificationStatus: (mockData.isVerified ?? true) ? 'APPROVED' : 'PENDING',
-                        completedJobsCount: isKnownMockUser ? 0 : 156,
+                        completedJobsCount: mockData.completedJobsCount || 0,
                         responseTimeAvg: 2
                     },
-                    locations: [{ city: 'İstanbul', district: isKnownMockUser ? 'Merkez' : 'Kadıköy', isDefault: true }]
+                    locations: [{ city: mockData.city || 'İstanbul', district: isKnownMockUser ? 'Merkez' : 'Kadıköy', isDefault: true }]
                 }
             });
         }
@@ -1009,7 +1012,7 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
                     verificationStatus: 'PENDING',
                     verificationDocuments: {
                         documentType: 'ELEKTRIK_USTASI',
-                        documentUrl: null,
+                        documentUrl: undefined,
                         submittedAt: new Date().toISOString(),
                     },
                     user: {
@@ -1062,7 +1065,7 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
                         verificationStatus: 'PENDING',
                         verificationDocuments: {
                             documentType: 'ELEKTRIK_USTASI',
-                            documentUrl: null,
+                            documentUrl: undefined,
                             submittedAt: new Date().toISOString(),
                         },
                         user: {

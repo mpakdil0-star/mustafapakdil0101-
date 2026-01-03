@@ -2,72 +2,24 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import prisma, { isDatabaseAvailable } from '../config/database';
 
-// Mock bildirim verileri üreten yardımcı fonksiyon
-const getMockNotifications = (userId: string, userType: string = 'CITIZEN') => {
-  const commonNotifications = [
-    {
-      id: 'mock-notif-msg',
-      userId,
-      type: 'MESSAGE_RECEIVED',
-      title: 'Yeni Mesaj',
-      message: 'Size yeni bir mesaj gönderildi.',
-      isRead: true,
-      relatedType: 'CONVERSATION',
-      relatedId: 'mock-conv-1',
-      createdAt: new Date(Date.now() - 3600000).toISOString()
-    }
-  ];
+// In-memory mock notification storage: userId -> notifications[]
+const mockNotifications = new Map<string, any[]>();
 
-  if (userType === 'ELECTRICIAN') {
-    return [
-      {
-        id: 'mock-notif-job-avail',
-        userId,
-        type: 'new_job_available',
-        title: 'Yeni İş Fırsatı',
-        message: 'Bölgenizde yeni bir iş ilanı yayınlandı.',
-        isRead: false,
-        relatedId: 'mock-1',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'mock-notif-bid-acc',
-        userId,
-        type: 'BID_ACCEPTED',
-        title: 'Teklifiniz Kabul Edildi',
-        message: 'Mutfak tesisatı için verdiğiniz teklif kabul edildi.',
-        isRead: false,
-        relatedId: 'mock-2',
-        createdAt: new Date(Date.now() - 1800000).toISOString()
-      },
-      ...commonNotifications
-    ];
+// Helper to add a notification for a user
+export const addMockNotification = (userId: string, notification: any) => {
+  if (!mockNotifications.has(userId)) {
+    mockNotifications.set(userId, []);
   }
+  const userNotifications = mockNotifications.get(userId) || [];
+  userNotifications.unshift(notification); // Add to beginning
+  mockNotifications.set(userId, userNotifications);
+  console.log(`✅ Mock notification added for user ${userId}:`, notification.title);
+};
 
-  // Default for CITIZEN
-  return [
-    {
-      id: 'mock-notif-bid-rec',
-      userId,
-      type: 'BID_RECEIVED',
-      title: 'Yeni Teklif',
-      message: 'İlanınıza yeni bir teklif geldi.',
-      isRead: false,
-      relatedId: 'mock-1',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 'mock-notif-job-upd',
-      userId,
-      type: 'JOB_UPDATED',
-      title: 'İlan Güncellendi',
-      message: 'İlanınız onaylandı ve yayına alındı.',
-      isRead: false,
-      relatedId: 'mock-3',
-      createdAt: new Date(Date.now() - 86400000).toISOString()
-    },
-    ...commonNotifications
-  ];
+// Mock bildirim verileri üreten yardımcı fonksiyon
+const getMockNotifications = (userId: string, userType: string = 'CITIZEN'): any[] => {
+  // Return stored notifications for this user
+  return mockNotifications.get(userId) || [];
 };
 
 const router = Router();
@@ -185,6 +137,13 @@ router.put('/:id/read', async (req, res) => {
     const userId = (req as any).user.id;
 
     if (!isDatabaseAvailable || userId.startsWith('mock-') || id.startsWith('mock-')) {
+      // Update mock notification in storage
+      const userNotifications = mockNotifications.get(userId) || [];
+      const notification = userNotifications.find(n => n.id === id);
+      if (notification) {
+        notification.isRead = true;
+        console.log(`✅ Mock notification ${id} marked as read for user ${userId}`);
+      }
       return res.json({
         success: true,
         data: { message: 'Marked as read (Mock)' },
@@ -217,6 +176,12 @@ router.put('/read-all', async (req, res) => {
     const userId = (req as any).user.id;
 
     if (!isDatabaseAvailable || userId.startsWith('mock-')) {
+      // Mark all mock notifications as read
+      const userNotifications = mockNotifications.get(userId) || [];
+      userNotifications.forEach(n => {
+        n.isRead = true;
+      });
+      console.log(`✅ All mock notifications marked as read for user ${userId}`);
       return res.json({
         success: true,
         data: { message: 'All marked as read (Mock)' },

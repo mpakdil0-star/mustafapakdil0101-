@@ -214,6 +214,9 @@ export default function JobDetailScreen() {
     }
   };
 
+  // DEBUG: Log images
+  console.log('🖼️ JobData.images:', jobData.images);
+
   return (
     <View style={styles.container}>
       <PremiumHeader title="İlan Detayı" subtitle={jobData.category} showBackButton />
@@ -350,7 +353,15 @@ export default function JobDetailScreen() {
               jobBids.map((bid) => (
                 <Card key={bid.id} style={[styles.bidCard, { backgroundColor: staticColors.white, shadowColor: colors.primary }, bid.status === 'ACCEPTED' && [styles.acceptedBidCard, { borderColor: staticColors.success + '40' }]]}>
                   <View style={styles.bidHeader}>
-                    <Image source={{ uri: getFileUrl(bid.electrician?.profileImageUrl) || undefined }} style={styles.bidAvatar} />
+                    <TouchableOpacity onPress={() => router.push(`/electrician/${bid.electricianId}`)} activeOpacity={0.7}>
+                      {bid.electrician?.profileImageUrl && getFileUrl(bid.electrician.profileImageUrl) ? (
+                        <Image source={{ uri: getFileUrl(bid.electrician.profileImageUrl)! }} style={styles.bidAvatar} />
+                      ) : (
+                        <View style={[styles.bidAvatar, { backgroundColor: colors.primary + '15', justifyContent: 'center', alignItems: 'center' }]}>
+                          <Ionicons name="person" size={24} color={colors.primary} />
+                        </View>
+                      )}
+                    </TouchableOpacity>
                     <View style={styles.bidInfo}>
                       <Text style={[styles.bidName, { color: colors.text }]}>{bid.electrician?.fullName}</Text>
                       <VerificationBadge status={bid.electrician?.electricianProfile?.verificationStatus} size="small" />
@@ -393,7 +404,15 @@ export default function JobDetailScreen() {
             {jobBids.filter(b => b.status === 'ACCEPTED').map(bid => (
               <Card key={bid.id} style={[styles.acceptedBidCard, { borderColor: staticColors.success + '40', backgroundColor: staticColors.white, shadowColor: colors.primary }]}>
                 <View style={styles.bidHeader}>
-                  <Image source={{ uri: getFileUrl(bid.electrician?.profileImageUrl) || undefined }} style={styles.bidAvatar} />
+                  <TouchableOpacity onPress={() => router.push(`/electrician/${bid.electricianId}`)} activeOpacity={0.7}>
+                    {bid.electrician?.profileImageUrl && getFileUrl(bid.electrician.profileImageUrl) ? (
+                      <Image source={{ uri: getFileUrl(bid.electrician.profileImageUrl)! }} style={styles.bidAvatar} />
+                    ) : (
+                      <View style={[styles.bidAvatar, { backgroundColor: colors.primary + '15', justifyContent: 'center', alignItems: 'center' }]}>
+                        <Ionicons name="person" size={24} color={colors.primary} />
+                      </View>
+                    )}
+                  </TouchableOpacity>
                   <View style={styles.bidInfo}>
                     <Text style={[styles.bidName, { color: colors.text }]}>{bid.electrician?.fullName}</Text>
                     <VerificationBadge status={bid.electrician?.electricianProfile?.verificationStatus} size="small" />

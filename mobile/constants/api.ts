@@ -36,15 +36,16 @@ const TUNNEL_URL = 'https://leptospiral-palaeontologically-hilton.ngrok-free.dev
 
 // Environment-based configuration
 const getApiUrl = () => {
-  const baseUrl = `${TUNNEL_URL}/api/${API_VERSION}`;
-  console.log('🔌 Backend URL (Tunnel):', baseUrl);
+  // Use local network instead of tunnel for development
+  const baseUrl = `http://${LOCALHOST}:${PORT}/api/${API_VERSION}`;
+  console.log('🔌 Backend URL (Local Network):', baseUrl);
   return process.env.EXPO_PUBLIC_API_URL || baseUrl;
 };
 
 export const API_BASE_URL = getApiUrl();
 
 // WebSocket URL
-export const WS_BASE_URL = TUNNEL_URL;
+export const WS_BASE_URL = `http://${LOCALHOST}:${PORT}`;
 
 // API Endpoints
 export const API_ENDPOINTS = {
@@ -95,11 +96,19 @@ export const API_ENDPOINTS = {
 // Uploads are served from root (http://server:3001/uploads), not from /api/v1
 export const getFileUrl = (filePath: string | null | undefined): string | null => {
   if (!filePath) return null;
-  if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
-    return filePath; // Already a full URL
+
+  // If it's a base64 data URL, return as-is
+  if (filePath.startsWith('data:image')) {
+    return filePath;
   }
-  // Use tunnel URL for files too
-  return `${TUNNEL_URL}${filePath}`;
+
+  // If it's already a full URL, return as-is
+  if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+    return filePath;
+  }
+
+  // For file paths, use the API base URL (localhost)
+  return `http://${LOCALHOST}:${PORT}${filePath}`;
 };
 
 // Log configuration on app start

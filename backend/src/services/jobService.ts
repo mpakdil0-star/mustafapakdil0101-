@@ -264,6 +264,7 @@ export const jobService = {
                   id: true,
                   fullName: true,
                   profileImageUrl: true,
+                  phone: true,
                 },
               },
             },

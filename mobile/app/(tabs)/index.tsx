@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity, Modal, ImageBackground, Image, Platform, Dimensions, PanResponder } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity, Modal, ImageBackground, Image, Platform, Dimensions, PanResponder, Alert } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
@@ -27,8 +27,28 @@ export default function HomeScreen() {
   const { unreadCount } = useAppSelector((state) => state.notifications);
   const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
 
+  // Toast notification state
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'bid' | 'message' | 'general'>('general');
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+
+  // Show toast notification
+  const showToast = (message: string, type: 'bid' | 'message' | 'general' = 'general') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+
+    Animated.sequence([
+      Animated.timing(toastOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.delay(3000),
+      Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true })
+    ]).start(() => setToastVisible(false));
+  };
+
   // DEBUG: Remove after fixing the role issue
   console.log('[HomeScreen] guestRole:', guestRole, '| isElectrician:', isElectrician, '| userType:', user?.userType);
+  console.log('[HomeScreen] unreadCount:', unreadCount); // DEBUG: Check badge count
   const [newJobsCount, setNewJobsCount] = useState(0);
   const [userCities, setUserCities] = useState<string[]>([]);
   const [locationsCount, setLocationsCount] = useState(0); // Service areas count from API
@@ -269,11 +289,53 @@ export default function HomeScreen() {
       };
 
       fetchNewJobsCount();
-      if (isAuthenticated) {
-        dispatch(fetchNotifications());
-      }
-    }, [isAuthenticated, isElectrician, dispatch])
+    }, [isAuthenticated, isElectrician])
   );
+
+  // Socket listeners - always active (not just when focused)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    dispatch(fetchNotifications());
+
+    // Listen for ALL real-time notification events
+    const { socketService } = require('../../services/socketService');
+    const { incrementUnreadCount } = require('../../store/slices/notificationSlice');
+
+    // Refresh on any notification-related event
+    const handlers = [
+      socketService.onBidNotification((data: any) => {
+        console.log('🔔 [BID] Bid notification received!');
+        console.log('🔔 [BID] Data:', JSON.stringify(data));
+        console.log('🔔 [BID] Message:', data.message);
+        // Increment badge immediately (optimistic update)
+        console.log('🔔 [BID] Dispatching incrementUnreadCount...');
+        dispatch(incrementUnreadCount());
+        console.log('🔔 [BID] Showing toast...');
+        // Show toast immediately
+        showToast(data.message || 'Yeni teklif aldınız!', 'bid');
+        console.log('🔔 [BID] Fetching notifications...');
+        // Fetch to get accurate count (this will override with correct value)
+        dispatch(fetchNotifications());
+      }),
+      socketService.onMessage((data: any) => {
+        console.log('🔔 [MESSAGE] Message notification received!');
+        dispatch(incrementUnreadCount());
+        showToast('Yeni mesajınız var 💬', 'message');
+        dispatch(fetchNotifications());
+      }),
+      socketService.onNotification((data: any) => {
+        console.log('🔔 [GENERAL] General notification received!');
+        dispatch(incrementUnreadCount());
+        showToast(data.message || 'Yeni bildiriminiz var', 'general');
+        dispatch(fetchNotifications());
+      })
+    ];
+
+    return () => {
+      handlers.forEach(unsub => unsub());
+    };
+  }, [isAuthenticated, dispatch]);
 
   const handleActionWithAuth = (path: string, params?: any) => {
     if (!isAuthenticated) {
@@ -337,22 +399,23 @@ export default function HomeScreen() {
                 <Text style={styles.welcomeName}>Merhaba, {user?.fullName?.split(' ')[0] || 'Misafir'}</Text>
               </View>
 
-              {isAuthenticated && (
-                <TouchableOpacity
-                  style={styles.headerLinkButton}
-                  activeOpacity={0.7}
-                  onPress={() => router.push('/profile/notifications')}
-                >
-                  <Ionicons name="notifications-outline" size={24} color={colors.white} />
-                  {unreadCount > 0 && (
-                    <View style={styles.notificationBadge}>
-                      <Text style={styles.notificationBadgeText}>
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              )}
+
+              {/* Always show notification button for debugging */}
+              <TouchableOpacity
+                style={styles.headerLinkButton}
+                activeOpacity={0.7}
+                onPress={() => router.push('/profile/notifications')}
+              >
+                <Ionicons name="notifications-outline" size={24} color={colors.white} />
+                {unreadCount > 0 && (
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.notificationBadgeText}>
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
 
               <TouchableOpacity
                 style={styles.profileAvatarButton}
@@ -770,6 +833,37 @@ export default function HomeScreen() {
               <Text style={styles.floatingEmergencyText}>ACİL USTA</Text>
             </LinearGradient>
           </TouchableOpacity>
+        </Animated.View>
+      )}
+
+      {/* Toast Notification */}
+      {toastVisible && (
+        <Animated.View style={[styles.toastContainer, { opacity: toastOpacity }]}>
+          <LinearGradient
+            colors={
+              toastType === 'bid'
+                ? ['#10B981', '#059669']
+                : toastType === 'message'
+                  ? ['#8B5CF6', '#7C3AED']
+                  : [colors.primary, colors.primaryDark]
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.toastGradient}
+          >
+            <Ionicons
+              name={
+                toastType === 'bid'
+                  ? 'pricetag'
+                  : toastType === 'message'
+                    ? 'chatbubbles'
+                    : 'notifications'
+              }
+              size={24}
+              color={staticColors.white}
+            />
+            <Text style={styles.toastText} numberOfLines={2}>{toastMessage}</Text>
+          </LinearGradient>
         </Animated.View>
       )}
     </View>
@@ -1737,5 +1831,32 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 9,
     fontFamily: fonts.bold,
+  },
+  toastContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 60 : 40,
+    left: 16,
+    right: 16,
+    zIndex: 9999,
+  },
+  toastGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  toastText: {
+    flex: 1,
+    color: staticColors.white,
+    fontSize: 14,
+    fontFamily: fonts.semiBold,
+    lineHeight: 18,
   },
 });

@@ -5,19 +5,24 @@
 
 interface MockUserStore {
     [userId: string]: {
+        id: string;
+        fullName?: string;
+        phone?: string;
+        email?: string;
+        profileImageUrl?: string;
+        userType?: string;
         passwordHash?: string;
         creditBalance: number;
         experienceYears: number;
         specialties: string[];
-        fullName?: string;
-        phone?: string;
-        email?: string;
         isVerified?: boolean;
-        profileImageUrl?: string;
-        verificationStatus?: string | null;
+        verificationStatus?: string;
         documentType?: string;
         submittedAt?: string;
-        documentUrl?: string | null;
+        documentUrl?: string;
+        city?: string;
+        bio?: string;
+        completedJobsCount?: number;
     }
 }
 
@@ -103,15 +108,16 @@ export const mockStorage = {
         if (!mockStore[userId]) {
             // Default initial values
             mockStore[userId] = {
+                id: userId,
                 passwordHash: undefined,
-                creditBalance: 5, // Yeni kullanıcılara başlangıç hediyesi
+                creditBalance: 5,
                 experienceYears: 0,
                 specialties: [],
                 fullName: 'Test Kullanıcısı',
-                phone: '05551234567', // Varsayılan test numarası
+                phone: '05551234567',
                 email: userId.includes('@') ? (userId.includes('mock-user-') ? userId.split('-').filter(p => p.includes('.')).join('.') || userId : userId) : 'mock@example.com',
                 isVerified: false,
-                verificationStatus: null
+                verificationStatus: undefined
             };
             saveToDisk();
         }
@@ -141,10 +147,10 @@ export const mockStorage = {
         if (data.email !== undefined) store.email = data.email;
         if (data.isVerified !== undefined) store.isVerified = data.isVerified;
         if (data.profileImageUrl !== undefined) store.profileImageUrl = data.profileImageUrl;
-        if (data.verificationStatus !== undefined) store.verificationStatus = data.verificationStatus;
+        if (data.verificationStatus !== undefined) store.verificationStatus = data.verificationStatus || undefined;
         if (data.documentType !== undefined) store.documentType = data.documentType;
         if (data.submittedAt !== undefined) store.submittedAt = data.submittedAt;
-        if (data.documentUrl !== undefined) store.documentUrl = data.documentUrl;
+        if (data.documentUrl !== undefined) store.documentUrl = data.documentUrl || undefined;
         saveToDisk();
         return store;
     },
@@ -185,7 +191,7 @@ export const mockStorage = {
                 verificationStatus: store.verificationStatus || null,
                 verificationDocuments: {
                     documentType: store.documentType || null,
-                    documentUrl: store.documentUrl || null,
+                    documentUrl: store.documentUrl ?? undefined,
                     submittedAt: store.submittedAt || null,
                 }
             } : null
@@ -200,3 +206,8 @@ export const mockStorage = {
         });
     }
 };
+
+// Export helper to get all mock users (for notifications, etc.)
+export const getAllMockUsers = () => mockStore;
+
+export default mockStorage;

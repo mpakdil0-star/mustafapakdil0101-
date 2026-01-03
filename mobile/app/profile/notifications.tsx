@@ -26,27 +26,41 @@ export default function NotificationsScreen() {
         dispatch(fetchNotifications());
     }, [dispatch]);
 
-    const handleNotificationPress = (notification: any) => {
+    const handleNotificationPress = async (notification: any) => {
         if (!notification.isRead) {
             dispatch(markNotificationAsRead(notification.id));
         }
 
         const type = notification.type.toUpperCase();
         const relatedId = notification.relatedId;
+        const relatedType = notification.relatedType;
 
         if (!relatedId) {
             console.warn('[Notifications] No relatedId found for notification:', notification.id);
             return;
         }
 
-        // Navigate based on type
-        if (type === 'NEW_MESSAGE' || type === 'MESSAGE_RECEIVED') {
+        // Navigate based on relatedType first, then fall back to type
+        if (relatedType === 'CONVERSATION' || type === 'NEW_MESSAGE' || type === 'MESSAGE_RECEIVED') {
             router.push(`/messages/${relatedId}`);
-        } else if (type === 'NEW_JOB_AVAILABLE' || type === 'JOB_UPDATED' || type === 'JOB_ASSIGNED') {
+        } else if (relatedType === 'JOB' || type === 'NEW_JOB_AVAILABLE' || type === 'JOB_UPDATED' || type === 'JOB_ASSIGNED') {
             router.push(`/jobs/${relatedId}`);
-        } else if (type.includes('BID')) {
-            router.push(`/jobs/${relatedId}`);
-        } else if (type === 'YENI_TEKLIF') {
+        } else if (relatedType === 'BID') {
+            // For BID notifications, we need to get the job ID from the bid
+            // Since we don't have it in the notification, we'll fetch it
+            try {
+                const { default: api } = await import('../../services/api');
+                const response = await api.get(`/bids/${relatedId}`);
+                if (response.data.success && response.data.data.bid.jobPostId) {
+                    router.push(`/jobs/${response.data.data.bid.jobPostId}`);
+                } else {
+                    console.warn('[Notifications] Could not get job ID from bid');
+                }
+            } catch (error) {
+                console.error('[Notifications] Error fetching bid details:', error);
+            }
+        } else if (type.includes('BID') || type === 'YENI_TEKLIF') {
+            // Fallback: assume relatedId is jobId
             router.push(`/jobs/${relatedId}`);
         }
     };

@@ -1,0 +1,459 @@
+import React, { useEffect, useState } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    ScrollView,
+    ActivityIndicator,
+    TouchableOpacity,
+    Image,
+    Linking,
+} from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { PremiumHeader } from '../../components/common/PremiumHeader';
+import { Card } from '../../components/common/Card';
+import { Button } from '../../components/common/Button';
+import { VerificationBadge } from '../../components/common/VerificationBadge';
+import { colors as staticColors } from '../../constants/colors';
+import { spacing } from '../../constants/spacing';
+import { fonts } from '../../constants/typography';
+import { useAppColors } from '../../hooks/useAppColors';
+import { getFileUrl, API_BASE_URL } from '../../constants/api';
+
+export default function ElectricianProfileScreen() {
+    const router = useRouter();
+    const { id } = useLocalSearchParams<{ id: string }>();
+    const colors = useAppColors();
+
+    const [electrician, setElectrician] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetchElectricianProfile();
+    }, [id]);
+
+    const fetchElectricianProfile = async () => {
+        try {
+            setIsLoading(true);
+            const response = await fetch(`${API_BASE_URL}/users/electricians/${id}`);
+            const data = await response.json();
+
+            if (data.success) {
+                setElectrician(data.data);
+            } else {
+                setError('Elektrikçi profili yüklenemedi');
+            }
+        } catch (err) {
+            console.error('Error fetching electrician:', err);
+            setError('Bir hata oluştu');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleCall = () => {
+        if (electrician?.phone) {
+            Linking.openURL(`tel:${electrician.phone}`);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <View style={styles.container}>
+                <PremiumHeader title="Profil" showBackButton />
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                    <Text style={[styles.loadingText, { color: staticColors.textSecondary }]}>Yükleniyor...</Text>
+                </View>
+            </View>
+        );
+    }
+
+    if (error || !electrician) {
+        return (
+            <View style={styles.container}>
+                <PremiumHeader title="Profil" showBackButton />
+                <View style={styles.errorContainer}>
+                    <Ionicons name="alert-circle-outline" size={64} color={staticColors.error} />
+                    <Text style={[styles.errorText, { color: staticColors.text }]}>{error || 'Profil bulunamadı'}</Text>
+                    <Button title="Geri Dön" onPress={() => router.back()} variant="primary" />
+                </View>
+            </View>
+        );
+    }
+
+    return (
+        <View style={styles.container}>
+            <PremiumHeader title="Usta Profili" showBackButton />
+
+            <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+                {/* Profile Header Card */}
+                <Card style={styles.profileCard}>
+                    <View style={styles.headerRow}>
+                        <View style={styles.avatarAndInfo}>
+                            <View style={styles.avatarSection}>
+                                {electrician.profileImageUrl && getFileUrl(electrician.profileImageUrl) ? (
+                                    <Image
+                                        source={{ uri: getFileUrl(electrician.profileImageUrl)! }}
+                                        style={styles.avatar}
+                                    />
+                                ) : (
+                                    <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary + '15' }]}>
+                                        <Ionicons name="person" size={48} color={colors.primary} />
+                                    </View>
+                                )}
+                            </View>
+
+                            <View style={styles.nameAndSpecialties}>
+                                <Text style={[styles.name, { color: colors.text }]}>{electrician.fullName}</Text>
+
+                                {electrician.electricianProfile?.specialties && electrician.electricianProfile.specialties.length > 0 && (
+                                    <Text style={[styles.specialtiesSubtitle, { color: staticColors.textSecondary }]}>
+                                        {electrician.electricianProfile.specialties.slice(0, 3).join(', ')}
+                                    </Text>
+                                )}
+
+                                {electrician.city && (
+                                    <View style={styles.locationRow}>
+                                        <Ionicons name="location" size={14} color={staticColors.textSecondary} />
+                                        <Text style={[styles.locationText, { color: staticColors.textSecondary }]}>
+                                            {electrician.city}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                        </View>
+
+                        <TouchableOpacity style={styles.favoriteButton} activeOpacity={0.7}>
+                            <Ionicons name="heart-outline" size={24} color={staticColors.error} />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Stats Row */}
+                    <View style={styles.statsRow}>
+                        <View style={styles.statBox}>
+                            <View style={styles.statIconText}>
+                                <Ionicons name="star" size={18} color="#F59E0B" />
+                                <Text style={[styles.statValue, { color: colors.text }]}>
+                                    {electrician.electricianProfile?.ratingAverage || '0.0'}
+                                </Text>
+                            </View>
+                            <Text style={[styles.statLabel, { color: staticColors.textSecondary }]}>
+                                {electrician.electricianProfile?.totalReviews || 0} değerlendirme
+                            </Text>
+                        </View>
+
+                        <View style={styles.statDivider} />
+
+                        <View style={styles.statBox}>
+                            <Text style={[styles.statValue, { color: colors.text }]}>
+                                {electrician.electricianProfile?.completedJobsCount || 0}
+                            </Text>
+                            <Text style={[styles.statLabel, { color: staticColors.textSecondary }]}>
+                                Tamamlanan İş
+                            </Text>
+                        </View>
+
+                        <View style={styles.statDivider} />
+
+                        <View style={styles.statBox}>
+                            <Text style={[styles.statValue, { color: colors.text }]}>
+                                {electrician.electricianProfile?.experienceYears || 0}
+                            </Text>
+                            <Text style={[styles.statLabel, { color: staticColors.textSecondary }]}>
+                                Deneyim (Yıl)
+                            </Text>
+                        </View>
+                    </View>
+                </Card>
+
+                {/* Services Offered */}
+                {electrician.electricianProfile?.specialties && electrician.electricianProfile.specialties.length > 0 && (
+                    <Card style={styles.servicesCard}>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Sunduğu Hizmetler</Text>
+                        <View style={styles.servicesList}>
+                            {electrician.electricianProfile.specialties.map((service: string, index: number) => (
+                                <View key={index} style={styles.serviceItem}>
+                                    <View style={[styles.checkIcon, { backgroundColor: '#10B981' }]}>
+                                        <Ionicons name="checkmark" size={16} color={staticColors.white} />
+                                    </View>
+                                    <Text style={[styles.serviceText, { color: colors.text }]}>{service}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    </Card>
+                )}
+
+                {/* Bio Section */}
+                {electrician.electricianProfile?.bio && (
+                    <Card style={styles.bioCard}>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Hakkında</Text>
+                        <Text style={[styles.bioText, { color: staticColors.textSecondary }]}>
+                            {electrician.electricianProfile.bio}
+                        </Text>
+                    </Card>
+                )}
+
+                {/* Contact Buttons */}
+                <View style={styles.actionButtons}>
+                    {electrician.phone && (
+                        <Button
+                            title="Ara"
+                            onPress={handleCall}
+                            variant="success"
+                            icon={<Ionicons name="call" size={20} color={staticColors.white} />}
+                            style={styles.actionButton}
+                        />
+                    )}
+                </View>
+            </ScrollView>
+        </View>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#F8FAFC',
+    },
+    scrollView: {
+        flex: 1,
+    },
+    content: {
+        padding: spacing.md,
+        paddingBottom: 100,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        marginTop: spacing.md,
+        fontFamily: fonts.medium,
+        fontSize: 14,
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: spacing.xl,
+    },
+    errorText: {
+        fontFamily: fonts.bold,
+        fontSize: 16,
+        marginTop: spacing.md,
+        marginBottom: spacing.xl,
+        textAlign: 'center',
+    },
+    profileCard: {
+        padding: spacing.lg,
+        marginTop: -20,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: spacing.md,
+    },
+    avatarAndInfo: {
+        flexDirection: 'row',
+        flex: 1,
+        gap: spacing.md,
+    },
+    avatarSection: {
+        flexShrink: 0,
+    },
+    avatar: {
+        width: 70,
+        height: 70,
+        borderRadius: 35,
+        borderWidth: 3,
+        borderColor: staticColors.white,
+    },
+    avatarPlaceholder: {
+        width: 70,
+        height: 70,
+        borderRadius: 35,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 3,
+        borderColor: staticColors.white,
+    },
+    nameAndSpecialties: {
+        flex: 1,
+        gap: 4,
+    },
+    name: {
+        fontFamily: fonts.extraBold,
+        fontSize: 20,
+    },
+    specialtiesSubtitle: {
+        fontFamily: fonts.regular,
+        fontSize: 13,
+        lineHeight: 18,
+    },
+    locationRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: 2,
+    },
+    locationText: {
+        fontFamily: fonts.medium,
+        fontSize: 13,
+    },
+    favoriteButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: staticColors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: staticColors.borderLight,
+    },
+    statsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        paddingTop: spacing.md,
+        borderTopWidth: 1,
+        borderTopColor: staticColors.borderLight,
+    },
+    statBox: {
+        alignItems: 'center',
+        gap: 6,
+    },
+    statIconText: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    statDivider: {
+        width: 1,
+        backgroundColor: staticColors.borderLight,
+    },
+    statValue: {
+        fontFamily: fonts.extraBold,
+        fontSize: 18,
+    },
+    statLabel: {
+        fontFamily: fonts.medium,
+        fontSize: 11,
+        textAlign: 'center',
+    },
+    trustCard: {
+        marginTop: spacing.md,
+        padding: spacing.lg,
+    },
+    trustHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: spacing.sm,
+    },
+    trustTitle: {
+        fontFamily: fonts.bold,
+        fontSize: 16,
+    },
+    trustBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: '#10B981' + '15',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    trustBadgeText: {
+        fontFamily: fonts.bold,
+        fontSize: 11,
+        color: '#10B981',
+    },
+    trustScoreRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: spacing.sm,
+    },
+    trustPercentage: {
+        fontFamily: fonts.extraBold,
+        fontSize: 36,
+    },
+    progressBarContainer: {
+        height: 8,
+        backgroundColor: staticColors.borderLight,
+        borderRadius: 4,
+        overflow: 'hidden',
+    },
+    progressBar: {
+        width: '100%',
+        height: '100%',
+    },
+    servicesCard: {
+        marginTop: spacing.md,
+        padding: spacing.lg,
+    },
+    servicesList: {
+        gap: spacing.sm,
+    },
+    serviceItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    checkIcon: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    serviceText: {
+        fontFamily: fonts.medium,
+        fontSize: 15,
+    },
+    bioCard: {
+        marginTop: spacing.md,
+        padding: spacing.lg,
+    },
+    sectionTitle: {
+        fontFamily: fonts.bold,
+        fontSize: 16,
+        marginBottom: spacing.sm,
+    },
+    bioText: {
+        fontFamily: fonts.regular,
+        fontSize: 14,
+        lineHeight: 21,
+    },
+    statsCard: {
+        marginTop: spacing.md,
+        padding: spacing.lg,
+    },
+    statsGrid: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+    },
+    statItem: {
+        alignItems: 'center',
+        gap: 8,
+    },
+    statIconBox: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    actionButtons: {
+        marginTop: spacing.lg,
+        gap: spacing.sm,
+    },
+    actionButton: {
+        height: 56,
+    },
+});
