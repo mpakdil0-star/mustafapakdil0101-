@@ -80,10 +80,12 @@ export const register = async (data: RegisterData) => {
     if (phone) {
       const existingPhoneUser = allUsers.find((u: any) => u.phone === phone);
       if (existingPhoneUser) {
+        // Eğer telefon numarası silinmiş bir hesaba aitse, yeniden kayda izin ver
         if (existingPhoneUser.isActive === false) {
-          throw new ConflictError('Bu e-posta adresiyle silinmiş bir hesap var. Hesabınızı geri açmak için lütfen Giriş Yapın.');
+          console.log(`♻️ Phone ${phone} belongs to deleted account, allowing re-registration`);
+        } else {
+          throw new ConflictError('Bu telefon numarası zaten kullanımda.');
         }
-        throw new ConflictError('Bu telefon numarası zaten kullanımda.');
       }
     }
 
@@ -132,10 +134,16 @@ export const register = async (data: RegisterData) => {
   });
 
   if (existingUser) {
+    // Eğer silinmiş hesap varsa, yeniden kayda izin ver (veriler sıfırlanacak)
     if (!existingUser.isActive) {
-      throw new ConflictError('Bu e-posta adresiyle silinmiş bir hesap var. Hesabınızı geri açmak için lütfen Giriş Yapın.');
+      console.log(`♻️ DB: Allowing re-registration for deleted account ${email}`);
+      // Eski kullanıcıyı tamamen sil, yeni kayıt oluşturulsun
+      await prisma.user.delete({
+        where: { id: existingUser.id }
+      });
+    } else {
+      throw new ConflictError('User with this email or phone already exists');
     }
-    throw new ConflictError('User with this email or phone already exists');
   }
 
   // Hash password
