@@ -60,6 +60,7 @@ export default function JobDetailScreen() {
   const [acceptingBid, setAcceptingBid] = useState<{ id: string; electricianId: string; electricianName: string; amount: number; phone?: string } | null>(null);
   const [isAcceptingBid, setIsAcceptingBid] = useState(false);
   const [isBidAccepted, setIsBidAccepted] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false); // İlan iptal state'i
 
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -239,6 +240,34 @@ export default function JobDetailScreen() {
     } finally {
       setIsReviewSubmitting(false);
     }
+  };
+
+  // İlan İptal Fonksiyonu
+  const handleCancelJob = async () => {
+    showAlert(
+      'İlanı İptal Et',
+      'Bu ilanı iptal etmek istediğinizden emin misiniz? Teklif veren tüm ustalara bildirim gönderilecek.',
+      'confirm',
+      [
+        { text: 'İptal', onPress: () => { }, variant: 'ghost' },
+        {
+          text: 'Evet, İptal Et',
+          onPress: async () => {
+            setIsCancelling(true);
+            try {
+              await jobService.cancelJob(id);
+              dispatch(fetchJobById(id));
+              showAlert('Başarılı', 'İlan başarıyla iptal edildi. Teklif veren ustalara bildirim gönderildi.', 'success');
+            } catch (error: any) {
+              showAlert('Hata', error.message || 'İlan iptal edilemedi.', 'error');
+            } finally {
+              setIsCancelling(false);
+            }
+          },
+          variant: 'danger'
+        }
+      ]
+    );
   };
 
   // DEBUG: Log images
@@ -422,6 +451,26 @@ export default function JobDetailScreen() {
                 </Card>
               ))
             )}
+          </View>
+        )}
+
+        {/* İlan İptal Et Butonu - Sadece ilan sahibi ve iş başlamadıysa görünür */}
+        {isOwner && (jobData.status === 'OPEN' || jobData.status === 'BIDDING') && (
+          <View style={styles.cancelSection}>
+            <TouchableOpacity
+              style={[styles.cancelBtn, { borderColor: staticColors.error, backgroundColor: staticColors.error + '08' }]}
+              onPress={handleCancelJob}
+              disabled={isCancelling}
+            >
+              {isCancelling ? (
+                <ActivityIndicator size="small" color={staticColors.error} />
+              ) : (
+                <>
+                  <Ionicons name="close-circle" size={20} color={staticColors.error} />
+                  <Text style={[styles.cancelBtnText, { color: staticColors.error }]}>İlanı İptal Et</Text>
+                </>
+              )}
+            </TouchableOpacity>
           </View>
         )}
 
@@ -850,5 +899,25 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginLeft: 4,
     textTransform: 'uppercase',
+  },
+  // İlan İptal Et Butonu Stilleri
+  cancelSection: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.md,
+  },
+  cancelBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    gap: 8,
+  },
+  cancelBtnText: {
+    fontFamily: fonts.bold,
+    fontSize: 15,
   },
 });

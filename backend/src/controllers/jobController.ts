@@ -4,6 +4,7 @@ import { jobService } from '../services/jobService';
 import { AuthRequest } from '../middleware/auth';
 import { ValidationError } from '../utils/errors';
 import { mockStorage } from '../utils/mockStorage';
+import { bidStoreById } from './bidController';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -836,6 +837,23 @@ export const cancelJobController = async (
       // Save to disk
       saveMockJobs();
 
+      // 📢 Socket bildirimi: Teklif veren tüm ustalara ilan iptal edildi bildir
+      const io = req.app.get('io');
+      if (io) {
+        // Bu ilana ait tüm teklifleri bul
+        bidStoreById.forEach((bid: any) => {
+          if (bid.jobPostId === id && bid.electricianId) {
+            io.to(`user:${bid.electricianId}`).emit('notification', {
+              type: 'JOB_CANCELLED',
+              title: '🚫 İlan İptal Edildi',
+              body: `Teklif verdiğiniz ilan iptal edildi: ${mockJob.title}`,
+              data: { jobId: id }
+            });
+            console.log(`📢 Notification sent to electrician ${bid.electricianId} for cancelled job ${id}`);
+          }
+        });
+      }
+
       return res.json({
         success: true,
         data: { job: mockJob },
@@ -977,6 +995,18 @@ export const confirmJobCompleteController = async (
 
       // Save to disk
       saveMockJobs();
+
+      // 🎉 Socket bildirimi: Atanmış ustaya "Tebrikler, iş onaylandı!" bildir
+      const io = req.app.get('io');
+      if (io && mockJob.assignedElectricianId) {
+        io.to(`user:${mockJob.assignedElectricianId}`).emit('notification', {
+          type: 'JOB_COMPLETED',
+          title: 'Tebrikler! 🎉',
+          body: `İş onaylandı: ${mockJob.title}`,
+          data: { jobId: id }
+        });
+        console.log(`🎉 Job completion notification sent to electrician ${mockJob.assignedElectricianId}`);
+      }
 
       return res.json({
         success: true,

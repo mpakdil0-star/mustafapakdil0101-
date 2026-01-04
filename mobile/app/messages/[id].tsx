@@ -339,8 +339,8 @@ export default function ChatScreen() {
 
             <KeyboardAvoidingView
                 style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
                 <View style={[styles.securityBanner, { backgroundColor: staticColors.secondary + '10', borderBottomColor: staticColors.secondary + '20' }]}>
                     <Ionicons name="shield-checkmark" size={16} color={staticColors.secondary} />

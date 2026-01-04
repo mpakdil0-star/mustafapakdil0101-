@@ -124,5 +124,10 @@ export const jobService = {
     const response = await apiClient.post(`${API_ENDPOINTS.JOB_DETAIL(id)}/review`, data);
     return response.data.data;
   },
+
+  async cancelJob(id: string, reason?: string) {
+    const response = await apiClient.post(`${API_ENDPOINTS.JOB_DETAIL(id)}/cancel`, { reason });
+    return response.data.data;
+  },
 };
 
