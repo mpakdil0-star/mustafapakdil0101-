@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity, Modal, ImageBackground, Image, Platform, Dimensions, PanResponder, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity, Modal, ImageBackground, Image, Platform, Dimensions, PanResponder, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
@@ -26,6 +26,16 @@ export default function HomeScreen() {
   const { user, isAuthenticated, guestRole } = useAppSelector((state) => state.auth);
   const { unreadCount } = useAppSelector((state) => state.notifications);
   const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
+
+  // SAFETY CHECK: Prevent crash on reload when user is not yet loaded
+  if (isAuthenticated && !user) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ marginTop: 20, color: colors.textSecondary, fontFamily: fonts.medium }}>Yükleniyor...</Text>
+      </View>
+    );
+  }
 
   // Toast notification state
   const [toastVisible, setToastVisible] = useState(false);

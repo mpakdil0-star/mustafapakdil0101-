@@ -1321,7 +1321,13 @@ export const deleteAccount = async (req: Request, res: Response, next: NextFunct
         } catch (dbError: any) {
             console.warn('deleteAccount error:', dbError.message || dbError);
 
-            // Database bağlantı hatası - mock başarı döndür
+            // Database bağlantı hatası - mock başarı döndür (ve isActive=false yap)
+            console.warn('Database not connected, deactivating account in mock mode');
+
+            const { mockStorage } = require('../utils/mockStorage');
+            // Mock veride isActive=false olarak işaretle
+            mockStorage.updateProfile(userId, { isActive: false });
+
             res.status(200).json({
                 success: true,
                 message: 'Hesabınız başarıyla silindi (test modu).',

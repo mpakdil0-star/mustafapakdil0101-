@@ -14,6 +14,7 @@ import { authService } from '../services/authService';
 import { PremiumAlert } from '../components/common/PremiumAlert';
 import { useAppDispatch } from '../hooks/redux';
 import { addNotification, fetchNotifications } from '../store/slices/notificationSlice';
+import { getMe } from '../store/slices/authSlice';
 import { Alert } from 'react-native';
 
 // Prevent splash from auto-hiding
@@ -99,10 +100,11 @@ function RootLayoutNav() {
     runNavigationLogic();
   }, [isAuthenticated, segments, isNavigationReady, router]);
 
-  // Fetch initial notification count on login
+  // Fetch initial notification count and SYNC USER STATUS on login/app start
   useEffect(() => {
     if (isAuthenticated) {
       dispatch(fetchNotifications());
+      dispatch(getMe());
     }
   }, [isAuthenticated, dispatch]);
 
@@ -139,7 +141,7 @@ function RootLayoutNav() {
               {
                 text: 'Bildirimleri Aç',
                 variant: 'primary',
-                onPress: async () => {
+                onPress: () => {
                   setAlertConfig(prev => ({ ...prev, visible: false }));
                   await authService.registerPushToken();
                 }

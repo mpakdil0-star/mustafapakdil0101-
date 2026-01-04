@@ -243,9 +243,9 @@ export const login = async (data: LoginData) => {
       throw new UnauthorizedError('Invalid email or password');
     }
 
-    if (!user.isActive) {
-      throw new UnauthorizedError('Bu hesap silinmiş. Yeniden kayıt olmanız gerekiyor.');
-    }
+    // if (!user.isActive) {
+    //   throw new UnauthorizedError('Bu hesap silinmiş. Yeniden kayıt olmanız gerekiyor.');
+    // }
 
     if (user.isBanned) {
       if (user.banUntil && user.banUntil > new Date()) {
@@ -263,6 +263,14 @@ export const login = async (data: LoginData) => {
 
     if (!isPasswordValid) {
       throw new UnauthorizedError('Invalid email or password');
+    }
+
+    // Reactivate account if it was deleted
+    if (!user.isActive) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { isActive: true, deletedAt: null }
+      });
     }
 
     // Update last login
@@ -321,24 +329,17 @@ export const login = async (data: LoginData) => {
         throw new UnauthorizedError('Bu e-posta ile kayıtlı kullanıcı bulunamadı.');
       }
 
-      // Check if account is deleted
-      if (mockUser.isActive === false) {
-        throw new UnauthorizedError('Bu hesap silinmiş. Yeniden kayıt olmanız gerekiyor.');
-      }
+      // Check if account is deleted - but ALLOW login to reactivate it
+      // if (mockUser.isActive === false) { ... } -> Removed blocking check
 
       // Şifre kontrolü
       if (mockUser.passwordHash) {
-        // Try direct comparison first (for simple mock passwords like '123456')
-        // If that fails, try bcrypt comparison
         let isPasswordValid = mockUser.passwordHash === password;
 
         if (!isPasswordValid) {
           try {
             isPasswordValid = await comparePassword(password, mockUser.passwordHash);
-          } catch (ignore) {
-            // If hash format is invalid (e.g. it's "123456"), comparePassword throws. 
-            // We typically assume false, but we already checked equality above.
-          }
+          } catch (ignore) { }
         }
 
         if (!isPasswordValid) {
@@ -346,6 +347,12 @@ export const login = async (data: LoginData) => {
         }
       }
 
+      // If inactive but password correct, REACTIVATE account
+      if (mockUser.isActive === false) {
+        console.log(`Reactivating deleted account for user ${mockUser.email}`);
+        mockStorage.updateProfile(mockUser.id, { isActive: true });
+        mockUser.isActive = true;
+      }
 
       const tokens = generateTokens({
         id: mockUser.id,

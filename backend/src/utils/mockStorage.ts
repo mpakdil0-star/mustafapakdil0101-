@@ -16,6 +16,7 @@ interface MockUserStore {
         experienceYears: number;
         specialties: string[];
         isVerified?: boolean;
+        isActive?: boolean;
         verificationStatus?: string;
         documentType?: string;
         submittedAt?: string;
@@ -73,7 +74,8 @@ const initDemoAccounts = () => {
                 fullName: 'Demo Vatandaş',
                 phone: '05551234567',
                 email: 'demo@vatandas.com',
-                isVerified: true
+                isVerified: true,
+                isActive: true
             }
         },
         {
@@ -86,7 +88,8 @@ const initDemoAccounts = () => {
                 fullName: 'Demo Elektrikçi',
                 phone: '05559876543',
                 email: 'demo@usta.com',
-                isVerified: true
+                isVerified: true,
+                isActive: true
             }
         }
     ];
@@ -117,6 +120,7 @@ export const mockStorage = {
                 phone: '05551234567',
                 email: userId.includes('@') ? (userId.includes('mock-user-') ? userId.split('-').filter(p => p.includes('.')).join('.') || userId : userId) : 'mock@example.com',
                 isVerified: false,
+                isActive: true, // Default active
                 verificationStatus: undefined
             };
             saveToDisk();
@@ -131,6 +135,7 @@ export const mockStorage = {
         phone?: string,
         email?: string,
         isVerified?: boolean,
+        isActive?: boolean,
         profileImageUrl?: string,
         verificationStatus?: string | null,
         documentType?: string,
@@ -146,6 +151,7 @@ export const mockStorage = {
         if (data.phone !== undefined) store.phone = data.phone;
         if (data.email !== undefined) store.email = data.email;
         if (data.isVerified !== undefined) store.isVerified = data.isVerified;
+        if (data.isActive !== undefined) store.isActive = data.isActive;
         if (data.profileImageUrl !== undefined) store.profileImageUrl = data.profileImageUrl;
         if (data.verificationStatus !== undefined) store.verificationStatus = data.verificationStatus || undefined;
         if (data.documentType !== undefined) store.documentType = data.documentType;
@@ -180,6 +186,7 @@ export const mockStorage = {
             userType: userType,
             profileImageUrl: store.profileImageUrl || null,
             isVerified: store.isVerified || false,
+            isActive: store.isActive !== undefined ? store.isActive : true,
             verificationStatus: store.verificationStatus || null,
             documentType: store.documentType || null,
             submittedAt: store.submittedAt || null,
