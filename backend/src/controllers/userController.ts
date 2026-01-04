@@ -514,8 +514,13 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
             }
 
             // Hash new password and save
+            // IMPORTANT: Also reactivate account if it was marked as deleted
+            // User changing password = account should be active
             const newPasswordHash = await bcrypt.hash(newPassword, 10);
-            mockStorage.updateProfile(userId, { passwordHash: newPasswordHash });
+            mockStorage.updateProfile(userId, {
+                passwordHash: newPasswordHash,
+                isActive: true // Reactivate account on password change
+            });
 
             res.status(200).json({
                 success: true,

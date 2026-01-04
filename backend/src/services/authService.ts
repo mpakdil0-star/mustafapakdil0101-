@@ -102,6 +102,7 @@ export const register = async (data: RegisterData) => {
     };
 
     // Save to mock storage immediately
+    // IMPORTANT: Set isActive: true to reactivate deleted accounts
     mockStorage.updateProfile(user.id, {
       fullName: user.fullName,
       phone: user.phone,
@@ -109,7 +110,8 @@ export const register = async (data: RegisterData) => {
       isVerified: user.isVerified,
       passwordHash: await hashPassword(password),
       experienceYears: 0,
-      creditBalance: userType === UserType.ELECTRICIAN ? 5 : 0 // Bonus for new users
+      creditBalance: userType === UserType.ELECTRICIAN ? 5 : 0,
+      isActive: true // Hesabı aktif olarak işaretle (silinmiş hesaplar için kritik)
     });
 
     // Generate tokens
