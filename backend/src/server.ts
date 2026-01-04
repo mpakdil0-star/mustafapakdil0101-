@@ -33,6 +33,7 @@ export const notifyUser = (target: string, event: string, data: any) => {
 
 // Initialize Socket Server
 io = initializeSocketServer(httpServer);
+app.set('io', io);
 
 // Security middleware
 app.use(helmet({

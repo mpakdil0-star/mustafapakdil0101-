@@ -45,6 +45,8 @@ export interface Job {
   images: string[];
   assignedElectricianId?: string | null;
   acceptedBidId?: string | null;
+  cancellationReason?: string | null;
+  cancelledAt?: string | null;
   viewCount: number;
   bidCount: number;
   createdAt: string;

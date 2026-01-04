@@ -61,6 +61,8 @@ export default function JobDetailScreen() {
   const [isAcceptingBid, setIsAcceptingBid] = useState(false);
   const [isBidAccepted, setIsBidAccepted] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false); // İlan iptal state'i
+  const [isCancelModalVisible, setIsCancelModalVisible] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
 
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -242,32 +244,30 @@ export default function JobDetailScreen() {
     }
   };
 
-  // İlan İptal Fonksiyonu
-  const handleCancelJob = async () => {
-    showAlert(
-      'İlanı İptal Et',
-      'Bu ilanı iptal etmek istediğinizden emin misiniz? Teklif veren tüm ustalara bildirim gönderilecek.',
-      'confirm',
-      [
-        { text: 'İptal', onPress: () => { }, variant: 'ghost' },
-        {
-          text: 'Evet, İptal Et',
-          onPress: async () => {
-            setIsCancelling(true);
-            try {
-              await jobService.cancelJob(id);
-              dispatch(fetchJobById(id));
-              showAlert('Başarılı', 'İlan başarıyla iptal edildi. Teklif veren ustalara bildirim gönderildi.', 'success');
-            } catch (error: any) {
-              showAlert('Hata', error.message || 'İlan iptal edilemedi.', 'error');
-            } finally {
-              setIsCancelling(false);
-            }
-          },
-          variant: 'danger'
-        }
-      ]
-    );
+  // İlan İptal Fonksiyonu - Modalı Açar
+  const handleCancelJob = () => {
+    setCancelReason('');
+    setIsCancelModalVisible(true);
+  };
+
+  // İptal İşlemini Onayla ve Backend'e Gönder
+  const confirmCancellation = async () => {
+    if (!cancelReason.trim()) {
+      showAlert('Hata', 'Lütfen iptal nedenini belirtin.', 'error');
+      return;
+    }
+
+    setIsCancelling(true);
+    try {
+      await jobService.cancelJob(id, cancelReason);
+      setIsCancelModalVisible(false);
+      dispatch(fetchJobById(id));
+      showAlert('Başarılı', 'İlan başarıyla iptal edildi. Teklif veren ustalara bildirim gönderildi.', 'success');
+    } catch (error: any) {
+      showAlert('Hata', error.message || 'İlan iptal edilemedi.', 'error');
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   // DEBUG: Log images
@@ -383,6 +383,16 @@ export default function JobDetailScreen() {
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Açıklama</Text>
           <Text style={styles.description}>{jobData.description}</Text>
 
+          {jobData.status === 'CANCELLED' && jobData.cancellationReason && (
+            <View style={[styles.cancelReasonBox, { backgroundColor: staticColors.error + '10', borderColor: staticColors.error + '20' }]}>
+              <View style={styles.reasonHeader}>
+                <Ionicons name="alert-circle" size={16} color={staticColors.error} />
+                <Text style={[styles.reasonTitle, { color: staticColors.error }]}>İptal Nedeni</Text>
+              </View>
+              <Text style={[styles.reasonText, { color: staticColors.textSecondary }]}>{jobData.cancellationReason}</Text>
+            </View>
+          )}
+
           {jobData.images && jobData.images.length > 0 && (
             <View style={styles.imageSection}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Fotoğraflar</Text>
@@ -430,7 +440,7 @@ export default function JobDetailScreen() {
                   {bid.message && <Text style={styles.bidMessage}>"{bid.message}"</Text>}
 
                   <View style={styles.bidActions}>
-                    {bid.status === 'PENDING' && (
+                    {bid.status === 'PENDING' && jobData.status !== 'CANCELLED' && (
                       <Button
                         title="Teklifi Kabul Et"
                         onPress={() => {
@@ -784,6 +794,59 @@ export default function JobDetailScreen() {
         </View>
       </Modal>
 
+      {/* İlan İptal Modalı */}
+      <Modal visible={isCancelModalVisible} transparent={true} animationType="fade" onRequestClose={() => setIsCancelModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <LinearGradient
+            colors={[staticColors.error, '#991B1B']}
+            style={styles.cancelModalContainer}
+          >
+            <View style={styles.cancelModalHeader}>
+              <View style={styles.cancelIconCircle}>
+                <Ionicons name="close-circle" size={32} color={staticColors.error} />
+              </View>
+              <Text style={styles.cancelModalTitle}>İlanı İptal Et</Text>
+              <Text style={styles.cancelModalSubtitle}>İlanı iptal etmeden önce lütfen nedenini belirtin.</Text>
+            </View>
+
+            <View style={styles.cancelInputWrapper}>
+              <TextInput
+                style={styles.cancelTextInput}
+                placeholder="İptal nedenini yazınız..."
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                multiline
+                numberOfLines={4}
+                value={cancelReason}
+                onChangeText={setCancelReason}
+              />
+            </View>
+
+            <View style={styles.cancelModalBtnGroup}>
+              <TouchableOpacity
+                style={styles.cancelModalVazgecBtn}
+                onPress={() => setIsCancelModalVisible(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.cancelModalVazgecText}>Vazgeç</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.cancelModalConfirmBtn}
+                onPress={confirmCancellation}
+                disabled={isCancelling}
+                activeOpacity={0.8}
+              >
+                {isCancelling ? (
+                  <ActivityIndicator size="small" color={staticColors.error} />
+                ) : (
+                  <Text style={styles.cancelModalConfirmText}>İptal Et</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
+        </View>
+      </Modal>
+
       <PremiumAlert
         visible={alertConfig.visible}
         title={alertConfig.title}
@@ -919,5 +982,113 @@ const styles = StyleSheet.create({
   cancelBtnText: {
     fontFamily: fonts.bold,
     fontSize: 15,
+  },
+  cancelReasonBox: {
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  reasonHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  reasonTitle: {
+    fontSize: 12,
+    fontFamily: fonts.bold,
+    marginLeft: 6,
+    textTransform: 'uppercase',
+  },
+  reasonText: {
+    fontSize: 13,
+    fontFamily: fonts.medium,
+    lineHeight: 18,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
+  },
+  cancelModalContainer: {
+    width: '100%',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    elevation: 10
+  },
+  cancelModalHeader: {
+    alignItems: 'center',
+    marginBottom: 20
+  },
+  cancelIconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12
+  },
+  cancelModalTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontFamily: fonts.extraBold,
+    marginBottom: 8
+  },
+  cancelModalSubtitle: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 14,
+    fontFamily: fonts.medium,
+    textAlign: 'center'
+  },
+  cancelInputWrapper: {
+    width: '100%',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)'
+  },
+  cancelTextInput: {
+    color: '#fff',
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    minHeight: 100,
+    textAlignVertical: 'top'
+  },
+  cancelModalBtnGroup: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%'
+  },
+  cancelModalVazgecBtn: {
+    flex: 1,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  cancelModalVazgecText: {
+    color: '#fff',
+    fontFamily: fonts.bold,
+    fontSize: 15
+  },
+  cancelModalConfirmBtn: {
+    flex: 1,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  cancelModalConfirmText: {
+    color: staticColors.error,
+    fontFamily: fonts.extraBold,
+    fontSize: 15
   },
 });

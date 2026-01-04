@@ -5,6 +5,7 @@ import { AuthRequest } from '../middleware/auth';
 import { ValidationError } from '../utils/errors';
 import { mockStorage } from '../utils/mockStorage';
 import { bidStoreById } from './bidController';
+import { addMockNotification } from '../routes/notificationRoutes';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -837,22 +838,47 @@ export const cancelJobController = async (
       // Save to disk
       saveMockJobs();
 
-      // 📢 Socket bildirimi: Teklif veren tüm ustalara ilan iptal edildi bildir
-      const io = req.app.get('io');
-      if (io) {
-        // Bu ilana ait tüm teklifleri bul
-        bidStoreById.forEach((bid: any) => {
-          if (bid.jobPostId === id && bid.electricianId) {
-            io.to(`user:${bid.electricianId}`).emit('notification', {
-              type: 'JOB_CANCELLED',
-              title: '🚫 İlan İptal Edildi',
-              body: `Teklif verdiğiniz ilan iptal edildi: ${mockJob.title}`,
-              data: { jobId: id }
-            });
-            console.log(`📢 Notification sent to electrician ${bid.electricianId} for cancelled job ${id}`);
+      // 📢 Socket ve Kalıcı Bildirim: Teklif veren tüm ustalara ilan iptal edildi bildir
+      console.log(`🔍 [DEBUG] Processing notifications for cancelled job ${id}`);
+
+      // Bu ilana ait tüm teklifleri bul
+      bidStoreById.forEach((bid: any) => {
+        if (bid.jobPostId === id && bid.electricianId) {
+          // 💰 KREDİ İADESİ: Teklif veren tüm ustalara 1 kredi iade et
+          try {
+            const { mockStorage } = require('../utils/mockStorage');
+            mockStorage.addCredits(bid.electricianId, 1);
+            console.log(`💰 [MOCK REFUND] 1 Credit refunded to electrician ${bid.electricianId}`);
+          } catch (refundErr) {
+            console.error('❌ Failed to refund mock credit:', refundErr);
           }
-        });
-      }
+
+          const cancelMsg = `İlan iptal edildi: ${mockJob.title}. Teklif krediniz hesabınıza yüklenmiştir.${reason ? `\nSebep: ${reason}` : ''}`;
+          const notificationData = {
+            id: `notif-${Date.now()}-${bid.id}`,
+            type: 'JOB_CANCELLED',
+            title: '🚫 İlan İptal Edildi (Kredi İade)',
+            message: cancelMsg,
+            body: cancelMsg,
+            jobId: id,
+            relatedId: id,
+            isRead: false,
+            createdAt: new Date().toISOString()
+          };
+
+          // 1. Kalıcı bildirim merkezine ekle
+          addMockNotification(bid.electricianId, notificationData);
+
+          // 2. Anlık socket bildirimi gönder
+          const io = req.app.get('io');
+          if (io) {
+            io.to(`user:${bid.electricianId}`).emit('notification', notificationData);
+            console.log(`📢 Socket notification emitted to user:${bid.electricianId}`);
+          }
+
+          console.log(`📢 Notification processed for electrician ${bid.electricianId} for cancelled job ${id}`);
+        }
+      });
 
       return res.json({
         success: true,
@@ -996,16 +1022,31 @@ export const confirmJobCompleteController = async (
       // Save to disk
       saveMockJobs();
 
-      // 🎉 Socket bildirimi: Atanmış ustaya "Tebrikler, iş onaylandı!" bildir
-      const io = req.app.get('io');
-      if (io && mockJob.assignedElectricianId) {
-        io.to(`user:${mockJob.assignedElectricianId}`).emit('notification', {
+      // 🎉 Socket ve Kalıcı Bildirim: Atanmış ustaya "Tebrikler, iş onaylandı!" bildir
+      if (mockJob.assignedElectricianId) {
+        const notificationData = {
+          id: `notif-${Date.now()}-complete`,
           type: 'JOB_COMPLETED',
           title: 'Tebrikler! 🎉',
+          message: `İş tarafınızdan onaylandı: ${mockJob.title}`,
           body: `İş onaylandı: ${mockJob.title}`,
-          data: { jobId: id }
-        });
-        console.log(`🎉 Job completion notification sent to electrician ${mockJob.assignedElectricianId}`);
+          jobId: id,
+          relatedId: id,
+          isRead: false,
+          createdAt: new Date().toISOString()
+        };
+
+        // 1. Kalıcı bildirim merkezine ekle
+        addMockNotification(mockJob.assignedElectricianId, notificationData);
+
+        // 2. Anlık socket bildirimi gönder
+        const io = req.app.get('io');
+        if (io) {
+          io.to(`user:${mockJob.assignedElectricianId}`).emit('notification', notificationData);
+          console.log(`🎉 Socket completion notification emitted to user:${mockJob.assignedElectricianId}`);
+        }
+
+        console.log(`🎉 Job completion notification processed for electrician ${mockJob.assignedElectricianId}`);
       }
 
       return res.json({

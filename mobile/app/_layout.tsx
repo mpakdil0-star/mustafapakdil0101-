@@ -236,6 +236,30 @@ function RootLayoutNav() {
             }
           ]
         );
+      } else if (data.type === 'JOB_CANCELLED') {
+        // 💰 Kredi iadesi yapılmış olabilir, profili güncelle
+        dispatch(getMe() as any);
+
+        showAlert(
+          '🚫 İlan İptal Edildi',
+          data.body || data.message || 'Teklif verdiğiniz bir ilan iptal edildi. Krediniz iade edilmiştir.',
+          'warning',
+          [
+            { text: 'Tamam', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }
+          ]
+        );
+      } else if (data.type === 'JOB_COMPLETED') {
+        // İş bittiğinde de profil (puan vs) güncellensin
+        dispatch(getMe() as any);
+
+        showAlert(
+          '🎉 Tebrikler!',
+          data.body || 'İş tamamlandı ve onaylandı!',
+          'success',
+          [
+            { text: 'Harika!', variant: 'primary', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }
+          ]
+        );
       }
     });
 

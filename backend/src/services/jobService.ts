@@ -639,7 +639,9 @@ export const jobService = {
       where: { id: jobId },
       include: {
         bids: {
-          where: { status: 'ACCEPTED' },
+          where: {
+            status: { in: ['PENDING', 'ACCEPTED'] as any }
+          },
         },
       },
     });
@@ -658,6 +660,81 @@ export const jobService = {
 
     if (jobPost.status === JobStatus.COMPLETED || jobPost.status === JobStatus.CANCELLED) {
       throw new ValidationError('Bu ilan zaten tamamlanmış veya iptal edilmiş');
+    }
+
+    // 💰 KREDİ İADESİ VE BİLDİRİM (Database)
+    if (jobPost.bids && jobPost.bids.length > 0) {
+      for (const bid of jobPost.bids) {
+        try {
+          // İlgili ustanın profilini al (mevcut bakiyeyi bilmek için)
+          const profile = await prisma.electricianProfile.findUnique({
+            where: { userId: bid.electricianId }
+          });
+
+          if (profile) {
+            const currentBalance = Number(profile.creditBalance);
+            const newBalance = currentBalance + 1;
+
+            // 1. Krediyi iade et
+            await prisma.electricianProfile.update({
+              where: { userId: bid.electricianId },
+              data: { creditBalance: newBalance }
+            });
+
+            // 2. Transaksiyon kaydı oluştur
+            await prisma.credit.create({
+              data: {
+                userId: bid.electricianId,
+                amount: 1,
+                transactionType: 'REFUND' as any,
+                relatedId: bid.id,
+                description: `"${jobPost.title}" ilanı iptal edildiği için teklif kredisi iade edildi.`,
+                balanceAfter: newBalance
+              }
+            });
+
+            // 3. Bildirimleri Gönder
+            const cancelMsg = `İlan iptal edildi: ${jobPost.title}. Teklif krediniz hesabınıza yüklenmiştir.${reason ? `\nSebep: ${reason}` : ''}`;
+
+            // a. Socket Bildirimi
+            notifyUser(bid.electricianId, 'notification', {
+              type: 'JOB_CANCELLED',
+              jobId: jobId,
+              title: '🚫 İlan İptal Edildi (Kredi İade)',
+              message: cancelMsg
+            });
+
+            // b. DB Bildirimi
+            await prisma.notification.create({
+              data: {
+                userId: bid.electricianId,
+                type: 'JOB_CANCELLED',
+                title: 'İlan İptal Edildi (Kredi İade)',
+                message: cancelMsg,
+                relatedType: 'JOB',
+                relatedId: jobId,
+              }
+            });
+
+            // c. Push Bildirimi
+            const electrician = await prisma.user.findUnique({
+              where: { id: bid.electricianId },
+              select: { pushToken: true }
+            });
+
+            if (electrician?.pushToken) {
+              pushNotificationService.sendNotification({
+                to: electrician.pushToken,
+                title: 'İlan İptal Edildi',
+                body: `Teklif krediniz hesabınıza iade edilmiştir.`,
+                data: { jobId: jobId, type: 'JOB_CANCELLED' }
+              }).catch(err => console.error('Push error during cancel refund:', err));
+            }
+          }
+        } catch (refundErr) {
+          console.error(`❌ Failed to refund credit/notify electrician ${bid.electricianId}:`, refundErr);
+        }
+      }
     }
 
     const updatedJob = await prisma.jobPost.update({
