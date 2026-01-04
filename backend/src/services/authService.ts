@@ -244,7 +244,7 @@ export const login = async (data: LoginData) => {
     }
 
     if (!user.isActive) {
-      throw new UnauthorizedError('Account is deactivated');
+      throw new UnauthorizedError('Bu hesap silinmiş. Yeniden kayıt olmanız gerekiyor.');
     }
 
     if (user.isBanned) {
@@ -318,7 +318,12 @@ export const login = async (data: LoginData) => {
       const mockUser = allUsers.find((u: any) => u.email === email);
 
       if (!mockUser) {
-        throw new UnauthorizedError('Invalid email or password (Mock)');
+        throw new UnauthorizedError('Bu e-posta ile kayıtlı kullanıcı bulunamadı.');
+      }
+
+      // Check if account is deleted
+      if (mockUser.isActive === false) {
+        throw new UnauthorizedError('Bu hesap silinmiş. Yeniden kayıt olmanız gerekiyor.');
       }
 
       // Şifre kontrolü
@@ -337,9 +342,10 @@ export const login = async (data: LoginData) => {
         }
 
         if (!isPasswordValid) {
-          throw new UnauthorizedError('Invalid email or password (Mock)');
+          throw new UnauthorizedError('E-posta veya şifre hatalı.');
         }
       }
+
 
       const tokens = generateTokens({
         id: mockUser.id,

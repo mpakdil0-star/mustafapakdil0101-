@@ -44,23 +44,27 @@ const handleAuthError = (error: any, defaultMessage: string) => {
   const statusCode = error?.response?.status;
   const serverMessage = error?.response?.data?.error?.message || error?.response?.data?.message;
 
-  // Map status codes to user-friendly Turkish messages
+  // Debug log
+  console.log('🔍 Auth Error Debug:', { statusCode, serverMessage, fullError: error?.response?.data });
+
+  // PRIORITY 1: If server returned a Turkish message, use it directly
+  const turkishKeywords = ['zaten', 'hatalı', 'silinmiş', 'bulunamadı', 'gerekiyor', 'kayıtlı'];
+  if (serverMessage && turkishKeywords.some(keyword => serverMessage.includes(keyword))) {
+    return serverMessage;
+  }
+
+  // Map status codes to user-friendly Turkish messages (fallback)
   const errorMessages: Record<number, string> = {
     400: 'Girilen bilgilerde hata var. Lütfen kontrol edin.',
     401: 'E-posta veya şifre hatalı. Lütfen tekrar deneyin.',
     403: 'Bu işlem için yetkiniz bulunmuyor.',
     404: 'Kullanıcı bulunamadı.',
-    409: serverMessage || 'Bu e-posta veya telefon numarası zaten kayıtlı.',
+    409: 'Bu e-posta veya telefon numarası zaten kayıtlı.',
     422: 'Girilen bilgiler geçersiz. Lütfen kontrol edin.',
     429: 'Çok fazla deneme yaptınız. Lütfen biraz bekleyin.',
     500: 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.',
     503: 'Sunucu şu an erişilebilir değil. Lütfen daha sonra tekrar deneyin.',
   };
-
-  // Check if we have a Turkish message from the server
-  if (serverMessage && serverMessage.includes('zaten') || serverMessage?.includes('hatalı')) {
-    return serverMessage;
-  }
 
   // Return mapped message or default
   if (statusCode && errorMessages[statusCode]) {
@@ -79,6 +83,7 @@ const handleAuthError = (error: any, defaultMessage: string) => {
 
   return serverMessage || defaultMessage;
 };
+
 
 export const register = createAsyncThunk(
   'auth/register',

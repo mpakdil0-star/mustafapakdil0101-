@@ -59,13 +59,20 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // Routes
 app.use('/api/v1', routes);
 
-// Error handling
-app.use((req, res) => {
+// 404 handler
+app.use((req, res, next) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found'
+    error: {
+      message: 'Route not found'
+    }
   });
 });
+
+// Error handling middleware (must be last)
+import { errorHandler } from './middleware/errorHandler';
+app.use(errorHandler);
+
 
 const PORT = config.port || 3001;
 

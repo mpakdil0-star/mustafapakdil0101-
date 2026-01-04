@@ -316,6 +316,7 @@ export default function RegisterScreen() {
               <Input
                 label="Şifre"
                 placeholder="En az 6 karakter"
+                helperText="En az 6 karakter olmalıdır"
                 value={password}
                 onChangeText={(text: string) => {
                   setPassword(text);

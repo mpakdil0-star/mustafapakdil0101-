@@ -460,11 +460,50 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
                 throw dbError;
             }
 
-            // Database bağlantı hatası - mock başarı döndür (test için)
-            console.warn('Database not connected, simulating password change success');
+            // Database bağlantı hatası - mock mode'da şifre kontrolü yap
+            console.warn('Database not connected, checking password in mock mode');
+
+            const bcrypt = require('bcrypt');
+            const { mockStorage } = require('../utils/mockStorage');
+            const mockUser = mockStorage.get(userId);
+
+            if (!mockUser) {
+                return res.status(404).json({
+                    success: false,
+                    error: { message: 'Kullanıcı bulunamadı' },
+                });
+            }
+
+            // Verify current password
+            let isPasswordValid = false;
+            if (mockUser.passwordHash) {
+                // Try direct comparison first (for simple passwords)
+                isPasswordValid = mockUser.passwordHash === currentPassword;
+
+                // If failed, try bcrypt comparison
+                if (!isPasswordValid) {
+                    try {
+                        isPasswordValid = await bcrypt.compare(currentPassword, mockUser.passwordHash);
+                    } catch (e) {
+                        // Hash format invalid, already checked equality above
+                    }
+                }
+            }
+
+            if (!isPasswordValid) {
+                return res.status(400).json({
+                    success: false,
+                    error: { message: 'Mevcut şifre yanlış' },
+                });
+            }
+
+            // Hash new password and save
+            const newPasswordHash = await bcrypt.hash(newPassword, 10);
+            mockStorage.updateProfile(userId, { passwordHash: newPasswordHash });
+
             res.status(200).json({
                 success: true,
-                message: 'Şifre başarıyla güncellendi (test modu)',
+                message: 'Şifre başarıyla güncellendi',
             });
         }
     } catch (error: any) {
@@ -477,6 +516,7 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
         next(error);
     }
 };
+
 
 // Update Profile
 export const updateProfile = async (req: Request, res: Response, next: NextFunction) => {

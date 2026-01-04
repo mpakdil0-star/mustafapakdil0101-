@@ -68,12 +68,22 @@ export default function SecurityScreen() {
             setNewPassword('');
             setConfirmPassword('');
         } catch (error: any) {
-            console.error('Change password error:', error);
+            // Error is handled via UI alert below
             const message = error.response?.data?.error?.message || 'Şifre değiştirilemedi.';
-            // Mock success for testing
-            showAlert('Başarılı', 'Şifreniz başarıyla değiştirildi (Test Modu).', 'success', [
-                { text: 'Tamam', onPress: () => router.back() }
-            ]);
+
+            // Handle 401 Unauthorized inside Security Screen specifically
+            if (error.response?.status === 401) {
+                showAlert('Oturum Süresi Doldu', 'Güvenliğiniz için lütfen tekrar giriş yapın.', 'error', [
+                    {
+                        text: 'Giriş Yap', onPress: () => {
+                            dispatch(logout());
+                            router.replace('/(auth)/login');
+                        }
+                    }
+                ]);
+            } else {
+                showAlert('Hata', message, 'error');
+            }
         } finally {
             setLoading(false);
         }

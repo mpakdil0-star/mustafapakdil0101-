@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   TextInput,
@@ -8,7 +8,9 @@ import {
   StyleProp,
   ViewStyle,
   TextStyle,
+  TouchableOpacity,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors as staticColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
@@ -38,6 +40,17 @@ export const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   const colors = useAppColors();
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+  // Check if this input is intended to be secure
+  const isSecureInput = props.secureTextEntry === true;
+
+  // Determine if we should show the toggle icon (only if no custom rightIcon is provided)
+  const showPasswordToggle = isSecureInput && !rightIcon;
+
+  // Determine the actual secureTextEntry value based on state
+  const secureTextEntry = isSecureInput ? !isPasswordVisible : props.secureTextEntry;
+
   return (
     <View style={[styles.container, containerStyle]}>
       {label && <Text style={[styles.label, { color: colors.text }, labelStyle]}>{label}</Text>}
@@ -56,13 +69,26 @@ export const Input: React.FC<InputProps> = ({
             styles.input,
             { color: colors.text },
             leftIcon ? styles.inputWithLeftIcon : null,
-            rightIcon ? styles.inputWithRightIcon : null,
+            (rightIcon || showPasswordToggle) ? styles.inputWithRightIcon : null,
             style,
           ]}
           placeholderTextColor={colors.textLight}
           {...props}
+          secureTextEntry={secureTextEntry}
         />
-        {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
+        {(rightIcon || showPasswordToggle) && (
+          <View style={styles.rightIcon}>
+            {rightIcon || (
+              <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons
+                  name={isPasswordVisible ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color={colors.textLight}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </View>
       {(error || helperText) && (
         <Text style={[styles.helperText, { color: colors.textSecondary }, error ? styles.errorText : null]}>
