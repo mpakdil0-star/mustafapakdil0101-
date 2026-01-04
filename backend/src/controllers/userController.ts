@@ -10,6 +10,95 @@ import pushNotificationService from '../services/pushNotificationService';
 import { calculateDistance, getBoundingBox } from '../utils/geo';
 import { mockStorage } from '../utils/mockStorage';
 
+// Helper to serve mock electricians
+function serveMockResponse(req: Request, res: Response, city: any, latNum: any, lngNum: any) {
+    // Serve mock data
+    let mockElectricians: any[] = [
+        {
+            id: 'mock-elec-1',
+            fullName: 'Ahmet Yılmaz',
+            profileImageUrl: null,
+            isVerified: true,
+            electricianProfile: {
+                specialties: ['Tesisat', 'Arıza'],
+                ratingAverage: 4.8,
+                totalReviews: 124,
+                experienceYears: 20,
+                isAvailable: true
+            },
+            locations: [{ city: 'İstanbul', district: 'Kadıköy', latitude: 40.9901, longitude: 29.0234, isDefault: true }]
+        },
+        {
+            id: 'mock-elec-2',
+            fullName: 'Mehmet Demir',
+            profileImageUrl: null,
+            isVerified: true,
+            electricianProfile: {
+                specialties: ['Aydınlatma'],
+                ratingAverage: 4.5,
+                totalReviews: 89,
+                experienceYears: 12,
+                isAvailable: true
+            },
+            locations: [{ city: 'İstanbul', district: 'Beşiktaş', latitude: 41.0422, longitude: 29.0083, isDefault: true }]
+        },
+        {
+            id: 'mock-elec-adana-1',
+            fullName: 'Mustafa Yıldız',
+            profileImageUrl: null,
+            isVerified: true,
+            electricianProfile: {
+                specialties: ['Tesisat', 'Klima Elektriği'],
+                ratingAverage: 4.9,
+                totalReviews: 42,
+                experienceYears: 15,
+                isAvailable: true
+            },
+            locations: [{ city: 'Adana', district: 'Seyhan', latitude: 36.9914, longitude: 35.3308, isDefault: true }]
+        }
+    ];
+
+    // Filter mocks by city if requested
+    if (city) {
+        mockElectricians = mockElectricians.filter(e =>
+            e.locations.some((l: any) => l.city.toLowerCase() === String(city).toLowerCase())
+        );
+    }
+
+    // If current user is a mock electrician, add them to the list so they can see their own updates
+    const currentUserId = (req as any).user?.id;
+    if (currentUserId && currentUserId.startsWith('mock-')) {
+        const mockData = mockStorage.get(currentUserId);
+        if ((req as any).user?.userType === 'ELECTRICIAN') {
+            mockElectricians.push({
+                id: currentUserId,
+                fullName: mockData.fullName || 'Benim Profilim (Test)',
+                profileImageUrl: mockData.profileImageUrl || null,
+                isVerified: mockData.isVerified || false,
+                electricianProfile: {
+                    specialties: mockData.specialties.length > 0 ? mockData.specialties : ['Genel Elektrik'],
+                    ratingAverage: 5.0,
+                    totalReviews: 0,
+                    experienceYears: mockData.experienceYears || 0,
+                    isAvailable: true
+                },
+                locations: [{
+                    city: String(city || 'İstanbul'),
+                    district: 'Merkez',
+                    latitude: latNum || (city === 'Adana' ? 37.0 : 41.0082),
+                    longitude: lngNum || (city === 'Adana' ? 35.32 : 28.9784),
+                    isDefault: true
+                }]
+            });
+        }
+    }
+
+    return res.status(200).json({
+        success: true,
+        data: mockElectricians
+    });
+}
+
 // Multer-based upload (for FormData)
 export const uploadAvatar = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -690,120 +779,64 @@ export const getElectricians = async (req: Request, res: Response, next: NextFun
 
         if (!isDatabaseAvailable) {
             // Serve mock data
-            const mockElectricians = [
-                {
-                    id: 'mock-elec-1',
-                    fullName: 'Ahmet Yılmaz',
-                    profileImageUrl: null,
-                    isVerified: true,
-                    electricianProfile: {
-                        specialties: ['Tesisat', 'Arıza'],
-                        ratingAverage: 4.8,
-                        totalReviews: 124,
-                        experienceYears: 20
-                    },
-                    locations: [{ city: 'İstanbul', district: 'Kadıköy', latitude: 40.9901, longitude: 29.0234, isDefault: true }]
-                },
-                {
-                    id: 'mock-elec-2',
-                    fullName: 'Mehmet Demir',
-                    profileImageUrl: null,
-                    isVerified: true,
-                    electricianProfile: {
-                        specialties: ['Aydınlatma'],
-                        ratingAverage: 4.5,
-                        totalReviews: 89,
-                        experienceYears: 12
-                    },
-                    locations: [{ city: 'İstanbul', district: 'Beşiktaş', latitude: 41.0422, longitude: 29.0083, isDefault: true }]
-                }
-            ];
-
-            // If current user is a mock electrician, add them to the list so they can see their own updates
-            const currentUserId = (req as any).user?.id;
-            if (currentUserId && currentUserId.startsWith('mock-')) {
-                const mockData = mockStorage.get(currentUserId);
-                // Only add if they are an electrician (checking if they have bio or specialties usually means they filled it)
-                // Or check userType if available in req.user
-                if ((req as any).user?.userType === 'ELECTRICIAN') {
-                    mockElectricians.push({
-                        id: currentUserId,
-                        fullName: mockData.fullName || 'Benim Profilim (Test)',
-                        profileImageUrl: null,
-                        isVerified: mockData.isVerified || false,
-                        electricianProfile: {
-                            specialties: mockData.specialties.length > 0 ? mockData.specialties : ['Genel Elektrik'],
-                            ratingAverage: 5.0,
-                            totalReviews: 0,
-                            experienceYears: mockData.experienceYears || 0
-                        },
-                        // Place them at the requested lat/lng or istanbul center
-                        locations: [{
-                            city: 'İstanbul',
-                            district: 'Merkez',
-                            latitude: latNum || 41.0082,
-                            longitude: lngNum || 28.9784,
-                            isDefault: true
-                        }]
-                    });
-                }
-            }
-
-            return res.status(200).json({
-                success: true,
-                data: mockElectricians
-            });
+            return serveMockResponse(req, res, city, latNum, lngNum);
         }
 
-        let results = await prisma.user.findMany({
-            where: {
-                userType: 'ELECTRICIAN',
-                fullName: query ? { contains: String(query), mode: 'insensitive' } : undefined,
-                electricianProfile: {
-                    specialties: specialty ? { has: String(specialty) } : undefined
+        let results;
+        try {
+            results = await prisma.user.findMany({
+                where: {
+                    userType: 'ELECTRICIAN',
+                    fullName: query ? { contains: String(query), mode: 'insensitive' } : undefined,
+                    electricianProfile: {
+                        specialties: specialty ? { has: String(specialty) } : undefined
+                    },
+                    locations: locationFilter
                 },
-                locations: locationFilter
-            },
-            select: {
-                id: true,
-                fullName: true,
-                profileImageUrl: true,
-                isVerified: true,
-                electricianProfile: {
-                    select: {
-                        specialties: true,
-                        ratingAverage: true,
-                        totalReviews: true,
-                        experienceYears: true,
-                        bio: true,
-                        verificationStatus: true,
-                        isAvailable: true
-                    }
-                },
-                locations: {
-                    select: {
-                        id: true,
-                        city: true,
-                        district: true,
-                        latitude: true,
-                        longitude: true,
-                        isDefault: true
-                    }
-                },
-                reviewsReceived: {
-                    take: 1,
-                    orderBy: { createdAt: 'desc' },
-                    select: {
-                        comment: true,
-                        reviewer: {
-                            select: {
-                                fullName: true
+                select: {
+                    id: true,
+                    fullName: true,
+                    profileImageUrl: true,
+                    isVerified: true,
+                    electricianProfile: {
+                        select: {
+                            specialties: true,
+                            ratingAverage: true,
+                            totalReviews: true,
+                            experienceYears: true,
+                            bio: true,
+                            verificationStatus: true,
+                            isAvailable: true
+                        }
+                    },
+                    locations: {
+                        select: {
+                            id: true,
+                            city: true,
+                            district: true,
+                            latitude: true,
+                            longitude: true,
+                            isDefault: true
+                        }
+                    },
+                    reviewsReceived: {
+                        take: 1,
+                        orderBy: { createdAt: 'desc' },
+                        select: {
+                            comment: true,
+                            reviewer: {
+                                select: {
+                                    fullName: true
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
+        } catch (dbError: any) {
+            console.warn('Database error in getElectricians, falling back to mock:', dbError.message);
+            return serveMockResponse(req, res, city, latNum, lngNum);
+        }
 
         // Add distance calculation if coordinates were provided
         if (latNum && lngNum) {
@@ -1258,3 +1291,5 @@ export const deleteAccount = async (req: Request, res: Response, next: NextFunct
         next(error);
     }
 };
+
+

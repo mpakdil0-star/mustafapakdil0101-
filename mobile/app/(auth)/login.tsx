@@ -283,6 +283,15 @@ export default function LoginScreen() {
                   placeholderTextColor="rgba(255,255,255,0.45)"
                 />
 
+                <TouchableOpacity
+                  onPress={() => router.push('/(auth)/forgot-password')}
+                  style={{ alignSelf: 'flex-end', marginBottom: 20, marginTop: -10 }}
+                >
+                  <Text style={{ color: 'rgba(255,255,255,0.7)', fontFamily: fonts.medium, fontSize: 13 }}>
+                    Şifremi Unuttum?
+                  </Text>
+                </TouchableOpacity>
+
                 {error && (
                   <View style={styles.errorContainer}>
                     <Ionicons name="alert-circle" size={16} color={colors.error} />

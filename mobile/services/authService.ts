@@ -189,5 +189,25 @@ export const authService = {
       console.error('Push Notification Registration Error:', error);
     }
   },
+
+  async forgotPassword(email: string) {
+    try {
+      const response = await apiClient.post('/auth/forgot-password', { email });
+      return response.data;
+    } catch (error: any) {
+      const message = error.response?.data?.error?.message || error.message || 'Hata oluştu';
+      throw new Error(message);
+    }
+  },
+
+  async resetPassword(data: any) {
+    try {
+      const response = await apiClient.post('/auth/reset-password', data);
+      return response.data;
+    } catch (error: any) {
+      const message = error.response?.data?.error?.message || error.message || 'Hata oluştu';
+      throw new Error(message);
+    }
+  },
 };
 

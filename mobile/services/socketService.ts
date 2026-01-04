@@ -59,6 +59,8 @@ class SocketService {
     private readHandlers: Set<ReadHandler> = new Set();
     private notificationHandlers: Set<NotificationHandler> = new Set();
     private bidNotificationHandlers: Set<BidNotificationHandler> = new Set();
+    private jobStatusHandlers: Set<NotificationHandler> = new Set();
+    private reviewHandlers: Set<NotificationHandler> = new Set();
 
     async connect(): Promise<boolean> {
         // Eğer zaten bağlıysa tekrar deneme
@@ -184,6 +186,18 @@ class SocketService {
             console.log('❌ Bid rejected notification:', data);
             this.bidNotificationHandlers.forEach(handler => handler(data));
         });
+
+        // İş durumu güncelleme eventi
+        this.socket.on('job_status_updated', (data: any) => {
+            console.log('🔄 Job status updated:', data);
+            this.jobStatusHandlers.forEach(handler => handler(data));
+        });
+
+        // Yeni değerlendirme eventi
+        this.socket.on('new_review', (data: any) => {
+            console.log('⭐ New review received:', data);
+            this.reviewHandlers.forEach(handler => handler(data));
+        });
     }
 
     disconnect() {
@@ -270,6 +284,16 @@ class SocketService {
     onBidNotification(handler: BidNotificationHandler) {
         this.bidNotificationHandlers.add(handler);
         return () => this.bidNotificationHandlers.delete(handler);
+    }
+
+    onJobStatusUpdate(handler: NotificationHandler) {
+        this.jobStatusHandlers.add(handler);
+        return () => this.jobStatusHandlers.delete(handler);
+    }
+
+    onNewReview(handler: NotificationHandler) {
+        this.reviewHandlers.add(handler);
+        return () => this.reviewHandlers.delete(handler);
     }
 
     getConnectionStatus() {

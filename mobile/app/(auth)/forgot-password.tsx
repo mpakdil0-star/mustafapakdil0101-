@@ -91,7 +91,7 @@ export default function ForgotPasswordScreen() {
         setIsLoading(true);
         setError(null);
         try {
-            await authService.resetPassword(email, code, newPassword);
+            await authService.resetPassword({ email, code, newPassword });
 
             showAlert(
                 'Başarılı',

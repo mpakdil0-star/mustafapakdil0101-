@@ -173,13 +173,14 @@ export const bidService = {
 
         if (citizen) {
           // 1. Send real-time socket notification
-          notifyUser(citizen.id, 'notification', {
-            type: 'new_bid',
+          notifyUser(citizen.id, 'bid_received', {
+            type: 'bid_received',
             jobId: jobPostId,
             jobTitle: jobPost.title,
             bidId: bid.id,
             amount: bid.amount,
-            electricianName: bid.electrician.fullName
+            electricianName: bid.electrician.fullName,
+            message: `"${jobPost.title}" ilanınız için ${bid.electrician.fullName} tarafından ${bid.amount}₺ tutarında bir teklif verildi.`
           });
 
           // 2. Save Notification to DB
@@ -556,6 +557,51 @@ export const bidService = {
       },
     });
 
+    // Notify electrician that their bid was accepted
+    try {
+      const electrician = await prisma.user.findUnique({
+        where: { id: bid.electricianId },
+        select: { id: true, pushToken: true }
+      });
+
+      if (electrician) {
+        // 1. Socket notification
+        notifyUser(electrician.id, 'bid_accepted', {
+          type: 'bid_accepted',
+          jobId: bid.jobPostId,
+          jobTitle: bid.jobPost.title,
+          bidId: bid.id,
+          message: `Tebrikler! "${bid.jobPost.title}" ilanına verdiğiniz teklif kabul edildi. İşlemleri başlatmak için dokunun.`
+        });
+
+        // 2. DB notification
+        if (isDatabaseAvailable) {
+          await prisma.notification.create({
+            data: {
+              userId: electrician.id,
+              type: 'bid_accepted',
+              title: 'Teklifiniz Kabul Edildi! 🎉',
+              message: `"${bid.jobPost.title}" ilanı için verdiğiniz teklif vatandaş tarafından onaylandı. İş detaylarına giderek iletişime geçebilirsiniz.`,
+              relatedType: 'JOB',
+              relatedId: bid.jobPostId,
+            }
+          });
+        }
+
+        // 3. Push notification
+        if (electrician.pushToken) {
+          pushNotificationService.sendNotification({
+            to: electrician.pushToken,
+            title: 'Teklifiniz Kabul Edildi! 🎉',
+            body: `"${bid.jobPost.title}" ilanına verdiğiniz teklif kabul edildi. Hemen iletişime geçin.`,
+            data: { jobId: bid.jobPostId, type: 'bid_accepted' }
+          }).catch(err => console.error('Push error:', err));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to notify electrician about accepted bid:', error);
+    }
+
     return acceptedBid;
   },
 
@@ -586,6 +632,33 @@ export const bidService = {
         rejectedAt: new Date(),
       },
     });
+
+    // Notify electrician that their bid was rejected
+    try {
+      // 1. Socket notification
+      notifyUser(bid.electricianId, 'bid_rejected', {
+        type: 'bid_rejected',
+        jobId: bid.jobPostId,
+        jobTitle: bid.jobPost.title,
+        message: `Maalesef "${bid.jobPost.title}" ilanı için verdiğiniz teklif reddedildi.`
+      });
+
+      // 2. DB notification
+      if (isDatabaseAvailable) {
+        await prisma.notification.create({
+          data: {
+            userId: bid.electricianId,
+            type: 'bid_rejected',
+            title: 'Teklif Reddedildi',
+            message: `"${bid.jobPost.title}" ilanı için verdiğiniz teklif vatandaş tarafından reddedildi. Diğer ilanlara göz atmaya devam edebilirsiniz.`,
+            relatedType: 'JOB',
+            relatedId: bid.jobPostId,
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to notify electrician about rejected bid:', error);
+    }
 
     return rejectedBid;
   },

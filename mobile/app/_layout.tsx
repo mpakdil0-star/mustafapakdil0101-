@@ -12,6 +12,8 @@ import { fontFiles } from '../constants/typography';
 import { socketService } from '../services/socketService';
 import { authService } from '../services/authService';
 import { PremiumAlert } from '../components/common/PremiumAlert';
+import { useAppDispatch } from '../hooks/redux';
+import { addNotification, fetchNotifications } from '../store/slices/notificationSlice';
 import { Alert } from 'react-native';
 
 // Prevent splash from auto-hiding
@@ -20,6 +22,7 @@ SplashScreen.preventAutoHideAsync();
 function RootLayoutNav() {
   const router = useRouter();
   const segments = useSegments();
+  const dispatch = useAppDispatch();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [isNavigationReady, setIsNavigationReady] = useState(false);
 
@@ -95,6 +98,13 @@ function RootLayoutNav() {
 
     runNavigationLogic();
   }, [isAuthenticated, segments, isNavigationReady, router]);
+
+  // Fetch initial notification count on login
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchNotifications());
+    }
+  }, [isAuthenticated, dispatch]);
 
   // Global Socket Notification Listener
   useEffect(() => {
@@ -178,6 +188,17 @@ function RootLayoutNav() {
     const unsubscribe = socketService.onNotification((data: any) => {
       console.log('🔔 Global Notification received:', data);
 
+      // Add to Redux store for the notification center
+      dispatch(addNotification({
+        id: data.id || `notif-${Date.now()}`,
+        type: data.type,
+        title: data.title || (data.type === 'new_job_available' ? 'Yeni İş İlanı!' : 'Bildirim'),
+        message: data.message || `${data.locationPreview || ''} yeni bir ilan açıldı`,
+        isRead: false,
+        relatedId: data.jobId || data.conversationId,
+        createdAt: new Date().toISOString()
+      }));
+
       if (data.type === 'new_job_available') {
         showAlert(
           '🔔 Yeni İş İlanı!',
@@ -219,6 +240,17 @@ function RootLayoutNav() {
     // Bid notification listener - for citizens to see new bids
     const unsubscribeBids = socketService.onBidNotification((data: any) => {
       console.log('📢 Bid Notification received:', data);
+
+      // Add to Redux store
+      dispatch(addNotification({
+        id: data.id || `bid-notif-${Date.now()}`,
+        type: data.type,
+        title: data.type === 'bid_received' ? 'Yeni Teklif!' : (data.type === 'bid_accepted' ? 'Teklif Kabul Edildi!' : 'Teklif Reddedildi'),
+        message: data.message || (data.type === 'bid_received' ? `"${data.jobTitle}" ilanınıza teklif verildi.` : `"${data.jobTitle}" ilanındaki teklifiniz güncellendi.`),
+        isRead: false,
+        relatedId: data.jobPostId || data.jobId,
+        createdAt: new Date().toISOString()
+      }));
 
       if (data.type === 'bid_received') {
         showAlert(
@@ -263,9 +295,45 @@ function RootLayoutNav() {
       }
     });
 
+    const unsubscribeStatus = socketService.onJobStatusUpdate((data: any) => {
+      console.log('🔄 Job Status Notification received:', data);
+      dispatch(addNotification({
+        id: data.id || `status-notif-${Date.now()}`,
+        type: data.type,
+        title: data.title,
+        message: data.message,
+        isRead: false,
+        relatedId: data.jobId,
+        createdAt: new Date().toISOString()
+      }));
+
+      showAlert(data.title, data.message, 'info', [
+        { text: 'Tamam', variant: 'primary', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }
+      ]);
+    });
+
+    const unsubscribeReview = socketService.onNewReview((data: any) => {
+      console.log('⭐ Review Notification received:', data);
+      dispatch(addNotification({
+        id: data.id || `review-notif-${Date.now()}`,
+        type: data.type,
+        title: data.title,
+        message: data.message,
+        isRead: false,
+        relatedId: data.jobId,
+        createdAt: new Date().toISOString()
+      }));
+
+      showAlert(data.title, data.message, 'success', [
+        { text: 'Harika!', variant: 'primary', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }
+      ]);
+    });
+
     return () => {
       unsubscribe();
       unsubscribeBids();
+      unsubscribeStatus();
+      unsubscribeReview();
     };
   }, [isAuthenticated, segments]);
 

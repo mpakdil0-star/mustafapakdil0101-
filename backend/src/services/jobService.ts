@@ -197,9 +197,11 @@ export const jobService = {
           title: job.title,
           category: job.category,
           urgencyLevel: job.urgencyLevel,
-          locationPreview: `${district}, ${city}`
+          locationPreview: `${district}, ${city}`,
+          message: `Bölgenizde yeni bir iş ilanı yayınlandı: ${job.title}`
         });
 
+        // 2. Save to database if available
         if (isDatabaseAvailable) {
           prisma.notification.create({
             data: {
@@ -724,7 +726,7 @@ export const jobService = {
     });
 
     // 1. Vatandaşa Gerçek Zamanlı Socket Bildirimi
-    notifyUser(updatedJob.citizenId, 'notification', {
+    notifyUser(updatedJob.citizenId, 'job_status_updated', {
       type: 'job_complete_request',
       jobId: updatedJob.id,
       title: 'İş Tamamlandı mı?',
@@ -795,7 +797,7 @@ export const jobService = {
     // Elektrikçiye Bildirim Gönder (assignedElectricianId üzerinden)
     if (updatedJob.assignedElectricianId) {
       // 1. Socket Bildirimi
-      notifyUser(updatedJob.assignedElectricianId, 'notification', {
+      notifyUser(updatedJob.assignedElectricianId, 'job_status_updated', {
         type: 'job_confirmed',
         jobId: updatedJob.id,
         title: 'İş Onaylandı! 🎉',
@@ -897,6 +899,34 @@ export const jobService = {
         totalReviews: allReviews.length,
       },
     });
+
+    // Notify electrician about new review
+    try {
+      // 1. Socket notification
+      notifyUser(electricianId, 'new_review', {
+        type: 'new_review',
+        jobId: jobId,
+        rating: data.rating,
+        title: 'Yeni Değerlendirme!',
+        message: `"${jobPost.title}" ilanı için ${data.rating} yıldızlı bir değerlendirme aldınız.`
+      });
+
+      // 2. DB notification
+      if (isDatabaseAvailable) {
+        await prisma.notification.create({
+          data: {
+            userId: electricianId,
+            type: 'new_review',
+            title: 'Yeni Değerlendirme Alındı! ⭐',
+            message: `"${jobPost.title}" ilanı için ${data.rating} yıldızlı bir değerlendirme aldınız. Profil puanınız güncellendi.`,
+            relatedType: 'JOB',
+            relatedId: jobId,
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to notify electrician about new review:', error);
+    }
 
     return review;
   },

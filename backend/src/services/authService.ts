@@ -60,6 +60,29 @@ export const register = async (data: RegisterData) => {
     const { mockStorage } = require('../utils/mockStorage');
     const existingMockId = `mock-user-${email.replace(/[@.]/g, '-')}-${userType}`;
 
+    // Check for duplicates in mock mode
+    const allUsers = mockStorage.getAllUsers();
+    const existingEmailUser = allUsers.find((u: any) => u.email === email);
+
+    if (existingEmailUser) {
+      console.log(`🔍 Debug Register: Found existing user ${email}. isActive: ${existingEmailUser.isActive}, Type: ${typeof existingEmailUser.isActive}`);
+
+      if (existingEmailUser.isActive === false) {
+        throw new ConflictError('Bu e-posta adresiyle silinmiş bir hesap var. Hesabınızı geri açmak için lütfen Giriş Yapın.');
+      }
+      throw new ConflictError('Bu e-posta adresi zaten kullanımda.');
+    }
+
+    if (phone) {
+      const existingPhoneUser = allUsers.find((u: any) => u.phone === phone);
+      if (existingPhoneUser) {
+        if (existingPhoneUser.isActive === false) {
+          throw new ConflictError('Bu e-posta adresiyle silinmiş bir hesap var. Hesabınızı geri açmak için lütfen Giriş Yapın.');
+        }
+        throw new ConflictError('Bu telefon numarası zaten kullanımda.');
+      }
+    }
+
     // Create new mock user with REAL data provided
     const user = {
       id: existingMockId,
@@ -105,6 +128,9 @@ export const register = async (data: RegisterData) => {
   });
 
   if (existingUser) {
+    if (!existingUser.isActive) {
+      throw new ConflictError('Bu e-posta adresiyle silinmiş bir hesap var. Hesabınızı geri açmak için lütfen Giriş Yapın.');
+    }
     throw new ConflictError('User with this email or phone already exists');
   }
 
@@ -202,69 +228,129 @@ export const register = async (data: RegisterData) => {
 export const login = async (data: LoginData) => {
   const { email, password } = data;
 
-  // Find user
-  const user = await prisma.user.findUnique({
-    where: { email },
-  });
-
-  if (!user) {
-    throw new UnauthorizedError('Invalid email or password');
-  }
-
-  if (!user.isActive) {
-    throw new UnauthorizedError('Account is deactivated');
-  }
-
-  if (user.isBanned) {
-    if (user.banUntil && user.banUntil > new Date()) {
-      throw new UnauthorizedError('Account is banned');
+  try {
+    // Veritabanı yoksa direkt mock moduna geç
+    if (!isDatabaseAvailable) {
+      throw new Error('DATABASE_NOT_CONNECTED');
     }
-    // Ban expired, update
+
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedError('Invalid email or password');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedError('Account is deactivated');
+    }
+
+    if (user.isBanned) {
+      if (user.banUntil && user.banUntil > new Date()) {
+        throw new UnauthorizedError('Account is banned');
+      }
+      // Ban expired, update
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { isBanned: false, banUntil: null, banReason: null },
+      });
+    }
+
+    // Verify password
+    const isPasswordValid = await comparePassword(password, user.passwordHash);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedError('Invalid email or password');
+    }
+
+    // Update last login
     await prisma.user.update({
       where: { id: user.id },
-      data: { isBanned: false, banUntil: null, banReason: null },
+      data: { lastLoginAt: new Date() },
     });
+
+    // Generate tokens
+    const tokens = generateTokens({
+      id: user.id,
+      email: user.email,
+      userType: user.userType,
+    });
+
+    // Get user profile
+    const userProfile = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        userType: true,
+        profileImageUrl: true,
+        isVerified: true,
+        createdAt: true,
+      },
+    });
+
+    return {
+      user: userProfile,
+      ...tokens,
+    };
+  } catch (dbError: any) {
+    const isConnectionError =
+      !isDatabaseAvailable ||
+      dbError.message?.includes('connect') ||
+      dbError.message?.includes('database') ||
+      dbError.message?.includes("Can't reach database") ||
+      dbError.message?.includes("DATABASE_NOT_CONNECTED") ||
+      dbError.code === 'P1001' ||
+      dbError.code === 'P1017' ||
+      dbError.name === 'PrismaClientInitializationError' ||
+      dbError.constructor?.name === 'PrismaClientInitializationError';
+
+    if (isConnectionError) {
+      console.warn('⚠️ Database login failed, checking mock storage');
+      const { mockStorage } = require('../utils/mockStorage');
+
+      // Email'den mock ID bul
+      const allUsers = mockStorage.getAllUsers();
+      const mockUser = allUsers.find((u: any) => u.email === email);
+
+      if (!mockUser) {
+        throw new UnauthorizedError('Invalid email or password (Mock)');
+      }
+
+      // Şifre kontrolü
+      if (mockUser.passwordHash) {
+        const isPasswordValid = await comparePassword(password, mockUser.passwordHash);
+        if (!isPasswordValid) {
+          throw new UnauthorizedError('Invalid email or password (Mock)');
+        }
+      }
+
+      const tokens = generateTokens({
+        id: mockUser.id,
+        email: mockUser.email,
+        userType: mockUser.userType,
+      });
+
+      const userResponse = {
+        id: mockUser.id,
+        email: mockUser.email,
+        fullName: mockUser.fullName,
+        phone: mockUser.phone,
+        userType: mockUser.userType,
+        profileImageUrl: mockUser.profileImageUrl || null,
+        isVerified: mockUser.isVerified || false,
+        createdAt: new Date(),
+      };
+
+      return { user: userResponse, ...tokens };
+    }
+
+    throw dbError;
   }
-
-  // Verify password
-  const isPasswordValid = await comparePassword(password, user.passwordHash);
-
-  if (!isPasswordValid) {
-    throw new UnauthorizedError('Invalid email or password');
-  }
-
-  // Update last login
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { lastLoginAt: new Date() },
-  });
-
-  // Generate tokens
-  const tokens = generateTokens({
-    id: user.id,
-    email: user.email,
-    userType: user.userType,
-  });
-
-  // Get user profile
-  const userProfile = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: {
-      id: true,
-      email: true,
-      fullName: true,
-      phone: true,
-      userType: true,
-      profileImageUrl: true,
-      isVerified: true,
-      createdAt: true,
-    },
-  });
-
-  return {
-    user: userProfile,
-    ...tokens,
-  };
 };
 
 export const refreshToken = async (refreshToken: string) => {
@@ -348,3 +434,58 @@ export const refreshToken = async (refreshToken: string) => {
   }
 };
 
+/**
+ * Forgot Password - Send recovery code
+ */
+export const forgotPassword = async (email: string) => {
+  // In a real app, you would send an email. For now, we'll use a fixed code for mock/demo
+  const recoveryCode = '123456';
+
+  if (!isDatabaseAvailable) {
+    const { mockStorage } = require('../utils/mockStorage');
+    const allUsers = mockStorage.getAllUsers();
+    const user = allUsers.find((u: { email: string }) => u.email === email);
+    if (!user) {
+      throw new ValidationError('Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı.');
+    }
+    return { success: true, message: 'Kurtarma kodu gönderildi (Mock: 123456)' };
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    throw new ValidationError('Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı.');
+  }
+
+  // Real DB logic would store the code and expiry
+  return { success: true, message: 'Kurtarma kodu gönderildi (Test: 123456)' };
+};
+
+/**
+ * Reset Password - Verify code and update password
+ */
+export const resetPassword = async (data: any) => {
+  const { email, code, newPassword } = data;
+
+  if (code !== '123456') {
+    throw new ValidationError('Geçersiz kurtarma kodu.');
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+
+  if (!isDatabaseAvailable) {
+    const { mockStorage } = require('../utils/mockStorage');
+    const allUsers = mockStorage.getAllUsers();
+    const user = allUsers.find((u: { id: string, email: string }) => u.email === email);
+    if (!user) throw new ValidationError('Kullanıcı bulunamadı.');
+
+    mockStorage.updateProfile(user.id, { passwordHash });
+    return { success: true, message: 'Şifreniz başarıyla güncellendi.' };
+  }
+
+  await prisma.user.update({
+    where: { email },
+    data: { passwordHash }
+  });
+
+  return { success: true, message: 'Şifreniz başarıyla güncellendi.' };
+};

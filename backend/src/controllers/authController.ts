@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { register, login, refreshToken, generateTokens } from '../services/authService';
+import { register, login, refreshToken, generateTokens, forgotPassword, resetPassword } from '../services/authService';
 import { ValidationError, UnauthorizedError } from '../utils/errors';
 import prisma, { isDatabaseAvailable } from '../config/database';
 import { AuthRequest } from '../middleware/auth';
@@ -293,3 +293,36 @@ export const meController = async (
   }
 };
 
+export const forgotPasswordController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email } = req.body;
+    if (!email) throw new ValidationError('Email is required');
+
+    const result = await forgotPassword(email);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPasswordController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    if (!email || !code || !newPassword) {
+      throw new ValidationError('Missing required fields');
+    }
+
+    const result = await resetPassword({ email, code, newPassword });
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};

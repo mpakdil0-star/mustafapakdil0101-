@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma, { isDatabaseAvailable } from '../config/database';
+import { getCityCoordinates } from '../utils/geo';
 
 // In-memory store for locations if database is not available
 const mockLocationsStore = new Map<string, any[]>();
@@ -38,7 +39,12 @@ export const getLocations = async (req: Request, res: Response, next: NextFuncti
 export const addLocation = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const { title, city, district, neighborhood, details, isDefault } = req.body;
+        const { title, city, district, neighborhood, details, isDefault, latitude, longitude } = req.body;
+
+        // Use provided coordinates OR fallback to city center
+        const fallbackCoords = getCityCoordinates(city);
+        const lat = latitude !== undefined ? Number(latitude) : fallbackCoords.lat;
+        const lng = longitude !== undefined ? Number(longitude) : fallbackCoords.lng;
 
         if (!isDatabaseAvailable || userId.startsWith('mock-')) {
             const newLocation = {
@@ -51,8 +57,8 @@ export const addLocation = async (req: Request, res: Response, next: NextFunctio
                 isDefault: isDefault || false,
                 isActive: true,
                 createdAt: new Date().toISOString(),
-                latitude: 0,
-                longitude: 0
+                latitude: lat,
+                longitude: lng
             };
 
             const userLocations = mockLocationsStore.get(userId) || [];
@@ -76,8 +82,8 @@ export const addLocation = async (req: Request, res: Response, next: NextFunctio
                 district,
                 neighborhood: neighborhood || '',
                 isDefault: isDefault || false,
-                latitude: 41.0082, // İstanbul varsayılan
-                longitude: 28.9784 // İstanbul varsayılan
+                latitude: lat,
+                longitude: lng
             }
         });
 
@@ -94,7 +100,18 @@ export const updateLocation = async (req: Request, res: Response, next: NextFunc
     try {
         const { id } = req.params;
         const userId = (req as any).user.id;
-        const { title, city, district, neighborhood, details, isDefault } = req.body;
+        const { title, city, district, neighborhood, details, isDefault, latitude, longitude } = req.body;
+
+        const updatePayload: any = {
+            address: details,
+            city,
+            district,
+            neighborhood: neighborhood || '',
+            isDefault: isDefault || false
+        };
+
+        if (latitude !== undefined) updatePayload.latitude = Number(latitude);
+        if (longitude !== undefined) updatePayload.longitude = Number(longitude);
 
         if (!isDatabaseAvailable || id.startsWith('mock-') || userId.startsWith('mock-')) {
             const userLocations = mockLocationsStore.get(userId) || [];
@@ -107,11 +124,7 @@ export const updateLocation = async (req: Request, res: Response, next: NextFunc
 
                 userLocations[index] = {
                     ...userLocations[index],
-                    address: details,
-                    city,
-                    district,
-                    neighborhood: neighborhood || '',
-                    isDefault: isDefault || false
+                    ...updatePayload
                 };
 
                 mockLocationsStore.set(userId, userLocations);
@@ -128,13 +141,7 @@ export const updateLocation = async (req: Request, res: Response, next: NextFunc
                 id,
                 userId
             },
-            data: {
-                address: details,
-                city,
-                district,
-                neighborhood: neighborhood || '',
-                isDefault: isDefault || false
-            }
+            data: updatePayload
         });
 
         res.status(200).json({

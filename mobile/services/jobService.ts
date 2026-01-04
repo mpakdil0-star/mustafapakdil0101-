@@ -119,5 +119,10 @@ export const jobService = {
     const response = await apiClient.post(`${API_ENDPOINTS.JOB_DETAIL(id)}/complete`, review);
     return response.data.data;
   },
+
+  async createReview(id: string, data: { rating: number, comment?: string }) {
+    const response = await apiClient.post(`${API_ENDPOINTS.JOB_DETAIL(id)}/review`, data);
+    return response.data.data;
+  },
 };
 

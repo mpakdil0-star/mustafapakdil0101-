@@ -146,7 +146,7 @@ export const createJobController = async (
       const { notifyUser } = require('../server');
       notifyUser('all_electricians', 'new_job_available', {
         title: 'Yeni İş İlanı! ⚡',
-        message: `${jobData.location?.district || jobData.location?.city || 'Yakınınızda'} yeni bir ilan var: ${jobData.title}`,
+        message: `Bölgenizde yeni bir ilan var: ${jobData.title}`,
         jobId: job.id,
         locationPreview: jobData.location?.district || jobData.location?.city,
         category: job.category
@@ -226,7 +226,7 @@ export const createJobController = async (
             userId,
             type: 'new_job_available',
             title: 'Yeni İş İlanı! ⚡',
-            message: `${jobData.location?.district || jobData.location?.city || 'Yakınınızda'} yeni bir ilan var: ${jobData.title}`,
+            message: `Bölgenizde yeni ilan verildi: ${jobData.title}`,
             isRead: false,
             relatedId: mockJob.id,
             relatedType: 'JOB',
@@ -238,7 +238,7 @@ export const createJobController = async (
         // Also send socket notification
         notifyUser('all_electricians', 'new_job_available', {
           title: 'Yeni İş İlanı! ⚡',
-          message: `${jobData.location?.district || jobData.location?.city || 'Yakınınızda'} yeni bir ilan var: ${jobData.title}`,
+          message: `Bölgenizde yeni ilan verildi: ${jobData.title}`,
           jobId: mockJob.id,
           locationPreview: jobData.location?.district || jobData.location?.city,
           category: jobData.category
@@ -389,7 +389,86 @@ const maskJobData = (job: any) => {
 
 // Mock data for testing when database is not available
 export const getMockJobs = () => {
-  const mockJobs: any[] = [];
+  const mockJobs: any[] = [
+    {
+      id: 'mock-job-1',
+      citizenId: 'mock-citizen-1',
+      title: 'Mutfak Priz Arızası',
+      description: 'Mutfaktaki 3 prizden elektrik gelmiyor. Sigortalar sağlam görünüyor.',
+      category: 'Priz ve Anahtar',
+      location: {
+        city: 'İstanbul',
+        district: 'Kadıköy',
+        neighborhood: 'Caferağa',
+        address: 'Moda Cd. No:12'
+      },
+      urgencyLevel: 'HIGH',
+      estimatedBudget: '500',
+      status: 'OPEN',
+      images: [],
+      viewCount: 12,
+      bidCount: 3,
+      createdAt: new Date(Date.now() - 3600000).toISOString(),
+      updatedAt: new Date(Date.now() - 3600000).toISOString(),
+      citizen: {
+        id: 'mock-citizen-1',
+        fullName: 'Caner Kaya',
+        profileImageUrl: null,
+      }
+    },
+    {
+      id: 'mock-job-2',
+      citizenId: 'mock-citizen-2',
+      title: 'Avize Montajı (3 Adet)',
+      description: 'Yeni aldığımız 3 adet avizenin montajı yapılacak. Tavanlar yüksek.',
+      category: 'Aydınlatma Sistemleri',
+      location: {
+        city: 'Adana',
+        district: 'Çukurova',
+        neighborhood: 'Güzelyalı',
+        address: 'Turgut Özal Blv. No:88'
+      },
+      urgencyLevel: 'MEDIUM',
+      estimatedBudget: '750',
+      status: 'OPEN',
+      images: [],
+      viewCount: 8,
+      bidCount: 1,
+      createdAt: new Date(Date.now() - 7200000).toISOString(),
+      updatedAt: new Date(Date.now() - 7200000).toISOString(),
+      citizen: {
+        id: 'mock-citizen-2',
+        fullName: 'Merve Demir',
+        profileImageUrl: null,
+      }
+    },
+    {
+      id: 'mock-job-3',
+      citizenId: 'mock-citizen-3',
+      title: 'Sigorta Panosu Değişimi',
+      description: 'Eski tip sigorta panosu otomatik sigortalarla değiştirilecek.',
+      category: 'Elektrik Panosu',
+      location: {
+        city: 'Adana',
+        district: 'Seyhan',
+        neighborhood: 'Cemalpaşa',
+        address: 'Vali Yolu Cd.'
+      },
+      urgencyLevel: 'MEDIUM',
+      estimatedBudget: '1200',
+      status: 'OPEN',
+      images: [],
+      viewCount: 15,
+      bidCount: 2,
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 86400000).toISOString(),
+      citizen: {
+        id: 'mock-citizen-3',
+        fullName: 'Bülent Yılmaz',
+        profileImageUrl: null,
+      }
+    }
+  ];
 
   return {
     jobs: mockJobs,

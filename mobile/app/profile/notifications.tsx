@@ -43,7 +43,15 @@ export default function NotificationsScreen() {
         // Navigate based on relatedType first, then fall back to type
         if (relatedType === 'CONVERSATION' || type === 'NEW_MESSAGE' || type === 'MESSAGE_RECEIVED') {
             router.push(`/messages/${relatedId}`);
-        } else if (relatedType === 'JOB' || type === 'NEW_JOB_AVAILABLE' || type === 'JOB_UPDATED' || type === 'JOB_ASSIGNED') {
+        } else if (relatedType === 'JOB' ||
+            type === 'NEW_JOB_AVAILABLE' ||
+            type === 'JOB_UPDATED' ||
+            type === 'JOB_ASSIGNED' ||
+            type === 'NEW_BID' ||
+            type === 'BID_RECEIVED' ||
+            type === 'JOB_COMPLETE_REQUEST' ||
+            type === 'JOB_CONFIRMED' ||
+            type === 'NEW_REVIEW') {
             router.push(`/jobs/${relatedId}`);
         } else if (relatedType === 'BID') {
             // For BID notifications, we need to get the job ID from the bid
@@ -51,33 +59,41 @@ export default function NotificationsScreen() {
             try {
                 const { default: api } = await import('../../services/api');
                 const response = await api.get(`/bids/${relatedId}`);
-                if (response.data.success && response.data.data.bid.jobPostId) {
-                    router.push(`/jobs/${response.data.data.bid.jobPostId}`);
+                if (response.data.success && (response.data.data.bid?.jobPostId || response.data.data.jobPostId)) {
+                    router.push(`/jobs/${response.data.data.bid?.jobPostId || response.data.data.jobPostId}`);
                 } else {
                     console.warn('[Notifications] Could not get job ID from bid');
                 }
             } catch (error) {
                 console.error('[Notifications] Error fetching bid details:', error);
             }
-        } else if (type.includes('BID') || type === 'YENI_TEKLIF') {
+        } else if (type.includes('BID') || type === 'YENI_TEKLIF' || type === 'NEW_BID') {
             // Fallback: assume relatedId is jobId
             router.push(`/jobs/${relatedId}`);
         }
     };
 
     const getNotificationIcon = (type: string) => {
-        switch (type) {
+        const normalizedType = type.toLowerCase();
+        switch (normalizedType) {
             case 'new_message':
-            case 'MESSAGE_RECEIVED':
+            case 'message_received':
                 return { name: 'chatbubbles-outline', color: '#8B5CF6' };
             case 'new_job_available':
                 return { name: 'flash-outline', color: '#F59E0B' };
-            case 'BID_RECEIVED':
+            case 'bid_received':
+            case 'new_bid':
                 return { name: 'pricetag-outline', color: '#10B981' };
-            case 'BID_ACCEPTED':
-                return { name: 'checkmark-circle-outline', color: '#3B82F6' };
-            case 'BID_REJECTED':
+            case 'bid_accepted':
+                return { name: 'checkmark-circle-outline', color: '#10B981' };
+            case 'bid_rejected':
                 return { name: 'close-circle-outline', color: '#EF4444' };
+            case 'job_complete_request':
+                return { name: 'help-circle-outline', color: '#F59E0B' };
+            case 'job_confirmed':
+                return { name: 'trophy-outline', color: '#FFD700' };
+            case 'new_review':
+                return { name: 'star-outline', color: '#FCD34D' };
             default:
                 return { name: 'notifications-outline', color: colors.primary };
         }

@@ -237,9 +237,11 @@ export default function HomeScreen() {
               setLocationsCount(0);
               setUserCities([]);
             }
-          } catch (error) {
-            console.error('Error fetching user locations:', error);
+          } catch (error: any) {
+            console.warn('Error fetching user locations:', error.message || error);
+            // Don't crash or alert, just default to 0
             setLocationsCount(0);
+            setUserCities([]);
           }
         };
 

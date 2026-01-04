@@ -1,3 +1,4 @@
+
 /**
  * Haversine formülü kullanarak iki koordinat arasındaki mesafeyi hesaplar (KM cinsinden)
  */
@@ -42,4 +43,24 @@ export const getBoundingBox = (lat: number, lon: number, radiusKm: number) => {
         minLon: lon - lonDelta,
         maxLon: lon + lonDelta,
     };
+};
+
+/**
+ * Türkiye'deki büyük şehirlerin merkez koordinatları (Fallback için)
+ */
+export const CITY_COORDINATES: Record<string, { lat: number, lng: number }> = {
+    'İstanbul': { lat: 41.0082, lng: 28.9784 },
+    'Ankara': { lat: 39.9334, lng: 32.8597 },
+    'İzmir': { lat: 38.4237, lng: 27.1428 },
+    'Adana': { lat: 37.0, lng: 35.3213 },
+    'Bursa': { lat: 40.1885, lng: 29.0610 },
+    'Antalya': { lat: 36.8841, lng: 30.7056 },
+    'Konya': { lat: 37.8714, lng: 32.4846 },
+    'Mersin': { lat: 36.8121, lng: 34.6415 },
+    'Gaziantep': { lat: 37.0662, lng: 37.3833 },
+    'Kayseri': { lat: 38.7205, lng: 35.4826 },
+};
+
+export const getCityCoordinates = (cityName: string) => {
+    return CITY_COORDINATES[cityName] || CITY_COORDINATES['İstanbul'];
 };
