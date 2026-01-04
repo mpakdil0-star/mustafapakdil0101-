@@ -177,6 +177,20 @@ export default function JobDetailScreen() {
 
   const handleMessagePress = async (receiverId: string, bidId: string, initialMessage?: string) => {
     try {
+      // Önce mevcut konuşma var mı kontrol et
+      const conversations = await messageService.getConversations();
+      const existingConversation = conversations.find((conv: any) =>
+        (conv.participant1Id === receiverId || conv.participant2Id === receiverId) ||
+        (conv.otherUser?.id === receiverId)
+      );
+
+      if (existingConversation) {
+        // Mevcut konuşma varsa, mesaj göndermeden direkt oraya git
+        router.push(`/messages/${existingConversation.id}`);
+        return;
+      }
+
+      // Mevcut konuşma yoksa, yeni konuşma başlat ve ilk mesajı gönder
       const resp = await messageService.sendMessage({
         receiverId: receiverId,
         content: initialMessage || 'Merhaba, ilanımla ilgili görüşmek istiyorum.',

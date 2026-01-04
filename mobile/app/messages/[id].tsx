@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
     bottomSection: {
         backgroundColor: 'transparent',
         paddingHorizontal: spacing.md,
-        paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+        paddingBottom: Platform.OS === 'ios' ? 34 : 80, // Tab bar yüksekliğini hesaba kat
     },
     typingContainer: {
         paddingVertical: 8,
