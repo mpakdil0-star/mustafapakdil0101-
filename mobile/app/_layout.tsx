@@ -141,7 +141,7 @@ function RootLayoutNav() {
               {
                 text: 'Bildirimleri Aç',
                 variant: 'primary',
-                onPress: () => {
+                onPress: async () => {
                   setAlertConfig(prev => ({ ...prev, visible: false }));
                   await authService.registerPushToken();
                 }

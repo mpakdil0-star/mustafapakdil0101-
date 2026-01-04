@@ -67,10 +67,14 @@ export const register = async (data: RegisterData) => {
     if (existingEmailUser) {
       console.log(`🔍 Debug Register: Found existing user ${email}. isActive: ${existingEmailUser.isActive}, Type: ${typeof existingEmailUser.isActive}`);
 
+      // Eğer hesap silinmişse, kullanıcının yeniden kayıt olmasına izin ver (eski veriyi sıfırla)
       if (existingEmailUser.isActive === false) {
-        throw new ConflictError('Bu e-posta adresiyle silinmiş bir hesap var. Hesabınızı geri açmak için lütfen Giriş Yapın.');
+        console.log(`♻️ Resetting deleted account for ${email}, allowing fresh registration`);
+        // Eski hesap ID'sini kullanarak veriyi tamamen sıfırla
+        // Yeni kayıt akışı devam edecek ve eski veriyi override edecek
+      } else {
+        throw new ConflictError('Bu e-posta adresi zaten kullanımda.');
       }
-      throw new ConflictError('Bu e-posta adresi zaten kullanımda.');
     }
 
     if (phone) {
@@ -243,9 +247,10 @@ export const login = async (data: LoginData) => {
       throw new UnauthorizedError('Invalid email or password');
     }
 
-    // if (!user.isActive) {
-    //   throw new UnauthorizedError('Bu hesap silinmiş. Yeniden kayıt olmanız gerekiyor.');
-    // }
+    // Block login for deleted accounts
+    if (!user.isActive) {
+      throw new UnauthorizedError('Bu hesap silinmiş. Yeniden kayıt olmanız gerekiyor.');
+    }
 
     if (user.isBanned) {
       if (user.banUntil && user.banUntil > new Date()) {
@@ -263,14 +268,6 @@ export const login = async (data: LoginData) => {
 
     if (!isPasswordValid) {
       throw new UnauthorizedError('Invalid email or password');
-    }
-
-    // Reactivate account if it was deleted
-    if (!user.isActive) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { isActive: true, deletedAt: null }
-      });
     }
 
     // Update last login
@@ -329,8 +326,10 @@ export const login = async (data: LoginData) => {
         throw new UnauthorizedError('Bu e-posta ile kayıtlı kullanıcı bulunamadı.');
       }
 
-      // Check if account is deleted - but ALLOW login to reactivate it
-      // if (mockUser.isActive === false) { ... } -> Removed blocking check
+      // Block login for deleted accounts
+      if (mockUser.isActive === false) {
+        throw new UnauthorizedError('Bu hesap silinmiş. Yeniden kayıt olmanız gerekiyor.');
+      }
 
       // Şifre kontrolü
       if (mockUser.passwordHash) {
@@ -345,13 +344,6 @@ export const login = async (data: LoginData) => {
         if (!isPasswordValid) {
           throw new UnauthorizedError('E-posta veya şifre hatalı.');
         }
-      }
-
-      // If inactive but password correct, REACTIVATE account
-      if (mockUser.isActive === false) {
-        console.log(`Reactivating deleted account for user ${mockUser.email}`);
-        mockStorage.updateProfile(mockUser.id, { isActive: true });
-        mockUser.isActive = true;
       }
 
       const tokens = generateTokens({
