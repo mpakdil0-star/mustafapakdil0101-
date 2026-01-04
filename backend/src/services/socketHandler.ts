@@ -445,14 +445,16 @@ async function joinUserLocationRooms(socket: AuthenticatedSocket) {
 
         userLocations.forEach(loc => {
             if (loc.city) {
-                const cityRoom = `area:${loc.city}:all`;
-                socket.join(cityRoom);
-                console.log(`📍 User ${userId} joined dynamic room: ${cityRoom}`);
-
-                if (loc.district) {
+                if (loc.district && loc.district !== 'Tüm Şehir' && loc.district !== 'Merkez') {
+                    // Sadece belirli bir ilçe odasına katıl
                     const districtRoom = `area:${loc.city}:${loc.district}`;
                     socket.join(districtRoom);
-                    console.log(`📍 User ${userId} joined dynamic room: ${districtRoom}`);
+                    console.log(`📍 User ${userId} joined specific district room: ${districtRoom}`);
+                } else {
+                    // İlçe seçilmediyse veya 'Tüm Şehir' ise genel odaya katıl
+                    const cityRoom = `area:${loc.city}:all`;
+                    socket.join(cityRoom);
+                    console.log(`📍 User ${userId} joined general city room: ${cityRoom}`);
                 }
             }
         });

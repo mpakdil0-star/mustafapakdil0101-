@@ -2,8 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma, { isDatabaseAvailable } from '../config/database';
 import { getCityCoordinates } from '../utils/geo';
 
-// In-memory store for locations if database is not available
-const mockLocationsStore = new Map<string, any[]>();
+// CENTRALIZED MOCK STORAGE is now used via ../utils/mockStorage
 
 export const getLocations = async (req: Request, res: Response, next: NextFunction) => {
     const userId = (req as any).user?.id;
@@ -14,7 +13,9 @@ export const getLocations = async (req: Request, res: Response, next: NextFuncti
         }
 
         if (!isDatabaseAvailable || userId.startsWith('mock-')) {
-            const mockLocs = mockLocationsStore.get(userId) || [];
+            const { mockStorage } = require('../utils/mockStorage');
+            const mockData = mockStorage.get(userId);
+            const mockLocs = mockData.locations || [];
             return res.status(200).json({ success: true, data: mockLocs });
         }
 
@@ -27,7 +28,9 @@ export const getLocations = async (req: Request, res: Response, next: NextFuncti
             return res.status(200).json({ success: true, data: locations });
         } catch (dbError: any) {
             console.error('⚠️ Location DB Error (Falling back to mock):', dbError.message);
-            const mockLocs = mockLocationsStore.get(userId) || [];
+            const { mockStorage } = require('../utils/mockStorage');
+            const mockData = mockStorage.get(userId);
+            const mockLocs = mockData.locations || [];
             return res.status(200).json({ success: true, data: mockLocs });
         }
     } catch (error: any) {
@@ -61,12 +64,24 @@ export const addLocation = async (req: Request, res: Response, next: NextFunctio
                 longitude: lng
             };
 
-            const userLocations = mockLocationsStore.get(userId) || [];
+            const { mockStorage } = require('../utils/mockStorage');
+            const mockData = mockStorage.get(userId);
+            const userLocations = mockData.locations || [];
+
             if (isDefault) {
-                userLocations.forEach(l => l.isDefault = false);
+                userLocations.forEach((l: any) => l.isDefault = false);
             }
             userLocations.unshift(newLocation);
-            mockLocationsStore.set(userId, userLocations);
+
+            mockStorage.updateProfile(userId, { locations: userLocations });
+
+            // Refresh socket rooms for the user
+            try {
+                const { refreshUserRooms } = require('../services/socketHandler');
+                refreshUserRooms(userId);
+            } catch (err) {
+                console.error('Socket refresh error in mock mode:', err);
+            }
 
             return res.status(201).json({
                 success: true,
@@ -86,6 +101,10 @@ export const addLocation = async (req: Request, res: Response, next: NextFunctio
                 longitude: lng
             }
         });
+
+        // Refresh socket rooms for the user
+        const { refreshUserRooms } = require('../services/socketHandler');
+        refreshUserRooms(userId);
 
         res.status(201).json({
             success: true,
@@ -114,12 +133,14 @@ export const updateLocation = async (req: Request, res: Response, next: NextFunc
         if (longitude !== undefined) updatePayload.longitude = Number(longitude);
 
         if (!isDatabaseAvailable || id.startsWith('mock-') || userId.startsWith('mock-')) {
-            const userLocations = mockLocationsStore.get(userId) || [];
-            const index = userLocations.findIndex(l => l.id === id);
+            const { mockStorage } = require('../utils/mockStorage');
+            const mockData = mockStorage.get(userId);
+            const userLocations = mockData.locations || [];
+            const index = userLocations.findIndex((l: any) => l.id === id);
 
             if (index !== -1) {
                 if (isDefault) {
-                    userLocations.forEach(l => l.isDefault = false);
+                    userLocations.forEach((l: any) => l.isDefault = false);
                 }
 
                 userLocations[index] = {
@@ -127,7 +148,15 @@ export const updateLocation = async (req: Request, res: Response, next: NextFunc
                     ...updatePayload
                 };
 
-                mockLocationsStore.set(userId, userLocations);
+                mockStorage.updateProfile(userId, { locations: userLocations });
+
+                // Refresh socket rooms for the user
+                try {
+                    const { refreshUserRooms } = require('../services/socketHandler');
+                    refreshUserRooms(userId);
+                } catch (err) {
+                    console.error('Socket refresh error in mock mode:', err);
+                }
 
                 return res.status(200).json({
                     success: true,
@@ -144,6 +173,10 @@ export const updateLocation = async (req: Request, res: Response, next: NextFunc
             data: updatePayload
         });
 
+        // Refresh socket rooms for the user
+        const { refreshUserRooms } = require('../services/socketHandler');
+        refreshUserRooms(userId);
+
         res.status(200).json({
             success: true,
             data: location
@@ -159,12 +192,22 @@ export const deleteLocation = async (req: Request, res: Response, next: NextFunc
         const userId = (req as any).user.id;
 
         if (!isDatabaseAvailable || id.startsWith('mock-') || userId.startsWith('mock-')) {
-            const userLocations = mockLocationsStore.get(userId) || [];
-            const index = userLocations.findIndex(l => l.id === id);
+            const { mockStorage } = require('../utils/mockStorage');
+            const mockData = mockStorage.get(userId);
+            const userLocations = mockData.locations || [];
+            const index = userLocations.findIndex((l: any) => l.id === id);
 
             if (index !== -1) {
                 userLocations.splice(index, 1);
-                mockLocationsStore.set(userId, userLocations);
+                mockStorage.updateProfile(userId, { locations: userLocations });
+
+                // Refresh socket rooms for the user
+                try {
+                    const { refreshUserRooms } = require('../services/socketHandler');
+                    refreshUserRooms(userId);
+                } catch (err) {
+                    console.error('Socket refresh error in mock mode:', err);
+                }
             }
 
             return res.status(200).json({
@@ -182,6 +225,10 @@ export const deleteLocation = async (req: Request, res: Response, next: NextFunc
                 isActive: false
             }
         });
+
+        // Refresh socket rooms for the user
+        const { refreshUserRooms } = require('../services/socketHandler');
+        refreshUserRooms(userId);
 
         res.status(200).json({
             success: true,

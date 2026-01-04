@@ -151,16 +151,12 @@ export const jobService = {
       // En güvenli ve performanslı yol: kişilere tek tek değil, bölge odalarına yayın yapmak.
       const targetRooms: string[] = [];
       if (city) {
+        // Her zaman 'all' odasına gönder (tüm şehre bakanlar için)
         targetRooms.push(`area:${city}:all`);
-        if (district) {
+        // Eğer ilçe varsa ilçe odasına da gönder
+        if (district && district !== 'Tüm Şehir' && district !== 'Merkez') {
           targetRooms.push(`area:${city}:${district}`);
         }
-      }
-
-      // Eğer bölge bilgisi yoksa veya targetRooms boşsa fallback yapma (spam olmaması için)
-      if (targetRooms.length === 0) {
-        console.warn('⚠️ No target rooms for new job notification (Missing location)');
-        return; // Don't notify anyone if no region is defined
       }
 
       // 'notification' event'i mobile app'te alert tetikler
@@ -175,9 +171,7 @@ export const jobService = {
       });
 
       // 2. PERSISTENT NOTIFICATIONS (Push & DB)
-      // Bu kısım halen kullanıcı bazlı filtreleme gerektirir
       if (isDatabaseAvailable) {
-        // DB varken sadece o bölgedeki aktif elektrikçileri bul
         const electricians = await prisma.user.findMany({
           where: {
             userType: 'ELECTRICIAN',
@@ -185,7 +179,13 @@ export const jobService = {
             locations: {
               some: {
                 city: city,
-                district: district
+                OR: [
+                  { district: district },
+                  { district: null },
+                  { district: '' },
+                  { district: 'Tüm Şehir' },
+                  { district: 'Merkez' }
+                ]
               }
             }
           },

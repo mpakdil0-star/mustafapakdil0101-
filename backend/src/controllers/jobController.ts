@@ -222,7 +222,13 @@ export const createJobController = async (
           // Check if usta is in the same city or has this specific region in locations
           const hasLocationMatch = userData.locations?.some((loc: any) =>
             loc.city?.toLowerCase() === targetCity?.toLowerCase() &&
-            (!targetDistrict || loc.district?.toLowerCase() === targetDistrict.toLowerCase())
+            (
+              !targetDistrict ||
+              loc.district?.toLowerCase() === targetDistrict.toLowerCase() ||
+              !loc.district ||
+              loc.district === 'Tüm Şehir' ||
+              loc.district === 'Merkez'
+            )
           );
 
           if (hasLocationMatch) {
@@ -244,9 +250,11 @@ export const createJobController = async (
         // Also send socket notification to specific area rooms
         const targetRooms = [];
         if (targetCity) {
+          // Always target city-wide room
           targetRooms.push(`area:${targetCity}:all`);
+
           const targetDistrict = jobData.location?.district;
-          if (targetDistrict) {
+          if (targetDistrict && targetDistrict !== 'Tüm Şehir' && targetDistrict !== 'Merkez') {
             targetRooms.push(`area:${targetCity}:${targetDistrict}`);
           }
         }

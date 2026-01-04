@@ -24,7 +24,8 @@ export default function HomeScreen() {
   const colors = useAppColors();
   const dispatch = useAppDispatch();
   const { user, isAuthenticated, guestRole } = useAppSelector((state) => state.auth);
-  const { unreadCount } = useAppSelector((state) => state.notifications);
+  const unreadCount = useAppSelector((state) => state.notifications.unreadCount);
+  const notifications = useAppSelector((state) => state.notifications.notifications);
   const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
 
   // SAFETY CHECK: Prevent crash on reload when user is not yet loaded
@@ -327,20 +328,27 @@ export default function HomeScreen() {
     }, [isAuthenticated, isElectrician, fetchNewJobsCount])
   );
 
-  // Real-time refresh of new jobs count when notifications change
-  const { notifications } = useAppSelector((state) => state.notifications);
+  // Real-time refresh of new jobs count and unread count when notifications change
   useEffect(() => {
-    if (!isAuthenticated || !isElectrician) return;
+    if (!isAuthenticated) return;
 
-    // If a new job notification arrived, refresh the count
+    // Log for debugging
+    console.log(`🔔 [HomeScreen] Notification update detected. List size: ${notifications.length}, Unread: ${unreadCount}`);
+
+    // If a new job notification arrived, refresh the jobs count
     const hasNewJobNotif = notifications.length > 0 &&
       notifications[0].type === 'new_job_available' &&
       !notifications[0].isRead;
 
-    if (hasNewJobNotif) {
+    if (hasNewJobNotif && isElectrician) {
       fetchNewJobsCount();
     }
-  }, [notifications.length, isAuthenticated, isElectrician, fetchNewJobsCount]);
+
+    // Force sync total unread count with server to be absolutely sure
+    if (notifications.length > 0 && !notifications[0].isRead) {
+      dispatch(fetchNotifications());
+    }
+  }, [notifications.length, isAuthenticated, isElectrician, fetchNewJobsCount, dispatch]);
 
   // Socket setup moved to global _layout.tsx
   useEffect(() => {
