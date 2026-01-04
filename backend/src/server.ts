@@ -18,14 +18,25 @@ const httpServer = createServer(app);
 let io: SocketServer;
 
 // Helper to notify users via socket
-export const notifyUser = (target: string, event: string, data: any) => {
+export const notifyUser = (target: string | string[], event: string, data: any) => {
   if (io) {
-    if (target === 'all_electricians') {
-      io.to('all_electricians').emit(event, data);
-    } else {
-      io.to(`user:${target}`).emit(event, data);
+    const targets = Array.isArray(target) ? target : [target];
+    const targetRooms: string[] = [];
+
+    targets.forEach(t => {
+      if (t === 'all_electricians' || t.startsWith('area:')) {
+        targetRooms.push(t);
+      } else {
+        // Individual user ID - use their private room
+        targetRooms.push(`user:${t}`);
+      }
+    });
+
+    if (targetRooms.length > 0) {
+      io.to(targetRooms).emit(event, data);
     }
-    logger.info(`🔔 Socket Notification sent to ${target}: ${event}`);
+
+    logger.info(`🔔 Socket Notification sent to ${Array.isArray(target) ? target.join(', ') : target}: ${event}`);
   } else {
     logger.warn('⚠️ Cannot send socket notification: io not initialized');
   }

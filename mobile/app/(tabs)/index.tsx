@@ -102,6 +102,21 @@ export default function HomeScreen() {
     ).start();
   }, []);
 
+  // NEW: Badge Pulse Animation
+  const badgePulseAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (unreadCount > 0) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(badgePulseAnim, { toValue: 1.2, duration: 600, useNativeDriver: true }),
+          Animated.timing(badgePulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+        ])
+      ).start();
+    } else {
+      badgePulseAnim.setValue(1);
+    }
+  }, [unreadCount]);
+
   // Interpolate border color through RGB spectrum
   const animatedBorderColor = borderColorAnim.interpolate({
     inputRange: [0, 0.25, 0.5, 0.75, 1],
@@ -244,7 +259,24 @@ export default function HomeScreen() {
 
   const completionPercent = calculateCompletion();
 
-  // Kullanıcının konumunu/şehrini ve hizmet bölgelerini yükle
+  const fetchNewJobsCount = useCallback(async () => {
+    if (!isAuthenticated || !isElectrician) return;
+    try {
+      const result = await jobService.getJobs({ limit: 50 });
+      if (result && result.jobs) {
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const todayJobs = result.jobs.filter((job: any) => {
+          const jobDate = new Date(job.createdAt).getTime();
+          return jobDate >= startOfToday;
+        });
+        setNewJobsCount(todayJobs.length);
+      }
+    } catch (error) {
+      console.error('Error fetching new jobs count:', error);
+    }
+  }, [isAuthenticated, isElectrician]);
+
   // Kullanıcının konumunu/şehrini ve hizmet bölgelerini yükle
   useFocusEffect(
     useCallback(() => {
@@ -269,7 +301,6 @@ export default function HomeScreen() {
             }
           } catch (error: any) {
             console.warn('Error fetching user locations:', error.message || error);
-            // Don't crash or alert, just default to 0
             setLocationsCount(0);
             setUserCities([]);
           }
@@ -292,37 +323,24 @@ export default function HomeScreen() {
       };
 
       fetchUserLocations();
-    }, [isAuthenticated, isElectrician])
-  );
-
-
-  // Fetch counts when screen is focused
-  useFocusEffect(
-    useCallback(() => {
-      if (!isAuthenticated || !isElectrician) return;
-
-      const fetchNewJobsCount = async () => {
-        try {
-          const result = await jobService.getJobs({ limit: 50 }); // Get recent jobs
-          if (result && result.jobs) {
-            const now = new Date();
-            const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-
-            const todayJobs = result.jobs.filter((job: any) => {
-              const jobDate = new Date(job.createdAt).getTime();
-              return jobDate >= startOfToday;
-            });
-
-            setNewJobsCount(todayJobs.length);
-          }
-        } catch (error) {
-          console.error('Error fetching new jobs count:', error);
-        }
-      };
-
       fetchNewJobsCount();
-    }, [isAuthenticated, isElectrician])
+    }, [isAuthenticated, isElectrician, fetchNewJobsCount])
   );
+
+  // Real-time refresh of new jobs count when notifications change
+  const { notifications } = useAppSelector((state) => state.notifications);
+  useEffect(() => {
+    if (!isAuthenticated || !isElectrician) return;
+
+    // If a new job notification arrived, refresh the count
+    const hasNewJobNotif = notifications.length > 0 &&
+      notifications[0].type === 'new_job_available' &&
+      !notifications[0].isRead;
+
+    if (hasNewJobNotif) {
+      fetchNewJobsCount();
+    }
+  }, [notifications.length, isAuthenticated, isElectrician, fetchNewJobsCount]);
 
   // Socket setup moved to global _layout.tsx
   useEffect(() => {
@@ -401,11 +419,11 @@ export default function HomeScreen() {
               >
                 <Ionicons name="notifications-outline" size={24} color={colors.white} />
                 {unreadCount > 0 && (
-                  <View style={styles.notificationBadge}>
+                  <Animated.View style={[styles.notificationBadge, { transform: [{ scale: badgePulseAnim }] }]}>
                     <Text style={styles.notificationBadgeText}>
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </Text>
-                  </View>
+                  </Animated.View>
                 )}
               </TouchableOpacity>
 

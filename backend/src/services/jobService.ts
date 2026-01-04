@@ -147,86 +147,81 @@ export const jobService = {
     const { city, district } = job.location as any;
 
     try {
-      let targetUserIds: string[] = [];
-      let electriciansInfo: any[] = [];
+      // 1. SEND REAL-TIME SOCKET NOTIFICATION VIA TARGETED ROOMS
+      // En güvenli ve performanslı yol: kişilere tek tek değil, bölge odalarına yayın yapmak.
+      const targetRooms: string[] = [];
+      if (city) {
+        targetRooms.push(`area:${city}:all`);
+        if (district) {
+          targetRooms.push(`area:${city}:${district}`);
+        }
+      }
 
-      if (!isDatabaseAvailable) {
-        console.warn('⚠️ Database not available, using all active socket users for mock notification');
+      // Eğer bölge bilgisi yoksa veya targetRooms boşsa fallback yapma (spam olmaması için)
+      if (targetRooms.length === 0) {
+        console.warn('⚠️ No target rooms for new job notification (Missing location)');
+        return; // Don't notify anyone if no region is defined
+      }
 
-        // socketHandler'dan online olan ve elektrikçi olan kullanıcıları al
-        const { getOnlineUsers } = require('./socketHandler');
-        const onlineUsers = getOnlineUsers();
+      // 'notification' event'i mobile app'te alert tetikler
+      notifyUser(targetRooms, 'notification', {
+        type: 'new_job_available',
+        jobId: job.id,
+        title: job.title,
+        category: job.category,
+        urgencyLevel: job.urgencyLevel,
+        locationPreview: `${district || ''}, ${city || ''}`,
+        message: `Bölgenizde yeni bir iş ilanı yayınlandı: ${job.title}`
+      });
 
-        // Mock modda her elektrikçiye haber ver
-        // Gerçekte city/district kontrolü yapılırdı ama mock'ta tüm elektrikçilere gitsin
-        targetUserIds = onlineUsers
-          .filter((u: any) => u.userType === 'ELECTRICIAN' && u.id !== job.citizenId)
-          .map((u: any) => u.id);
-      } else {
-        // Find electricians by user city or specialized location
+      // 2. PERSISTENT NOTIFICATIONS (Push & DB)
+      // Bu kısım halen kullanıcı bazlı filtreleme gerektirir
+      if (isDatabaseAvailable) {
+        // DB varken sadece o bölgedeki aktif elektrikçileri bul
         const electricians = await prisma.user.findMany({
           where: {
             userType: 'ELECTRICIAN',
             isActive: true,
-            OR: [
-              { city: city },
-              {
-                locations: {
-                  some: {
-                    city: city,
-                    district: district
-                  }
-                }
+            locations: {
+              some: {
+                city: city,
+                district: district
               }
-            ]
+            }
           },
           select: { id: true, pushToken: true }
         });
-        targetUserIds = [...new Set(electricians.map(e => e.id))];
-        electriciansInfo = electricians;
-      }
 
-      targetUserIds.forEach(userId => {
-        // Don't notify the owner if they happen to be an electrician (unlikely)
-        if (userId === job.citizenId) return;
+        for (const elec of electricians) {
+          if (elec.id === job.citizenId) continue;
 
-        // 1. Send real-time socket notification
-        notifyUser(userId, 'notification', {
-          type: 'new_job_available',
-          jobId: job.id,
-          title: job.title,
-          category: job.category,
-          urgencyLevel: job.urgencyLevel,
-          locationPreview: `${district}, ${city}`,
-          message: `Bölgenizde yeni bir iş ilanı yayınlandı: ${job.title}`
-        });
-
-        // 2. Save to database if available
-        if (isDatabaseAvailable) {
+          // DB Bildirimi kaydet
           prisma.notification.create({
             data: {
-              userId: userId,
+              userId: elec.id,
               type: 'new_job_available',
               title: 'Yeni İş İlanı!',
-              message: `${district}, ${city} bölgesinde yeni bir ${job.category} ilanı açıldı: "${job.title}"`,
+              message: `${district || ''}, ${city || ''} bölgesinde yeni bir ${job.category} ilanı açıldı: "${job.title}"`,
               relatedType: 'JOB',
               relatedId: job.id,
             }
           }).catch(err => console.error('Failed to save notification to DB:', err));
-        }
 
-        // 3. Send Push Notification if token exists
-        const electrician = electriciansInfo.find(e => e.id === userId);
-        if (electrician?.pushToken) {
-          pushNotificationService.sendNotification({
-            to: electrician.pushToken,
-            title: 'Yeni İş İlanı!',
-            body: `${district}, ${city} bölgesinde yeni bir ${job.category} ilanı açıldı.`,
-            data: { jobId: job.id, type: 'new_job_available' }
-          }).catch(err => console.error('Push Notification Error:', err));
+          // Push Bildirimi gönder
+          if (elec.pushToken) {
+            pushNotificationService.sendNotification({
+              to: elec.pushToken,
+              title: 'Yeni İş İlanı!',
+              body: `${district || ''}, ${city || ''} bölgesinde yeni bir ${job.category} ilanı açıldı.`,
+              data: { jobId: job.id, type: 'new_job_available' }
+            }).catch(err => console.error('Push Notification Error:', err));
+          }
         }
-      });
-      console.log(`📡 Notifications triggered for ${targetUserIds.length} electricians`);
+      } else {
+        // Mock modda notificationRoutes'taki listenin de güncellenmesi gerekiyorsa controller zaten bunu yapıyor.
+        // Ama socket yayını artık targetRooms üzerinden yapıldığı için broad broadcast engellenmiş oldu.
+        console.log(`📡 Targeted room notification sent to: ${targetRooms.join(', ')}`);
+      }
     } catch (error) {
       console.error('Failed to notify nearby electricians:', error);
     }

@@ -144,15 +144,8 @@ export const createJobController = async (
       }
       const job = await jobService.createJob(jobData);
 
-      // Bildirim Gönder
-      const { notifyUser } = require('../server');
-      notifyUser('all_electricians', 'new_job_available', {
-        title: 'Yeni İş İlanı! ⚡',
-        message: `Bölgenizde yeni bir ilan var: ${jobData.title}`,
-        jobId: job.id,
-        locationPreview: jobData.location?.district || jobData.location?.city,
-        category: job.category
-      });
+      // Socket notifications are already handled inside jobService.createJob()
+      // so we don't need redundant notifyUser call here.
 
       res.status(201).json({
         success: true,
@@ -221,24 +214,50 @@ export const createJobController = async (
           id.includes('ELECTRICIAN')
         );
 
-        // Create notification for each electrician
+        // Create notification for each electrician in the same city or district
+        const targetCity = jobData.location?.city;
+        const targetDistrict = jobData.location?.district;
+
         electricians.forEach(([userId, userData]: [string, any]) => {
-          const notification = {
-            id: `mock-notif-${Date.now()}-${userId}`,
-            userId,
-            type: 'new_job_available',
-            title: 'Yeni İş İlanı! ⚡',
-            message: `Bölgenizde yeni ilan verildi: ${jobData.title}`,
-            isRead: false,
-            relatedId: mockJob.id,
-            relatedType: 'JOB',
-            createdAt: new Date().toISOString()
-          };
-          addMockNotification(userId, notification);
+          // Check if usta is in the same city or has this specific region in locations
+          const hasLocationMatch = userData.locations?.some((loc: any) =>
+            loc.city?.toLowerCase() === targetCity?.toLowerCase() &&
+            (!targetDistrict || loc.district?.toLowerCase() === targetDistrict.toLowerCase())
+          );
+
+          if (hasLocationMatch) {
+            const notification = {
+              id: `mock-notif-${Date.now()}-${userId}`,
+              userId,
+              type: 'new_job_available',
+              title: 'Yeni İş İlanı! ⚡',
+              message: `Bölgenizde yeni ilan verildi: ${jobData.title}`,
+              isRead: false,
+              relatedId: mockJob.id,
+              relatedType: 'JOB',
+              createdAt: new Date().toISOString()
+            };
+            addMockNotification(userId, notification);
+          }
         });
 
-        // Also send socket notification
-        notifyUser('all_electricians', 'new_job_available', {
+        // Also send socket notification to specific area rooms
+        const targetRooms = [];
+        if (targetCity) {
+          targetRooms.push(`area:${targetCity}:all`);
+          const targetDistrict = jobData.location?.district;
+          if (targetDistrict) {
+            targetRooms.push(`area:${targetCity}:${targetDistrict}`);
+          }
+        }
+
+        // If no location info, don't fallback to all to avoid spam
+        if (targetRooms.length === 0) {
+          console.warn('⚠️ No target rooms for new job notification (Missing location)');
+          // targetRooms.push('all_electricians'); // REMOVED PER USER REQUEST
+        }
+
+        notifyUser(targetRooms, 'new_job_available', {
           title: 'Yeni İş İlanı! ⚡',
           message: `Bölgenizde yeni ilan verildi: ${jobData.title}`,
           jobId: mockJob.id,

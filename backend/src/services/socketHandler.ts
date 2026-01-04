@@ -18,6 +18,7 @@ interface MessagePayload {
 
 // Aktif kullanıcı bağlantılarını takip et
 const userSockets = new Map<string, Set<string>>();
+let ioInstance: SocketServer | null = null;
 
 export const initializeSocketServer = (httpServer: HttpServer): SocketServer => {
     const io = new SocketServer(httpServer, {
@@ -27,6 +28,7 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
         },
         path: '/socket.io',
     });
+    ioInstance = io;
 
     // Authentication middleware
     io.use(async (socket: AuthenticatedSocket, next) => {
@@ -64,6 +66,7 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
         if (socket.userType === 'ELECTRICIAN') {
             socket.join('all_electricians');
             console.log(`👷 Electrician ${userId} joined global electricians room`);
+            joinUserLocationRooms(socket);
         }
 
         // Konuşmaya katıl
@@ -380,3 +383,80 @@ export const getOnlineUsers = () => {
 
     return onlineUsers;
 };
+
+// --- Yeni Dinamik Oda Yönetimi ---
+
+/**
+ * Kullanıcının konum odalarını yeniler (Profil/Konum güncellemesinden sonra tetiklenir)
+ */
+export const refreshUserRooms = async (userId: string) => {
+    if (!ioInstance) return;
+
+    const socketIds = userSockets.get(userId);
+    if (!socketIds || socketIds.size === 0) return;
+
+    console.log(`🔄 Refreshing rooms for user: ${userId} (${socketIds.size} active sockets)`);
+
+    for (const socketId of socketIds) {
+        const socket = ioInstance.sockets.sockets.get(socketId) as AuthenticatedSocket;
+        if (socket && socket.userType === 'ELECTRICIAN') {
+            // Önce mevcut tüm area odalarından çık
+            const rooms = Array.from(socket.rooms);
+            rooms.forEach(room => {
+                if (room.startsWith('area:')) {
+                    socket.leave(room);
+                }
+            });
+
+            // Yeni konumlar ile odalara tekrar katıl
+            await joinUserLocationRooms(socket);
+        }
+    }
+};
+
+/**
+ * Elektrikçinin konum bazlı odalara katılmasını sağlar
+ */
+async function joinUserLocationRooms(socket: AuthenticatedSocket) {
+    const userId = socket.userId!;
+    try {
+        let userLocations: any[] = [];
+
+        if (!isDatabaseAvailable || userId.startsWith('mock-')) {
+            const { mockStorage } = require('../utils/mockStorage');
+            const mockData = mockStorage.get(userId);
+
+            // 1. Eklediği tüm hizmet bölgelerinden odaya katıl
+            if (mockData.locations && Array.isArray(mockData.locations)) {
+                mockData.locations.forEach((loc: any) => {
+                    userLocations.push({
+                        city: loc.city,
+                        district: loc.district || 'Merkez'
+                    });
+                });
+            }
+        } else {
+            const userWithLocations = await prisma.user.findUnique({
+                where: { id: userId },
+                include: { locations: true }
+            });
+            userLocations = userWithLocations?.locations || [];
+        }
+
+        userLocations.forEach(loc => {
+            if (loc.city) {
+                const cityRoom = `area:${loc.city}:all`;
+                socket.join(cityRoom);
+                console.log(`📍 User ${userId} joined dynamic room: ${cityRoom}`);
+
+                if (loc.district) {
+                    const districtRoom = `area:${loc.city}:${loc.district}`;
+                    socket.join(districtRoom);
+                    console.log(`📍 User ${userId} joined dynamic room: ${districtRoom}`);
+                }
+            }
+        });
+    } catch (err) {
+        console.error('Error in joinUserLocationRooms:', err);
+    }
+}
