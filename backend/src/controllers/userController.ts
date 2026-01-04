@@ -463,14 +463,30 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
             // Database bağlantı hatası - mock mode'da şifre kontrolü yap
             console.warn('Database not connected, checking password in mock mode');
 
-            const bcrypt = require('bcrypt');
+            const bcrypt = require('bcryptjs'); // Tutarlılık için bcryptjs kullan
             const { mockStorage } = require('../utils/mockStorage');
             const mockUser = mockStorage.get(userId);
+
+            // Debug log
+            console.log('🔍 Mock Password Change Debug:', {
+                userId,
+                hasPasswordHash: !!mockUser.passwordHash,
+                passwordHashType: typeof mockUser.passwordHash,
+                passwordHashLength: mockUser.passwordHash?.length
+            });
 
             if (!mockUser) {
                 return res.status(404).json({
                     success: false,
                     error: { message: 'Kullanıcı bulunamadı' },
+                });
+            }
+
+            // Check if password hash exists
+            if (!mockUser.passwordHash) {
+                return res.status(400).json({
+                    success: false,
+                    error: { message: 'Hesap şifresi tanımlı değil. Lütfen yeniden kayıt olun.' },
                 });
             }
 
