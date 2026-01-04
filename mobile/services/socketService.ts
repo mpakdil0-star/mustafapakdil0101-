@@ -198,6 +198,14 @@ class SocketService {
             console.log('⭐ New review received:', data);
             this.reviewHandlers.forEach(handler => handler(data));
         });
+
+        // Yeni iş ilanı eventi
+        this.socket.on('new_job_available', (data: any) => {
+            console.log('⚡ New job available notification:', data);
+            // Ensure type is set for the frontend handlers
+            const enrichedData = { ...data, type: 'new_job_available' };
+            this.notificationHandlers.forEach(handler => handler(enrichedData));
+        });
     }
 
     disconnect() {

@@ -324,49 +324,10 @@ export default function HomeScreen() {
     }, [isAuthenticated, isElectrician])
   );
 
-  // Socket listeners - always active (not just when focused)
+  // Socket setup moved to global _layout.tsx
   useEffect(() => {
     if (!isAuthenticated) return;
-
     dispatch(fetchNotifications());
-
-    // Listen for ALL real-time notification events
-    const { socketService } = require('../../services/socketService');
-    const { incrementUnreadCount } = require('../../store/slices/notificationSlice');
-
-    // Refresh on any notification-related event
-    const handlers = [
-      socketService.onBidNotification((data: any) => {
-        console.log('🔔 [BID] Bid notification received!');
-        console.log('🔔 [BID] Data:', JSON.stringify(data));
-        console.log('🔔 [BID] Message:', data.message);
-        // Increment badge immediately (optimistic update)
-        console.log('🔔 [BID] Dispatching incrementUnreadCount...');
-        dispatch(incrementUnreadCount());
-        console.log('🔔 [BID] Showing toast...');
-        // Show toast immediately
-        showToast(data.message || 'Yeni teklif aldınız!', 'bid');
-        console.log('🔔 [BID] Fetching notifications...');
-        // Fetch to get accurate count (this will override with correct value)
-        dispatch(fetchNotifications());
-      }),
-      socketService.onMessage((data: any) => {
-        console.log('🔔 [MESSAGE] Message notification received!');
-        dispatch(incrementUnreadCount());
-        showToast('Yeni mesajınız var 💬', 'message');
-        dispatch(fetchNotifications());
-      }),
-      socketService.onNotification((data: any) => {
-        console.log('🔔 [GENERAL] General notification received!');
-        dispatch(incrementUnreadCount());
-        showToast(data.message || 'Yeni bildiriminiz var', 'general');
-        dispatch(fetchNotifications());
-      })
-    ];
-
-    return () => {
-      handlers.forEach(unsub => unsub());
-    };
   }, [isAuthenticated, dispatch]);
 
   const handleActionWithAuth = (path: string, params?: any) => {

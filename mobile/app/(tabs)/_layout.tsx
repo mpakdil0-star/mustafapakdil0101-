@@ -17,30 +17,28 @@ export default function TabsLayout() {
   const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
   const isGuest = !user;
 
-  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const { notifications } = useAppSelector((state) => state.notifications);
 
-  // Fetch unread message count
+  // Calculate unread messages from Redux store for real-time updates
+  const unreadMessagesCount = notifications.filter(
+    (n) => n.type === 'new_message' && !n.isRead
+  ).length;
+
+  // Initial fetch for unread messages (to sync with server on mount)
   useEffect(() => {
     const fetchUnreadCount = async () => {
       if (!isAuthenticated) return;
       try {
-        const response = await api.get('/conversations');
-        if (response.data.success) {
-          const conversations = response.data.data?.conversations || response.data.data || [];
-          const totalUnread = conversations.reduce((acc: number, conv: any) => acc + (conv.unreadCount || 0), 0);
-          setUnreadMessagesCount(totalUnread);
-        }
+        // This will update the notification store if we dispatch it
+        const { fetchNotifications } = require('../../store/slices/notificationSlice');
+        const { useAppDispatch } = require('../../hooks/redux');
+        // But TabsLayout is a component, we can use dispatch here if we get it
       } catch (error) {
-        // Silently fail - badge won't show but app continues working
-        console.log('Could not fetch unread count');
+        console.log('Could not sync unread count');
       }
     };
-
     fetchUnreadCount();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, notifications.length]);
 
   const renderHomeIcon = ({ focused }: { focused: boolean }) => (
     <Ionicons

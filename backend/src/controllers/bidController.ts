@@ -579,6 +579,16 @@ export const acceptBidController = async (
           createdAt: new Date().toISOString()
         };
         addMockNotification(acceptedBid.electricianId, notification);
+
+        // --- ADDED: Real-time notification for electrician ---
+        console.log(`📢 [MOCK] Sending bid_accepted notification to electrician ${acceptedBid.electricianId}`);
+        notifyUser(acceptedBid.electricianId, 'bid_accepted', {
+          type: 'bid_accepted',
+          bidId: acceptedBid.id,
+          jobPostId: acceptedBid.jobPostId,
+          jobTitle: job?.title || 'İş İlanı',
+          message: `✅ Tebrikler! "${job?.title || 'İş'}" ilanına verdiğiniz teklif kabul edildi. Hemen iletişime geçebilirsiniz!`
+        });
       }
 
       return res.json({ success: true, data: { bid: acceptedBid } });
@@ -588,15 +598,7 @@ export const acceptBidController = async (
     try {
       const bid = await bidService.acceptBid(id, userId);
 
-      if (bid.electrician?.id) {
-        notifyUser(bid.electrician.id, 'bid_accepted', {
-          type: 'bid_accepted',
-          bidId: bid.id,
-          jobPostId: bid.jobPostId,
-          message: `Teklifiniz kabul edildi!`,
-        });
-      }
-
+      // notifyUser already called in bidService.acceptBid for DB path
       return res.json({ success: true, data: { bid } });
     } catch (dbError: any) {
       console.error('⚠️ DB Bid Acceptance Error:', dbError.message);
@@ -668,6 +670,19 @@ export const rejectBidController = async (
       bidStoreById.set(id, rejectedBid);
       saveMockBids();
 
+      // --- ADDED: Real-time notification for electrician ---
+      if (rejectedBid.electricianId) {
+        console.log(`📢 [MOCK] Sending bid_rejected notification to electrician ${rejectedBid.electricianId}`);
+        const job = jobStoreById.get(rejectedBid.jobPostId);
+        notifyUser(rejectedBid.electricianId, 'bid_rejected', {
+          type: 'bid_rejected',
+          bidId: rejectedBid.id,
+          jobPostId: rejectedBid.jobPostId,
+          jobTitle: job?.title || 'İş İlanı',
+          message: `❌ Üzgünüz, "${job?.title || 'İş'}" ilanına verdiğiniz teklif vatandaş tarafından reddedildi.`
+        });
+      }
+
       return res.json({
         success: true,
         data: { bid: rejectedBid },
@@ -677,16 +692,7 @@ export const rejectBidController = async (
     try {
       const bid = await bidService.rejectBid(id, req.user.id);
 
-      // Elektrikçiye teklif red bildirimi gönder
-      if (bid.electricianId) {
-        notifyUser(bid.electricianId, 'bid_rejected', {
-          type: 'bid_rejected',
-          bidId: bid.id,
-          jobPostId: bid.jobPostId,
-          message: `Teklifiniz reddedildi.`,
-        });
-      }
-
+      // notifyUser already called in bidService.rejectBid for DB path
       res.json({
         success: true,
         data: { bid },

@@ -355,11 +355,45 @@ function RootLayoutNav() {
       ]);
     });
 
+    const unsubscribeMessage = socketService.onMessage((data: any) => {
+      console.log('💬 Global Message received:', data);
+      // Only show notification if NOT on the messages tab
+      if (segments[0] !== 'messages') {
+        dispatch(addNotification({
+          id: data.message?.id || `msg-${Date.now()}`,
+          type: 'new_message',
+          title: '💬 Yeni Mesaj',
+          message: `${data.senderName || 'Bir kullanıcı'}: ${data.preview || 'Yeni bir mesajınız var'}`,
+          isRead: false,
+          relatedId: data.conversationId,
+          createdAt: new Date().toISOString()
+        }));
+
+        showAlert(
+          '💬 Yeni Mesaj',
+          `${data.senderName || 'Bir kullanıcı'}: ${data.preview || 'Yeni bir mesajınız var'}`,
+          'info',
+          [
+            { text: 'Kapat', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },
+            {
+              text: 'Cevapla',
+              variant: 'primary',
+              onPress: () => {
+                setAlertConfig(prev => ({ ...prev, visible: false }));
+                router.push(`/messages/${data.conversationId}`);
+              }
+            }
+          ]
+        );
+      }
+    });
+
     return () => {
       unsubscribe();
       unsubscribeBids();
       unsubscribeStatus();
       unsubscribeReview();
+      unsubscribeMessage();
     };
   }, [isAuthenticated, segments]);
 
