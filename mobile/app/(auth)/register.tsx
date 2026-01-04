@@ -14,6 +14,7 @@ import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import LocationPicker from '../../components/common/LocationPicker';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { register } from '../../store/slices/authSlice';
 import { Button } from '../../components/common/Button';
@@ -33,6 +34,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [location, setLocation] = useState<{ city: string; district: string; address: string; latitude: number; longitude: number } | null>(null);
   const [userType, setUserType] = useState<'CITIZEN' | 'ELECTRICIAN'>(initialRole === 'ELECTRICIAN' ? 'ELECTRICIAN' : 'CITIZEN');
 
   // Theme selection based on userType
@@ -74,6 +76,10 @@ export default function RegisterScreen() {
     if (passwordErr) newErrors.password = passwordErr;
     if (phoneErr) newErrors.phone = phoneErr;
 
+    if (!location) {
+      newErrors.location = 'Lütfen konum seçiniz';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -95,6 +101,13 @@ export default function RegisterScreen() {
           phone,
           password,
           userType,
+          location: location ? {
+            city: location.city,
+            district: location.district,
+            address: location.address,
+            latitude: location.latitude,
+            longitude: location.longitude
+          } : undefined
         })
       ).unwrap();
       if (redirectTo) {

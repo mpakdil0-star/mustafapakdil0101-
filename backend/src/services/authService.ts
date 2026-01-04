@@ -323,7 +323,19 @@ export const login = async (data: LoginData) => {
 
       // Şifre kontrolü
       if (mockUser.passwordHash) {
-        const isPasswordValid = await comparePassword(password, mockUser.passwordHash);
+        // Try direct comparison first (for simple mock passwords like '123456')
+        // If that fails, try bcrypt comparison
+        let isPasswordValid = mockUser.passwordHash === password;
+
+        if (!isPasswordValid) {
+          try {
+            isPasswordValid = await comparePassword(password, mockUser.passwordHash);
+          } catch (ignore) {
+            // If hash format is invalid (e.g. it's "123456"), comparePassword throws. 
+            // We typically assume false, but we already checked equality above.
+          }
+        }
+
         if (!isPasswordValid) {
           throw new UnauthorizedError('Invalid email or password (Mock)');
         }

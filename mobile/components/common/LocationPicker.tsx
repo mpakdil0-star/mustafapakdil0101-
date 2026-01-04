@@ -79,9 +79,15 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
 
     useEffect(() => {
         if (initialLocation) {
-            updateLocation(initialLocation.latitude, initialLocation.longitude);
+            // Prevent infinite loop: only update if coordinates actually changed
+            if (
+                initialLocation.latitude !== selectedLocation.latitude ||
+                initialLocation.longitude !== selectedLocation.longitude
+            ) {
+                updateLocation(initialLocation.latitude, initialLocation.longitude);
+            }
         }
-    }, []);
+    }, [initialLocation]);
 
     return (
         <View style={styles.container}>

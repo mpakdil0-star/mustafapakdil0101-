@@ -53,7 +53,7 @@ const MAX_IMAGES = 3;
 export default function QuickCreateScreen() {
     const router = useRouter();
     const dispatch = useAppDispatch();
-    const { isLoading } = useAppSelector((state) => state.jobs);
+    const { isLoading, error } = useAppSelector((state) => state.jobs);
     const { user, isAuthenticated } = useAppSelector((state) => state.auth);
     const colors = useAppColors();
 
@@ -61,15 +61,12 @@ export default function QuickCreateScreen() {
     const [images, setImages] = useState<string[]>([]);
     const [description, setDescription] = useState<string>('');
 
-    // Location State
-    const [city, setCity] = useState('İstanbul');
+    // Location State - Start with empty values, will be filled by GPS
+    const [city, setCity] = useState('');
     const [district, setDistrict] = useState('');
     const [neighborhood, setNeighborhood] = useState('');
     const [address, setAddress] = useState('');
-    const [coords, setCoords] = useState<{ latitude: number; longitude: number }>({
-        latitude: 41.0082,
-        longitude: 28.9784,
-    });
+    const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isLoadingLocation, setIsLoadingLocation] = useState(true);
     const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
@@ -171,19 +168,20 @@ export default function QuickCreateScreen() {
             // Use the robust service which handles permissions and fallbacks
             let fetchedCoords = await locationService.getCurrentLocation();
 
-            // If automatic location fails, fallback to Istanbul default
+            // If automatic location fails, fallback to user's profile city
             if (!fetchedCoords) {
-                console.log('Location service returned null, using fallback.');
+                console.log('Location service returned null, using profile fallback.');
+                const profileCity = user?.city || 'İstanbul';
                 showAlert(
                     'Konum Alınamadı',
-                    'Konumunuz otomatik olarak belirlenemedi, varsayılan konum (İstanbul) seçildi. Lütfen haritadan düzeltin.',
+                    `Konumunuz otomatik olarak belirlenemedi. Profil bilginizdeki şehir (${profileCity}) seçildi. Lütfen haritadan düzeltin.`,
                     'warning'
                 );
 
-                setCity('İstanbul');
-                setDistrict('Merkez');
-                setAddress('Konum Belirlenemedi');
-                setCoords({ latitude: 41.0082, longitude: 28.9784 });
+                setCity(profileCity);
+                setDistrict(user?.district || '');
+                setAddress('Konum alınamadı - Profil bilgisi kullanıldı');
+                // Don't set coords if GPS failed, keep it null
                 return;
             }
 
@@ -208,9 +206,11 @@ export default function QuickCreateScreen() {
             }
         } catch (error) {
             console.error('Location error in quick-create:', error);
-            // Fallback
-            setCity('İstanbul');
-            setCoords({ latitude: 41.0082, longitude: 28.9784 });
+            // Fallback to user's profile city
+            const profileCity = user?.city || 'İstanbul';
+            setCity(profileCity);
+            setDistrict(user?.district || '');
+            setAddress('Konum hatası - Profil bilgisi kullanıldı');
         } finally {
             setIsLoadingLocation(false);
         }
@@ -353,8 +353,8 @@ export default function QuickCreateScreen() {
                     city: city,
                     district: district,
                     neighborhood: neighborhood || undefined,
-                    latitude: coords.latitude,
-                    longitude: coords.longitude,
+                    latitude: coords?.latitude || 41.0082,
+                    longitude: coords?.longitude || 28.9784,
                 },
                 urgencyLevel: 'HIGH' as const,
                 images: images.length > 0 ? images : undefined,
@@ -466,7 +466,7 @@ export default function QuickCreateScreen() {
                                         key={addr.id}
                                         style={[
                                             styles.addressChip,
-                                            coords.latitude === addr.latitude && [styles.addressChipActive, { backgroundColor: colors.primary, borderColor: colors.primary, shadowColor: colors.primary }]
+                                            coords?.latitude === addr.latitude && [styles.addressChipActive, { backgroundColor: colors.primary, borderColor: colors.primary, shadowColor: colors.primary }]
                                         ]}
                                         onPress={() => {
                                             setCity(addr.city);
@@ -479,11 +479,11 @@ export default function QuickCreateScreen() {
                                         <Ionicons
                                             name="location"
                                             size={14}
-                                            color={coords.latitude === addr.latitude ? staticColors.white : colors.primary}
+                                            color={coords?.latitude === addr.latitude ? staticColors.white : colors.primary}
                                         />
                                         <Text style={[
                                             styles.addressChipText,
-                                            coords.latitude === addr.latitude && [styles.addressChipTextActive, { color: staticColors.white }]
+                                            coords?.latitude === addr.latitude && [styles.addressChipTextActive, { color: staticColors.white }]
                                         ]}>
                                             {addr.city} / {addr.district || 'Merkez'}
                                         </Text>
@@ -512,7 +512,7 @@ export default function QuickCreateScreen() {
                                 }
                                 if (loc.district) setDistrict(loc.district);
                             }}
-                            initialLocation={coords}
+                            initialLocation={coords || { latitude: 41.0082, longitude: 28.9784 }}
                         />
 
                         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>

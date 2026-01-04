@@ -5,7 +5,10 @@ interface JobState {
   jobs: Job[];
   myJobs: Job[];
   currentJob: Job | null;
-  isLoading: boolean;
+  isLoading: boolean; // Global loading (kept for legacy)
+  isJobsLoading: boolean;
+  isMyJobsLoading: boolean;
+  isDetailLoading: boolean;
   error: string | null;
 }
 
@@ -14,6 +17,9 @@ const initialState: JobState = {
   myJobs: [],
   currentJob: null,
   isLoading: false,
+  isJobsLoading: false,
+  isMyJobsLoading: false,
+  isDetailLoading: false,
   error: null,
 };
 
@@ -73,31 +79,39 @@ const jobSlice = createSlice({
     // Fetch Jobs
     builder
       .addCase(fetchJobs.pending, (state) => {
-        if (state.jobs.length === 0) {
-          state.isLoading = true;
-        }
+        state.isJobsLoading = true;
+        state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchJobs.fulfilled, (state, action) => {
+        state.isJobsLoading = false;
         state.isLoading = false;
         state.jobs = action.payload?.jobs || [];
       })
       .addCase(fetchJobs.rejected, (state, action) => {
+        state.isJobsLoading = false;
         state.isLoading = false;
         state.error = action.error.message || 'Failed to fetch jobs';
       });
 
     // Fetch Job By ID
     builder
-      .addCase(fetchJobById.pending, (state) => {
-        state.isLoading = true;
+      .addCase(fetchJobById.pending, (state, action) => {
+        // Only show loading if we don't have this job cached, or if it's a different job
+        const requestedId = String(action.meta.arg);
+        if (!state.currentJob || String(state.currentJob.id) !== requestedId) {
+          state.isDetailLoading = true;
+          state.isLoading = true;
+        }
         state.error = null;
       })
       .addCase(fetchJobById.fulfilled, (state, action) => {
+        state.isDetailLoading = false;
         state.isLoading = false;
         state.currentJob = action.payload;
       })
       .addCase(fetchJobById.rejected, (state, action) => {
+        state.isDetailLoading = false;
         state.isLoading = false;
         state.error = action.error.message || 'Failed to fetch job';
       });
@@ -105,16 +119,17 @@ const jobSlice = createSlice({
     // Fetch My Jobs
     builder
       .addCase(fetchMyJobs.pending, (state) => {
-        if (state.myJobs.length === 0) {
-          state.isLoading = true;
-        }
+        state.isMyJobsLoading = true;
+        state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchMyJobs.fulfilled, (state, action) => {
+        state.isMyJobsLoading = false;
         state.isLoading = false;
         state.myJobs = action.payload;
       })
       .addCase(fetchMyJobs.rejected, (state, action) => {
+        state.isMyJobsLoading = false;
         state.isLoading = false;
         state.error = action.error.message || 'Failed to fetch my jobs';
       });

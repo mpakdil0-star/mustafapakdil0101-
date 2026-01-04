@@ -42,7 +42,7 @@ export default function JobDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const dispatch = useAppDispatch();
-  const { currentJob, isLoading, error, jobs, myJobs } = useAppSelector((state) => state.jobs);
+  const { currentJob, isDetailLoading, error, jobs, myJobs } = useAppSelector((state) => state.jobs);
   const { jobBids, myBids } = useAppSelector((state) => state.bids);
   const { user, guestRole } = useAppSelector((state) => state.auth);
   const colors = useAppColors();
@@ -73,7 +73,6 @@ export default function JobDetailScreen() {
     setAlertConfig({ visible: true, title, message, type, buttons });
   };
 
-  const hasStartedLoading = useRef(false);
   const urgentPulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -86,16 +85,30 @@ export default function JobDetailScreen() {
     pulse();
   }, []);
 
-  const cachedJob = useMemo(() => {
-    if (currentJob?.id === id) return currentJob;
-    return jobs.find(j => j.id === id) || myJobs.find(j => j.id === id) || null;
+  // Find job from cache first - this should work immediately on back navigation
+  const displayJob = useMemo(() => {
+    // If id is undefined (can happen on back navigation), use currentJob directly
+    if (!id) {
+      return currentJob || null;
+    }
+    // Check currentJob first
+    if (currentJob && String(currentJob.id) === String(id)) {
+      return currentJob;
+    }
+    // Check jobs list
+    const fromJobs = jobs.find(j => String(j.id) === String(id));
+    if (fromJobs) return fromJobs;
+    // Check myJobs list
+    const fromMyJobs = myJobs.find(j => String(j.id) === String(id));
+    if (fromMyJobs) return fromMyJobs;
+
+    return null;
   }, [id, currentJob, jobs, myJobs]);
 
-  const displayJob = currentJob?.id === id ? currentJob : cachedJob;
 
+  // Fetch data on mount, but silently if we already have cached data
   useEffect(() => {
-    if (id && !hasStartedLoading.current) {
-      hasStartedLoading.current = true;
+    if (id) {
       dispatch(fetchJobById(id));
       dispatch(fetchJobBids(id));
     }
@@ -104,45 +117,38 @@ export default function JobDetailScreen() {
     const unsub = socketService.onBidNotification((data) => {
       if (data.jobPostId === id) {
         console.log('⚡ Real-time update:', data.type);
-        // Refresh data silently
         dispatch(fetchJobById(id));
         dispatch(fetchJobBids(id));
       }
     });
 
     return () => {
-      // Don't clear job data on unmount to prevent "stuck loading" when navigating back
-      // If we clear, the user sees a spinner when returning from messages/bids
-      // Stale-while-revalidate is better UX
-      if (hasStartedLoading.current) {
-        hasStartedLoading.current = false;
-        // dispatch(clearCurrentJob());
-        // dispatch(clearJobBids());
-      }
       unsub();
     };
   }, [id, dispatch]);
 
-  if (error && !displayJob) {
-    return (
-      <View style={[styles.loadingContainer, { backgroundColor: colors.backgroundDark }]}>
-        <Ionicons name="alert-circle-outline" size={48} color={staticColors.error} />
-        <Text style={[styles.errorText, { color: staticColors.white, marginTop: 16 }]}>İlan yüklenemedi.</Text>
-        <Text style={{ color: staticColors.textSecondary, textAlign: 'center', marginTop: 8, paddingHorizontal: 40 }}>{error}</Text>
-        <TouchableOpacity
-          style={{ marginTop: 24, padding: 12, backgroundColor: colors.primary, borderRadius: 12 }}
-          onPress={() => {
-            hasStartedLoading.current = false;
-            dispatch(fetchJobById(id));
-          }}
-        >
-          <Text style={{ color: staticColors.white, fontFamily: fonts.bold }}>Tekrar Dene</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  // SHOW DATA IF WE HAVE IT - don't wait for loading
+  if (displayJob) {
+    // We have data, render the job detail (code continues after this block)
+  } else {
+    // No data yet
+    if (error) {
+      return (
+        <View style={[styles.loadingContainer, { backgroundColor: colors.backgroundDark }]}>
+          <Ionicons name="alert-circle-outline" size={48} color={staticColors.error} />
+          <Text style={[styles.errorText, { color: staticColors.white, marginTop: 16 }]}>İlan yüklenemedi.</Text>
+          <Text style={{ color: staticColors.textSecondary, textAlign: 'center', marginTop: 8, paddingHorizontal: 40 }}>{error}</Text>
+          <TouchableOpacity
+            style={{ marginTop: 24, padding: 12, backgroundColor: colors.primary, borderRadius: 12 }}
+            onPress={() => dispatch(fetchJobById(id))}
+          >
+            <Text style={{ color: staticColors.white, fontFamily: fonts.bold }}>Tekrar Dene</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
 
-  if (!displayJob) {
+    // Show loading spinner
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.backgroundDark }]}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -151,7 +157,9 @@ export default function JobDetailScreen() {
     );
   }
 
+  // From here on, displayJob is guaranteed to exist
   const jobData = displayJob;
+
   const isOwner = user?.id === jobData.citizenId;
   const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
   const isAssignedToMe = isElectrician && user?.id && String(jobData?.assignedElectricianId) === String(user.id);
@@ -405,8 +413,12 @@ export default function JobDetailScreen() {
               <Card key={bid.id} style={[styles.acceptedBidCard, { borderColor: staticColors.success + '40', backgroundColor: staticColors.white, shadowColor: colors.primary }]}>
                 <View style={styles.bidHeader}>
                   <TouchableOpacity onPress={() => router.push(`/electrician/${bid.electricianId}`)} activeOpacity={0.7}>
-                    {bid.electrician?.profileImageUrl && getFileUrl(bid.electrician.profileImageUrl) ? (
-                      <Image source={{ uri: getFileUrl(bid.electrician.profileImageUrl)! }} style={styles.bidAvatar} />
+                    {bid.electrician?.profileImageUrl ? (
+                      <Image
+                        source={{ uri: getFileUrl(bid.electrician.profileImageUrl) || undefined }}
+                        style={styles.bidAvatar}
+                        onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
+                      />
                     ) : (
                       <View style={[styles.bidAvatar, { backgroundColor: colors.primary + '15', justifyContent: 'center', alignItems: 'center' }]}>
                         <Ionicons name="person" size={24} color={colors.primary} />
