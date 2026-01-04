@@ -62,7 +62,11 @@ export default function HomeScreen() {
   // Pulse animation for health action buttons
   const healthPulseAnim = useRef(new Animated.Value(1)).current;
 
+  // RGB Border animation for profile health card
+  const borderColorAnim = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
+    // Pulse animation
     Animated.loop(
       Animated.sequence([
         Animated.timing(healthPulseAnim, {
@@ -77,7 +81,22 @@ export default function HomeScreen() {
         }),
       ])
     ).start();
+
+    // RGB Border rotation animation
+    Animated.loop(
+      Animated.timing(borderColorAnim, {
+        toValue: 1,
+        duration: 3000,
+        useNativeDriver: false, // Color animation doesn't support native driver
+      })
+    ).start();
   }, []);
+
+  // Interpolate border color through RGB spectrum
+  const animatedBorderColor = borderColorAnim.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: ['#3B82F6', '#8B5CF6', '#EC4899', '#F97316', '#3B82F6'] // Blue -> Purple -> Pink -> Orange -> Blue
+  });
 
   const getMissingItems = () => {
     const missing = [];
@@ -108,14 +127,15 @@ export default function HomeScreen() {
         missing.push({ id: 'specialties', label: 'Uzmanlık Alanları', icon: 'construct-outline', route: '/profile/edit' });
       }
       if (locationsCount === 0) {
-        missing.push({ id: 'serviceAreas', label: 'Hizmet Bölgeleri', icon: 'location-outline', route: '/profile/edit' });
+        missing.push({ id: 'serviceAreas', label: 'Hizmet Bölgeleri', icon: 'location-outline', route: '/profile/addresses' });
       }
     } else {
       // Vatandaşlar için adres bilgisi
       if (locationsCount === 0) {
-        missing.push({ id: 'addresses', label: 'Adres Bilgisi', icon: 'location-outline', route: '/profile/edit' });
+        missing.push({ id: 'addresses', label: 'Adres Bilgisi', icon: 'location-outline', route: '/profile/addresses' });
       }
     }
+
     return missing;
   };
 
@@ -436,52 +456,56 @@ export default function HomeScreen() {
           </ImageBackground>
         </View>
 
-        {/* Unified Profile Health Banner - Redesigned to match image */}
+        {/* Unified Profile Health Banner - with RGB Border Animation */}
         {
           isInitialized && isAuthenticated && completionPercent < 100 && (
             <View style={styles.bannerWrapper}>
-              <TouchableOpacity
-                style={styles.profileHealthCard}
-                activeOpacity={0.9}
-                onPress={() => setShowCompletionModal(true)}
-              >
-                <View style={styles.healthCardContent}>
-                  <View style={[styles.healthIconContainer, isElectrician && { backgroundColor: '#3B82F6' }]}>
-                    <Ionicons name={isElectrician ? "rocket" : "location"} size={24} color={staticColors.white} />
+              {/* RGB Animated Border Wrapper */}
+              <Animated.View style={[styles.rgbBorderWrapper, { borderColor: animatedBorderColor }]}>
+                <TouchableOpacity
+                  style={styles.profileHealthCard}
+                  activeOpacity={0.9}
+                  onPress={() => setShowCompletionModal(true)}
+                >
+                  <View style={styles.healthCardContent}>
+                    <View style={[styles.healthIconContainer, isElectrician && { backgroundColor: '#3B82F6' }]}>
+                      <Ionicons name={isElectrician ? "rocket" : "location"} size={24} color={staticColors.white} />
+                    </View>
+
+                    <View style={styles.healthTextContainer}>
+                      <Text style={styles.healthTitle}>{isElectrician ? 'Hesabını Tamamla' : 'Profil Sağlığı'}</Text>
+                      <Text style={styles.healthSubtitle}>
+                        {isElectrician
+                          ? 'Profilini tamamla, iş alma şansını %50 artır.'
+                          : 'Adres ve fotoğraf ekle, usta bulman kolaylaşsın.'}
+                      </Text>
+                    </View>
+
+                    <Animated.View
+                      style={[
+                        styles.healthActionButton,
+                        isElectrician && { backgroundColor: '#2563EB' },
+                        { transform: [{ scale: healthPulseAnim }] }
+                      ]}
+                    >
+                      <Text style={styles.healthActionText}>{isElectrician ? 'GİT' : 'BAŞLA'}</Text>
+                      <Ionicons name="flash" size={14} color={staticColors.white} />
+                    </Animated.View>
                   </View>
 
-                  <View style={styles.healthTextContainer}>
-                    <Text style={styles.healthTitle}>{isElectrician ? 'Hesabını Tamamla' : 'Profil Sağlığı'}</Text>
-                    <Text style={styles.healthSubtitle}>
-                      {isElectrician
-                        ? 'Profilini tamamla, iş alma şansını %50 artır.'
-                        : 'Adres ve fotoğraf ekle, usta bulman kolaylaşsın.'}
-                    </Text>
+                  {/* Orange/Blue Progress Bar */}
+                  <View style={styles.healthProgressRow}>
+                    <View style={styles.healthProgressBarBg}>
+                      <View style={[styles.healthProgressBarFill, { width: `${completionPercent}%` }, isElectrician && { backgroundColor: '#3B82F6' }]} />
+                    </View>
+                    <Text style={styles.healthProgressPercent}>%{completionPercent}</Text>
                   </View>
-
-                  <Animated.View
-                    style={[
-                      styles.healthActionButton,
-                      isElectrician && { backgroundColor: '#2563EB' },
-                      { transform: [{ scale: healthPulseAnim }] }
-                    ]}
-                  >
-                    <Text style={styles.healthActionText}>{isElectrician ? 'GİT' : 'BAŞLA'}</Text>
-                    <Ionicons name="flash" size={14} color={staticColors.white} />
-                  </Animated.View>
-                </View>
-
-                {/* Orange/Blue Progress Bar */}
-                <View style={styles.healthProgressRow}>
-                  <View style={styles.healthProgressBarBg}>
-                    <View style={[styles.healthProgressBarFill, { width: `${completionPercent}%` }, isElectrician && { backgroundColor: '#3B82F6' }]} />
-                  </View>
-                  <Text style={styles.healthProgressPercent}>%{completionPercent}</Text>
-                </View>
-              </TouchableOpacity>
+                </TouchableOpacity>
+              </Animated.View>
             </View>
           )
         }
+
 
         {/* Electrician Quick Actions (RESTORED) */}
         {isElectrician && (
@@ -1860,5 +1884,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: fonts.semiBold,
     lineHeight: 18,
+  },
+  rgbBorderWrapper: {
+    borderWidth: 3,
+    borderRadius: 20,
+    padding: 2,
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 12,
+    elevation: 8,
   },
 });

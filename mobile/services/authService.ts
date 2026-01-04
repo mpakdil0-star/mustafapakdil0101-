@@ -69,8 +69,8 @@ export const authService = {
       const response = await apiClient.post(API_ENDPOINTS.REGISTER, data);
       return handleAuthResponse(response.data.data);
     } catch (error: any) {
-      const message = error.response?.data?.error?.message || error.message || 'Kayıt işlemi başarısız oldu';
-      throw new Error(message);
+      // Re-throw to preserve axios error structure for proper status code handling
+      throw error;
     }
   },
 
@@ -88,8 +88,8 @@ export const authService = {
         return handleAuthResponse(await mockAuth.login(data));
       }
 
-      const message = error.response?.data?.error?.message || error.message || 'Giriş işlemi başarısız oldu';
-      throw new Error(message);
+      // Re-throw to preserve axios error structure for proper status code handling
+      throw error;
     }
   },
 

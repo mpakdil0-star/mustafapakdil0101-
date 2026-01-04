@@ -40,10 +40,44 @@ const initialState: AuthState = {
 };
 
 const handleAuthError = (error: any, defaultMessage: string) => {
-  if (error instanceof Error) {
-    return error.message;
+  // Get status code from axios error
+  const statusCode = error?.response?.status;
+  const serverMessage = error?.response?.data?.error?.message || error?.response?.data?.message;
+
+  // Map status codes to user-friendly Turkish messages
+  const errorMessages: Record<number, string> = {
+    400: 'Girilen bilgilerde hata var. Lütfen kontrol edin.',
+    401: 'E-posta veya şifre hatalı. Lütfen tekrar deneyin.',
+    403: 'Bu işlem için yetkiniz bulunmuyor.',
+    404: 'Kullanıcı bulunamadı.',
+    409: serverMessage || 'Bu e-posta veya telefon numarası zaten kayıtlı.',
+    422: 'Girilen bilgiler geçersiz. Lütfen kontrol edin.',
+    429: 'Çok fazla deneme yaptınız. Lütfen biraz bekleyin.',
+    500: 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.',
+    503: 'Sunucu şu an erişilebilir değil. Lütfen daha sonra tekrar deneyin.',
+  };
+
+  // Check if we have a Turkish message from the server
+  if (serverMessage && serverMessage.includes('zaten') || serverMessage?.includes('hatalı')) {
+    return serverMessage;
   }
-  return error?.response?.data?.error?.message || defaultMessage;
+
+  // Return mapped message or default
+  if (statusCode && errorMessages[statusCode]) {
+    return errorMessages[statusCode];
+  }
+
+  // If error is a string, return it directly
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  // Check for network errors
+  if (error?.message?.includes('Network') || error?.message?.includes('timeout')) {
+    return 'İnternet bağlantınızı kontrol edin.';
+  }
+
+  return serverMessage || defaultMessage;
 };
 
 export const register = createAsyncThunk(

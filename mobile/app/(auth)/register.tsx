@@ -76,13 +76,12 @@ export default function RegisterScreen() {
     if (passwordErr) newErrors.password = passwordErr;
     if (phoneErr) newErrors.phone = phoneErr;
 
-    if (!location) {
-      newErrors.location = 'Lütfen konum seçiniz';
-    }
+    // Location is optional for registration - user can set it later in profile
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
 
   const handleRegister = async (forceRegister = false) => {
     if (!validate()) return;
