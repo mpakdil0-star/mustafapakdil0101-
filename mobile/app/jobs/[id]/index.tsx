@@ -197,7 +197,12 @@ export default function JobDetailScreen() {
         bidId: bidId,
         jobId: id
       });
-      if (resp?.conversationId) router.push(`/messages/${resp.conversationId}`);
+
+      if (resp?.conversationId) {
+        // Mesajın veritabanına kaydedilmesi için kısa bir bekleme
+        await new Promise(resolve => setTimeout(resolve, 500));
+        router.push(`/messages/${resp.conversationId}`);
+      }
     } catch (error) {
       showAlert('Hata', 'Sohbet başlatılamadı.', 'error');
     }
