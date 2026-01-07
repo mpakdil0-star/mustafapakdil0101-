@@ -449,30 +449,89 @@ export const getElectricianStats = async (req: Request, res: Response, next: Nex
         const completedJobs = userData?.completedJobsCount || 0;
 
         // Mock stats (database bağlantısı yoksa) - Use dynamic values where possible
+        // Calculate dynamic stats from userBidsStore
+        let totalBids = 0;
+        let activeBids = 0;
+        let activeJobs = 0;
+        let totalEarnings = 0;
+
+        // Default chart data
+        let weeklyEarnings = [
+            { day: 'Pzt', amount: 0 },
+            { day: 'Sal', amount: 0 },
+            { day: 'Çar', amount: 0 },
+            { day: 'Per', amount: 0 },
+            { day: 'Cum', amount: 0 },
+            { day: 'Cmt', amount: 0 },
+            { day: 'Paz', amount: 0 },
+        ];
+        let categoryMap: Record<string, number> = {};
+
+        try {
+            const { userBidsStore } = require('./bidController');
+            if (userBidsStore && userBidsStore.has(userId)) {
+                const bids = userBidsStore.get(userId) || [];
+                totalBids = bids.length;
+                activeBids = bids.filter((b: any) => b.status === 'PENDING' || b.status === 'OFFERED').length;
+                activeJobs = bids.filter((b: any) => b.status === 'ACCEPTED' && b.jobPost?.status !== 'COMPLETED').length;
+
+                // Process completed jobs for Earnings and Distribution
+                bids.forEach((b: any) => {
+                    const isCompleted = b.status === 'COMPLETED' || b.jobPost?.status === 'COMPLETED';
+                    if (isCompleted) {
+                        const amount = Number(b.amount) || 0;
+                        totalEarnings += amount;
+
+                        // Weekly Earnings
+                        // Use updated date of bid or completed date of job
+                        const dateStr = b.jobPost?.completedAt || b.updatedAt || new Date().toISOString();
+                        const date = new Date(dateStr);
+                        const dayIndex = date.getDay(); // 0(Sun) - 6(Sat)
+
+                        // Map Sun(0)->6, Mon(1)->0...
+                        const arrayIndex = dayIndex === 0 ? 6 : dayIndex - 1;
+                        if (weeklyEarnings[arrayIndex]) {
+                            weeklyEarnings[arrayIndex].amount += amount;
+                        }
+
+                        // Category Distribution
+                        let category = b.jobPost?.categoryId || 'Diğer';
+                        // Infer category from title if missing
+                        if ((!category || category === 'Diğer') && b.jobPost?.title) {
+                            const title = b.jobPost.title.toLowerCase();
+                            if (title.includes('tesisat')) category = 'Tesisat';
+                            else if (title.includes('montaj')) category = 'Montaj';
+                            else if (title.includes('tamir') || title.includes('onarım')) category = 'Arıza Onarım';
+                            else if (title.includes('aydınlatma')) category = 'Aydınlatma';
+                            else if (title.includes('kamera') || title.includes('güvenlik')) category = 'Güvenlik';
+                            else if (title.includes('priz') || title.includes('anahtar')) category = 'Priz/Anahtar';
+                        }
+                        categoryMap[category] = (categoryMap[category] || 0) + 1;
+                    }
+                });
+            }
+        } catch (e) { console.error('Stats Calc Error:', e); }
+
+        const categoryDistribution = Object.keys(categoryMap).length > 0
+            ? Object.keys(categoryMap).map(key => ({ category: key, count: categoryMap[key] }))
+            : [
+                { category: 'Arıza Onarım', count: 0 },
+                { category: 'Tesisat', count: 0 },
+                { category: 'Aydınlatma', count: 0 },
+                { category: 'Priz/Anahtar', count: 0 },
+                { category: 'Diğer', count: 0 },
+            ];
+
         const mockStats = {
-            totalBids: 12,
-            activeBids: 3,
-            activeJobs: 2,
-            completedJobs: completedJobs, // Use real count, even if 0
-            totalEarnings: completedJobs * 350 + 1200, // Estimate based on jobs
-            rating: reviewStats.ratingAverage || 0, // Use real rating
-            reviewCount: reviewStats.totalReviews || 0, // Use real count
-            weeklyEarnings: [
-                { day: 'Pzt', amount: 450 },
-                { day: 'Sal', amount: 820 },
-                { day: 'Çar', amount: 320 },
-                { day: 'Per', amount: 650 },
-                { day: 'Cum', amount: 980 },
-                { day: 'Cmt', amount: 1200 },
-                { day: 'Paz', amount: 0 },
-            ],
-            categoryDistribution: [
-                { category: 'Arıza Onarım', count: 18 },
-                { category: 'Tesisat', count: 12 },
-                { category: 'Aydınlatma', count: 8 },
-                { category: 'Priz/Anahtar', count: 5 },
-                { category: 'Diğer', count: 2 },
-            ],
+            totalBids: totalBids,
+            activeBids: activeBids,
+            activeJobs: activeJobs,
+            completedJobs: completedJobs,
+            totalEarnings: totalEarnings,
+            rating: reviewStats.ratingAverage || 0,
+            reviewCount: reviewStats.totalReviews || 0,
+            weeklyEarnings,
+            categoryDistribution,
         };
 
         res.status(200).json({
