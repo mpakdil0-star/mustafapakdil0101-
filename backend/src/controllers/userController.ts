@@ -265,8 +265,29 @@ export const removeAvatar = async (req: Request, res: Response, next: NextFuncti
             });
             console.log('Database updated, avatar removed');
         } catch (dbError: any) {
-            console.warn('Database update failed, returning mock response:', dbError.message);
+            console.warn('Database update failed, using mock mode to remove avatar:', dbError.message);
+            // Clear profileImageUrl in mockStorage - use empty string to trigger the !== undefined check
+            const currentStore = mockStorage.get(userId);
+            if (currentStore) {
+                currentStore.profileImageUrl = undefined;
+            }
+            // Force save to disk
+            const fs = require('fs');
+            const path = require('path');
+            const DATA_DIR = path.join(process.cwd(), 'data');
+            const DATA_FILE = path.join(DATA_DIR, 'mock_users.json');
+            try {
+                const { getAllMockUsers } = require('../utils/mockStorage');
+                fs.writeFileSync(DATA_FILE, JSON.stringify(getAllMockUsers(), null, 2), 'utf8');
+                console.log('Mock storage saved to disk after avatar removal');
+            } catch (saveError) {
+                console.error('Failed to save mock storage:', saveError);
+            }
+
             updatedUser = mockStorage.getFullUser(userId, user.userType);
+            // Ensure profileImageUrl is null in response
+            updatedUser.profileImageUrl = null;
+            console.log('Mock storage updated, avatar removed for user:', userId);
         }
 
         res.status(200).json({
@@ -554,6 +575,10 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
                 experienceYears
             });
 
+            // Refresh socket rooms (in case city/location changed)
+            const { refreshUserRooms } = require('../services/socketHandler');
+            refreshUserRooms(userId);
+
             res.status(200).json({
                 success: true,
                 data: { user: updatedUser },
@@ -586,6 +611,10 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
                 email,
                 isVerified: (willVerify || isAlreadyVerified) ? true : false
             });
+
+            // Refresh socket rooms (Mock mode city change)
+            const { refreshUserRooms } = require('../services/socketHandler');
+            refreshUserRooms(userId);
 
             res.status(200).json({
                 success: true,

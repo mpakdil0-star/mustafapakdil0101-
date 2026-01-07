@@ -22,8 +22,10 @@ interface MockUserStore {
         submittedAt?: string;
         documentUrl?: string;
         city?: string;
+        district?: string;
         bio?: string;
         completedJobsCount?: number;
+        locations?: any[];
     }
 }
 
@@ -121,7 +123,10 @@ export const mockStorage = {
                 email: userId.includes('@') ? (userId.includes('mock-user-') ? userId.split('-').filter(p => p.includes('.')).join('.') || userId : userId) : 'mock@example.com',
                 isVerified: false,
                 isActive: true, // Default active
-                verificationStatus: undefined
+                city: 'İstanbul',
+                district: 'Merkez',
+                verificationStatus: undefined,
+                locations: []
             };
             saveToDisk();
         }
@@ -141,7 +146,10 @@ export const mockStorage = {
         documentType?: string,
         submittedAt?: string,
         documentUrl?: string | null,
-        passwordHash?: string
+        passwordHash?: string,
+        city?: string,
+        district?: string,
+        locations?: any[]
     }) => {
         const store = mockStorage.get(userId);
         if (data.passwordHash !== undefined) store.passwordHash = data.passwordHash;
@@ -157,6 +165,9 @@ export const mockStorage = {
         if (data.documentType !== undefined) store.documentType = data.documentType;
         if (data.submittedAt !== undefined) store.submittedAt = data.submittedAt;
         if (data.documentUrl !== undefined) store.documentUrl = data.documentUrl || undefined;
+        if (data.city !== undefined) store.city = data.city;
+        if (data.district !== undefined) store.district = data.district;
+        if (data.locations !== undefined) store.locations = data.locations;
         saveToDisk();
         return store;
     },

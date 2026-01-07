@@ -540,9 +540,15 @@ export default function JobDetailScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Müşteri Bilgileri</Text>
             <Card style={[styles.acceptedBidCard, { borderColor: colors.primary + '40', backgroundColor: staticColors.white, shadowColor: colors.primary }]}>
               <View style={styles.bidHeader}>
-                <Image source={{ uri: getFileUrl(jobData.citizen?.profileImageUrl) || undefined }} style={styles.bidAvatar} />
+                {jobData.citizen?.profileImageUrl && getFileUrl(jobData.citizen.profileImageUrl) ? (
+                  <Image source={{ uri: getFileUrl(jobData.citizen.profileImageUrl)! }} style={styles.bidAvatar} />
+                ) : (
+                  <View style={[styles.bidAvatar, { backgroundColor: colors.primary + '15', justifyContent: 'center', alignItems: 'center' }]}>
+                    <Ionicons name="person" size={24} color={colors.primary} />
+                  </View>
+                )}
                 <View style={styles.bidInfo}>
-                  <Text style={[styles.bidName, { color: colors.text }]}>{jobData.citizen?.fullName}</Text>
+                  <Text style={[styles.bidName, { color: colors.text }]}>{jobData.citizen?.fullName || 'Müşteri'}</Text>
                   <View style={[styles.trustBadge, { backgroundColor: staticColors.success + '10', alignSelf: 'flex-start', marginTop: 4 }]}>
                     <Ionicons name="checkmark-circle" size={12} color={staticColors.success} />
                     <Text style={[styles.trustBadgeText, { color: staticColors.success, fontSize: 10 }]}>Müşteri Onaylı</Text>

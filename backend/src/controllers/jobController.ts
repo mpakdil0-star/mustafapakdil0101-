@@ -183,9 +183,9 @@ export const createJobController = async (
           updatedAt: new Date().toISOString(),
           citizen: {
             id: req.user.id,
-            fullName: req.user.email ? req.user.email.split('@')[0] : 'Kullanıcı',
-            profileImageUrl: null,
-            phone: mockStorage.get(req.user.id)?.phone || '05555555555',
+            fullName: mockStorage.get(req.user.id)?.fullName || (req.user.email ? req.user.email.split('@')[0] : 'Kullanıcı'),
+            profileImageUrl: mockStorage.get(req.user.id)?.profileImageUrl || null,
+            phone: mockStorage.get(req.user.id)?.phone || null,
           },
         };
 
@@ -319,6 +319,21 @@ export const getJobByIdController = async (
       }
 
       if (job) {
+        // Enrich citizen data with profile info from mockStorage
+        if (job.citizenId) {
+          const citizenData = mockStorage.get(job.citizenId);
+          job = {
+            ...job,
+            citizen: {
+              ...job.citizen,
+              id: job.citizenId,
+              fullName: citizenData?.fullName || job.citizen?.fullName || 'Müşteri',
+              profileImageUrl: citizenData?.profileImageUrl || job.citizen?.profileImageUrl || null,
+              phone: citizenData?.phone || job.citizen?.phone || null,
+            },
+          };
+        }
+
         let maskedJob = { ...job };
         if (isGuest) {
           maskedJob = maskJobData(maskedJob);
@@ -376,6 +391,21 @@ export const getJobByIdController = async (
         }
 
         if (job) {
+          // Enrich citizen data with profile info from mockStorage
+          if (job.citizenId) {
+            const citizenData = mockStorage.get(job.citizenId);
+            job = {
+              ...job,
+              citizen: {
+                ...job.citizen,
+                id: job.citizenId,
+                fullName: citizenData?.fullName || job.citizen?.fullName || 'Müşteri',
+                profileImageUrl: citizenData?.profileImageUrl || job.citizen?.profileImageUrl || null,
+                phone: citizenData?.phone || job.citizen?.phone || null,
+              },
+            };
+          }
+
           if (isGuest) job = maskJobData(job);
           const { _count, ...jobWithoutCount } = job;
           return res.json({

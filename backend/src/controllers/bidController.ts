@@ -173,11 +173,11 @@ export const createBidController = async (
           updatedAt: new Date().toISOString(),
           electrician: {
             id: req.user.id,
-            fullName: req.user.email.split('@')[0] || 'Mock Electrician',
-            profileImageUrl: null,
+            fullName: mockStorage.get(req.user.id)?.fullName || req.user.email.split('@')[0] || 'Mock Electrician',
+            profileImageUrl: mockStorage.get(req.user.id)?.profileImageUrl || null,
             phone: mockStorage.get(req.user.id)?.phone || '05555555555',
             electricianProfile: {
-              verificationStatus: 'APPROVED',
+              verificationStatus: mockStorage.get(req.user.id)?.verificationStatus || 'APPROVED',
               licenseVerified: true,
               licenseNumber: 'MOCK-LIC-12345',
             },
@@ -334,7 +334,26 @@ export const getJobBidsController = async (
     // This avoids any potential Prisma initialization delays
     if (jobId.startsWith('mock-') || req.user?.id?.startsWith('mock-')) {
       console.log('⚡ Fast path: returning mock bids for job:', jobId);
-      const bids = Array.from(bidStoreById.values()).filter(bid => bid.jobPostId === jobId);
+      const bids = Array.from(bidStoreById.values())
+        .filter(bid => bid.jobPostId === jobId)
+        .map(bid => {
+          // Enrich bid with up-to-date electrician profile data from mockStorage
+          const electricianData = mockStorage.get(bid.electricianId);
+          return {
+            ...bid,
+            electrician: {
+              ...bid.electrician,
+              id: bid.electricianId,
+              fullName: electricianData?.fullName || bid.electrician?.fullName || 'Elektrikçi',
+              profileImageUrl: electricianData?.profileImageUrl || bid.electrician?.profileImageUrl || null,
+              phone: electricianData?.phone || bid.electrician?.phone || null,
+              electricianProfile: {
+                ...bid.electrician?.electricianProfile,
+                verificationStatus: electricianData?.verificationStatus || bid.electrician?.electricianProfile?.verificationStatus || 'PENDING',
+              },
+            },
+          };
+        });
       return res.json({
         success: true,
         data: { bids },
@@ -362,8 +381,27 @@ export const getJobBidsController = async (
       if (isConnectionError || jobId.startsWith('mock-')) {
         console.warn('⚠️ Database not connected, searching for bids in memory store');
 
-        // Filter bids by jobPostId from global store
-        const bids = Array.from(bidStoreById.values()).filter(bid => bid.jobPostId === jobId);
+        // Filter bids by jobPostId from global store and enrich with profile data
+        const bids = Array.from(bidStoreById.values())
+          .filter(bid => bid.jobPostId === jobId)
+          .map(bid => {
+            // Enrich bid with up-to-date electrician profile data from mockStorage
+            const electricianData = mockStorage.get(bid.electricianId);
+            return {
+              ...bid,
+              electrician: {
+                ...bid.electrician,
+                id: bid.electricianId,
+                fullName: electricianData?.fullName || bid.electrician?.fullName || 'Elektrikçi',
+                profileImageUrl: electricianData?.profileImageUrl || bid.electrician?.profileImageUrl || null,
+                phone: electricianData?.phone || bid.electrician?.phone || null,
+                electricianProfile: {
+                  ...bid.electrician?.electricianProfile,
+                  verificationStatus: electricianData?.verificationStatus || bid.electrician?.electricianProfile?.verificationStatus || 'PENDING',
+                },
+              },
+            };
+          });
 
         return res.json({
           success: true,
