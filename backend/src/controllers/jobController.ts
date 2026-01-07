@@ -3,7 +3,7 @@ import { isDatabaseAvailable } from '../config/database';
 import { jobService } from '../services/jobService';
 import { AuthRequest } from '../middleware/auth';
 import { ValidationError } from '../utils/errors';
-import { mockStorage } from '../utils/mockStorage';
+import { mockStorage, mockReviewStorage } from '../utils/mockStorage';
 import { bidStoreById } from './bidController';
 import { addMockNotification } from '../routes/notificationRoutes';
 import * as fs from 'fs';
@@ -1251,10 +1251,18 @@ export const completeJobController = async (
 
       // Get electrician ID
       const electricianId = mockJob.assignedElectricianId || mockJob.acceptedElectricianId;
+      try {
+        const logMsg = `[${new Date().toISOString()}] Job Completion: JobId=${id}, ElectricianId=${electricianId}, Assigned=${mockJob.assignedElectricianId}, Accepted=${mockJob.acceptedElectricianId}\n`;
+        const logPath = path.join(process.cwd(), 'debug_output.txt');
+        fs.appendFileSync(logPath, logMsg);
+      } catch (e) { console.error('Log error', e); }
+
+      console.log(`👷 Job Completion Debug: JobId=${id}, ElectricianId=${electricianId}`);
+      console.log('👷 Assigned:', mockJob.assignedElectricianId, 'Accepted:', mockJob.acceptedElectricianId);
 
       // 2. Add Review if provided using mockReviewStorage
       if (rating && electricianId) {
-        const { mockReviewStorage, mockStorage } = require('../utils/mockStorage');
+        // require() removed, using top-level import
 
         // Get reviewer info from mockStorage if not available in req.user
         let reviewerName = (req.user as any).fullName;
@@ -1279,18 +1287,55 @@ export const completeJobController = async (
 
         mockJob.hasReview = true;
         mockJob.review = review;
+        console.log(`✅ Review added for electrician ${electricianId}`);
       }
 
       // 3. Increment electrician's completedJobsCount in mockStorage
       if (electricianId) {
-        const { mockStorage } = require('../utils/mockStorage');
         const electricianData = mockStorage.get(electricianId);
         if (electricianData) {
           const currentCount = electricianData.completedJobsCount || 0;
+          console.log(`📊 Updating job count for ${electricianId}. Old: ${currentCount}, New: ${currentCount + 1}`);
+
+          try {
+            const logPath = path.join(process.cwd(), 'debug_output.txt');
+            fs.appendFileSync(logPath, `[${new Date().toISOString()}] Updating count for ${electricianId}. Old: ${currentCount}, New: ${currentCount + 1}\n`);
+          } catch (e) { console.error(e); }
+
           mockStorage.updateProfile(electricianId, {
             completedJobsCount: currentCount + 1
           });
+
+          // Verify update
+          const updatedData = mockStorage.get(electricianId);
+          console.log(`✅ Verified new count: ${updatedData?.completedJobsCount}`);
+        } else {
+          console.warn(`⚠️ Electrician data not found for ID: ${electricianId}`);
         }
+      } else {
+        console.warn('⚠️ No electrician ID found for this job, cannot increment count.');
+      }
+
+      // Sync job status in userBidsStore (Electrician's My Bids list)
+      if (electricianId) {
+        try {
+          const { userBidsStore } = require('./bidController');
+          const bids = userBidsStore.get(electricianId) || [];
+          const bidIndex = bids.findIndex((b: any) => b.jobPostId === id);
+
+          if (bidIndex !== -1) {
+            if (bids[bidIndex].jobPost) {
+              bids[bidIndex].jobPost.status = 'COMPLETED';
+              bids[bidIndex].jobPost.completedAt = new Date().toISOString();
+            }
+            userBidsStore.set(electricianId, bids);
+
+            try {
+              const logPath = path.join(process.cwd(), 'debug_output.txt');
+              fs.appendFileSync(logPath, `[${new Date().toISOString()}] Synced bid status for electrician ${electricianId}\n`);
+            } catch (e) { }
+          }
+        } catch (e) { console.error('Sync error:', e); }
       }
 
       jobStoreById.set(id, mockJob);

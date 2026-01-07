@@ -106,8 +106,9 @@ function serveMockResponse(req: Request, res: Response, city: any, latNum: any, 
             isVerified: user.isVerified || false,
             electricianProfile: {
                 specialties: specialties.length > 0 ? specialties : ['Genel Elektrik'],
-                ratingAverage: 0,
-                totalReviews: 0,
+                // Get real rating stats from mockReviewStorage
+                ratingAverage: mockReviewStorage.getRatingStats(user.id).ratingAverage || 0,
+                totalReviews: mockReviewStorage.getRatingStats(user.id).totalReviews || 0,
                 experienceYears: experienceYears,
                 bio: rawData.bio || '',
                 verificationStatus: user.isVerified ? 'VERIFIED' : 'PENDING',
@@ -441,15 +442,21 @@ export const getElectricianStats = async (req: Request, res: Response, next: Nex
             // Database bağlantı hatası - mock veriler döndür
         }
 
-        // Mock stats (database bağlantısı yoksa)
+        // Get dynamic mock data
+        // userId is already defined at top of function
+        const reviewStats = mockReviewStorage.getRatingStats(userId);
+        const userData: any = mockStorage.get(userId);
+        const completedJobs = userData?.completedJobsCount || 0;
+
+        // Mock stats (database bağlantısı yoksa) - Use dynamic values where possible
         const mockStats = {
             totalBids: 12,
             activeBids: 3,
             activeJobs: 2,
-            completedJobs: 45,
-            totalEarnings: 15400,
-            rating: 4.8,
-            reviewCount: 34,
+            completedJobs: completedJobs, // Use real count, even if 0
+            totalEarnings: completedJobs * 350 + 1200, // Estimate based on jobs
+            rating: reviewStats.ratingAverage || 0, // Use real rating
+            reviewCount: reviewStats.totalReviews || 0, // Use real count
             weeklyEarnings: [
                 { day: 'Pzt', amount: 450 },
                 { day: 'Sal', amount: 820 },

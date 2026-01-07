@@ -126,7 +126,9 @@ export const mockStorage = {
                 city: 'İstanbul',
                 district: 'Merkez',
                 verificationStatus: undefined,
-                locations: []
+                locations: [],
+                completedJobsCount: 0,
+                profileImageUrl: undefined
             };
             saveToDisk();
         }
@@ -204,6 +206,7 @@ export const mockStorage = {
             documentType: store.documentType || null,
             submittedAt: store.submittedAt || null,
             electricianProfile: userType === 'ELECTRICIAN' ? {
+                completedJobsCount: store.completedJobsCount || 0,
                 experienceYears: store.experienceYears,
                 specialties: store.specialties,
                 creditBalance: store.creditBalance,

@@ -2,7 +2,7 @@ import { Response, NextFunction } from 'express';
 import { bidService } from '../services/bidService';
 import { AuthRequest } from '../middleware/auth';
 import { isDatabaseAvailable } from '../config/database';
-import { jobStoreById, saveMockJobs } from './jobController';
+// import { jobStoreById, saveMockJobs } from './jobController'; // Removed for circular dependency fix
 import { notifyUser } from '../server';
 import { mockStorage } from '../utils/mockStorage';
 import * as fs from 'fs';
@@ -55,7 +55,7 @@ const loadMockBids = () => {
 
 // In-memory store for bids created when database is not available
 // Key: userId, Value: array of bids
-const userBidsStore = new Map<string, any[]>();
+export const userBidsStore = new Map<string, any[]>();
 
 // Load bids on startup
 loadMockBids();
@@ -147,6 +147,7 @@ export const createBidController = async (
         console.log(`✅ [MOCK BID] Credit deducted. New balance: ${currentBalance - 1}`);
 
         // Try to get job details from jobStoreById
+        const { jobStoreById } = require('./jobController');
         let job: any = jobStoreById.get(bidData.jobPostId);
 
         // If not found in store, try to get from mock jobs
@@ -591,7 +592,19 @@ export const acceptBidController = async (
       bidStoreById.set(id, acceptedBid);
       saveMockBids();
 
+      // Sync with user's specific bid list
+      if (acceptedBid.electricianId) {
+        const userBids = userBidsStore.get(acceptedBid.electricianId) || [];
+        const bidIndex = userBids.findIndex((b: any) => b.id === id);
+        if (bidIndex !== -1) {
+          userBids[bidIndex] = acceptedBid;
+          userBidsStore.set(acceptedBid.electricianId, userBids);
+          console.log(`✅ [MOCK] Updated userBidsStore for electrician ${acceptedBid.electricianId}`);
+        }
+      }
+
       // İşi de ilerlet
+      const { jobStoreById, saveMockJobs } = require('./jobController');
       const job = jobStoreById.get(acceptedBid.jobPostId);
       if (job) {
         job.status = 'IN_PROGRESS';
@@ -711,6 +724,7 @@ export const rejectBidController = async (
       // --- ADDED: Real-time notification for electrician ---
       if (rejectedBid.electricianId) {
         console.log(`📢 [MOCK] Sending bid_rejected notification to electrician ${rejectedBid.electricianId}`);
+        const { jobStoreById } = require('./jobController');
         const job = jobStoreById.get(rejectedBid.jobPostId);
         notifyUser(rejectedBid.electricianId, 'bid_rejected', {
           type: 'bid_rejected',
