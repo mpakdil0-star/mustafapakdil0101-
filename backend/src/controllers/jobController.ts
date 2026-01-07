@@ -1249,31 +1249,45 @@ export const completeJobController = async (
       mockJob.status = 'COMPLETED';
       mockJob.completedAt = new Date().toISOString();
 
-      // 2. Add Review if provided
-      if (rating) {
-        const mockReview = {
-          id: `review-${Date.now()}`,
-          jobPostId: id,
-          citizenId: req.user.id,
-          electricianId: mockJob.assignedElectricianId || mockJob.acceptedElectricianId,
-          rating,
-          comment: comment || null,
-          createdAt: new Date().toISOString(),
-        };
-        mockReview.id = `mock-review-${Date.now()}`;
+      // Get electrician ID
+      const electricianId = mockJob.assignedElectricianId || mockJob.acceptedElectricianId;
+
+      // 2. Add Review if provided using mockReviewStorage
+      if (rating && electricianId) {
+        const { mockReviewStorage, mockStorage } = require('../utils/mockStorage');
+
+        // Get reviewer info from mockStorage if not available in req.user
+        let reviewerName = (req.user as any).fullName;
+        let reviewerImageUrl = (req.user as any).profileImageUrl || null;
+
+        if (!reviewerName && req.user.id) {
+          const reviewerData = mockStorage.get(req.user.id);
+          reviewerName = reviewerData?.fullName || 'Müşteri';
+          reviewerImageUrl = reviewerData?.profileImageUrl || null;
+        }
+
+        // Add review to mockReviewStorage
+        const review = mockReviewStorage.addReview({
+          electricianId: electricianId,
+          reviewerId: req.user.id,
+          reviewerName: reviewerName || 'Müşteri',
+          reviewerImageUrl: reviewerImageUrl,
+          rating: Number(rating),
+          comment: comment || '',
+          jobId: id
+        });
+
         mockJob.hasReview = true;
-        mockJob.review = mockReview;
+        mockJob.review = review;
       }
 
       // 3. Increment electrician's completedJobsCount in mockStorage
-      const electricianId = mockJob.assignedElectricianId || mockJob.acceptedElectricianId;
       if (electricianId) {
         const { mockStorage } = require('../utils/mockStorage');
         const electricianData = mockStorage.get(electricianId);
         if (electricianData) {
           const currentCount = electricianData.completedJobsCount || 0;
-          mockStorage.set(electricianId, {
-            ...electricianData,
+          mockStorage.updateProfile(electricianId, {
             completedJobsCount: currentCount + 1
           });
         }

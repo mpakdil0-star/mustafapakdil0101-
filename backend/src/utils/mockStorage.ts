@@ -149,7 +149,8 @@ export const mockStorage = {
         passwordHash?: string,
         city?: string,
         district?: string,
-        locations?: any[]
+        locations?: any[],
+        completedJobsCount?: number
     }) => {
         const store = mockStorage.get(userId);
         if (data.passwordHash !== undefined) store.passwordHash = data.passwordHash;
@@ -168,6 +169,7 @@ export const mockStorage = {
         if (data.city !== undefined) store.city = data.city;
         if (data.district !== undefined) store.district = data.district;
         if (data.locations !== undefined) store.locations = data.locations;
+        if (data.completedJobsCount !== undefined) store.completedJobsCount = data.completedJobsCount;
         saveToDisk();
         return store;
     },
@@ -223,6 +225,110 @@ export const mockStorage = {
             return mockStorage.getFullUser(id, userType);
         });
     }
+};
+
+// ============== MOCK REVIEWS STORAGE ==============
+
+interface MockReview {
+    id: string;
+    electricianId: string;
+    reviewerId: string;
+    reviewerName: string;
+    reviewerImageUrl?: string | null;
+    rating: number;
+    comment: string;
+    createdAt: string;
+    jobId?: string;
+}
+
+const REVIEWS_FILE = path.join(DATA_DIR, 'mock_reviews.json');
+
+// Load reviews from file
+let mockReviews: MockReview[] = [];
+if (fs.existsSync(REVIEWS_FILE)) {
+    try {
+        const reviewData = fs.readFileSync(REVIEWS_FILE, 'utf8');
+        mockReviews = JSON.parse(reviewData);
+        console.log(`⭐ Mock reviews loaded: ${mockReviews.length} reviews`);
+    } catch (error) {
+        console.error('❌ Failed to load mock reviews:', error);
+        mockReviews = [];
+    }
+}
+
+const saveReviewsToDisk = () => {
+    try {
+        fs.writeFileSync(REVIEWS_FILE, JSON.stringify(mockReviews, null, 2), 'utf8');
+    } catch (error) {
+        console.error('❌ Failed to save mock reviews:', error);
+    }
+};
+
+export const mockReviewStorage = {
+    // Add a new review
+    addReview: (review: Omit<MockReview, 'id' | 'createdAt'>) => {
+        const newReview: MockReview = {
+            ...review,
+            id: `review-${Date.now()}`,
+            createdAt: new Date().toISOString()
+        };
+        mockReviews.push(newReview);
+        saveReviewsToDisk();
+
+        // Update electrician's rating stats
+        mockReviewStorage.updateElectricianRating(review.electricianId);
+
+        return newReview;
+    },
+
+    // Get reviews for an electrician
+    getReviewsForElectrician: (electricianId: string) => {
+        return mockReviews
+            .filter(r => r.electricianId === electricianId)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    },
+
+    // Calculate and update electrician's rating
+    updateElectricianRating: (electricianId: string) => {
+        const reviews = mockReviews.filter(r => r.electricianId === electricianId);
+        if (reviews.length === 0) return { ratingAverage: 0, totalReviews: 0 };
+
+        const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
+        const ratingAverage = parseFloat((totalRating / reviews.length).toFixed(1));
+
+        // Update user's rating in mockStore if exists
+        if (mockStore[electricianId]) {
+            (mockStore[electricianId] as any).ratingAverage = ratingAverage;
+            (mockStore[electricianId] as any).totalReviews = reviews.length;
+            saveToDisk();
+        }
+
+        return { ratingAverage, totalReviews: reviews.length };
+    },
+
+    // Get rating stats for an electrician
+    getRatingStats: (electricianId: string) => {
+        const reviews = mockReviews.filter(r => r.electricianId === electricianId);
+        if (reviews.length === 0) return { ratingAverage: 0, totalReviews: 0 };
+
+        const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
+        return {
+            ratingAverage: parseFloat((totalRating / reviews.length).toFixed(1)),
+            totalReviews: reviews.length
+        };
+    },
+
+    // Check if user has already reviewed this electrician for a specific job
+    hasReviewed: (reviewerId: string, electricianId: string, jobId?: string) => {
+        return mockReviews.some(r =>
+            r.reviewerId === reviewerId &&
+            r.electricianId === electricianId &&
+            (!jobId || r.jobId === jobId)
+        );
+    },
+
+    // Get all reviews
+    getAllReviews: () => mockReviews
 };
 
 // Export helper to get all mock users (for notifications, etc.)

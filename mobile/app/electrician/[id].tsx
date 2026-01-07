@@ -197,18 +197,54 @@ export default function ElectricianProfileScreen() {
                     </Card>
                 )}
 
-                {/* Contact Buttons */}
-                <View style={styles.actionButtons}>
-                    {electrician.phone && (
-                        <Button
-                            title="Ara"
-                            onPress={handleCall}
-                            variant="success"
-                            icon={<Ionicons name="call" size={20} color={staticColors.white} />}
-                            style={styles.actionButton}
-                        />
-                    )}
-                </View>
+                {/* Customer Reviews */}
+                {electrician.reviewsReceived && electrician.reviewsReceived.length > 0 && (
+                    <Card style={styles.reviewsCard}>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                            Müşteri Yorumları ({electrician.reviewsReceived.length})
+                        </Text>
+                        {electrician.reviewsReceived.map((review: any, index: number) => (
+                            <View key={review.id || index} style={styles.reviewItem}>
+                                <View style={styles.reviewHeader}>
+                                    <View style={styles.reviewerInfo}>
+                                        {review.reviewer?.profileImageUrl ? (
+                                            <Image
+                                                source={{ uri: getFileUrl(review.reviewer.profileImageUrl) || '' }}
+                                                style={styles.reviewerAvatarImage}
+                                            />
+                                        ) : (
+                                            <View style={[styles.reviewerAvatar, { backgroundColor: colors.primary + '20' }]}>
+                                                <Ionicons name="person" size={16} color={colors.primary} />
+                                            </View>
+                                        )}
+                                        <Text style={[styles.reviewerName, { color: colors.text }]}>
+                                            {review.reviewer?.fullName || 'Müşteri'}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.reviewRating}>
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <Ionicons
+                                                key={star}
+                                                name={star <= review.rating ? "star" : "star-outline"}
+                                                size={14}
+                                                color="#F59E0B"
+                                            />
+                                        ))}
+                                    </View>
+                                </View>
+                                {review.comment && (
+                                    <Text style={[styles.reviewComment, { color: staticColors.textSecondary }]}>
+                                        "{review.comment}"
+                                    </Text>
+                                )}
+                                <Text style={styles.reviewDate}>
+                                    {new Date(review.createdAt).toLocaleDateString('tr-TR')}
+                                </Text>
+                            </View>
+                        ))}
+                    </Card>
+                )}
+
             </ScrollView>
         </View>
     );
@@ -455,5 +491,58 @@ const styles = StyleSheet.create({
     },
     actionButton: {
         height: 56,
+    },
+    reviewsCard: {
+        marginTop: spacing.md,
+        padding: spacing.lg,
+    },
+    reviewItem: {
+        paddingVertical: spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F1F5F9',
+    },
+    reviewHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: spacing.xs,
+    },
+    reviewerInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    reviewerAvatar: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    reviewerAvatarImage: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+    },
+    reviewerName: {
+        fontFamily: fonts.medium,
+        fontSize: 14,
+    },
+    reviewRating: {
+        flexDirection: 'row',
+        gap: 2,
+    },
+    reviewComment: {
+        fontFamily: fonts.regular,
+        fontSize: 14,
+        fontStyle: 'italic',
+        marginTop: spacing.xs,
+        lineHeight: 20,
+    },
+    reviewDate: {
+        fontFamily: fonts.regular,
+        fontSize: 12,
+        color: '#94A3B8',
+        marginTop: spacing.xs,
     },
 });

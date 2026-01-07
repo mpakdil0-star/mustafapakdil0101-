@@ -8,11 +8,11 @@ import { UserType } from '@prisma/client';
 import { notifyUser } from '../server';
 import pushNotificationService from '../services/pushNotificationService';
 import { calculateDistance, getBoundingBox } from '../utils/geo';
-import { mockStorage } from '../utils/mockStorage';
+import { mockStorage, mockReviewStorage } from '../utils/mockStorage';
 
 // Helper to serve mock electricians
 function serveMockResponse(req: Request, res: Response, city: any, latNum: any, lngNum: any) {
-    // Serve mock data
+    // Static mock electricians for fallback
     let mockElectricians: any[] = [
         {
             id: 'mock-elec-1',
@@ -58,39 +58,71 @@ function serveMockResponse(req: Request, res: Response, city: any, latNum: any, 
         }
     ];
 
+
+    // Include all registered electricians from mockStorage
+    const allMockUsers = mockStorage.getAllUsers();
+    console.log(`📋 Found ${allMockUsers.length} users in mockStorage`);
+
+    for (const user of allMockUsers) {
+        // Skip if already in static mocks or not an electrician
+        if (user.id.startsWith('mock-elec-') || user.userType !== 'ELECTRICIAN') {
+            continue;
+        }
+
+        console.log(`✅ Adding electrician from mockStorage: ${user.fullName} (${user.id})`);
+
+        // Get raw data from mockStorage for location info
+        const rawData = mockStorage.get(user.id);
+
+        // Get specialties from electricianProfile if available
+        const specialties = user.electricianProfile?.specialties || [];
+        const experienceYears = user.electricianProfile?.experienceYears || 0;
+
+        // Build locations from raw mockStorage data
+        let userLocations = [{ city: 'Türkiye', district: 'Merkez', latitude: 41.0, longitude: 29.0, isDefault: true }];
+
+        if (rawData.locations && rawData.locations.length > 0) {
+            userLocations = rawData.locations.map((loc: any) => ({
+                city: loc.city || 'Türkiye',
+                district: loc.district || 'Merkez',
+                latitude: loc.latitude || 41.0,
+                longitude: loc.longitude || 29.0,
+                isDefault: loc.isDefault ?? true
+            }));
+        } else if (rawData.city) {
+            userLocations = [{
+                city: rawData.city,
+                district: rawData.district || 'Merkez',
+                latitude: 41.0,
+                longitude: 29.0,
+                isDefault: true
+            }];
+        }
+
+        mockElectricians.push({
+            id: user.id,
+            fullName: user.fullName || 'Elektrikçi',
+            profileImageUrl: user.profileImageUrl || null,
+            isVerified: user.isVerified || false,
+            electricianProfile: {
+                specialties: specialties.length > 0 ? specialties : ['Genel Elektrik'],
+                ratingAverage: 0,
+                totalReviews: 0,
+                experienceYears: experienceYears,
+                bio: rawData.bio || '',
+                verificationStatus: user.isVerified ? 'VERIFIED' : 'PENDING',
+                isAvailable: true
+            },
+            locations: userLocations
+        });
+    }
+
     // Filter mocks by city if requested
     if (city) {
         mockElectricians = mockElectricians.filter(e =>
-            e.locations.some((l: any) => l.city.toLowerCase() === String(city).toLowerCase())
+            e.locations.some((l: any) => l.city.toLowerCase().includes(String(city).toLowerCase()) ||
+                String(city).toLowerCase().includes(l.city.toLowerCase()))
         );
-    }
-
-    // If current user is a mock electrician, add them to the list so they can see their own updates
-    const currentUserId = (req as any).user?.id;
-    if (currentUserId && currentUserId.startsWith('mock-')) {
-        const mockData = mockStorage.get(currentUserId);
-        if ((req as any).user?.userType === 'ELECTRICIAN') {
-            mockElectricians.push({
-                id: currentUserId,
-                fullName: mockData.fullName || 'Benim Profilim (Test)',
-                profileImageUrl: mockData.profileImageUrl || null,
-                isVerified: mockData.isVerified || false,
-                electricianProfile: {
-                    specialties: mockData.specialties.length > 0 ? mockData.specialties : ['Genel Elektrik'],
-                    ratingAverage: 5.0,
-                    totalReviews: 0,
-                    experienceYears: mockData.experienceYears || 0,
-                    isAvailable: true
-                },
-                locations: [{
-                    city: String(city || 'İstanbul'),
-                    district: 'Merkez',
-                    latitude: latNum || (city === 'Adana' ? 37.0 : 41.0082),
-                    longitude: lngNum || (city === 'Adana' ? 35.32 : 28.9784),
-                    isDefault: true
-                }]
-            });
-        }
     }
 
     return res.status(200).json({
@@ -1007,6 +1039,30 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
             const mockData = mockStorage.get(id);
             const isKnownMockUser = !!mockData.fullName || mockData.specialties.length > 0;
 
+            // Build locations from mockStorage data
+            let userLocations = [{ city: 'İstanbul', district: 'Merkez', isDefault: true }];
+
+            if (mockData.locations && mockData.locations.length > 0) {
+                userLocations = mockData.locations.map((loc: any) => ({
+                    city: loc.city || 'Türkiye',
+                    district: loc.district || 'Merkez',
+                    isDefault: loc.isDefault ?? true
+                }));
+            } else if (mockData.city) {
+                userLocations = [{
+                    city: mockData.city,
+                    district: mockData.district || 'Merkez',
+                    isDefault: true
+                }];
+            }
+
+            // Get city from first location
+            const primaryCity = userLocations[0]?.city || 'Türkiye';
+
+            // Get real rating stats from mock reviews
+            const reviewStats = mockReviewStorage.getRatingStats(id);
+            const mockReviews = mockReviewStorage.getReviewsForElectrician(id).slice(0, 5);
+
             // Mock data fallback or dynamic mock data
             return res.status(200).json({
                 success: true,
@@ -1015,19 +1071,37 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
                     fullName: mockData.fullName || 'Ahmet Yılmaz',
                     profileImageUrl: mockData.profileImageUrl || null,
                     phone: mockData.phone || null,
-                    city: mockData.city || 'İstanbul',
+                    city: primaryCity,
                     isVerified: mockData.isVerified ?? true,
                     electricianProfile: {
                         specialties: mockData.specialties.length > 0 ? mockData.specialties : ['Tesisat', 'Arıza', 'Aydınlatma', 'Pano'],
-                        ratingAverage: 4.8,
-                        totalReviews: isKnownMockUser ? 0 : 124,
+                        ratingAverage: reviewStats.ratingAverage || (isKnownMockUser ? 0 : 4.8),
+                        totalReviews: reviewStats.totalReviews || (isKnownMockUser ? 0 : 124),
                         experienceYears: mockData.experienceYears || (isKnownMockUser ? 0 : 12),
                         bio: mockData.bio || null,
                         verificationStatus: (mockData.isVerified ?? true) ? 'APPROVED' : 'PENDING',
                         completedJobsCount: mockData.completedJobsCount || 0,
                         responseTimeAvg: 2
                     },
-                    locations: [{ city: mockData.city || 'İstanbul', district: isKnownMockUser ? 'Merkez' : 'Kadıköy', isDefault: true }]
+                    locations: userLocations,
+                    reviewsReceived: mockReviews.map(r => {
+                        // Get current reviewer info from mockStorage (for dynamic updates)
+                        const reviewerData = mockStorage.get(r.reviewerId);
+                        // Check if this is a known user in mockStorage (has fullName set)
+                        const isKnownUser = reviewerData && reviewerData.fullName && reviewerData.fullName !== 'Test Kullanıcısı';
+
+                        return {
+                            id: r.id,
+                            rating: r.rating,
+                            comment: r.comment,
+                            createdAt: r.createdAt,
+                            reviewer: {
+                                // If user exists in mockStorage, use their current data (even if null)
+                                fullName: isKnownUser ? reviewerData.fullName : (r.reviewerName || 'Müşteri'),
+                                profileImageUrl: isKnownUser ? (reviewerData.profileImageUrl || null) : (r.reviewerImageUrl || null)
+                            }
+                        };
+                    })
                 }
             });
         }

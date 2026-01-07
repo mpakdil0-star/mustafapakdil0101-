@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import api from '../../services/api';
 import { API_ENDPOINTS, getFileUrl } from '../../constants/api';
 import { jobService } from '../../services/jobService';
+import { userService } from '../../services/userService';
 import { AuthGuardModal } from '../../components/common/AuthGuardModal';
 import { JOB_CATEGORIES } from '../../constants/jobCategories';
 
@@ -69,6 +70,8 @@ export default function HomeScreen() {
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
+  const [featuredElectricians, setFeaturedElectricians] = useState<any[]>([]);
+  const [isLoadingElectricians, setIsLoadingElectricians] = useState(false);
 
   // Pulse animation for health action buttons
   const healthPulseAnim = useRef(new Animated.Value(1)).current;
@@ -328,6 +331,32 @@ export default function HomeScreen() {
     }, [isAuthenticated, isElectrician, fetchNewJobsCount])
   );
 
+  // Separate useEffect for fetching featured electricians when userCities changes
+  useEffect(() => {
+    if (isElectrician) return;
+
+    const fetchFeaturedElectricians = async () => {
+      setIsLoadingElectricians(true);
+      try {
+        const response = await userService.getElectricians({ city: userCities[0] });
+        if (response.success && response.data) {
+          // Sort by rating and take top 5
+          const sorted = (response.data as any[])
+            .sort((a, b) => (b.electricianProfile?.rating || 0) - (a.electricianProfile?.rating || 0))
+            .slice(0, 5);
+          setFeaturedElectricians(sorted);
+        }
+      } catch (error) {
+        console.log('Error fetching featured electricians:', error);
+        setFeaturedElectricians([]);
+      } finally {
+        setIsLoadingElectricians(false);
+      }
+    };
+
+    fetchFeaturedElectricians();
+  }, [isElectrician, isInitialized]); // Only run after initialization, not on userCities change
+
   // Real-time refresh of new jobs count and unread count when notifications change
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -561,6 +590,40 @@ export default function HomeScreen() {
               </TouchableOpacity>
 
             </View>
+
+            {/* Professional Tools Section */}
+            <View style={styles.sectionHeaderRow}>
+              <View style={styles.sectionTitleContainer}>
+                <Text style={styles.sectionTitle}>Profesyonel Araçlar</Text>
+                <Text style={styles.sectionSubtitle}>İşini kolaylaştıran pratik araçlar</Text>
+              </View>
+            </View>
+
+            <View style={styles.toolsGridTwo}>
+              <TouchableOpacity
+                style={styles.toolCardHalf}
+                onPress={() => handleActionWithAuth('/tools/calculator')}
+                activeOpacity={0.85}
+              >
+                <LinearGradient colors={['#6366F1', '#4F46E5']} style={styles.toolIconBox}>
+                  <Ionicons name="calculator" size={28} color="#FFF" />
+                </LinearGradient>
+                <Text style={styles.toolCardTitle}>Hesaplayıcı</Text>
+                <Text style={styles.toolCardDesc}>Kablo kesiti, gerilim düşümü</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.toolCardHalf}
+                onPress={() => handleActionWithAuth('/tools/quote')}
+                activeOpacity={0.85}
+              >
+                <LinearGradient colors={['#10B981', '#059669']} style={styles.toolIconBox}>
+                  <Ionicons name="document-text" size={28} color="#FFF" />
+                </LinearGradient>
+                <Text style={styles.toolCardTitle}>Teklif Hazırla</Text>
+                <Text style={styles.toolCardDesc}>PDF oluştur ve paylaş</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
@@ -618,20 +681,43 @@ export default function HomeScreen() {
               </View>
 
               <View style={styles.featuredVerticalList}>
-                {getFeaturedElectricians(userCities).map((elec) => (
-                  <FeaturedElectrician
-                    key={elec.id}
-                    name={elec.name}
-                    rating={elec.rating}
-                    reviewCount={elec.reviewCount}
-                    specialty={elec.specialty}
-                    isVerified={elec.isVerified}
-                    imageUrl={elec.imageUrl}
-                    location={elec.location}
-                    onPress={() => router.push(`/electricians/${elec.id}` as any)}
-                    onBook={() => handleActionWithAuth('/jobs/create', { electricianId: elec.id })}
-                  />
-                ))}
+                {isLoadingElectricians ? (
+                  <View style={{ padding: 40, alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                    <Text style={{ marginTop: 10, color: staticColors.textSecondary, fontFamily: fonts.medium }}>Ustalar yükleniyor...</Text>
+                  </View>
+                ) : featuredElectricians.length > 0 ? (
+                  featuredElectricians.map((elec) => (
+                    <FeaturedElectrician
+                      key={elec.id}
+                      name={elec.fullName || 'Usta'}
+                      rating={elec.electricianProfile?.ratingAverage || elec.electricianProfile?.rating || 0}
+                      reviewCount={elec.electricianProfile?.totalReviews || elec.electricianProfile?.reviewCount || 0}
+                      specialty={elec.electricianProfile?.specialties?.[0] || 'Genel Elektrik'}
+                      isVerified={elec.isVerified || elec.electricianProfile?.verificationStatus === 'VERIFIED'}
+                      imageUrl={elec.profileImageUrl ? getFileUrl(elec.profileImageUrl) || undefined : undefined}
+                      location={elec.locations?.[0] ? `${elec.locations[0].district || ''}, ${elec.locations[0].city || ''}`.replace(/^, /, '').replace(/, $/, '') || 'Türkiye' : 'Türkiye'}
+                      onPress={() => router.push(`/electrician/${elec.id}` as any)}
+                      onBook={() => handleActionWithAuth('/jobs/create', { electricianId: elec.id })}
+                    />
+                  ))
+                ) : (
+                  // Fallback to mock data if no electricians from API
+                  getFeaturedElectricians(userCities).map((elec) => (
+                    <FeaturedElectrician
+                      key={elec.id}
+                      name={elec.name}
+                      rating={elec.rating}
+                      reviewCount={elec.reviewCount}
+                      specialty={elec.specialty}
+                      isVerified={elec.isVerified}
+                      imageUrl={elec.imageUrl}
+                      location={elec.location}
+                      onPress={() => router.push(`/electricians/${elec.id}` as any)}
+                      onBook={() => handleActionWithAuth('/jobs/create', { electricianId: elec.id })}
+                    />
+                  ))
+                )}
               </View>
             </View>
           )
@@ -1891,5 +1977,45 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.6,
     shadowRadius: 12,
     elevation: 8,
+  },
+  toolsGridTwo: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  toolCardHalf: {
+    flex: 1,
+    backgroundColor: staticColors.white,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
+  },
+  toolIconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  toolCardTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 14,
+    color: staticColors.text,
+    textAlign: 'center',
+  },
+  toolCardDesc: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    color: staticColors.textSecondary,
+    textAlign: 'center',
+    marginTop: 4,
   },
 });
