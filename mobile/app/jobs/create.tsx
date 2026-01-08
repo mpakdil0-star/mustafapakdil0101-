@@ -514,7 +514,9 @@ export default function CreateJobScreen() {
               <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '10' }]}>
                 <Ionicons name="document-text-outline" size={20} color={colors.primary} />
               </View>
-              <Text style={styles.sectionTitle}>İlan Detayı</Text>
+              <Text style={styles.sectionTitle}>
+                İlan Detayı{serviceCategory ? ` - ${SERVICE_CATEGORIES.find(s => s.id === serviceCategory)?.name || ''}` : ''}
+              </Text>
             </View>
 
             <View style={styles.inputContainer}>
