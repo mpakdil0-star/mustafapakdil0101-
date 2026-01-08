@@ -652,7 +652,7 @@ export default function HomeScreen() {
                       colors={cat.colors}
                       style={styles.serviceCategoryIconBg}
                     >
-                      <Ionicons name={cat.icon as any} size={28} color="#FFF" />
+                      <Ionicons name={cat.icon as any} size={22} color="#FFF" />
                     </LinearGradient>
                     <Text style={styles.serviceCategoryName}>{cat.name}</Text>
                   </TouchableOpacity>
@@ -2056,40 +2056,37 @@ const styles = StyleSheet.create({
   // Service Category Grid Styles (NEW)
   serviceCategoryGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 12,
-    marginTop: 16,
-    paddingHorizontal: 4,
+    marginTop: 14,
   },
   serviceCategoryCard: {
-    width: '30%',
-    aspectRatio: 0.9,
+    width: '18%',
+    aspectRatio: 0.8,
     backgroundColor: staticColors.white,
-    borderRadius: 20,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 8,
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.1)',
+    borderColor: 'rgba(0, 0, 0, 0.04)',
   },
   serviceCategoryIconBg: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   serviceCategoryName: {
     fontFamily: fonts.semiBold,
-    fontSize: 12,
+    fontSize: 10,
     color: staticColors.text,
     textAlign: 'center',
   },
