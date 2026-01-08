@@ -36,6 +36,18 @@ const ServiceCategoryItem = ({ cat, index, onPress, styles }: any) => {
     ]).start();
   }, []);
 
+  // Map category ID to 3D image asset
+  const getCategoryImage = (id: string) => {
+    switch (id) {
+      case 'elektrik': return require('../../assets/images/categories/3d_electric.png');
+      case 'cilingir': return require('../../assets/images/categories/3d_locksmith.png');
+      case 'klima': return require('../../assets/images/categories/3d_aircon.png');
+      case 'beyaz-esya': return require('../../assets/images/categories/3d_appliances.png');
+      case 'tesisat': return require('../../assets/images/categories/3d_plumbing.png');
+      default: return null;
+    }
+  };
+
   return (
     <Animated.View style={{ width: '18%', transform: [{ scale: scaleAnim }] }}>
       <TouchableOpacity
@@ -43,9 +55,13 @@ const ServiceCategoryItem = ({ cat, index, onPress, styles }: any) => {
         onPress={() => onPress(cat.id)}
         activeOpacity={0.85}
       >
-        <LinearGradient colors={cat.colors} style={styles.serviceCategoryIconBg}>
-          <Ionicons name={cat.icon as any} size={28} color="#FFF" />
-        </LinearGradient>
+        <View style={styles.serviceCategoryIconBg}>
+          <Image
+            source={getCategoryImage(cat.id)}
+            style={styles.serviceCategoryImage}
+            resizeMode="contain"
+          />
+        </View>
         <Text style={styles.serviceCategoryName} numberOfLines={2}>{cat.name}</Text>
       </TouchableOpacity>
     </Animated.View>
@@ -2103,12 +2119,17 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.8)',
   },
   serviceCategoryIconBg: {
-    width: 56, // Mega ikonlar (56px)
-    height: 56,
-    borderRadius: 18, // Biraz daha yuvarlattık
+    width: 60, // Resimler için biraz daha genişlettik
+    height: 60,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
+    backgroundColor: '#F8FAFC', // Çok hafif gri arka plan resimler için
+  },
+  serviceCategoryImage: {
+    width: '100%',
+    height: '100%',
   },
   serviceCategoryName: {
     fontFamily: fonts.semiBold,
