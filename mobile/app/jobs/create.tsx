@@ -433,6 +433,7 @@ export default function CreateJobScreen() {
       const jobData = {
         title: title.trim(),
         description: description.trim(),
+        serviceCategory, // Ana hizmet kategorisi (elektrik, cilingir, klima, etc.)
         category,
         subcategory: subcategory.trim() || undefined,
         location: {

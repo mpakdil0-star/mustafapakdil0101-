@@ -170,6 +170,7 @@ export const createJobController = async (
           citizenId: req.user.id,
           title: jobData.title,
           description: jobData.description,
+          serviceCategory: jobData.serviceCategory || 'elektrik', // Ana hizmet kategorisi
           category: jobData.category,
           subcategory: jobData.subcategory || null,
           location: jobData.location,
@@ -208,17 +209,28 @@ export const createJobController = async (
         const { addMockNotification } = require('../routes/notificationRoutes');
         const { getAllMockUsers } = require('../utils/mockStorage');
 
-        // Get all electrician users and send them notification
+        // Get all electrician users and send them notification (filtered by serviceCategory + location)
         const allUsers = getAllMockUsers();
+        const jobServiceCategory = jobData.serviceCategory || 'elektrik';
+
         const electricians = Object.entries(allUsers).filter(([id, data]: [string, any]) =>
           id.includes('ELECTRICIAN')
         );
 
-        // Create notification for each electrician in the same city or district
+        // Create notification for each electrician in the same city or district AND matching serviceCategory
         const targetCity = jobData.location?.city;
         const targetDistrict = jobData.location?.district;
 
         electricians.forEach(([userId, userData]: [string, any]) => {
+          // Check if usta's serviceCategory matches the job's serviceCategory
+          const ustaServiceCategory = userData.serviceCategory || 'elektrik';
+          const serviceCategoryMatch = ustaServiceCategory === jobServiceCategory;
+
+          // If serviceCategory doesn't match, skip this usta
+          if (!serviceCategoryMatch) {
+            return;
+          }
+
           // Check if usta is in the same city or has this specific region in locations
           const hasLocationMatch = userData.locations?.some((loc: any) =>
             loc.city?.toLowerCase() === targetCity?.toLowerCase() &&
