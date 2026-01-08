@@ -37,7 +37,8 @@ import {
   getNeighborhoodsByCityAndDistrict,
 } from '../../constants/locations';
 import LocationPicker from '../../components/common/LocationPicker';
-import { JOB_CATEGORIES } from '../../constants/jobCategories';
+import { JOB_CATEGORIES, getSubCategoriesByParent } from '../../constants/jobCategories';
+import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
 
 const MAX_IMAGES = 5;
 
@@ -57,7 +58,8 @@ export default function CreateJobScreen() {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
+  const [serviceCategory, setServiceCategory] = useState(''); // Ana hizmet kategorisi
+  const [category, setCategory] = useState(''); // Alt kategori
   const [subcategory, setSubcategory] = useState('');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('İstanbul');
@@ -558,7 +560,7 @@ export default function CreateJobScreen() {
 
             <View style={styles.divider} />
 
-            {/* Kategori Seçimi - Expandable */}
+            {/* Hizmet Türü ve Kategori Seçimi - Expandable */}
             <TouchableOpacity
               style={styles.expandableHeader}
               onPress={() => setIsCategoryExpanded(!isCategoryExpanded)}
@@ -568,7 +570,7 @@ export default function CreateJobScreen() {
                 <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '10' }]}>
                   <Ionicons name="list-outline" size={20} color={colors.primary} />
                 </View>
-                <Text style={styles.sectionTitle}>Kategori Seçimi</Text>
+                <Text style={styles.sectionTitle}>Hizmet Türü & Kategori</Text>
               </View>
               <Ionicons
                 name={isCategoryExpanded ? "chevron-up" : "chevron-down"}
@@ -579,47 +581,103 @@ export default function CreateJobScreen() {
 
             {isCategoryExpanded && (
               <View style={styles.expandableContent}>
+                {/* Hizmet Türü Seçimi (Ana Kategori) */}
+                <Text style={[styles.label, { marginBottom: 8 }]}>Hizmet Türü</Text>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   style={styles.categoryScroll}
                   contentContainerStyle={{ paddingBottom: 10, paddingRight: 20 }}
                 >
-                  {JOB_CATEGORIES.map((cat) => (
+                  {SERVICE_CATEGORIES.map((svc) => (
                     <TouchableOpacity
-                      key={cat.id}
+                      key={svc.id}
                       style={[
                         styles.categoryChip,
-                        category === cat.name && [styles.categoryChipSelected, { backgroundColor: colors.primary, borderColor: colors.primary, shadowColor: colors.primary }],
+                        serviceCategory === svc.id && [styles.categoryChipSelected, { backgroundColor: svc.colors[0], borderColor: svc.colors[0], shadowColor: svc.colors[0] }],
                       ]}
                       onPress={() => {
-                        setCategory(cat.name);
+                        setServiceCategory(svc.id);
+                        setCategory(''); // Alt kategoriyi sıfırla
                         if (errors.category) setErrors({ ...errors, category: '' });
                       }}
                     >
-                      <View style={[
-                        styles.categoryIconCircle,
-                        { backgroundColor: colors.primary + '10' },
-                        category === cat.name && styles.categoryIconCircleSelected
-                      ]}>
+                      <LinearGradient
+                        colors={serviceCategory === svc.id ? svc.colors : ['transparent', 'transparent']}
+                        style={[
+                          styles.categoryIconCircle,
+                          serviceCategory !== svc.id && { backgroundColor: svc.colors[0] + '20' }
+                        ]}
+                      >
                         <Ionicons
-                          name={cat.icon as any}
+                          name={svc.icon as any}
                           size={18}
-                          color={category === cat.name ? staticColors.white : colors.primary}
+                          color={serviceCategory === svc.id ? staticColors.white : svc.colors[0]}
                         />
-                      </View>
+                      </LinearGradient>
                       <Text
                         style={[
                           styles.categoryChipText,
-                          category === cat.name && [styles.categoryChipTextSelected, { color: staticColors.white }],
+                          serviceCategory === svc.id && [styles.categoryChipTextSelected, { color: staticColors.white }],
                         ]}
                         numberOfLines={1}
                       >
-                        {cat.name}
+                        {svc.name}
                       </Text>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
+
+                {/* Alt Kategori Seçimi */}
+                {serviceCategory && (
+                  <>
+                    <Text style={[styles.label, { marginTop: 16, marginBottom: 8 }]}>Alt Kategori</Text>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      style={styles.categoryScroll}
+                      contentContainerStyle={{ paddingBottom: 10, paddingRight: 20 }}
+                    >
+                      {getSubCategoriesByParent(serviceCategory).map((cat) => (
+                        <TouchableOpacity
+                          key={cat.id}
+                          style={[
+                            styles.categoryChip,
+                            category === cat.name && [styles.categoryChipSelected, { backgroundColor: cat.colors[0], borderColor: cat.colors[0], shadowColor: cat.colors[0] }],
+                          ]}
+                          onPress={() => {
+                            setCategory(cat.name);
+                            if (errors.category) setErrors({ ...errors, category: '' });
+                          }}
+                        >
+                          <LinearGradient
+                            colors={category === cat.name ? (cat.colors as [string, string]) : ['transparent', 'transparent']}
+                            style={[
+                              styles.categoryIconCircle,
+                              category !== cat.name && { backgroundColor: cat.colors[0] + '20' }
+                            ]}
+                          >
+                            <Ionicons
+                              name={cat.icon as any}
+                              size={18}
+                              color={category === cat.name ? staticColors.white : cat.colors[0]}
+                            />
+                          </LinearGradient>
+                          <Text
+                            style={[
+                              styles.categoryChipText,
+                              category === cat.name && [styles.categoryChipTextSelected, { color: staticColors.white }],
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {cat.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </>
+                )}
+
                 {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
               </View>
             )}
