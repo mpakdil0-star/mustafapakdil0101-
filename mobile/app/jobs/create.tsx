@@ -587,7 +587,7 @@ export default function CreateJobScreen() {
                 >
                   {JOB_CATEGORIES.map((cat) => (
                     <TouchableOpacity
-                      key={cat.name}
+                      key={cat.id}
                       style={[
                         styles.categoryChip,
                         category === cat.name && [styles.categoryChipSelected, { backgroundColor: colors.primary, borderColor: colors.primary, shadowColor: colors.primary }],
