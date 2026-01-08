@@ -2057,7 +2057,7 @@ const styles = StyleSheet.create({
   serviceCategoryGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 4,
   },
   serviceCategoryCard: {
     width: '18%',
