@@ -30,15 +30,7 @@ export default function HomeScreen() {
   const notifications = useAppSelector((state) => state.notifications.notifications);
   const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
 
-  // SAFETY CHECK: Prevent crash on reload when user is not yet loaded
-  if (isAuthenticated && !user) {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={{ marginTop: 20, color: colors.textSecondary, fontFamily: fonts.medium }}>Yükleniyor...</Text>
-      </View>
-    );
-  }
+
 
   // Toast notification state
   const [toastVisible, setToastVisible] = useState(false);
@@ -400,10 +392,19 @@ export default function HomeScreen() {
       try {
         router.push(path as any);
       } catch {
-        console.error('[HomeScreen] Both navigation attempts failed');
       }
     }
   };
+
+  // SAFETY CHECK: Prevent crash on reload when user is not yet loaded
+  if (isAuthenticated && !user) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ marginTop: 20, color: colors.textSecondary, fontFamily: fonts.medium }}>Yükleniyor...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1 }}>
