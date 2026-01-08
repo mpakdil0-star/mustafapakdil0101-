@@ -17,6 +17,7 @@ import { jobService } from '../../services/jobService';
 import { userService } from '../../services/userService';
 import { AuthGuardModal } from '../../components/common/AuthGuardModal';
 import { JOB_CATEGORIES } from '../../constants/jobCategories';
+import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
 
 
 
@@ -626,6 +627,40 @@ export default function HomeScreen() {
             </View>
           </View>
         )}
+
+        {/* Main Service Categories Section (Citizen Only) - NEW */}
+        {
+          !isElectrician && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeaderMatch}>
+                <View style={styles.purpleIndicator} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.matchSectionTitle}>Ne Lazım?</Text>
+                  <Text style={styles.matchSectionSubtitle}>Hizmet türünü seçin</Text>
+                </View>
+              </View>
+
+              <View style={styles.serviceCategoryGrid}>
+                {SERVICE_CATEGORIES.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.id}
+                    style={styles.serviceCategoryCard}
+                    onPress={() => handleActionWithAuth('/jobs/create', { serviceCategory: cat.id })}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient
+                      colors={cat.colors}
+                      style={styles.serviceCategoryIconBg}
+                    >
+                      <Ionicons name={cat.icon as any} size={28} color="#FFF" />
+                    </LinearGradient>
+                    <Text style={styles.serviceCategoryName}>{cat.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )
+        }
 
         {/* Popular Categories Section (Citizen Only) */}
         {
@@ -2017,5 +2052,45 @@ const styles = StyleSheet.create({
     color: staticColors.textSecondary,
     textAlign: 'center',
     marginTop: 4,
+  },
+  // Service Category Grid Styles (NEW)
+  serviceCategoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginTop: 16,
+    paddingHorizontal: 4,
+  },
+  serviceCategoryCard: {
+    width: '30%',
+    aspectRatio: 0.9,
+    backgroundColor: staticColors.white,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.1)',
+  },
+  serviceCategoryIconBg: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  serviceCategoryName: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
+    color: staticColors.text,
+    textAlign: 'center',
   },
 });

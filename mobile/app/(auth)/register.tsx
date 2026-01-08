@@ -23,6 +23,7 @@ import { validateEmail, validatePassword, validateRequired, validatePhone } from
 import { colors as baseColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
+import { SERVICE_CATEGORIES, ServiceCategory } from '../../constants/serviceCategories';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -36,6 +37,7 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [location, setLocation] = useState<{ city: string; district: string; address: string; latitude: number; longitude: number } | null>(null);
   const [userType, setUserType] = useState<'CITIZEN' | 'ELECTRICIAN'>(initialRole === 'ELECTRICIAN' ? 'ELECTRICIAN' : 'CITIZEN');
+  const [serviceCategory, setServiceCategory] = useState<string>('elektrik');
 
   // Theme selection based on userType
   const colors = userType === 'CITIZEN' ? baseColors : (baseColors as any).ELECTRICIAN_COLORS || baseColors;
@@ -100,6 +102,7 @@ export default function RegisterScreen() {
           phone,
           password,
           userType,
+          serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined,
           location: location ? {
             city: location.city,
             district: location.district,
@@ -257,6 +260,43 @@ export default function RegisterScreen() {
                 </TouchableOpacity>
               </View>
             </View>
+
+            {/* Service Category Selection (only for professionals) */}
+            {userType === 'ELECTRICIAN' && (
+              <View style={styles.userTypeSection}>
+                <Text style={styles.sectionLabel}>Mesleğinizi Seçin</Text>
+                <View style={styles.categoryGrid}>
+                  {SERVICE_CATEGORIES.map((cat: ServiceCategory) => (
+                    <TouchableOpacity
+                      key={cat.id}
+                      style={[
+                        styles.categoryCard,
+                        serviceCategory === cat.id && { borderColor: cat.colors[0], backgroundColor: cat.colors[0] + '20' },
+                      ]}
+                      onPress={() => setServiceCategory(cat.id)}
+                      activeOpacity={0.7}
+                    >
+                      <LinearGradient
+                        colors={serviceCategory === cat.id ? cat.colors : ['transparent', 'transparent']}
+                        style={styles.categoryIconBg}
+                      >
+                        <Ionicons
+                          name={cat.icon as any}
+                          size={24}
+                          color={serviceCategory === cat.id ? '#FFFFFF' : 'rgba(255,255,255,0.5)'}
+                        />
+                      </LinearGradient>
+                      <Text style={[
+                        styles.categoryText,
+                        serviceCategory === cat.id && { color: '#FFFFFF' }
+                      ]}>
+                        {cat.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
 
             {/* Form */}
             <View style={styles.formSection}>
@@ -616,5 +656,35 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontSize: 15,
     color: '#FFFFFF',
+  },
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  categoryCard: {
+    width: '30%',
+    aspectRatio: 1,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.sm,
+  },
+  categoryIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  categoryText: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.6)',
+    textAlign: 'center',
   },
 });

@@ -9,6 +9,7 @@ export interface RegisterData {
   phone?: string;
   userType: 'CITIZEN' | 'ELECTRICIAN';
   location?: any;
+  serviceCategory?: string; // Ana hizmet kategorisi: 'elektrik' | 'cilingir' | 'klima' | 'beyaz-esya' | 'tesisat'
 }
 
 export interface LoginData {

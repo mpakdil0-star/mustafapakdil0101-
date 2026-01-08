@@ -26,6 +26,7 @@ interface MockUserStore {
         bio?: string;
         completedJobsCount?: number;
         locations?: any[];
+        serviceCategory?: string; // Ana hizmet kategorisi: 'elektrik' | 'cilingir' | 'klima' | 'beyaz-esya' | 'tesisat'
     }
 }
 
@@ -152,7 +153,8 @@ export const mockStorage = {
         city?: string,
         district?: string,
         locations?: any[],
-        completedJobsCount?: number
+        completedJobsCount?: number,
+        serviceCategory?: string
     }) => {
         const store = mockStorage.get(userId);
         if (data.passwordHash !== undefined) store.passwordHash = data.passwordHash;
@@ -172,6 +174,7 @@ export const mockStorage = {
         if (data.district !== undefined) store.district = data.district;
         if (data.locations !== undefined) store.locations = data.locations;
         if (data.completedJobsCount !== undefined) store.completedJobsCount = data.completedJobsCount;
+        if (data.serviceCategory !== undefined) store.serviceCategory = data.serviceCategory;
         saveToDisk();
         return store;
     },
