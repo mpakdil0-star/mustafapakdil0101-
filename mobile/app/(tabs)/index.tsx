@@ -44,7 +44,7 @@ const ServiceCategoryItem = ({ cat, index, onPress, styles }: any) => {
         activeOpacity={0.85}
       >
         <LinearGradient colors={cat.colors} style={styles.serviceCategoryIconBg}>
-          <Ionicons name={cat.icon as any} size={24} color="#FFF" />
+          <Ionicons name={cat.icon as any} size={28} color="#FFF" />
         </LinearGradient>
         <Text style={styles.serviceCategoryName} numberOfLines={2}>{cat.name}</Text>
       </TouchableOpacity>
@@ -2083,11 +2083,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 8,
-    paddingHorizontal: 16, // Kenarlardan boşluk bırakır
+    paddingHorizontal: 8, // Yanlardan daha az boşluk bırakarak ikonlara yer açtık
   },
   serviceCategoryCard: {
     width: '100%',
-    aspectRatio: 0.62, // Biraz daha uzattık ki yazı rahat sığsın
+    aspectRatio: 0.58, // Daha büyük ikonlar için boyu biraz daha uzattık
     backgroundColor: staticColors.white,
     borderRadius: 18,
     alignItems: 'center',
@@ -2103,12 +2103,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.8)',
   },
   serviceCategoryIconBg: {
-    width: 48, // Bir tık küçülttük ki yazıya yer kalsın
-    height: 48,
-    borderRadius: 16,
+    width: 56, // Mega ikonlar (56px)
+    height: 56,
+    borderRadius: 18, // Biraz daha yuvarlattık
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   serviceCategoryName: {
     fontFamily: fonts.semiBold,
