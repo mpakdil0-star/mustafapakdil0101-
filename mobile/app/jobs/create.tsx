@@ -132,13 +132,18 @@ export default function CreateJobScreen() {
 
   // Pre-fill category from params
   useEffect(() => {
+    // Handle serviceCategory param (from home screen Ne Lazım cards)
+    if (params.serviceCategory && typeof params.serviceCategory === 'string') {
+      setServiceCategory(params.serviceCategory);
+    }
+    // Handle category param (legacy)
     if (params.category && typeof params.category === 'string') {
       const catName = params.category;
       if (JOB_CATEGORIES.some(cat => cat.name === catName)) {
         setCategory(catName);
       }
     }
-  }, [params.category]);
+  }, [params.category, params.serviceCategory]);
 
   // Akıllı Sihirbaz Mantığı
   const [wizardDraft, setWizardDraft] = useState<{ category?: string; urgency?: string } | null>(null);
