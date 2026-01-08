@@ -2061,7 +2061,7 @@ const styles = StyleSheet.create({
   },
   serviceCategoryCard: {
     width: '18%',
-    aspectRatio: 0.8,
+    aspectRatio: 0.7,
     backgroundColor: staticColors.white,
     borderRadius: 16,
     alignItems: 'center',
