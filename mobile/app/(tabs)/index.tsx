@@ -20,6 +20,37 @@ import { JOB_CATEGORIES } from '../../constants/jobCategories';
 import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
 
 
+// --- Premium Service Category Component ---
+const ServiceCategoryItem = ({ cat, index, onPress, styles }: any) => {
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.delay(index * 80), // Staggered entry
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View style={{ width: '18%', transform: [{ scale: scaleAnim }] }}>
+      <TouchableOpacity
+        style={[styles.serviceCategoryCard, { shadowColor: cat.colors[0] }]}
+        onPress={() => onPress(cat.id)}
+        activeOpacity={0.85}
+      >
+        <LinearGradient colors={cat.colors} style={styles.serviceCategoryIconBg}>
+          <Ionicons name={cat.icon as any} size={24} color="#FFF" />
+        </LinearGradient>
+        <Text style={styles.serviceCategoryName} numberOfLines={2}>{cat.name}</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -642,21 +673,14 @@ export default function HomeScreen() {
               </View>
 
               <View style={styles.serviceCategoryGrid}>
-                {SERVICE_CATEGORIES.map((cat) => (
-                  <TouchableOpacity
+                {SERVICE_CATEGORIES.map((cat, index) => (
+                  <ServiceCategoryItem
                     key={cat.id}
-                    style={styles.serviceCategoryCard}
-                    onPress={() => handleActionWithAuth('/jobs/create', { serviceCategory: cat.id })}
-                    activeOpacity={0.85}
-                  >
-                    <LinearGradient
-                      colors={cat.colors}
-                      style={styles.serviceCategoryIconBg}
-                    >
-                      <Ionicons name={cat.icon as any} size={22} color="#FFF" />
-                    </LinearGradient>
-                    <Text style={styles.serviceCategoryName}>{cat.name}</Text>
-                  </TouchableOpacity>
+                    cat={cat}
+                    index={index}
+                    onPress={(id: string) => handleActionWithAuth('/jobs/create', { serviceCategory: id })}
+                    styles={styles}
+                  />
                 ))}
               </View>
             </View>
@@ -2058,37 +2082,39 @@ const styles = StyleSheet.create({
   serviceCategoryGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 4,
+    marginTop: 8,
+    paddingHorizontal: 16, // Kenarlardan boşluk bırakır
   },
   serviceCategoryCard: {
-    width: '18%',
-    aspectRatio: 0.7,
+    width: '100%',
+    aspectRatio: 0.62, // Biraz daha uzattık ki yazı rahat sığsın
     backgroundColor: staticColors.white,
-    borderRadius: 16,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    paddingHorizontal: 2,
+    // Glow effect
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.8)',
   },
   serviceCategoryIconBg: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 48, // Bir tık küçülttük ki yazıya yer kalsın
+    height: 48,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   serviceCategoryName: {
     fontFamily: fonts.semiBold,
     fontSize: 10,
     color: staticColors.text,
     textAlign: 'center',
+    width: '100%',
   },
 });
