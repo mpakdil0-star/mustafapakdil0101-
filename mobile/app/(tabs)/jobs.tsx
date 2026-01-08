@@ -496,6 +496,12 @@ export default function JobsScreen() {
                   )}
                 </View>
                 <Text style={styles.jobTitleText} numberOfLines={1}>{job.title}</Text>
+                <View style={styles.categoryBadgeRow}>
+                  <View style={[styles.categoryBadge, { backgroundColor: accentColor + '15' }]}>
+                    <Ionicons name={getCategoryIcon(job.category)} size={12} color={accentColor} />
+                    <Text style={[styles.categoryBadgeText, { color: accentColor }]}>{job.category || 'Genel'}</Text>
+                  </View>
+                </View>
                 <Text style={styles.jobDescText} numberOfLines={1}>{job.description}</Text>
                 <View style={styles.cardFooter}>
                   <View style={styles.metaInfoRow}>
@@ -751,5 +757,21 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontSize: 15,
     color: staticColors.white,
+  },
+  categoryBadgeRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  categoryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    gap: 4,
+  },
+  categoryBadgeText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
   },
 });
