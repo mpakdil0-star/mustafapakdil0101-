@@ -1182,16 +1182,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   categoryChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderRadius: 16,
-    backgroundColor: '#F5F6FA', // Light gray background for unselected
-    borderWidth: 0, // No border for cleaner look
-    marginRight: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderRadius: 14,
+    backgroundColor: '#F5F6FA',
+    borderWidth: 0,
+    marginRight: 8,
     alignItems: 'center',
-    minWidth: 80, // Minimum width, but can expand
-    maxWidth: 120, // Maximum width to prevent too long
-    gap: 6,
+    minWidth: 70, // Smaller min width
+    maxWidth: 100, // Smaller max width
+    gap: 4,
   },
   categoryChipSelected: {
     shadowColor: '#000',
@@ -1213,7 +1213,7 @@ const styles = StyleSheet.create({
   },
   categoryChipText: {
     fontFamily: fonts.semiBold,
-    fontSize: 12, // Increased for readability
+    fontSize: 10, // Smaller
     color: staticColors.textSecondary,
     textAlign: 'center',
   },
@@ -1232,12 +1232,12 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderRadius: 14,
     borderWidth: 0,
     backgroundColor: '#F5F6FA',
-    gap: 6,
+    gap: 4,
   },
   urgencyIconCircle: {
     width: 28,
@@ -1248,7 +1248,7 @@ const styles = StyleSheet.create({
   },
   urgencyText: {
     fontFamily: fonts.semiBold,
-    fontSize: 12, // Match category chip text
+    fontSize: 10, // Smaller to match
     color: staticColors.textSecondary,
     textAlign: 'center',
   },
