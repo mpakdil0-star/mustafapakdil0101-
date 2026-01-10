@@ -12,12 +12,12 @@ import { mockStorage, mockReviewStorage } from '../utils/mockStorage';
 
 // Helper to serve mock electricians
 function serveMockResponse(req: Request, res: Response, city: any, latNum: any, lngNum: any) {
-    // Static mock electricians for fallback - using randomuser.me for realistic avatars
+    // Static mock electricians for fallback
     let mockElectricians: any[] = [
         {
             id: 'mock-elec-1',
             fullName: 'Ahmet Yılmaz',
-            profileImageUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
+            profileImageUrl: null,
             isVerified: true,
             electricianProfile: {
                 specialties: ['Tesisat', 'Arıza'],
@@ -31,7 +31,7 @@ function serveMockResponse(req: Request, res: Response, city: any, latNum: any, 
         {
             id: 'mock-elec-2',
             fullName: 'Mehmet Demir',
-            profileImageUrl: 'https://randomuser.me/api/portraits/men/45.jpg',
+            profileImageUrl: null,
             isVerified: true,
             electricianProfile: {
                 specialties: ['Aydınlatma'],
@@ -45,7 +45,7 @@ function serveMockResponse(req: Request, res: Response, city: any, latNum: any, 
         {
             id: 'mock-elec-adana-1',
             fullName: 'Mustafa Yıldız',
-            profileImageUrl: 'https://randomuser.me/api/portraits/men/67.jpg',
+            profileImageUrl: null,
             isVerified: true,
             electricianProfile: {
                 specialties: ['Tesisat', 'Klima Elektriği'],

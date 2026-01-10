@@ -807,7 +807,37 @@ export default function CreateJobScreen() {
               }}
             />
 
-            {/* Detaylı Adres - Haritadan seçim sonrası ek bilgi için */}
+            <View style={styles.row}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <Picker
+                  label="Şehir"
+                  value={city}
+                  options={CITY_NAMES}
+                  onValueChange={setCity}
+                  error={errors.city}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Picker
+                  label="İlçe"
+                  value={district}
+                  options={districtOptions}
+                  onValueChange={setDistrict}
+                  error={errors.district}
+                  disabled={!city}
+                />
+              </View>
+            </View>
+
+            <Picker
+              label="Mahalle"
+              value={neighborhood}
+              options={neighborhoodOptions.length > 0 ? neighborhoodOptions : (district ? ['Merkez'] : [])}
+              onValueChange={setNeighborhood}
+              error={errors.neighborhood}
+              disabled={!district}
+            />
+
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Detaylı Adres</Text>
               <TextInput
