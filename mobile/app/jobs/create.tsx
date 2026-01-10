@@ -664,7 +664,7 @@ export default function CreateJobScreen() {
                           styles.categoryChipText,
                           serviceCategory === svc.id && [styles.categoryChipTextSelected, { color: staticColors.white }],
                         ]}
-                        numberOfLines={1}
+                        numberOfLines={2}
                       >
                         {svc.name}
                       </Text>
@@ -712,7 +712,7 @@ export default function CreateJobScreen() {
                               styles.categoryChipText,
                               category === cat.name && [styles.categoryChipTextSelected, { color: staticColors.white }],
                             ]}
-                            numberOfLines={1}
+                            numberOfLines={2}
                           >
                             {cat.name}
                           </Text>
@@ -901,7 +901,7 @@ export default function CreateJobScreen() {
                 <Ionicons name="cash-outline" size={20} color={colors.primary} style={styles.budgetIcon} />
                 <TextInput
                   style={styles.budgetInput}
-                  placeholder="Örn: 500 - 1.000 TL arası"
+                  placeholder="Bütçeniz (Opsiyonel)"
                   value={estimatedBudget}
                   onChangeText={(text) => setEstimatedBudget(text.replace(/[^0-9.]/g, ''))}
                   keyboardType="numeric"
@@ -1180,27 +1180,24 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   categoryChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: 14,
-    backgroundColor: staticColors.white,
-    borderWidth: 1,
-    borderColor: staticColors.borderLight,
-    marginRight: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderRadius: 16,
+    backgroundColor: '#F5F6FA', // Light gray background for unselected
+    borderWidth: 0, // No border for cleaner look
+    marginRight: 10,
     alignItems: 'center',
-    width: 85,
-    gap: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    minWidth: 80, // Minimum width, but can expand
+    maxWidth: 120, // Maximum width to prevent too long
+    gap: 6,
   },
   categoryChipSelected: {
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
     elevation: 4,
+    borderWidth: 0, // Keep no border when selected
   },
   categoryIconCircle: {
     width: 28,
@@ -1214,9 +1211,10 @@ const styles = StyleSheet.create({
   },
   categoryChipText: {
     fontFamily: fonts.semiBold,
-    fontSize: 10,
+    fontSize: 11, // Slightly larger
     color: staticColors.textSecondary,
     textAlign: 'center',
+    flexWrap: 'wrap', // Allow text to wrap
   },
   categoryChipTextSelected: {
     color: staticColors.white,
