@@ -11,6 +11,7 @@ export interface RegisterData {
   fullName: string;
   phone?: string;
   userType: UserType;
+  serviceCategory?: string; // Profession category: 'elektrik' | 'cilingir' | 'klima' | 'beyaz-esya' | 'tesisat'
 }
 
 export interface LoginData {
@@ -111,7 +112,8 @@ export const register = async (data: RegisterData) => {
       passwordHash: await hashPassword(password),
       experienceYears: 0,
       creditBalance: userType === UserType.ELECTRICIAN ? 5 : 0,
-      isActive: true // Hesabı aktif olarak işaretle (silinmiş hesaplar için kritik)
+      isActive: true, // Mark account as active
+      serviceCategory: userType === UserType.ELECTRICIAN ? (data.serviceCategory || 'elektrik') : undefined, // Save profession
     });
 
     // Generate tokens
@@ -215,7 +217,8 @@ export const register = async (data: RegisterData) => {
       isVerified: userType === UserType.ELECTRICIAN && !!phone,
       passwordHash: passwordHash, // Use hashed password
       experienceYears: 0,
-      creditBalance: userType === UserType.ELECTRICIAN ? 5 : 0
+      creditBalance: userType === UserType.ELECTRICIAN ? 5 : 0,
+      serviceCategory: userType === UserType.ELECTRICIAN ? (data.serviceCategory || 'elektrik') : undefined, // Save profession
     });
 
     const user = {
