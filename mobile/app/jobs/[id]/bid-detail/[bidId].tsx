@@ -171,7 +171,7 @@ export default function BidDetailScreen() {
                 <Text style={styles.infoLabel}>Usta Bilgisi</Text>
               </View>
               <Text style={styles.infoValue}>
-                {currentBid.electrician?.fullName || 'Elektrikçi'}
+                {currentBid.electrician?.fullName || 'Usta'}
               </Text>
             </View>
 

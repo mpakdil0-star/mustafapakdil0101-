@@ -137,7 +137,7 @@ export default function QuoteScreen() {
         <div class="info-grid">
           <div class="info-box">
             <h3>USTA BİLGİLERİ</h3>
-            <p><strong>${user?.fullName || 'Elektrikçi'}</strong></p>
+            <p><strong>${user?.fullName || 'Usta'}</strong></p>
             <p>Tel: ${user?.phone || '-'}</p>
             <p>${user?.email || ''}</p>
           </div>
@@ -194,7 +194,7 @@ export default function QuoteScreen() {
 
         <div class="footer">
           <p>Bu teklif bilgilendirme amaçlıdır. Fiyatlar değişiklik gösterebilir.</p>
-          <p>Elektrikçiler Uygulaması ile oluşturuldu.</p>
+          <p>Ustalar Uygulaması ile oluşturuldu.</p>
         </div>
       </body>
       </html>

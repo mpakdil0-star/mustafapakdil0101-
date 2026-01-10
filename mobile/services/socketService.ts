@@ -175,13 +175,13 @@ class SocketService {
             this.bidNotificationHandlers.forEach(handler => handler(data));
         });
 
-        // Teklif kabul edildi eventi (elektrikçi için)
+        // Teklif kabul edildi eventi (usta için)
         this.socket.on('bid_accepted', (data: BidNotificationData) => {
             console.log('✅ Bid accepted notification:', data);
             this.bidNotificationHandlers.forEach(handler => handler(data));
         });
 
-        // Teklif reddedildi eventi (elektrikçi için)
+        // Teklif reddedildi eventi (usta için)
         this.socket.on('bid_rejected', (data: BidNotificationData) => {
             console.log('❌ Bid rejected notification:', data);
             this.bidNotificationHandlers.forEach(handler => handler(data));

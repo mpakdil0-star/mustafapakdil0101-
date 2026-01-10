@@ -15,25 +15,25 @@ const CONTENT = {
         title: 'Kullanım Koşulları',
         lastUpdate: '25 Aralık 2024',
         text: `1. Hizmet Şartları
-Elektrikçiler uygulamasını kullanarak, bu sayfada yer alan tüm şartları kabul etmiş sayılırsınız. Uygulamamız üzerinden verilen hizmetler, elektrikçiler ile müşterileri bir araya getiren bir platformdur.
+Ustalar uygulamasını kullanarak, bu sayfada yer alan tüm şartları kabul etmiş sayılırsınız. Uygulamamız üzerinden verilen hizmetler, ustalar ile müşterileri bir araya getiren bir platformdur.
 
 2. Hizmet Kapsamı
-Elektrikçiler, usta ve müşteri arasındaki anlaşmazlıklardan, iş kalitesinden veya ödeme süreçlerinden doğrudan sorumlu değildir. Platformumuz sadece bir "buluşturma" hizmeti sunar.
+Ustalar, hizmet veren ve alan arasındaki anlaşmazlıklardan, iş kalitesinden veya ödeme süreçlerinden doğrudan sorumlu değildir. Platformumuz sadece bir "buluşturma" hizmeti sunar.
 
 3. Kullanıcı Sorumlulukları
 Kullanıcılar, kayıt sırasında verdikleri bilgilerin doğruluğundan sorumludur. Yanıltıcı bilgi veren veya platformu kötüye kullanan hesaplar askıya alınabilir.
 
 4. Ödemeler ve Krediler
-Elektrikçiler, teklif verebilmek için uygulama içi kredi satın almalıdır. Satın alınan krediler, platform içi kullanım içindir ve nakde çevrilemez.
+Ustalar, teklif verebilmek için uygulama içi kredi satın almalıdır. Satın alınan krediler, platform içi kullanım içindir ve nakde çevrilemez.
 
 5. Değişiklik Hakları
-Elektrikçiler A.Ş., bu kullanım koşullarını dilediği zaman güncelleme hakkını saklı tutar.`
+Ustalar A.Ş., bu kullanım koşullarını dilediği zaman güncelleme hakkını saklı tutar.`
     },
     kvkk: {
         title: 'KVKK ve Veri Politikası',
         lastUpdate: '25 Aralık 2024',
         text: `1. Veri Sorumlusu
-6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, verileriniz Elektrikçiler A.Ş. tarafından işlenmektedir.
+6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, verileriniz Ustalar A.Ş. tarafından işlenmektedir.
 
 2. İşlenen Veriler
 Uygulamayı kullanırken paylaştığınız ad-soyad, telefon numarası, konum bilgisi ve ustalık belgeleri, size hizmet sunabilmek adına güvenli sunucularımızda saklanır.
@@ -48,7 +48,7 @@ Verileriniz şu amaçlarla kullanılır:
 Kişisel verileriniz, yasal zorunluluklar hariç, üçüncü taraflarla reklam veya pazarlama amacıyla paylaşılmaz. Sadece onayladığınız iş süreçlerinde, ilgili usta veya müşteri ile sınırlı bilgiler paylaşılır.
 
 5. Haklarınız
-KVKK kapsamında, verilerinizin silinmesini, güncellenmesini veya işlenip işlenmediğini öğrenme hakkına sahipsiniz. Bunun için destek@elektrikciler.com üzerinden bize ulaşabilirsiniz.`
+KVKK kapsamında, verilerinizin silinmesini, güncellenmesini veya işlenip işlenmediğini öğrenme hakkına sahipsiniz. Bunun için destek@ustalar.com üzerinden bize ulaşabilirsiniz.`
     }
 };
 

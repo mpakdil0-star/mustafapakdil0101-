@@ -24,8 +24,9 @@ function RootLayoutNav() {
   const router = useRouter();
   const segments = useSegments();
   const dispatch = useAppDispatch();
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
   const [isNavigationReady, setIsNavigationReady] = useState(false);
+  const [hasCheckedProfile, setHasCheckedProfile] = useState(false);
 
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -107,6 +108,57 @@ function RootLayoutNav() {
       dispatch(getMe());
     }
   }, [isAuthenticated, dispatch]);
+
+  // Check if electrician profile is incomplete and redirect to mandatory profile completion
+  useEffect(() => {
+    // Wait for user data to be fully loaded
+    if (!isAuthenticated || !isNavigationReady) return;
+    if (hasCheckedProfile) return;
+
+    // Small delay to ensure getMe() has completed and user data is populated
+    const timer = setTimeout(() => {
+      if (!user) {
+        console.log('🔧 Profil kontrolü: user henüz yüklenmedi');
+        return;
+      }
+
+      console.log('🔧 Profil kontrolü:', {
+        userType: user.userType,
+        exp: user.electricianProfile?.experienceYears,
+        specs: user.electricianProfile?.specialties
+      });
+
+      // Only check for electricians
+      if (user.userType !== 'ELECTRICIAN') {
+        setHasCheckedProfile(true);
+        return;
+      }
+
+      // Check if profile is incomplete
+      const profile = user.electricianProfile;
+      const hasExperience = profile?.experienceYears && profile.experienceYears > 0;
+      const hasSpecialties = profile?.specialties && profile.specialties.length > 0 &&
+        profile.specialties.some((s: string) => s !== 'Genel' && s !== 'Genel Elektrik');
+
+      const isProfileIncomplete = !hasExperience || !hasSpecialties;
+
+      console.log('🔧 Profil durumu:', { hasExperience, hasSpecialties, isProfileIncomplete });
+
+      if (isProfileIncomplete) {
+        // Don't redirect if already on edit page
+        const currentPath = segments.join('/');
+        const isOnEditPage = currentPath.includes('profile') && currentPath.includes('edit');
+        if (!isOnEditPage) {
+          console.log('🔧 Usta profili eksik, yönlendiriliyor...');
+          router.replace('/profile/edit?mandatory=true');
+        }
+      }
+
+      setHasCheckedProfile(true);
+    }, 1000); // 1 saniye bekle - getMe() için yeterli süre
+
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, user, isNavigationReady, hasCheckedProfile, segments, router]);
 
   // Global Socket Notification Listener
   useEffect(() => {

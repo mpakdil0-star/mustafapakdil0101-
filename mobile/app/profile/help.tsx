@@ -54,7 +54,7 @@ export default function HelpScreen() {
     const router = useRouter();
     const colors = useAppColors();
     const handleContactSupport = () => {
-        Linking.openURL('mailto:destek@elektrikciler.com');
+        Linking.openURL('mailto:destek@ustalar.com');
     };
 
     return (
@@ -109,7 +109,7 @@ export default function HelpScreen() {
                     />
                     <FAQItem
                         question="Ödeme sistemi nasıl çalışıyor?"
-                        answer="Şu an için ödemeler iş bitiminde doğrudan ustaya (nakit/IBAN/kart) yapılmaktadır. Elektrikçiler uygulaması olarak ileride uygulama içi güvenli ödeme sistemini devreye alacağız."
+                        answer="Şu an için ödemeler iş bitiminde doğrudan ustaya (nakit/IBAN/kart) yapılmaktadır. Ustalar uygulaması olarak ileride uygulama içi güvenli ödeme sistemini devreye alacağız."
                         icon="card-outline"
                         colors={colors}
                     />
@@ -130,7 +130,7 @@ export default function HelpScreen() {
                             <Ionicons name="mail" size={24} color="#3B82F6" />
                         </View>
                         <Text style={styles.supportCardTitle}>E-Posta</Text>
-                        <Text style={styles.supportCardValue}>destek@elektrikciler.com</Text>
+                        <Text style={styles.supportCardValue}>destek@ustalar.com</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.supportCard} onPress={() => Linking.openURL('tel:08500000000')}>
@@ -173,7 +173,7 @@ export default function HelpScreen() {
                         <Ionicons name="flash" size={24} color={colors.primaryLight} />
                     </View>
                     <Text style={styles.versionText}>Versiyon 1.2.0 • Build 202412</Text>
-                    <Text style={styles.copyrightText}>© 2024 Elektrikçiler A.Ş. Tüm Hakları Saklıdır.</Text>
+                    <Text style={styles.copyrightText}>© 2024 Ustalar A.Ş. Tüm Hakları Saklıdır.</Text>
                 </View>
             </ScrollView>
         </View>

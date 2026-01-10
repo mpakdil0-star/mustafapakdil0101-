@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView, Alert, Text, TouchableOpacity, Modal, Pla
 import { Ionicons } from '@expo/vector-icons';
 import { fonts } from '../../constants/typography';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAppSelector } from '../../hooks/redux';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
@@ -88,7 +88,9 @@ export default function EditProfileScreen() {
     const dispatch = useDispatch();
     const { user } = useAppSelector((state) => state.auth);
     const colors = useAppColors();
-    const isElectrician = user?.userType === 'ELECTRICIAN';
+    const { mandatory } = useLocalSearchParams();
+    // Zorunlu moddaysa veya kullanıcı tipi Usta ise
+    const isElectrician = user?.userType === 'ELECTRICIAN' || !!mandatory;
 
     const [fullName, setFullName] = useState(user?.fullName || '');
     const [email, setEmail] = useState(user?.email || '');
@@ -170,7 +172,7 @@ export default function EditProfileScreen() {
             return;
         }
         if (!phoneNumber || phoneNumber.trim() === '') {
-            // Elektrikçiler için telefon alanı pasifse uyarı verme
+            // Ustalar için telefon alanı pasifse uyarı verme
             if (!isElectrician) {
                 showValidationError('Lütfen telefon numarası alanını doldurunuz.');
                 return;
@@ -243,7 +245,10 @@ export default function EditProfileScreen() {
 
     return (
         <View style={styles.container}>
-            <PremiumHeader title="Profili Düzenle" showBackButton />
+            <PremiumHeader
+                title={mandatory ? "Profilinizi Tamamlayın" : "Profili Düzenle"}
+                showBackButton={!mandatory}
+            />
 
             <ScrollView
                 style={styles.scrollView}
@@ -331,7 +336,7 @@ export default function EditProfileScreen() {
                         </View>
                     </>
 
-                    {/* Uzmanlık Alanları - Elektrikçiler için */}
+                    {/* Uzmanlık Alanları - Ustalar için */}
                     {user?.userType === 'ELECTRICIAN' && (
                         <>
                             <View style={styles.divider} />

@@ -170,7 +170,7 @@ export default function HomeScreen() {
   const getMissingItems = () => {
     const missing = [];
 
-    // Belge onayı elektrikçiler için en öncelikli olanı (Ödül için kritik)
+    // Belge onayı ustalar için en öncelikli olanı (Ödül için kritik)
     if (isElectrician && !user?.isVerified && verificationStatus !== 'VERIFIED') {
       // Eğer belge gönderilmiş ama henüz onaylanmamışsa (PENDING)
       if (verificationStatus === 'PENDING') {
@@ -286,7 +286,7 @@ export default function HomeScreen() {
     // Telefon numarası kayıt esnasında zorunlu olduğu için puanı buralara dağıtıldı
 
     if (isElectrician) {
-      // Elektrikçiler için mesleki alanlar
+      // Ustalar için mesleki alanlar
       if (user?.electricianProfile?.experienceYears) score += 10;
       if (user?.electricianProfile?.specialties && user.electricianProfile.specialties.length > 0) score += 10;
       if (locationsCount > 0) score += 10;

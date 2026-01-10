@@ -133,7 +133,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
 
                         <Text style={styles.alertTitle}>Konum İzni Gerekli</Text>
                         <Text style={styles.alertMessage}>
-                            Size en yakın elektrikçileri bulabilmemiz ve adresi otomatik doldurabilmemiz için konum izni vermeniz gerekiyor.
+                            Size en yakın ustaları bulabilmemiz ve adresi otomatik doldurabilmemiz için konum izni vermeniz gerekiyor.
                         </Text>
 
                         <View style={styles.btnRow}>

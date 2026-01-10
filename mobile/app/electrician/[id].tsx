@@ -44,7 +44,7 @@ export default function ElectricianProfileScreen() {
             if (data.success) {
                 setElectrician(data.data);
             } else {
-                setError('Elektrikçi profili yüklenemedi');
+                setError('Usta profili yüklenemedi');
             }
         } catch (err) {
             console.error('Error fetching electrician:', err);
