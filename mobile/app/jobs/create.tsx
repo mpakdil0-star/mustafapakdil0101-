@@ -48,6 +48,42 @@ const URGENCY_LEVELS = [
   { value: 'HIGH', label: 'Acil', icon: 'flash-outline', color: '#EF4444' },
 ];
 
+// Kategoriye göre dinamik placeholder metinleri
+const getPlaceholdersByCategory = (categoryId: string) => {
+  switch (categoryId) {
+    case 'elektrik':
+      return {
+        title: 'Örn: Mutfak tavan aydınlatma arızası',
+        description: 'Sigorta sürekli atıyor, prizden koku geliyor, avize montajı yapılacak...'
+      };
+    case 'cilingir':
+      return {
+        title: 'Örn: Anahtar kapıda kırıldı / Kapıda kaldım',
+        description: 'Çelik kapı kilitli kaldı, göbek değişimi istiyorum, oto kapısı açılacak...'
+      };
+    case 'tesisat':
+      return {
+        title: 'Örn: Banyo lavabosu su kaçırıyor',
+        description: 'Mutfak gideri tıkandı, musluk damlatıyor, klozet sifonu çalışmıyor...'
+      };
+    case 'klima':
+      return {
+        title: 'Örn: Klima soğutmuyor / Bakım',
+        description: 'Gaz dolumu yapılacak, iç üniteden su damlatıyor, montaj söküm yapılacak...'
+      };
+    case 'beyaz-esya':
+      return {
+        title: 'Örn: Buzdolabı soğutmuyor',
+        description: 'Çamaşır makinesi sallanıyor, motor sesi geliyor, kapı contaları yıpranmış...'
+      };
+    default:
+      return {
+        title: 'Örn: İhtiyacınızı kısaca belirtin',
+        description: 'İşin detaylarını, sorunun ne zaman başladığını ve beklentilerinizi yazın...'
+      };
+  }
+};
+
 export default function CreateJobScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -529,7 +565,7 @@ export default function CreateJobScreen() {
               <Text style={styles.label}>İlan Başlığı</Text>
               <TextInput
                 style={[styles.input, errors.title && styles.inputError]}
-                placeholder="Örn: Mutfak tavan aydınlatma arızası"
+                placeholder={getPlaceholdersByCategory(serviceCategory).title}
                 value={title}
                 onChangeText={(text) => {
                   setTitle(text);
@@ -548,7 +584,7 @@ export default function CreateJobScreen() {
               <View>
                 <TextInput
                   style={[styles.textArea, errors.description && styles.inputError]}
-                  placeholder="İşin detaylarını, sorunun ne zaman başladığını yazın..."
+                  placeholder={getPlaceholdersByCategory(serviceCategory).description}
                   value={description}
                   onChangeText={(text) => {
                     setDescription(text);
@@ -771,37 +807,7 @@ export default function CreateJobScreen() {
               }}
             />
 
-            <View style={styles.row}>
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <Picker
-                  label="Şehir"
-                  value={city}
-                  options={CITY_NAMES}
-                  onValueChange={setCity}
-                  error={errors.city}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Picker
-                  label="İlçe"
-                  value={district}
-                  options={districtOptions}
-                  onValueChange={setDistrict}
-                  error={errors.district}
-                  disabled={!city}
-                />
-              </View>
-            </View>
-
-            <Picker
-              label="Mahalle"
-              value={neighborhood}
-              options={neighborhoodOptions.length > 0 ? neighborhoodOptions : (district ? ['Merkez'] : [])}
-              onValueChange={setNeighborhood}
-              error={errors.neighborhood}
-              disabled={!district}
-            />
-
+            {/* Detaylı Adres - Haritadan seçim sonrası ek bilgi için */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Detaylı Adres</Text>
               <TextInput
@@ -865,7 +871,7 @@ export default function CreateJobScreen() {
                 <Ionicons name="cash-outline" size={20} color={colors.primary} style={styles.budgetIcon} />
                 <TextInput
                   style={styles.budgetInput}
-                  placeholder="Seçenekleri değerlendirin (Opsiyonel)"
+                  placeholder="Örn: 500 - 1.000 TL arası"
                   value={estimatedBudget}
                   onChangeText={(text) => setEstimatedBudget(text.replace(/[^0-9.]/g, ''))}
                   keyboardType="numeric"
