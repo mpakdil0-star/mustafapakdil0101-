@@ -40,12 +40,24 @@ import LocationPicker from '../../components/common/LocationPicker';
 import { Picker } from '../../components/common/Picker';
 
 const EMERGENCY_TYPES = [
-    { id: 'elektrik', label: 'Elektrik', icon: 'flash-outline', color: '#7C3AED' },
-    { id: 'tesisat', label: 'Su/Tesisat', icon: 'water-outline', color: '#0284C7' },
-    { id: 'cilingir', label: 'Çilingir', icon: 'key-outline', color: '#D97706' },
-    { id: 'beyaz-esya', label: 'Beyaz Eşya', icon: 'cube-outline', color: '#16A34A' },
-    { id: 'klima', label: 'Klima', icon: 'snow-outline', color: '#2563EB' },
+    { id: 'elektrik', label: 'Elektrik', color: '#7C3AED' },
+    { id: 'tesisat', label: 'Su/Tesisat', color: '#0284C7' },
+    { id: 'cilingir', label: 'Çilingir', color: '#D97706' },
+    { id: 'beyaz-esya', label: 'Beyaz Eşya', color: '#16A34A' },
+    { id: 'klima', label: 'Klima', color: '#2563EB' },
 ];
+
+// Map category ID to 3D image asset (same as home screen)
+const getCategoryImage = (id: string) => {
+    switch (id) {
+        case 'elektrik': return require('../../assets/images/categories/3d_electric.png');
+        case 'cilingir': return require('../../assets/images/categories/3d_locksmith.png');
+        case 'klima': return require('../../assets/images/categories/3d_aircon.png');
+        case 'beyaz-esya': return require('../../assets/images/categories/3d_appliances.png');
+        case 'tesisat': return require('../../assets/images/categories/3d_plumbing.png');
+        default: return null;
+    }
+};
 
 const MAX_IMAGES = 3;
 
@@ -424,25 +436,24 @@ export default function QuickCreateScreen() {
                                     style={[
                                         styles.typeBtn,
                                         selectedType === type.id
-                                            ? { borderColor: type.color, backgroundColor: type.color + '08' }
+                                            ? { borderColor: type.color, backgroundColor: type.color + '10', shadowColor: type.color }
                                             : {}
                                     ]}
                                     activeOpacity={0.7}
                                     onPress={() => setSelectedType(type.id)}
                                 >
-                                    <ImageBackground
-                                        source={require('../../assets/images/header_bg.png')}
-                                        style={styles.typeBtnContent}
-                                        imageStyle={{ opacity: 0.04, borderRadius: 20 }}
-                                    >
+                                    <View style={styles.typeBtnContent}>
                                         <View style={[styles.typeIconBox, { backgroundColor: type.color + '15' }]}>
-                                            <View style={[styles.typeGlowEffect, { backgroundColor: type.color + '30' }]} />
-                                            <Ionicons name={type.icon as any} size={22} color={type.color} />
+                                            <Image
+                                                source={getCategoryImage(type.id)}
+                                                style={styles.type3dImage}
+                                                resizeMode="contain"
+                                            />
                                         </View>
                                         <Text style={[
                                             styles.typeLabel,
-                                            selectedType === type.id && { color: type.color }
-                                        ]} numberOfLines={1}>
+                                            selectedType === type.id && { color: type.color, fontFamily: fonts.bold }
+                                        ]} numberOfLines={2}>
                                             {type.label}
                                         </Text>
                                         {selectedType === type.id && (
@@ -450,7 +461,7 @@ export default function QuickCreateScreen() {
                                                 <Ionicons name="checkmark" size={10} color={colors.white} />
                                             </View>
                                         )}
-                                    </ImageBackground>
+                                    </View>
                                 </TouchableOpacity>
                             ))}
                         </View>
@@ -835,6 +846,10 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         transform: [{ scale: 1.5 }],
         opacity: 0.5,
+    },
+    type3dImage: {
+        width: 32,
+        height: 32,
     },
     typeLabel: {
         fontFamily: fonts.bold,
