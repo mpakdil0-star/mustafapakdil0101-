@@ -94,6 +94,20 @@ const initDemoAccounts = () => {
                 isVerified: true,
                 isActive: true
             }
+        },
+        {
+            userId: 'mock-user-demo-admin-com-ADMIN',
+            data: {
+                passwordHash: '123456',
+                creditBalance: 9999,
+                experienceYears: 10,
+                specialties: [],
+                fullName: 'Sistem Yöneticisi',
+                phone: '05550000000',
+                email: 'admin@ustalar.com',
+                isVerified: true,
+                isActive: true
+            }
         }
     ];
 
@@ -107,7 +121,7 @@ const initDemoAccounts = () => {
 };
 
 // Initialize demo accounts on startup - DISABLED per user request
-// initDemoAccounts();
+initDemoAccounts();
 
 export const mockStorage = {
     get: (userId: string) => {

@@ -88,7 +88,13 @@ function RootLayoutNav() {
         // Connect socket if authenticated and in auth group (redirecting to tabs)
         socketService.connect();
         try {
-          router.replace('/(tabs)');
+          // Redirect admins to admin dashboard
+          if (user?.userType === 'ADMIN') {
+            console.log('🛡️ Admin kullanıcısı tespit edildi, admin paneline yönlendiriliyor...');
+            router.replace('/admin');
+          } else {
+            router.replace('/(tabs)');
+          }
         } catch (error) {
           console.warn('Navigation error, will retry:', error);
         }

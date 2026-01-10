@@ -107,7 +107,17 @@ export default function LoginScreen() {
           if (redirectTo) {
             router.replace(redirectTo as any);
           } else {
-            router.replace('/(tabs)');
+            // Redirection logic is handled in _layout.tsx generally, but we force it here too for smoothness
+            // We can check the Redux state, but inside this closure state might be stale.
+            // Rely on _layout.tsx or make a simple check if we could access userType from response (requires changing unwrap() usage)
+            // For now, let's just push to root and let _layout handle it, OR push to tabs as default.
+
+            // Check if email indicates admin (simple client-side check for immediate feedback)
+            if (email.toLowerCase().includes('admin')) {
+              router.replace('/admin');
+            } else {
+              router.replace('/(tabs)');
+            }
           }
         } catch (navError) {
           console.error('[Login] Navigation failed:', navError);

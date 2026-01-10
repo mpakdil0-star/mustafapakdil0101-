@@ -143,7 +143,7 @@ httpServer.listen(PORT, '0.0.0.0', () => {
 
   // Get current IP address
   const networkInterfaces = os.networkInterfaces();
-  let currentIP = '192.168.1.62'; // Default
+  let currentIP = '192.168.1.78'; // Default
 
   for (const interfaceName in networkInterfaces) {
     const interfaces = networkInterfaces[interfaceName];
