@@ -122,6 +122,10 @@ export default function JobsScreen() {
   const loadJobs = useCallback(() => {
     // FIX: Use 'ACTIVE' to fetch both OPEN and BIDDING jobs
     const filters: any = { status: 'ACTIVE', limit: 20 };
+    // Filter jobs by professional's category (e.g. only show Plumbing jobs to Plumbers)
+    if (isElectrician && user?.electricianProfile?.serviceCategory) {
+      filters.serviceCategory = user.electricianProfile.serviceCategory;
+    }
     if (selectedCity) filters.city = selectedCity;
     if (selectedDistricts.length > 0) filters.districts = selectedDistricts;
     if (userLocation) {
@@ -183,6 +187,11 @@ export default function JobsScreen() {
       case 'Aydınlatma': return 'bulb-outline';
       case 'Arıza / Onarım': return 'flash-outline';
       case 'İnternet / Diafon': return 'wifi-outline';
+      // New Categories
+      case 'Tesisat': return 'water-outline';
+      case 'Klima': return 'snow-outline';
+      case 'Beyaz Eşya': return 'cube-outline';
+      case 'Çilingir': return 'key-outline';
       default: return 'build-outline';
     }
   };

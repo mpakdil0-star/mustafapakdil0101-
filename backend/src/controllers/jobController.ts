@@ -615,6 +615,17 @@ export const getJobsController = async (
       if (category) {
         mockResult.jobs = mockResult.jobs.filter((j: any) => j.category === category);
       }
+      // NEW: Filter by serviceCategory logic
+      // This is crucial for distinguishing between Electrician vs Plumber jobs
+      const serviceCategoryParam = req.query.serviceCategory as string;
+      if (serviceCategoryParam) {
+        mockResult.jobs = mockResult.jobs.filter((j: any) =>
+          // Match exact serviceCategory 'tesisat' === 'tesisat'
+          j.serviceCategory === serviceCategoryParam ||
+          // Fallback: If job has no serviceCategory, assume 'elektrik' (legacy support)
+          (!j.serviceCategory && serviceCategoryParam === 'elektrik')
+        );
+      }
 
       if (isGuest && mockResult.jobs) {
         mockResult.jobs = mockResult.jobs.map((j: any) => maskJobData(j));
