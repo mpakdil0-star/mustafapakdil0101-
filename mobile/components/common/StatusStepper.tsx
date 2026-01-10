@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
         top: 10,
         width: '100%',
         height: 2,
-        backgroundColor: '#E2E8F0',
+        backgroundColor: '#F1F5F9', // Lighter gray
         zIndex: -1,
     },
     lineCompleted: {
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
         borderRadius: 11,
         backgroundColor: colors.white,
         borderWidth: 2,
-        borderColor: '#E2E8F0',
+        borderColor: '#F1F5F9', // Lighter gray
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 8,
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     label: {
         fontFamily: fonts.medium,
         fontSize: 10,
-        color: colors.textLight,
+        color: '#94A3B8', // Lighter text color
         textAlign: 'center',
         maxWidth: 80,
     },
