@@ -1231,17 +1231,11 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: staticColors.borderLight,
-    backgroundColor: staticColors.white,
-    gap: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 0, // No border for cleaner look
+    backgroundColor: '#F5F6FA', // Light gray background
+    gap: 6,
   },
   urgencyText: {
     fontFamily: fonts.semiBold,
