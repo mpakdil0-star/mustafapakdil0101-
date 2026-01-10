@@ -176,21 +176,21 @@ export default function CreateBidScreen() {
       // Kredi hatası kontrolü
       if (errorMessage.toLowerCase().includes('yetersiz kredi') || errorMessage.toLowerCase().includes('kredi')) {
         showAlert(
-          'Yetersiz Kredi ⚠️',
-          errorMessage,
+          'Krediniz Tükendi! 💳',
+          'Teklif verebilmek için cüzdanınıza kredi yüklemeniz gerekmektedir. Yeni üyelere verilen 5 ücretsiz kredinizi kullandınız.',
           'warning',
           [
             {
-              text: 'Hemen Doğrula',
+              text: 'Cüzdana Git',
               onPress: () => {
                 setAlertConfig(prev => ({ ...prev, visible: false }));
-                // Kısa bir gecikme ile yönlendir ki modal kapansın
-                setTimeout(() => router.push('/(tabs)/profile'), 300);
+                // Wallet sayfasına yönlendir
+                setTimeout(() => router.push('/profile/wallet'), 300);
               },
               variant: 'primary'
             },
             {
-              text: 'İptal',
+              text: 'Daha Sonra',
               onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })),
               variant: 'ghost'
             }
