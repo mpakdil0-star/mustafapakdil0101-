@@ -830,9 +830,9 @@ const styles = StyleSheet.create({
         padding: 4,
     },
     typeIconBox: {
-        width: 36, // Reduced from 44
-        height: 36, // Reduced from 44
-        borderRadius: 10,
+        width: 48, // Larger for 3D icons
+        height: 48,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 6,
@@ -848,8 +848,8 @@ const styles = StyleSheet.create({
         opacity: 0.5,
     },
     type3dImage: {
-        width: 32,
-        height: 32,
+        width: 40,
+        height: 40,
     },
     typeLabel: {
         fontFamily: fonts.bold,
