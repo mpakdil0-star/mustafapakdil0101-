@@ -703,13 +703,13 @@ export default function HomeScreen() {
           )
         }
 
-        {/* Popular Categories Section (Citizen Only) */}
+        {/* Popüler Hizmetler Section (Citizen Only) - Minimal/Outline Style */}
         {
           !isElectrician && (
             <View style={styles.section}>
               <View style={styles.sectionHeaderMatch}>
                 <View style={styles.purpleIndicator} />
-                <Text style={styles.matchSectionTitle}>Popüler Kategoriler</Text>
+                <Text style={styles.matchSectionTitle}>Popüler Hizmetler</Text>
                 <TouchableOpacity onPress={() => router.push('/categories')}>
                   <Text style={styles.seeAllMatch}>Tümü</Text>
                 </TouchableOpacity>
@@ -720,18 +720,21 @@ export default function HomeScreen() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.categoryScroller}
               >
-                {JOB_CATEGORIES.map((cat, idx) => (
+                {[
+                  { id: 'avize-montaj', name: 'Avize Montajı', icon: 'bulb-outline' },
+                  { id: 'kapi-acma', name: 'Kapı Açma', icon: 'lock-open-outline' },
+                  { id: 'klima-montaj', name: 'Klima Montaj', icon: 'snow-outline' },
+                  { id: 'tikaniklik', name: 'Tıkanıklık Açma', icon: 'water-outline' },
+                  { id: 'buzdolabi', name: 'Buzdolabı Tamiri', icon: 'cube-outline' },
+                ].map((cat, idx) => (
                   <TouchableOpacity
                     key={idx}
                     style={styles.categoryItemMatch}
                     onPress={() => handleActionWithAuth('/jobs/create', { category: cat.name })}
                   >
-                    <LinearGradient
-                      colors={cat.colors as [string, string, ...string[]]}
-                      style={styles.categoryIconCircle}
-                    >
-                      <Ionicons name={cat.icon as any} size={24} color={staticColors.white} />
-                    </LinearGradient>
+                    <View style={styles.categoryIconCircleMinimal}>
+                      <Ionicons name={cat.icon as any} size={22} color="#64748B" />
+                    </View>
                     <Text style={styles.categoryLabelMatch}>{cat.name}</Text>
                   </TouchableOpacity>
                 ))}
@@ -1940,7 +1943,7 @@ const styles = StyleSheet.create({
   // Floating Emergency Button Styles
   floatingEmergencyWrapper: {
     position: 'absolute',
-    bottom: 120,
+    bottom: 140, // Moved higher to avoid tab bar overlap
     right: 20,
     zIndex: 9999,
     elevation: 10,
@@ -2103,20 +2106,21 @@ const styles = StyleSheet.create({
   },
   serviceCategoryCard: {
     width: '100%',
-    aspectRatio: 0.58, // Daha büyük ikonlar için boyu biraz daha uzattık
+    aspectRatio: 0.58,
     backgroundColor: staticColors.white,
-    borderRadius: 18,
+    borderRadius: 22, // More rounded for squircle effect
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
     paddingHorizontal: 2,
-    // Glow effect
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 6,
+    // Enhanced shadow for premium squircle look
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: 'rgba(0, 0, 0, 0.04)',
   },
   serviceCategoryIconBg: {
     width: 60, // Resimler için biraz daha genişlettik
@@ -2137,5 +2141,17 @@ const styles = StyleSheet.create({
     color: staticColors.text,
     textAlign: 'center',
     width: '100%',
+  },
+  // Minimal outline icon style for Popüler Hizmetler
+  categoryIconCircleMinimal: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F1F5F9', // Very light gray
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
 });
