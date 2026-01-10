@@ -70,6 +70,7 @@ export const jobService = {
   async getJobs(filters?: {
     status?: string;
     category?: string;
+    serviceCategory?: string; // Add this field
     city?: string;
     district?: string;
     districts?: string[];
@@ -82,6 +83,7 @@ export const jobService = {
     const params = new URLSearchParams();
     if (filters?.status) params.append('status', filters.status);
     if (filters?.category) params.append('category', filters.category);
+    if (filters?.serviceCategory) params.append('serviceCategory', filters.serviceCategory); // Append it
     if (filters?.city) params.append('city', filters.city);
     if (filters?.district) params.append('district', filters.district);
     // Support for multiple districts
