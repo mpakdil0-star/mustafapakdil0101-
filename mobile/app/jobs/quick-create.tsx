@@ -369,6 +369,7 @@ export default function QuickCreateScreen() {
                 },
                 urgencyLevel: 'HIGH' as const,
                 images: images.length > 0 ? images : undefined,
+                serviceCategory: selectedType || undefined, // Pass the ID directly (elektrik, tesisat, etc.)
             };
 
             const newJob = await dispatch(createJob(jobData)).unwrap();

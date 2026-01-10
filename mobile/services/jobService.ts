@@ -24,6 +24,7 @@ export interface CreateJobData {
   };
   preferredTime?: string;
   images?: string[];
+  serviceCategory?: string; // 'elektrik' | 'tesisat' | 'cilingir' | ...
 }
 
 export interface Job {
