@@ -427,7 +427,7 @@ export default function QuickCreateScreen() {
                             <View style={[styles.sectionIconWrapper, { backgroundColor: staticColors.error + '10' }]}>
                                 <Ionicons name="alert-circle-outline" size={20} color={staticColors.error} />
                             </View>
-                            <Text style={styles.sectionTitle}>Arıza Tipi Seçin</Text>
+                            <Text style={styles.sectionTitle}>Hizmet Türü</Text>
                         </View>
 
                         <View style={styles.typeGrid}>
