@@ -20,23 +20,23 @@ import { fonts } from '../../constants/typography';
 const slides = [
     {
         id: '1',
-        title: 'Hızlı Usta Bul',
-        description: 'Konumunuza en yakın elektrikçileri saniyeler içinde görüntüleyin.',
+        title: 'İhtiyacın Olan Uzman',
+        description: 'Elektrikten tesisata, montajdan tamire... Evindeki tüm işler için aradığın usta yanında.',
         icon: 'map',
         color: '#3B82F6', // Blue
     },
     {
         id: '2',
-        title: 'Güvenilir Hizmet',
-        description: 'Onaylı profiller, gerçek yorumlar ve puanlarla güvenle çalışın.',
-        icon: 'shield-checkmark',
+        title: 'Konumuna En Yakın',
+        description: 'Sana en yakın ustaları haritada gör, profillerini incele ve saniyeler içinde ulaş.',
+        icon: 'location',
         color: '#8B5CF6', // Violet
     },
     {
         id: '3',
-        title: 'Kolay İşlemler',
-        description: 'İhtiyacınızı belirtin, ustalardan gelen teklifleri karşılaştırın ve işi başlatın.',
-        icon: 'flash',
+        title: 'Güvenle Çalış',
+        description: 'Gerçek müşteri yorumlarını oku, teklifleri karşılaştır ve onaylı ustalarla işini güvenle çöz.',
+        icon: 'shield-checkmark',
         color: '#EC4899', // Pink
     },
 ];

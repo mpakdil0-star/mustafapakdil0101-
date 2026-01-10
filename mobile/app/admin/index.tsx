@@ -16,7 +16,7 @@ export default function AdminDashboardScreen() {
     const menuItems = [
         {
             title: 'Doğrulama Havuzu',
-            subtitle: 'Bekleyen elektrikçi belgeleri',
+            subtitle: 'Onay bekleyen belgeler',
             icon: 'shield-checkmark',
             color: '#10B981',
             route: '/profile/admin_verifications'

@@ -306,20 +306,22 @@ export default function HomeScreen() {
   const fetchNewJobsCount = useCallback(async () => {
     if (!isAuthenticated || !isElectrician) return;
     try {
-      const result = await jobService.getJobs({ limit: 50 });
+      // Filter by user's service category (profession)
+      const serviceCategory = user?.electricianProfile?.serviceCategory || 'elektrik';
+      const result = await jobService.getJobs({ limit: 50, serviceCategory });
+
       if (result && result.jobs) {
-        const now = new Date();
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-        const todayJobs = result.jobs.filter((job: any) => {
+        const last24Hours = Date.now() - 24 * 60 * 60 * 1000;
+        const newJobs = result.jobs.filter((job: any) => {
           const jobDate = new Date(job.createdAt).getTime();
-          return jobDate >= startOfToday;
+          return jobDate >= last24Hours;
         });
-        setNewJobsCount(todayJobs.length);
+        setNewJobsCount(newJobs.length);
       }
     } catch (error) {
       console.error('Error fetching new jobs count:', error);
     }
-  }, [isAuthenticated, isElectrician]);
+  }, [isAuthenticated, isElectrician, user]);
 
   // Kullanıcının konumunu/şehrini ve hizmet bölgelerini yükle
   useFocusEffect(
@@ -603,7 +605,7 @@ export default function HomeScreen() {
                 </LinearGradient>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.cardMainTitle}>Yeni İşler</Text>
-                  <Text style={styles.cardMainSubtitle}>Bugün {newJobsCount} yeni iş fırsatı var</Text>
+                  <Text style={styles.cardMainSubtitle}>Son 24 saatte {newJobsCount} yeni iş fırsatı var</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
               </TouchableOpacity>
