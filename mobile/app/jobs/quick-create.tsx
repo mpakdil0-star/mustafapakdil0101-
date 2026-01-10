@@ -852,11 +852,10 @@ const styles = StyleSheet.create({
         height: 40,
     },
     typeLabel: {
-        fontFamily: fonts.bold,
-        fontSize: 10,
+        fontFamily: fonts.extraBold, // Bolder
+        fontSize: 12, // Larger
         color: staticColors.text,
         textAlign: 'center',
-        letterSpacing: -0.2,
     },
     checkBadge: {
         position: 'absolute',
