@@ -24,14 +24,14 @@ export default function ElectriciansLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: 'Elektrikçiler',
+          title: 'Ustalar',
           headerTitle: 'Öne Çıkan Ustalar'
         }}
       />
       <Stack.Screen
         name="[id]"
         options={{
-          title: 'Elektrikçi Detay',
+          title: 'Usta Detayı',
         }}
       />
     </Stack>

@@ -116,7 +116,7 @@ export default function ElectriciansListScreen() {
                 name: e.fullName,
                 rating: Number(e.electricianProfile?.ratingAverage) || 0,
                 reviewCount: e.electricianProfile?.totalReviews || 0,
-                specialty: e.electricianProfile?.specialties?.[0] || 'Genel Elektrik',
+                specialty: e.electricianProfile?.specialties?.[0] || 'Genel Hizmet',
                 isVerified: e.isVerified,
                 location: e.locations?.[0] ? `${e.locations[0].district}, ${e.locations[0].city}` : 'Konum Belirtilmedi',
                 city: e.locations?.[0]?.city || 'Diğer',
