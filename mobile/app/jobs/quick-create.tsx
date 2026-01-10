@@ -852,8 +852,8 @@ const styles = StyleSheet.create({
         height: 40,
     },
     typeLabel: {
-        fontFamily: fonts.extraBold, // Bolder
-        fontSize: 12, // Larger
+        fontFamily: fonts.extraBold,
+        fontSize: 11, // Slightly smaller
         color: staticColors.text,
         textAlign: 'center',
     },
