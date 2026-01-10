@@ -1108,23 +1108,24 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
-    gap: 10,
+    marginBottom: 16, // Increased spacing
+    marginTop: 8,
+    gap: 12,
   },
   sectionIconWrapper: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 38, // Larger icons
+    height: 38,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   sectionTitle: {
     fontFamily: fonts.extraBold,
-    fontSize: 15,
+    fontSize: 16, // Slightly larger
     color: staticColors.text,
   },
   inputContainer: {
-    marginBottom: 10,
+    marginBottom: 16, // More spacing between inputs
   },
   label: {
     fontFamily: fonts.bold,
@@ -1134,39 +1135,39 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   input: {
-    backgroundColor: staticColors.white,
-    borderRadius: 12,
-    padding: 10,
+    backgroundColor: '#F5F6FA', // Light gray background
+    borderRadius: 16, // More rounded
+    padding: 14,
     fontFamily: fonts.semiBold,
     fontSize: 14,
     color: staticColors.text,
     borderWidth: 1,
-    borderColor: staticColors.borderLight,
+    borderColor: 'rgba(0,0,0,0.04)', // Very subtle border
   },
   inputError: {
     borderColor: staticColors.error,
   },
   textArea: {
-    backgroundColor: staticColors.white,
-    borderRadius: 12,
-    padding: 10,
+    backgroundColor: '#F5F6FA', // Light gray background
+    borderRadius: 16, // More rounded
+    padding: 14,
     fontFamily: fonts.semiBold,
     fontSize: 14,
     color: staticColors.text,
     borderWidth: 1,
-    borderColor: staticColors.borderLight,
-    height: 80,
+    borderColor: 'rgba(0,0,0,0.04)', // Very subtle border
+    height: 90,
   },
   textAreaSmall: {
-    backgroundColor: staticColors.white,
-    borderRadius: 12,
-    padding: 10,
+    backgroundColor: '#F5F6FA', // Light gray background
+    borderRadius: 16, // More rounded
+    padding: 14,
     fontFamily: fonts.semiBold,
     fontSize: 14,
     color: staticColors.text,
     borderWidth: 1,
-    borderColor: staticColors.borderLight,
-    height: 50,
+    borderColor: 'rgba(0,0,0,0.04)', // Very subtle border
+    height: 56,
   },
   errorText: {
     color: staticColors.error,
@@ -1262,12 +1263,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: staticColors.white,
-    borderWidth: 1,
+    backgroundColor: '#F5F6FA', // Light gray background
+    borderWidth: 1.5,
     borderStyle: 'dashed',
-    borderRadius: 14,
-    padding: 10,
-    gap: 6,
+    borderRadius: 16, // More rounded
+    borderColor: 'rgba(139, 92, 246, 0.3)', // Purple tint
+    padding: 14,
+    gap: 8,
   },
   imageActionText: {
     fontFamily: fonts.bold,
@@ -1295,10 +1297,10 @@ const styles = StyleSheet.create({
   budgetInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: staticColors.white,
-    borderRadius: 16,
+    backgroundColor: '#F5F6FA', // Light gray background
+    borderRadius: 16, // More rounded
     borderWidth: 1,
-    borderColor: staticColors.borderLight,
+    borderColor: 'rgba(0,0,0,0.04)', // Very subtle border
     paddingHorizontal: 14,
   },
   budgetIcon: {
@@ -1307,14 +1309,20 @@ const styles = StyleSheet.create({
   budgetInput: {
     flex: 1,
     paddingVertical: 14,
+    paddingRight: 10, // Extra padding for placeholder text
     fontFamily: fonts.bold,
-    fontSize: 15,
+    fontSize: 14, // Slightly smaller to fit placeholder
     color: staticColors.text,
   },
   submitBtn: {
-    marginTop: 10,
+    marginTop: 20, // More spacing before button
     height: 56,
     borderRadius: 18,
+    shadowColor: staticColors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25, // Softer shadow
+    shadowRadius: 16, // More spread
+    elevation: 8,
   },
   finalNote: {
     textAlign: 'center',
