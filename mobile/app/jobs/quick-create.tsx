@@ -45,7 +45,6 @@ const EMERGENCY_TYPES = [
     { id: 'cilingir', label: 'Çilingir', icon: 'key-outline', color: '#D97706' },
     { id: 'beyaz-esya', label: 'Beyaz Eşya', icon: 'cube-outline', color: '#16A34A' },
     { id: 'klima', label: 'Klima', icon: 'snow-outline', color: '#2563EB' },
-    { id: 'diger', label: 'Diğer', icon: 'alert-circle-outline', color: '#6B7280' },
 ];
 
 const MAX_IMAGES = 3;
