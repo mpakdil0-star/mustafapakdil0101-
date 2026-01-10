@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
     },
     reviewText: {
-        fontFamily: fonts.medium,
+        fontFamily: fonts.semiBold, // Increased weight for readability
         fontSize: 12,
         color: '#94A3B8',
     },
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
         gap: 4,
     },
     locationText: {
-        fontFamily: fonts.medium,
+        fontFamily: fonts.semiBold, // Increased weight for readability
         fontSize: 12,
         color: '#94A3B8',
     },
