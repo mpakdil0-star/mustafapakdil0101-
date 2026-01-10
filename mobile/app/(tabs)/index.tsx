@@ -733,7 +733,7 @@ export default function HomeScreen() {
                     onPress={() => handleActionWithAuth('/jobs/create', { category: cat.name })}
                   >
                     <View style={styles.categoryIconCircleMinimal}>
-                      <Ionicons name={cat.icon as any} size={22} color="#64748B" />
+                      <Ionicons name={cat.icon as any} size={22} color="#7C3AED" />
                     </View>
                     <Text style={styles.categoryLabelMatch}>{cat.name}</Text>
                   </TouchableOpacity>
@@ -1064,7 +1064,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   content: {
-    paddingBottom: 100,
+    paddingBottom: 180, // Increased for ACİL USTA button clearance
   },
   premiumHeaderContainer: {
     borderBottomLeftRadius: 32,
@@ -1094,6 +1094,7 @@ const styles = StyleSheet.create({
   headerTitleContainer: {
     flex: 1,
     marginLeft: 12,
+    justifyContent: 'center', // Vertically center text
   },
   profileAvatarButton: {
     width: 40,
@@ -2147,11 +2148,11 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#F1F5F9', // Very light gray
+    backgroundColor: 'rgba(139, 92, 246, 0.1)', // Light purple (Lavender 10%)
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(139, 92, 246, 0.15)', // Subtle purple border
   },
 });
