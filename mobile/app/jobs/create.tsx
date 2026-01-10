@@ -756,25 +756,30 @@ export default function CreateJobScreen() {
                       style={[
                         styles.urgencyButton,
                         urgencyLevel === level.value && {
-                          borderColor: level.color,
-                          backgroundColor: level.color + '10',
+                          backgroundColor: level.color,
                           shadowColor: level.color,
+                          shadowOffset: { width: 0, height: 4 },
                           shadowOpacity: 0.3,
-                          shadowRadius: 10,
+                          shadowRadius: 8,
                           elevation: 6
                         },
                       ]}
                       onPress={() => setUrgencyLevel(level.value as any)}
                     >
-                      <Ionicons
-                        name={level.icon as any}
-                        size={16}
-                        color={urgencyLevel === level.value ? level.color : colors.textLight}
-                      />
+                      <View style={[
+                        styles.urgencyIconCircle,
+                        { backgroundColor: urgencyLevel === level.value ? 'rgba(255,255,255,0.25)' : level.color + '20' }
+                      ]}>
+                        <Ionicons
+                          name={level.icon as any}
+                          size={18}
+                          color={urgencyLevel === level.value ? staticColors.white : level.color}
+                        />
+                      </View>
                       <Text
                         style={[
                           styles.urgencyText,
-                          urgencyLevel === level.value && { color: level.color, fontFamily: fonts.bold },
+                          urgencyLevel === level.value && { color: staticColors.white, fontFamily: fonts.bold },
                         ]}
                       >
                         {level.label}
@@ -1232,15 +1237,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
+    paddingHorizontal: 8,
     borderRadius: 16,
-    borderWidth: 0, // No border for cleaner look
-    backgroundColor: '#F5F6FA', // Light gray background
+    borderWidth: 0,
+    backgroundColor: '#F5F6FA',
     gap: 6,
+  },
+  urgencyIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   urgencyText: {
     fontFamily: fonts.semiBold,
     fontSize: 11,
     color: staticColors.textSecondary,
+    textAlign: 'center',
   },
   row: {
     flexDirection: 'row',
