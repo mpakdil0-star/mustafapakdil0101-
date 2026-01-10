@@ -781,7 +781,17 @@ export const getVerificationStatus = async (req: Request, res: Response, next: N
                 },
             });
         } catch (dbError: any) {
-            console.warn('Database error, returning mock verification status:', dbError.message);
+            const isConnectionError =
+                dbError.message?.includes('connect') ||
+                dbError.message?.includes('database') ||
+                dbError.message?.includes("Can't reach database") ||
+                dbError.code === 'P1001';
+
+            if (isConnectionError) {
+                console.warn('⚠️ Database not connected, returning mock verification status');
+            } else {
+                console.warn('Database error, returning mock verification status:', dbError.message);
+            }
             // Mock response for testing
             const mockData = mockStorage.get(userId);
             res.json({
