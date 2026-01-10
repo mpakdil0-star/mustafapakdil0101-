@@ -135,7 +135,7 @@ export default function LoginScreen() {
             },
             {
               text: 'Kayıt Ol',
-              onPress: () => router.push('/(auth)/register')
+              onPress: () => router.push('/(auth)/role-select')
             }
           ]
         );
@@ -325,7 +325,7 @@ export default function LoginScreen() {
                 <Button
                   title="Kayıt Ol"
                   onPress={() => router.push({
-                    pathname: '/(auth)/register',
+                    pathname: '/(auth)/role-select',
                     params: { redirectTo }
                   })}
                   variant="outline"

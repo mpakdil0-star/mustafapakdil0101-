@@ -219,12 +219,7 @@ export default function ProfileScreen() {
           }}
           onRegister={() => {
             setShowAuthModal(false);
-            router.push({
-              pathname: '/(auth)/register',
-              params: {
-                initialRole: 'CITIZEN',
-              }
-            });
+            router.push('/(auth)/role-select');
           }}
         />
       </View>
