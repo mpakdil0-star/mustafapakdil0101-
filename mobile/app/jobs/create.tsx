@@ -1202,9 +1202,9 @@ const styles = StyleSheet.create({
     borderWidth: 0, // Keep no border when selected
   },
   categoryIconCircle: {
-    width: 36, // Larger to match service type
-    height: 36,
-    borderRadius: 18,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1240,9 +1240,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   urgencyIconCircle: {
-    width: 36, // Larger to match service type
-    height: 36,
-    borderRadius: 18,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
