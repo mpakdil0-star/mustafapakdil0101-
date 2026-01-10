@@ -1202,9 +1202,9 @@ const styles = StyleSheet.create({
     borderWidth: 0, // Keep no border when selected
   },
   categoryIconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 36, // Larger to match service type
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1240,15 +1240,15 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   urgencyIconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 36, // Larger to match service type
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
   urgencyText: {
     fontFamily: fonts.semiBold,
-    fontSize: 11,
+    fontSize: 12, // Match category chip text
     color: staticColors.textSecondary,
     textAlign: 'center',
   },
