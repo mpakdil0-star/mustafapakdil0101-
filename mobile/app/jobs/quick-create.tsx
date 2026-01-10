@@ -40,12 +40,12 @@ import LocationPicker from '../../components/common/LocationPicker';
 import { Picker } from '../../components/common/Picker';
 
 const EMERGENCY_TYPES = [
-    { id: 'elektrik_kesintisi', label: 'Elektrik Kesintisi', icon: 'flash-outline', color: '#EF4444' },
-    { id: 'su_sizinti', label: 'Su Patlağı / Sızıntı', icon: 'water-outline', color: '#3B82F6' },
-    { id: 'kapida_kaldim', label: 'Kapıda Kaldım', icon: 'key-outline', color: '#F59E0B' },
-    { id: 'beyaz_esya', label: 'Beyaz Eşya Arızası', icon: 'cube-outline', color: '#10B981' },
-    { id: 'klima_ariza', label: 'Klima Arızası', icon: 'snow-outline', color: '#06B6D4' },
-    { id: 'diger', label: 'Diğer Acil Durum', icon: 'alert-circle-outline', color: '#6B7280' },
+    { id: 'elektrik', label: 'Elektrik', icon: 'flash-outline', color: '#7C3AED' },
+    { id: 'tesisat', label: 'Su/Tesisat', icon: 'water-outline', color: '#0284C7' },
+    { id: 'cilingir', label: 'Çilingir', icon: 'key-outline', color: '#D97706' },
+    { id: 'beyaz-esya', label: 'Beyaz Eşya', icon: 'cube-outline', color: '#16A34A' },
+    { id: 'klima', label: 'Klima', icon: 'snow-outline', color: '#2563EB' },
+    { id: 'diger', label: 'Diğer', icon: 'alert-circle-outline', color: '#6B7280' },
 ];
 
 const MAX_IMAGES = 3;
@@ -373,12 +373,13 @@ export default function QuickCreateScreen() {
     };
 
     const getCategoryFromType = (type: string): string => {
+        // Return category name that matches JOB_CATEGORIES for proper notification routing
         switch (type) {
-            case 'elektrik_kesintisi': return 'Elektrik Tamiri';
-            case 'su_sizinti': return 'Su Tesisatı';
-            case 'kapida_kaldim': return 'Çilingir';
-            case 'beyaz_esya': return 'Beyaz Eşya Servisi';
-            case 'klima_ariza': return 'Klima Servisi';
+            case 'elektrik': return 'Elektrik Tamiri';
+            case 'tesisat': return 'Tesisat';
+            case 'cilingir': return 'Çilingir';
+            case 'beyaz-esya': return 'Beyaz Eşya';
+            case 'klima': return 'Klima Servisi';
             default: return 'Diğer';
         }
     };
