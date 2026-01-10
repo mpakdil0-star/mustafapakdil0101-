@@ -1113,8 +1113,8 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16, // Increased spacing
-    marginTop: 8,
+    marginBottom: 16,
+    marginTop: 24, // More spacing between sections
     gap: 12,
   },
   sectionIconWrapper: {
@@ -1133,45 +1133,42 @@ const styles = StyleSheet.create({
     marginBottom: 16, // More spacing between inputs
   },
   label: {
-    fontFamily: fonts.bold,
-    fontSize: 13,
-    color: staticColors.textSecondary,
-    marginBottom: 4,
+    fontFamily: fonts.semiBold, // Bolder font
+    fontSize: 14, // Larger size
+    color: '#333333', // Darker color
+    marginBottom: 6,
     marginLeft: 4,
   },
   input: {
-    backgroundColor: '#F5F6FA', // Light gray background
-    borderRadius: 16, // More rounded
+    backgroundColor: '#F3F4F6', // Light gray background
+    borderRadius: 12,
     padding: 14,
-    fontFamily: fonts.semiBold,
+    fontFamily: fonts.regular,
     fontSize: 14,
     color: staticColors.text,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)', // Very subtle border
+    borderWidth: 0, // No border
   },
   inputError: {
     borderColor: staticColors.error,
   },
   textArea: {
-    backgroundColor: '#F5F6FA', // Light gray background
-    borderRadius: 16, // More rounded
+    backgroundColor: '#F3F4F6', // Light gray background
+    borderRadius: 12,
     padding: 14,
-    fontFamily: fonts.semiBold,
+    fontFamily: fonts.regular,
     fontSize: 14,
     color: staticColors.text,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)', // Very subtle border
+    borderWidth: 0, // No border
     height: 90,
   },
   textAreaSmall: {
-    backgroundColor: '#F5F6FA', // Light gray background
-    borderRadius: 16, // More rounded
+    backgroundColor: '#F3F4F6', // Light gray background
+    borderRadius: 12,
     padding: 14,
-    fontFamily: fonts.semiBold,
+    fontFamily: fonts.regular,
     fontSize: 14,
     color: staticColors.text,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)', // Very subtle border
+    borderWidth: 0, // No border
     height: 56,
   },
   errorText: {
@@ -1216,10 +1213,9 @@ const styles = StyleSheet.create({
   },
   categoryChipText: {
     fontFamily: fonts.semiBold,
-    fontSize: 11, // Slightly larger
+    fontSize: 12, // Increased for readability
     color: staticColors.textSecondary,
     textAlign: 'center',
-    flexWrap: 'wrap', // Allow text to wrap
   },
   categoryChipTextSelected: {
     color: staticColors.white,
