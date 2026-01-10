@@ -18,6 +18,7 @@ interface User {
     bio: string;
     experienceYears: number;
     isAvailable: boolean;
+    serviceCategory?: string;
   };
 }
 

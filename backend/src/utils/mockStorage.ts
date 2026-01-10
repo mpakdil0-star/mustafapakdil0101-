@@ -220,7 +220,8 @@ export const mockStorage = {
                     documentType: store.documentType || null,
                     documentUrl: store.documentUrl ?? undefined,
                     submittedAt: store.submittedAt || null,
-                }
+                },
+                serviceCategory: store.serviceCategory || 'elektrik'
             } : null
         };
     },

@@ -16,21 +16,67 @@ import { setUser } from '../../store/slices/authSlice';
 import api from '../../services/api';
 
 // Uzmanlık alanları listesi
-const EXPERTISE_OPTIONS = [
-    { id: 'arizaOnarim', label: 'Arıza Onarım', icon: 'build-outline' },
-    { id: 'tesisatYenileme', label: 'Tesisat Yenileme', icon: 'construct-outline' },
-    { id: 'prizAnahtar', label: 'Priz/Anahtar Montajı', icon: 'flash-outline' },
-    { id: 'aydinlatma', label: 'Aydınlatma Sistemleri', icon: 'bulb-outline' },
-    { id: 'sigortaPanosu', label: 'Sigorta Panosu', icon: 'grid-outline' },
-    { id: 'topraklama', label: 'Topraklama', icon: 'earth-outline' },
-    { id: 'klimaElektrik', label: 'Klima Elektrik Bağlantısı', icon: 'snow-outline' },
-    { id: 'guvenlikSistemi', label: 'Güvenlik Sistemi Kurulumu', icon: 'shield-outline' },
-    { id: 'uyduSistemleri', label: 'Uydu Sistemleri', icon: 'planet-outline' },
-    { id: 'solarPanel', label: 'Solar Panel Kurulumu', icon: 'sunny-outline' },
-    { id: 'endüstriyel', label: 'Endüstriyel Elektrik', icon: 'business-outline' },
-    { id: 'akilliiEv', label: 'Akıllı Ev Sistemleri', icon: 'home-outline' },
-    { id: 'acilServis', label: 'Acil Servis', icon: 'warning-outline' },
-];
+// Uzmanlık alanları listesi - Kategorilere göre
+const SPECIALTIES_BY_CATEGORY: Record<string, { id: string; label: string; icon: string }[]> = {
+    elektrik: [
+        { id: 'arizaOnarim', label: 'Arıza Onarım', icon: 'build-outline' },
+        { id: 'tesisatYenileme', label: 'Tesisat Yenileme', icon: 'construct-outline' },
+        { id: 'prizAnahtar', label: 'Priz/Anahtar Montajı', icon: 'flash-outline' },
+        { id: 'aydinlatma', label: 'Aydınlatma Sistemleri', icon: 'bulb-outline' },
+        { id: 'sigortaPanosu', label: 'Sigorta Panosu', icon: 'grid-outline' },
+        { id: 'topraklama', label: 'Topraklama', icon: 'earth-outline' },
+        { id: 'klimaElektrik', label: 'Klima Elektrik Bağlantısı', icon: 'snow-outline' },
+        { id: 'guvenlikSistemi', label: 'Güvenlik Sistemi Kurulumu', icon: 'shield-outline' },
+        { id: 'uyduSistemleri', label: 'Uydu Sistemleri', icon: 'planet-outline' },
+        { id: 'solarPanel', label: 'Solar Panel Kurulumu', icon: 'sunny-outline' },
+        { id: 'endüstriyel', label: 'Endüstriyel Elektrik', icon: 'business-outline' },
+        { id: 'akilliiEv', label: 'Akıllı Ev Sistemleri', icon: 'home-outline' },
+        { id: 'acilServis', label: 'Acil Servis', icon: 'warning-outline' },
+    ],
+    tesisat: [
+        { id: 'suKacagi', label: 'Su Kaçağı Tespiti', icon: 'water-outline' },
+        { id: 'tikaniklik', label: 'Tıkanıklık Açma', icon: 'remove-circle-outline' },
+        { id: 'musluk', label: 'Musluk/Armatür Tamiri', icon: 'construct-outline' },
+        { id: 'borulama', label: 'Boru Tesisatı Yenileme', icon: 'git-merge-outline' },
+        { id: 'klozet', label: 'Klozet Tamiri/Montaj', icon: 'ellipse-outline' },
+        { id: 'dusakabin', label: 'Duşakabin Montajı', icon: 'square-outline' },
+        { id: 'kalorifer', label: 'Kalorifer Tesisatı', icon: 'thermometer-outline' },
+        { id: 'pompa', label: 'Su Pompası/Hidrofor', icon: 'refresh-outline' },
+        { id: 'dogalgaz', label: 'Doğalgaz Tesisatı', icon: 'flame-outline' },
+        { id: 'acil', label: 'Acil Su Tesisatçısı', icon: 'warning-outline' },
+    ],
+    cilingir: [
+        { id: 'kapiAcma', label: 'Kapı Açma', icon: 'key-outline' },
+        { id: 'kilitDegisim', label: 'Kilit Değiştirme', icon: 'lock-open-outline' },
+        { id: 'barel', label: 'Barel (Göbek) Değişimi', icon: 'sync-outline' },
+        { id: 'otoKapi', label: 'Oto Kapısı Açma', icon: 'car-outline' },
+        { id: 'kasa', label: 'Kasa Çilingiri', icon: 'cube-outline' },
+        { id: 'hidrolik', label: 'Kapı Hidroliği Montajı', icon: 'download-outline' },
+        { id: 'kopyalama', label: 'Anahtar Kopyalama', icon: 'copy-outline' },
+        { id: 'elektronik', label: 'Elektronik Kilit', icon: 'hardware-chip-outline' },
+        { id: 'master', label: 'Master Anahtar', icon: 'people-outline' },
+        { id: 'acil', label: '7/24 Acil Çilingir', icon: 'warning-outline' },
+    ],
+    'beyaz-esya': [
+        { id: 'camasir', label: 'Çamaşır Makinesi', icon: 'shirt-outline' },
+        { id: 'bulasik', label: 'Bulaşık Makinesi', icon: 'restaurant-outline' },
+        { id: 'buzdolabi', label: 'Buzdolabı Tamiri', icon: 'snow-outline' },
+        { id: 'firin', label: 'Fırın/Ocak Tamiri', icon: 'flame-outline' },
+        { id: 'kurutma', label: 'Kurutma Makinesi', icon: 'sunny-outline' },
+        { id: 'montaj', label: 'Montaj/Kurulum', icon: 'tools-outline' },
+        { id: 'yedekparca', label: 'Yedek Parça', icon: 'settings-outline' },
+        { id: 'bakim', label: 'Periyodik Bakım', icon: 'calendar-outline' },
+    ],
+    klima: [
+        { id: 'bakim', label: 'Klima Bakımı', icon: 'water-outline' },
+        { id: 'montaj', label: 'Klima Montajı', icon: 'move-outline' },
+        { id: 'ariza', label: 'Klima Arıza', icon: 'alert-circle-outline' },
+        { id: 'gaz', label: 'Gaz Dolumu', icon: 'speedometer-outline' },
+        { id: 'kart', label: 'Anakart Tamiri', icon: 'hardware-chip-outline' },
+        { id: 'vrf', label: 'VRF Sistemleri', icon: 'business-outline' },
+        { id: 'altyapi', label: 'Altyapı Hazırlığı', icon: 'construct-outline' },
+    ]
+};
 
 import { useFocusEffect } from 'expo-router';
 import { API_ENDPOINTS } from '../../constants/api';
@@ -108,6 +154,10 @@ export default function EditProfileScreen() {
             }
         });
     };
+
+    // Determine current specialties based on user's category
+    const serviceCategory = user?.electricianProfile?.serviceCategory || 'elektrik';
+    const currentExpertiseOptions = SPECIALTIES_BY_CATEGORY[serviceCategory] || SPECIALTIES_BY_CATEGORY['elektrik'];
 
     const handleSave = async (forceSave = false) => {
         // Validate all required fields
@@ -309,7 +359,7 @@ export default function EditProfileScreen() {
 
                                 {isExpertiseExpanded && (
                                     <View style={styles.expertiseGrid}>
-                                        {EXPERTISE_OPTIONS.map((option) => {
+                                        {currentExpertiseOptions.map((option) => {
                                             const isSelected = selectedExpertise.includes(option.label);
                                             return (
                                                 <TouchableOpacity
