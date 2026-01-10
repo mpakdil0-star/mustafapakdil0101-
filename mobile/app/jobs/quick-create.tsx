@@ -40,12 +40,12 @@ import LocationPicker from '../../components/common/LocationPicker';
 import { Picker } from '../../components/common/Picker';
 
 const EMERGENCY_TYPES = [
-    { id: 'elektrik_kesintisi', label: 'Elektrik Kesintisi', icon: 'flash-off', color: '#EF4444' },
-    { id: 'priz_ariza', label: 'Priz Arızası', icon: 'hardware-chip-outline', color: '#F59E0B' },
-    { id: 'kisa_devre', label: 'Kısa Devre', icon: 'warning-outline', color: '#DC2626' },
-    { id: 'aydinlatma', label: 'Aydınlatma', icon: 'bulb-outline', color: '#10B981' },
-    { id: 'sigorta', label: 'Sigorta Atma', icon: 'radio-button-off-outline', color: '#3B82F6' },
-    { id: 'diger', label: 'Diğer Acil', icon: 'construct-outline', color: '#6B7280' },
+    { id: 'elektrik_kesintisi', label: 'Elektrik Kesintisi', icon: 'flash-outline', color: '#EF4444' },
+    { id: 'su_sizinti', label: 'Su Patlağı / Sızıntı', icon: 'water-outline', color: '#3B82F6' },
+    { id: 'kapida_kaldim', label: 'Kapıda Kaldım', icon: 'key-outline', color: '#F59E0B' },
+    { id: 'beyaz_esya', label: 'Beyaz Eşya Arızası', icon: 'cube-outline', color: '#10B981' },
+    { id: 'klima_ariza', label: 'Klima Arızası', icon: 'snow-outline', color: '#06B6D4' },
+    { id: 'diger', label: 'Diğer Acil Durum', icon: 'alert-circle-outline', color: '#6B7280' },
 ];
 
 const MAX_IMAGES = 3;
@@ -375,10 +375,10 @@ export default function QuickCreateScreen() {
     const getCategoryFromType = (type: string): string => {
         switch (type) {
             case 'elektrik_kesintisi': return 'Elektrik Tamiri';
-            case 'priz_ariza': return 'Priz ve Anahtar';
-            case 'kisa_devre': return 'Elektrik Tamiri';
-            case 'aydinlatma': return 'Aydınlatma';
-            case 'sigorta': return 'Elektrik Panosu';
+            case 'su_sizinti': return 'Su Tesisatı';
+            case 'kapida_kaldim': return 'Çilingir';
+            case 'beyaz_esya': return 'Beyaz Eşya Servisi';
+            case 'klima_ariza': return 'Klima Servisi';
             default: return 'Diğer';
         }
     };
@@ -740,9 +740,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#EF4444',
-        padding: 12, // Reduced from 16
-        borderRadius: 16, // Reduced from 20
-        marginBottom: 12, // Reduced from 20
+        padding: 16, // Increased padding
+        borderRadius: 12, // Updated per request
+        marginBottom: 12,
         shadowColor: '#EF4444',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
@@ -790,8 +790,8 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontFamily: fonts.bold,
-        fontSize: 14,
-        color: staticColors.text,
+        fontSize: 15,
+        color: '#1F2937', // Darker black
     },
     typeGrid: {
         flexDirection: 'row',
@@ -884,14 +884,13 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     descInput: {
-        backgroundColor: staticColors.white,
+        backgroundColor: '#F3F4F6', // Light gray
         borderRadius: 12,
-        padding: 10,
-        fontFamily: fonts.medium,
-        fontSize: 13,
+        padding: 12,
+        fontFamily: fonts.regular,
+        fontSize: 14,
         color: staticColors.text,
-        borderWidth: 1,
-        borderColor: staticColors.borderLight,
+        borderWidth: 0, // No border
         height: 60,
         marginBottom: 10,
     },
@@ -953,20 +952,19 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     label: {
-        fontFamily: fonts.medium,
+        fontFamily: fonts.semiBold, // Bolder
         fontSize: 14,
-        color: staticColors.text,
-        marginBottom: 8,
+        color: '#333333', // Darker
+        marginBottom: 6,
     },
     textAreaSmall: {
-        backgroundColor: staticColors.backgroundLight,
+        backgroundColor: '#F3F4F6', // Light gray
         borderRadius: 12,
-        padding: 12,
+        padding: 14,
         fontFamily: fonts.regular,
         fontSize: 14,
         color: staticColors.text,
-        borderWidth: 1,
-        borderColor: staticColors.borderLight,
+        borderWidth: 0, // No border
         height: 80,
         textAlignVertical: 'top',
     },
