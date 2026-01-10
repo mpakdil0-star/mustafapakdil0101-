@@ -954,7 +954,6 @@ const styles = StyleSheet.create({
     },
     savedAddressesContainer: {
         marginBottom: 16,
-        paddingHorizontal: 4,
     },
     savedTitle: {
         fontFamily: fonts.bold,

@@ -27,7 +27,7 @@ import { SERVICE_CATEGORIES, ServiceCategory } from '../../constants/serviceCate
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { redirectTo, initialRole } = useLocalSearchParams<{ redirectTo?: string; initialRole?: 'CITIZEN' | 'ELECTRICIAN' }>();
+  const { redirectTo, initialRole, serviceCategory: initialServiceCategory } = useLocalSearchParams<{ redirectTo?: string; initialRole?: 'CITIZEN' | 'ELECTRICIAN'; serviceCategory?: string }>();
   const dispatch = useAppDispatch();
   const { isLoading, error } = useAppSelector((state) => state.auth);
 
@@ -36,8 +36,9 @@ export default function RegisterScreen() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [location, setLocation] = useState<{ city: string; district: string; address: string; latitude: number; longitude: number } | null>(null);
-  const [userType, setUserType] = useState<'CITIZEN' | 'ELECTRICIAN'>(initialRole === 'ELECTRICIAN' ? 'ELECTRICIAN' : 'CITIZEN');
-  const [serviceCategory, setServiceCategory] = useState<string>('elektrik');
+  // Use values from role-select screen
+  const userType = initialRole === 'ELECTRICIAN' ? 'ELECTRICIAN' : 'CITIZEN';
+  const serviceCategory = initialServiceCategory || 'elektrik';
 
   // Theme selection based on userType
   const colors = userType === 'CITIZEN' ? baseColors : (baseColors as any).ELECTRICIAN_COLORS || baseColors;
@@ -59,11 +60,7 @@ export default function RegisterScreen() {
     setAlertConfig({ visible: true, title, message, type, buttons });
   };
 
-  useEffect(() => {
-    if (initialRole) {
-      setUserType(initialRole);
-    }
-  }, [initialRole]);
+  // userType and serviceCategory are now passed from role-select screen
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -216,87 +213,28 @@ export default function RegisterScreen() {
               <Text style={styles.subtitle}>Sektörün uzmanlarını veya müşterilerini bulun</Text>
             </View>
 
-            {/* User Type Selection */}
-            <View style={styles.userTypeSection}>
-              <Text style={styles.sectionLabel}>Rolünüzü Seçin</Text>
-              <View style={styles.userTypeContainer}>
+            {/* Selected Role Badge */}
+            <View style={styles.roleBadgeContainer}>
+              <View style={[styles.roleBadge, { backgroundColor: accentColor + '20', borderColor: accentColor }]}>
+                <Ionicons
+                  name={userType === 'CITIZEN' ? 'person' : 'construct'}
+                  size={16}
+                  color={accentColor}
+                />
+                <Text style={[styles.roleBadgeText, { color: accentColor }]}>
+                  {userType === 'CITIZEN'
+                    ? 'Vatandaş olarak kayıt'
+                    : `${SERVICE_CATEGORIES.find(c => c.id === serviceCategory)?.name || 'Usta'} olarak kayıt`
+                  }
+                </Text>
                 <TouchableOpacity
-                  style={[
-                    styles.userTypeButton,
-                    userType === 'CITIZEN' && { borderColor: '#7C3AED', backgroundColor: 'rgba(124, 58, 237, 0.1)' },
-                  ]}
-                  onPress={() => setUserType('CITIZEN')}
-                  activeOpacity={0.7}
+                  onPress={() => router.back()}
+                  style={styles.changeBadgeBtn}
                 >
-                  <View style={[styles.userTypeIcon, userType === 'CITIZEN' && { backgroundColor: '#7C3AED' }]}>
-                    <Ionicons
-                      name="person"
-                      size={24}
-                      color={userType === 'CITIZEN' ? '#FFFFFF' : 'rgba(255,255,255,0.4)'}
-                    />
-                  </View>
-                  <Text style={[styles.userTypeText, userType === 'CITIZEN' && { color: '#FFFFFF' }]}>
-                    Vatandaş
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.userTypeButton,
-                    userType === 'ELECTRICIAN' && { borderColor: '#3B82F6', backgroundColor: 'rgba(59, 130, 246, 0.1)' },
-                  ]}
-                  onPress={() => setUserType('ELECTRICIAN')}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.userTypeIcon, userType === 'ELECTRICIAN' && { backgroundColor: '#3B82F6' }]}>
-                    <Ionicons
-                      name="construct"
-                      size={24}
-                      color={userType === 'ELECTRICIAN' ? '#FFFFFF' : 'rgba(255,255,255,0.4)'}
-                    />
-                  </View>
-                  <Text style={[styles.userTypeText, userType === 'ELECTRICIAN' && { color: '#FFFFFF' }]}>
-                    Elektrikçi
-                  </Text>
+                  <Text style={[styles.changeBadgeText, { color: accentColor }]}>Değiştir</Text>
                 </TouchableOpacity>
               </View>
             </View>
-
-            {/* Service Category Selection (only for professionals) */}
-            {userType === 'ELECTRICIAN' && (
-              <View style={styles.userTypeSection}>
-                <Text style={styles.sectionLabel}>Mesleğinizi Seçin</Text>
-                <View style={styles.categoryGrid}>
-                  {SERVICE_CATEGORIES.map((cat: ServiceCategory) => (
-                    <TouchableOpacity
-                      key={cat.id}
-                      style={[
-                        styles.categoryCard,
-                        serviceCategory === cat.id && { borderColor: cat.colors[0], backgroundColor: cat.colors[0] + '20' },
-                      ]}
-                      onPress={() => setServiceCategory(cat.id)}
-                      activeOpacity={0.7}
-                    >
-                      <LinearGradient
-                        colors={serviceCategory === cat.id ? cat.colors : ['transparent', 'transparent']}
-                        style={styles.categoryIconBg}
-                      >
-                        <Ionicons
-                          name={cat.icon as any}
-                          size={24}
-                          color={serviceCategory === cat.id ? '#FFFFFF' : 'rgba(255,255,255,0.5)'}
-                        />
-                      </LinearGradient>
-                      <Text style={[
-                        styles.categoryText,
-                        serviceCategory === cat.id && { color: '#FFFFFF' }
-                      ]}>
-                        {cat.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
 
             {/* Form */}
             <View style={styles.formSection}>
@@ -686,5 +624,31 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
+  },
+  // Role Badge Styles
+  roleBadgeContainer: {
+    marginBottom: 24,
+  },
+  roleBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 8,
+  },
+  roleBadgeText: {
+    flex: 1,
+    fontFamily: fonts.semiBold,
+    fontSize: 14,
+  },
+  changeBadgeBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  changeBadgeText: {
+    fontFamily: fonts.bold,
+    fontSize: 12,
   },
 });

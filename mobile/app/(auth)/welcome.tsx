@@ -144,7 +144,7 @@ export default function WelcomeScreen() {
                             <View style={styles.authDivider} />
 
                             <TouchableOpacity
-                                onPress={() => router.push('/(auth)/register')}
+                                onPress={() => router.push('/(auth)/role-select')}
                                 style={styles.authLink}
                             >
                                 <Text style={styles.authLinkText}>Kayıt Ol</Text>
