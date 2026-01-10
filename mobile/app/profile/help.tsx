@@ -115,7 +115,7 @@ export default function HelpScreen() {
                     />
                     <FAQItem
                         question="Nasıl onaylı usta olabilirim?"
-                        answer="Elektrikçiyseniz, profil sayfanızdaki 'Doğrula' sekmesinden ustalık belgenizi veya kimliğinizi yükleyerek 'Onaylı Usta' rozeti alabilir, müşterilerin güvenini kazanabilirsiniz."
+                        answer="Hizmet veren iseniz, profil sayfanızdaki 'Doğrula' sekmesinden ustalık belgenizi veya kimliğinizi yükleyerek 'Onaylı Usta' rozeti alabilir, müşterilerin güvenini kazanabilirsiniz."
                         icon="shield-checkmark-outline"
                         colors={colors}
                     />

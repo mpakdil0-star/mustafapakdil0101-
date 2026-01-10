@@ -168,7 +168,7 @@ export default function BidDetailScreen() {
             <View style={styles.infoRow}>
               <View style={styles.infoLabelGroup}>
                 <Ionicons name="person-outline" size={18} color={colors.primary} />
-                <Text style={styles.infoLabel}>Elektrikçi</Text>
+                <Text style={styles.infoLabel}>Usta Bilgisi</Text>
               </View>
               <Text style={styles.infoValue}>
                 {currentBid.electrician?.fullName || 'Elektrikçi'}

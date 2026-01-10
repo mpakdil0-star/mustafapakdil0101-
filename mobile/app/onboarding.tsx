@@ -20,8 +20,8 @@ import { fonts } from '../constants/typography';
 const slides = [
     {
         id: '1',
-        title: 'Hızlı Usta Bul',
-        description: 'Konumunuza en yakın elektrikçileri saniyeler içinde görüntüleyin.',
+        title: 'Hızlı ve Güvenilir',
+        description: 'Konumunuza en yakın ustaları saniyeler içinde görüntüleyin.',
         icon: 'map',
         color: '#3B82F6', // Blue
     },
