@@ -748,6 +748,11 @@ export const getVerificationStatus = async (req: Request, res: Response, next: N
         }
 
         try {
+            if (!isDatabaseAvailable) {
+                // Skip Prisma if DB is not available to avoid error logs
+                throw new Error('Database not connected');
+            }
+
             const profile = await prisma.electricianProfile.findUnique({
                 where: { userId },
                 select: {
