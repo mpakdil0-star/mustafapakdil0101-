@@ -182,18 +182,18 @@ export default function JobsScreen() {
   }, [router]);
 
   const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'Elektrik Tesisatı': return 'construct-outline';
-      case 'Aydınlatma': return 'bulb-outline';
-      case 'Arıza / Onarım': return 'flash-outline';
-      case 'İnternet / Diafon': return 'wifi-outline';
-      // New Categories
-      case 'Tesisat': return 'water-outline';
-      case 'Klima': return 'snow-outline';
-      case 'Beyaz Eşya': return 'cube-outline';
-      case 'Çilingir': return 'key-outline';
-      default: return 'build-outline';
-    }
+    if (!category) return 'build-outline';
+    const cat = category.toLowerCase();
+
+    if (cat.includes('tesisat') || cat.includes('su')) return 'water-outline';
+    if (cat.includes('çilingir') || cat.includes('cilingir') || cat.includes('anahtar') || cat.includes('kapi')) return 'key-outline';
+    if (cat.includes('klima') || cat.includes('iklim')) return 'snow-outline';
+    if (cat.includes('beyaz') || cat.includes('eşya') || cat.includes('camasir') || cat.includes('bulasik')) return 'cube-outline';
+    if (cat.includes('internet') || cat.includes('diafon') || cat.includes('kamera')) return 'wifi-outline';
+    if (cat.includes('aydinlatma') || cat.includes('avize')) return 'bulb-outline';
+    if (cat.includes('elektrik') || cat.includes('sigorta') || cat.includes('priz')) return 'flash-outline';
+
+    return 'build-outline';
   };
 
   const filteredJobs = useMemo(() => {
