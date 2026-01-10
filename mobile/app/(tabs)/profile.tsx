@@ -17,6 +17,7 @@ import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { useAppColors } from '../../hooks/useAppColors';
 import { getFileUrl } from '../../constants/api';
 import { AuthGuardModal } from '../../components/common/AuthGuardModal';
+import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
 
 const { width } = Dimensions.get('window');
 
@@ -288,7 +289,10 @@ export default function ProfileScreen() {
               <View style={styles.userBadgesRow}>
                 <View style={[styles.typeBadge, { backgroundColor: colors.primary + '15' }]}>
                   <Text style={[styles.typeBadgeText, { color: colors.primary }]}>
-                    {user?.userType === 'ELECTRICIAN' ? 'PROFESYONEL' : 'BİREYSEL'}
+                    {user?.userType === 'ELECTRICIAN'
+                      ? (SERVICE_CATEGORIES.find(c => c.id === (user as any)?.serviceCategory)?.name?.toUpperCase() || 'PROFESYONEL')
+                      : 'BİREYSEL'
+                    }
                   </Text>
                 </View>
                 {isElectrician && (
