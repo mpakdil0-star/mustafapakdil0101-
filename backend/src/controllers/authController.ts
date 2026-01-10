@@ -11,7 +11,7 @@ export const registerController = async (
   next: NextFunction
 ) => {
   try {
-    const { email, password, fullName, phone, userType } = req.body;
+    const { email, password, fullName, phone, userType, serviceCategory } = req.body;
 
     if (!email || !password || !fullName || !userType || !phone) {
       throw new ValidationError('Missing required fields');
@@ -24,6 +24,7 @@ export const registerController = async (
         fullName,
         phone,
         userType,
+        serviceCategory, // Pass serviceCategory to register service
       });
 
       res.status(201).json({
@@ -75,7 +76,8 @@ export const registerController = async (
           fullName, email,
           phone: phone || '',
           passwordHash: password, // Store password in mock mode
-          isVerified: userType === 'ELECTRICIAN' && !!phone
+          isVerified: userType === 'ELECTRICIAN' && !!phone,
+          serviceCategory: userType === 'ELECTRICIAN' ? (serviceCategory || 'elektrik') : undefined, // Save profession
         });
 
         const tokens = generateTokens({ id: mockUserId, email, userType });

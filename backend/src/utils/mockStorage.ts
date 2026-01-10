@@ -208,6 +208,7 @@ export const mockStorage = {
             verificationStatus: store.verificationStatus || null,
             documentType: store.documentType || null,
             submittedAt: store.submittedAt || null,
+            serviceCategory: store.serviceCategory || null, // Profession category for professionals
             electricianProfile: userType === 'ELECTRICIAN' ? {
                 completedJobsCount: store.completedJobsCount || 0,
                 experienceYears: store.experienceYears,
