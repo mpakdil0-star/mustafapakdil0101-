@@ -400,15 +400,18 @@ export const refreshUserRooms = async (userId: string) => {
     for (const socketId of socketIds) {
         const socket = ioInstance.sockets.sockets.get(socketId) as AuthenticatedSocket;
         if (socket && socket.userType === 'ELECTRICIAN') {
-            // Önce mevcut tüm area odalarından çık
+            // Önce mevcut tüm area odalarından çık (both old and new format)
             const rooms = Array.from(socket.rooms);
             rooms.forEach(room => {
-                if (room.startsWith('area:')) {
+                // Leave rooms that contain ':area:' (new format: category:area:city:district)
+                // or start with 'area:' (old format: area:city:district)
+                if (room.includes(':area:') || room.startsWith('area:')) {
                     socket.leave(room);
+                    console.log(`📍 User ${userId} left room: ${room}`);
                 }
             });
 
-            // Yeni konumlar ile odalara tekrar katıl
+            // Yeni konumlar ile odalara tekrar katıl (with serviceCategory prefix)
             await joinUserLocationRooms(socket);
         }
     }
@@ -416,18 +419,24 @@ export const refreshUserRooms = async (userId: string) => {
 
 /**
  * Elektrikçinin konum bazlı odalara katılmasını sağlar
+ * Room format: serviceCategory:area:City:District
+ * This ensures only professionals matching the job's service category receive notifications
  */
 async function joinUserLocationRooms(socket: AuthenticatedSocket) {
     const userId = socket.userId!;
     try {
         let userLocations: any[] = [];
+        let userServiceCategory = 'elektrik'; // Default fallback
 
         if (!isDatabaseAvailable || userId.startsWith('mock-')) {
             const { mockStorage } = require('../utils/mockStorage');
             const mockData = mockStorage.get(userId);
 
+            // Get user's service category
+            userServiceCategory = mockData?.serviceCategory || 'elektrik';
+
             // 1. Eklediği tüm hizmet bölgelerinden odaya katıl
-            if (mockData.locations && Array.isArray(mockData.locations)) {
+            if (mockData?.locations && Array.isArray(mockData.locations)) {
                 mockData.locations.forEach((loc: any) => {
                     userLocations.push({
                         city: loc.city,
@@ -438,21 +447,27 @@ async function joinUserLocationRooms(socket: AuthenticatedSocket) {
         } else {
             const userWithLocations = await prisma.user.findUnique({
                 where: { id: userId },
-                include: { locations: true }
+                include: { locations: true, electricianProfile: true }
             });
             userLocations = userWithLocations?.locations || [];
+            // Get service category from electrician profile or user
+            userServiceCategory = (userWithLocations as any)?.serviceCategory ||
+                (userWithLocations?.electricianProfile as any)?.serviceCategory ||
+                'elektrik';
         }
+
+        console.log(`🔧 User ${userId} serviceCategory: ${userServiceCategory}`);
 
         userLocations.forEach(loc => {
             if (loc.city) {
                 if (loc.district && loc.district !== 'Tüm Şehir' && loc.district !== 'Merkez') {
-                    // Sadece belirli bir ilçe odasına katıl
-                    const districtRoom = `area:${loc.city}:${loc.district}`;
+                    // Sadece belirli bir ilçe odasına katıl (with serviceCategory prefix)
+                    const districtRoom = `${userServiceCategory}:area:${loc.city}:${loc.district}`;
                     socket.join(districtRoom);
                     console.log(`📍 User ${userId} joined specific district room: ${districtRoom}`);
                 } else {
-                    // İlçe seçilmediyse veya 'Tüm Şehir' ise genel odaya katıl
-                    const cityRoom = `area:${loc.city}:all`;
+                    // İlçe seçilmediyse veya 'Tüm Şehir' ise genel odaya katıl (with serviceCategory prefix)
+                    const cityRoom = `${userServiceCategory}:area:${loc.city}:all`;
                     socket.join(cityRoom);
                     console.log(`📍 User ${userId} joined general city room: ${cityRoom}`);
                 }

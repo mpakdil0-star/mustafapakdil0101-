@@ -145,17 +145,18 @@ export const jobService = {
 
   async notifyNearbyElectricians(job: any) {
     const { city, district } = job.location as any;
+    const jobServiceCategory = job.serviceCategory || job.category || 'elektrik';
 
     try {
-      // 1. SEND REAL-TIME SOCKET NOTIFICATION VIA TARGETED ROOMS
-      // En güvenli ve performanslı yol: kişilere tek tek değil, bölge odalarına yayın yapmak.
+      // 1. SEND REAL-TIME SOCKET NOTIFICATION VIA TARGETED ROOMS (FILTERED BY SERVICE CATEGORY)
+      // Room format: category:area:City:District - ensures only matching professionals receive
       const targetRooms: string[] = [];
       if (city) {
-        // Her zaman 'all' odasına gönder (tüm şehre bakanlar için)
-        targetRooms.push(`area:${city}:all`);
+        // Include serviceCategory in room name
+        targetRooms.push(`${jobServiceCategory}:area:${city}:all`);
         // Eğer ilçe varsa ilçe odasına da gönder
         if (district && district !== 'Tüm Şehir' && district !== 'Merkez') {
-          targetRooms.push(`area:${city}:${district}`);
+          targetRooms.push(`${jobServiceCategory}:area:${city}:${district}`);
         }
       }
 
@@ -165,6 +166,7 @@ export const jobService = {
         jobId: job.id,
         title: job.title,
         category: job.category,
+        serviceCategory: jobServiceCategory,
         urgencyLevel: job.urgencyLevel,
         locationPreview: `${district || ''}, ${city || ''}`,
         message: `Bölgenizde yeni bir iş ilanı yayınlandı: ${job.title}`

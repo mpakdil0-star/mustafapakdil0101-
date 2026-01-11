@@ -259,15 +259,18 @@ export const createJobController = async (
           }
         });
 
-        // Also send socket notification to specific area rooms
+        // Also send socket notification to specific area rooms (FILTERED BY SERVICE CATEGORY)
         const targetRooms = [];
+        const jobServiceCategoryForRoom = jobData.serviceCategory || 'elektrik';
+
         if (targetCity) {
-          // Always target city-wide room
-          targetRooms.push(`area:${targetCity}:all`);
+          // Include serviceCategory in room names so only matching professionals receive
+          // Room format: category:area:City:District
+          targetRooms.push(`${jobServiceCategoryForRoom}:area:${targetCity}:all`);
 
           const targetDistrict = jobData.location?.district;
           if (targetDistrict && targetDistrict !== 'Tüm Şehir' && targetDistrict !== 'Merkez') {
-            targetRooms.push(`area:${targetCity}:${targetDistrict}`);
+            targetRooms.push(`${jobServiceCategoryForRoom}:area:${targetCity}:${targetDistrict}`);
           }
         }
 
@@ -282,7 +285,8 @@ export const createJobController = async (
           message: `Bölgenizde yeni ilan verildi: ${jobData.title}`,
           jobId: mockJob.id,
           locationPreview: jobData.location?.district || jobData.location?.city,
-          category: jobData.category
+          category: jobData.category,
+          serviceCategory: jobServiceCategoryForRoom
         });
 
         return res.status(201).json({

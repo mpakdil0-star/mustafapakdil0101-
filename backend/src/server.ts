@@ -24,7 +24,8 @@ export const notifyUser = (target: string | string[], event: string, data: any) 
     const targetRooms: string[] = [];
 
     targets.forEach(t => {
-      if (t === 'all_electricians' || t.startsWith('area:')) {
+      // Accept: 'all_electricians', 'area:City:District', or 'category:area:City:District'
+      if (t === 'all_electricians' || t.includes(':area:') || t.startsWith('area:')) {
         targetRooms.push(t);
       } else {
         // Individual user ID - use their private room
