@@ -158,7 +158,10 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontFamily: fonts.bold,
         fontSize: 18,
-        color: '#E2E8F0',
+        color: '#1E293B', // Dark slate instead of light gray
+        textShadowColor: 'rgba(0, 0, 0, 0.1)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
     },
     grid: {
         flexDirection: 'row',
