@@ -173,13 +173,12 @@ export const jobService = {
 
       // 2. PERSISTENT NOTIFICATIONS (Push & DB)
       if (isDatabaseAvailable) {
+        // Note: Socket room filtering by serviceCategory handles real-time notifications
+        // Database query filters by location only - push notifications go to all category users in area
         const electricians = await prisma.user.findMany({
           where: {
             userType: 'ELECTRICIAN',
             isActive: true,
-            electricianProfile: {
-              serviceCategory: serviceCategory // Filter by service category
-            },
             locations: {
               some: {
                 city: city,
