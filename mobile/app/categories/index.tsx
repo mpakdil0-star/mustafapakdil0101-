@@ -198,10 +198,11 @@ const styles = StyleSheet.create({
         marginBottom: 6,
     },
     categoryName: {
-        fontFamily: fonts.semiBold,
-        fontSize: 10,
+        fontFamily: fonts.bold,
+        fontSize: 12,
         color: staticColors.text,
         textAlign: 'center',
-        lineHeight: 13,
+        lineHeight: 16,
+        paddingHorizontal: 4,
     },
 });
