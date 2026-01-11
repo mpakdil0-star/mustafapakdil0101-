@@ -41,10 +41,6 @@
         "googleMaps": {
           "apiKey": ""
         }
-      },
-      "locationPermissions": {
-        "locationWhenInUsePermission": "Size en yakın iş ilanlarını ve elektrikçileri göstermek için konum izni gerekiyor.",
-        "locationAlwaysAndWhenInUsePermission": "Size en yakın iş ilanlarını ve elektrikçileri göstermek için konum izni gerekiyor."
       }
     },
     "plugins": [

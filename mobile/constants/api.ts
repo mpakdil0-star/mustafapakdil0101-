@@ -36,16 +36,16 @@ const TUNNEL_URL = 'https://leptospiral-palaeontologically-hilton.ngrok-free.dev
 
 // Environment-based configuration
 const getApiUrl = () => {
-  // Use local network instead of tunnel for development
-  const baseUrl = `http://${LOCALHOST}:${PORT}/api/${API_VERSION}`;
-  console.log('🔌 Backend URL (Local Network):', baseUrl);
+  // Use TUNNEL for remote access (works from any network)
+  const baseUrl = `${TUNNEL_URL}/api/${API_VERSION}`;
+  console.log('🔌 Backend URL (Ngrok Tunnel):', baseUrl);
   return process.env.EXPO_PUBLIC_API_URL || baseUrl;
 };
 
 export const API_BASE_URL = getApiUrl();
 
-// WebSocket URL
-export const WS_BASE_URL = `http://${LOCALHOST}:${PORT}`;
+// WebSocket URL (also via tunnel for remote access)
+export const WS_BASE_URL = TUNNEL_URL;
 
 // API Endpoints
 export const API_ENDPOINTS = {
@@ -107,8 +107,8 @@ export const getFileUrl = (filePath: string | null | undefined): string | null =
     return filePath;
   }
 
-  // For file paths, use the API base URL (localhost)
-  return `http://${LOCALHOST}:${PORT}${filePath}`;
+  // For file paths, use the TUNNEL URL for remote access
+  return `${TUNNEL_URL}${filePath}`;
 };
 
 // Log configuration on app start
