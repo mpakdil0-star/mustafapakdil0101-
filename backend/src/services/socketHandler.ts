@@ -421,10 +421,12 @@ async function joinUserLocationRooms(socket: AuthenticatedSocket) {
     const userId = socket.userId!;
     try {
         let userLocations: any[] = [];
+        let serviceCategory = 'elektrik'; // Default
 
         if (!isDatabaseAvailable || userId.startsWith('mock-')) {
             const { mockStorage } = require('../utils/mockStorage');
             const mockData = mockStorage.get(userId);
+            serviceCategory = mockData.serviceCategory || 'elektrik';
 
             // 1. Eklediği tüm hizmet bölgelerinden odaya katıl
             if (mockData.locations && Array.isArray(mockData.locations)) {
@@ -438,23 +440,24 @@ async function joinUserLocationRooms(socket: AuthenticatedSocket) {
         } else {
             const userWithLocations = await prisma.user.findUnique({
                 where: { id: userId },
-                include: { locations: true }
+                include: { locations: true, electricianProfile: true }
             });
             userLocations = userWithLocations?.locations || [];
+            serviceCategory = (userWithLocations?.electricianProfile as any)?.serviceCategory || 'elektrik';
         }
 
         userLocations.forEach(loc => {
             if (loc.city) {
                 if (loc.district && loc.district !== 'Tüm Şehir' && loc.district !== 'Merkez') {
-                    // Sadece belirli bir ilçe odasına katıl
-                    const districtRoom = `area:${loc.city}:${loc.district}`;
+                    // Kategoriye özel ilçe odasına katıl
+                    const districtRoom = `area:${loc.city}:${loc.district}:${serviceCategory}`;
                     socket.join(districtRoom);
-                    console.log(`📍 User ${userId} joined specific district room: ${districtRoom}`);
+                    console.log(`📍 User ${userId} joined category-specific district room: ${districtRoom}`);
                 } else {
-                    // İlçe seçilmediyse veya 'Tüm Şehir' ise genel odaya katıl
-                    const cityRoom = `area:${loc.city}:all`;
+                    // Kategoriye özel şehir genel odasına katıl
+                    const cityRoom = `area:${loc.city}:all:${serviceCategory}`;
                     socket.join(cityRoom);
-                    console.log(`📍 User ${userId} joined general city room: ${cityRoom}`);
+                    console.log(`📍 User ${userId} joined category-specific city room: ${cityRoom}`);
                 }
             }
         });

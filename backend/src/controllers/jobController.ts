@@ -259,15 +259,17 @@ export const createJobController = async (
           }
         });
 
-        // Also send socket notification to specific area rooms
+        // Also send socket notification to specific area rooms (with serviceCategory)
         const targetRooms = [];
+        const jobServiceCategoryForRoom = jobData.serviceCategory || 'elektrik';
+
         if (targetCity) {
-          // Always target city-wide room
-          targetRooms.push(`area:${targetCity}:all`);
+          // Always target category-specific city-wide room
+          targetRooms.push(`area:${targetCity}:all:${jobServiceCategoryForRoom}`);
 
           const targetDistrict = jobData.location?.district;
           if (targetDistrict && targetDistrict !== 'Tüm Şehir' && targetDistrict !== 'Merkez') {
-            targetRooms.push(`area:${targetCity}:${targetDistrict}`);
+            targetRooms.push(`area:${targetCity}:${targetDistrict}:${jobServiceCategoryForRoom}`);
           }
         }
 

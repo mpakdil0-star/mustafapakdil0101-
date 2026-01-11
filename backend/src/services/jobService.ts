@@ -145,17 +145,18 @@ export const jobService = {
 
   async notifyNearbyElectricians(job: any) {
     const { city, district } = job.location as any;
+    const serviceCategory = job.serviceCategory || 'elektrik';
 
     try {
-      // 1. SEND REAL-TIME SOCKET NOTIFICATION VIA TARGETED ROOMS
+      // 1. SEND REAL-TIME SOCKET NOTIFICATION VIA TARGETED ROOMS (with serviceCategory)
       // En güvenli ve performanslı yol: kişilere tek tek değil, bölge odalarına yayın yapmak.
       const targetRooms: string[] = [];
       if (city) {
-        // Her zaman 'all' odasına gönder (tüm şehre bakanlar için)
-        targetRooms.push(`area:${city}:all`);
-        // Eğer ilçe varsa ilçe odasına da gönder
+        // Kategoriye özel 'all' odasına gönder (tüm şehre bakanlar için)
+        targetRooms.push(`area:${city}:all:${serviceCategory}`);
+        // Eğer ilçe varsa kategoriye özel ilçe odasına da gönder
         if (district && district !== 'Tüm Şehir' && district !== 'Merkez') {
-          targetRooms.push(`area:${city}:${district}`);
+          targetRooms.push(`area:${city}:${district}:${serviceCategory}`);
         }
       }
 
@@ -176,6 +177,9 @@ export const jobService = {
           where: {
             userType: 'ELECTRICIAN',
             isActive: true,
+            electricianProfile: {
+              serviceCategory: serviceCategory // Filter by service category
+            },
             locations: {
               some: {
                 city: city,
