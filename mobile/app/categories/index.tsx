@@ -7,12 +7,63 @@ import { colors as staticColors } from '../../constants/colors';
 import { useAppColors } from '../../hooks/useAppColors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
-import { JOB_CATEGORIES } from '../../constants/jobCategories';
+import {
+    ELEKTRIK_CATEGORIES,
+    CILINGIR_CATEGORIES,
+    KLIMA_CATEGORIES,
+    BEYAZ_ESYA_CATEGORIES,
+    TESISAT_CATEGORIES,
+    JobCategory
+} from '../../constants/jobCategories';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
+
+// Kategori grupları için veri yapısı
+const CATEGORY_GROUPS = [
+    {
+        title: '⚡ Elektrik',
+        id: 'elektrik',
+        color: '#A78BFA',
+        categories: ELEKTRIK_CATEGORIES
+    },
+    {
+        title: '🔑 Çilingir',
+        id: 'cilingir',
+        color: '#FBBF24',
+        categories: CILINGIR_CATEGORIES
+    },
+    {
+        title: '❄️ Klima',
+        id: 'klima',
+        color: '#60A5FA',
+        categories: KLIMA_CATEGORIES
+    },
+    {
+        title: '🔧 Beyaz Eşya',
+        id: 'beyaz-esya',
+        color: '#4ADE80',
+        categories: BEYAZ_ESYA_CATEGORIES
+    },
+    {
+        title: '💧 Tesisat',
+        id: 'tesisat',
+        color: '#38BDF8',
+        categories: TESISAT_CATEGORIES
+    },
+];
 
 export default function CategoriesScreen() {
     const router = useRouter();
     const colors = useAppColors();
+
+    const handleCategoryPress = (cat: JobCategory) => {
+        router.push({
+            pathname: '/jobs/create',
+            params: {
+                category: cat.name,
+                serviceCategory: cat.parentCategory
+            }
+        });
+    };
 
     return (
         <View style={[styles.container, { backgroundColor: colors.backgroundDark }]}>
@@ -27,34 +78,46 @@ export default function CategoriesScreen() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
-                <Text style={styles.subtitle}>İhtiyacın olan hizmet kategorisini seçerek hemen ilanını oluştur.</Text>
+                <Text style={styles.subtitle}>
+                    İhtiyacın olan hizmet kategorisini seçerek hemen ilanını oluştur.
+                </Text>
 
-                <View style={styles.grid}>
-                    {JOB_CATEGORIES.map((cat, idx) => (
-                        <TouchableOpacity
-                            key={idx}
-                            style={styles.cardWrapper}
-                            onPress={() => router.push({
-                                pathname: '/jobs/create',
-                                params: { category: cat.name }
-                            })}
-                            activeOpacity={0.8}
-                        >
-                            <LinearGradient
-                                colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']}
-                                style={styles.categoryCard}
-                            >
-                                <LinearGradient
-                                    colors={cat.colors as [string, string, ...string[]]}
-                                    style={styles.iconCircle}
+                {CATEGORY_GROUPS.map((group) => (
+                    <View key={group.id} style={styles.section}>
+                        {/* Bölüm Başlığı */}
+                        <View style={styles.sectionHeader}>
+                            <View style={[styles.sectionIndicator, { backgroundColor: group.color }]} />
+                            <Text style={styles.sectionTitle}>{group.title}</Text>
+                        </View>
+
+                        {/* Kategori Grid */}
+                        <View style={styles.grid}>
+                            {group.categories.map((cat) => (
+                                <TouchableOpacity
+                                    key={cat.id}
+                                    style={styles.cardWrapper}
+                                    onPress={() => handleCategoryPress(cat)}
+                                    activeOpacity={0.8}
                                 >
-                                    <Ionicons name={cat.icon as any} size={22} color="#FFF" />
-                                </LinearGradient>
-                                <Text style={styles.categoryName} numberOfLines={2}>{cat.name}</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                                    <LinearGradient
+                                        colors={['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.85)']}
+                                        style={styles.categoryCard}
+                                    >
+                                        <LinearGradient
+                                            colors={cat.colors as [string, string, ...string[]]}
+                                            style={styles.iconCircle}
+                                        >
+                                            <Ionicons name={cat.icon as any} size={20} color="#FFF" />
+                                        </LinearGradient>
+                                        <Text style={styles.categoryName} numberOfLines={2}>
+                                            {cat.name}
+                                        </Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+                ))}
             </ScrollView>
         </View>
     );
@@ -75,27 +138,45 @@ const styles = StyleSheet.create({
         fontFamily: fonts.medium,
         fontSize: 14,
         color: '#94A3B8',
-        marginBottom: 24,
+        marginBottom: 20,
         lineHeight: 20,
+    },
+    section: {
+        marginBottom: 24,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    sectionIndicator: {
+        width: 4,
+        height: 20,
+        borderRadius: 2,
+        marginRight: 10,
+    },
+    sectionTitle: {
+        fontFamily: fonts.bold,
+        fontSize: 18,
+        color: '#E2E8F0',
     },
     grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 12,
+        gap: 10,
     },
     cardWrapper: {
         width: '31%',
-        marginBottom: 4,
     },
     categoryCard: {
-        borderRadius: 20,
+        borderRadius: 16,
         padding: 10,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.4)',
-        height: 100,
+        borderColor: 'rgba(255, 255, 255, 0.5)',
+        height: 90,
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
@@ -109,18 +190,18 @@ const styles = StyleSheet.create({
         }),
     },
     iconCircle: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 6,
     },
     categoryName: {
-        fontFamily: fonts.bold,
-        fontSize: 11,
+        fontFamily: fonts.semiBold,
+        fontSize: 10,
         color: staticColors.text,
         textAlign: 'center',
-        lineHeight: 14,
+        lineHeight: 13,
     },
 });
