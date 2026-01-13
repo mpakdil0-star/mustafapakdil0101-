@@ -232,9 +232,12 @@ export default function JobDetailScreen() {
       return;
     }
 
+    setIsReviewSubmitting(true);
     try {
       await jobService.completeJob(id, { rating, comment: reviewComment });
       setIsReviewModalVisible(false);
+      setRating(0);
+      setReviewComment('');
       dispatch(fetchJobById(id));
       showAlert('Başarılı', 'İş tamamlandı olarak işaretlendi ve değerlendirmeniz kaydedildi.', 'success');
     } catch (error: any) {
@@ -655,7 +658,11 @@ export default function JobDetailScreen() {
             <View style={styles.reviewModalActions}>
               <TouchableOpacity
                 style={[styles.reviewCancelBtn, { backgroundColor: 'rgba(255,255,255,0.1)' }]}
-                onPress={() => setIsReviewModalVisible(false)}
+                onPress={() => {
+                  setIsReviewModalVisible(false);
+                  setRating(0);
+                  setReviewComment('');
+                }}
               >
                 <Text style={[styles.reviewCancelBtnText, { color: 'rgba(255,255,255,0.6)' }]}>Vazgeç</Text>
               </TouchableOpacity>

@@ -653,18 +653,6 @@ export default function HomeScreen() {
             <View style={styles.toolsGridTwo}>
               <TouchableOpacity
                 style={styles.toolCardHalf}
-                onPress={() => handleActionWithAuth('/tools/calculator')}
-                activeOpacity={0.85}
-              >
-                <LinearGradient colors={['#6366F1', '#4F46E5']} style={styles.toolIconBox}>
-                  <Ionicons name="calculator" size={28} color="#FFF" />
-                </LinearGradient>
-                <Text style={styles.toolCardTitle}>Hesaplayıcı</Text>
-                <Text style={styles.toolCardDesc}>Kablo kesiti, gerilim düşümü</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.toolCardHalf}
                 onPress={() => handleActionWithAuth('/tools/quote')}
                 activeOpacity={0.85}
               >
@@ -871,13 +859,23 @@ export default function HomeScreen() {
           }}
           onRegister={() => {
             setShowAuthModal(false);
-            router.push({
-              pathname: '/(auth)/register',
-              params: {
-                ...(pendingAction ? { redirectTo: pendingAction.path } : {}),
-                initialRole: isElectrician ? 'ELECTRICIAN' : 'CITIZEN',
-              }
-            });
+            if (isElectrician) {
+              router.push({
+                pathname: '/(auth)/role-select',
+                params: {
+                  initialRole: 'ELECTRICIAN',
+                  ...(pendingAction ? { redirectTo: pendingAction.path } : {})
+                }
+              });
+            } else {
+              router.push({
+                pathname: '/(auth)/register',
+                params: {
+                  initialRole: 'CITIZEN',
+                  ...(pendingAction ? { redirectTo: pendingAction.path } : {})
+                }
+              });
+            }
           }}
         />
 

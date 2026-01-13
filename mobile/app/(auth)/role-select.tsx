@@ -9,7 +9,7 @@ import {
     Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { fonts } from '../../constants/typography';
 import { SERVICE_CATEGORIES, ServiceCategory } from '../../constants/serviceCategories';
@@ -30,7 +30,8 @@ const getCategoryImage = (id: string) => {
 
 export default function RoleSelectScreen() {
     const router = useRouter();
-    const [userType, setUserType] = useState<'CITIZEN' | 'ELECTRICIAN' | null>(null);
+    const { initialRole } = useLocalSearchParams<{ initialRole?: 'CITIZEN' | 'ELECTRICIAN' }>();
+    const [userType, setUserType] = useState<'CITIZEN' | 'ELECTRICIAN' | null>(initialRole || null);
     const [serviceCategory, setServiceCategory] = useState<string | null>(null);
 
     const canProceed = userType === 'CITIZEN' || (userType === 'ELECTRICIAN' && serviceCategory);

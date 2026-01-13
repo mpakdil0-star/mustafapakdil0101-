@@ -7,8 +7,30 @@ import { colors as staticColors } from '../../constants/colors';
 import { useAppColors } from '../../hooks/useAppColors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
-import { JOB_CATEGORIES } from '../../constants/jobCategories';
+import {
+    ELEKTRIK_CATEGORIES,
+    CILINGIR_CATEGORIES,
+    KLIMA_CATEGORIES,
+    BEYAZ_ESYA_CATEGORIES,
+    TESISAT_CATEGORIES,
+    JobCategory
+} from '../../constants/jobCategories';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
+
+interface CategoryGroup {
+    id: string;
+    title: string;
+    emoji: string;
+    categories: JobCategory[];
+}
+
+const CATEGORY_GROUPS: CategoryGroup[] = [
+    { id: 'elektrik', title: 'Elektrik', emoji: '⚡', categories: ELEKTRIK_CATEGORIES },
+    { id: 'cilingir', title: 'Çilingir', emoji: '🔧', categories: CILINGIR_CATEGORIES },
+    { id: 'klima', title: 'Klima', emoji: '❄️', categories: KLIMA_CATEGORIES },
+    { id: 'beyaz-esya', title: 'Beyaz Eşya', emoji: '🏠', categories: BEYAZ_ESYA_CATEGORIES },
+    { id: 'tesisat', title: 'Tesisat', emoji: '💧', categories: TESISAT_CATEGORIES },
+];
 
 export default function CategoriesScreen() {
     const router = useRouter();
@@ -29,32 +51,41 @@ export default function CategoriesScreen() {
             >
                 <Text style={styles.subtitle}>İhtiyacın olan hizmet kategorisini seçerek hemen ilanını oluştur.</Text>
 
-                <View style={styles.grid}>
-                    {JOB_CATEGORIES.map((cat, idx) => (
-                        <TouchableOpacity
-                            key={idx}
-                            style={styles.cardWrapper}
-                            onPress={() => router.push({
-                                pathname: '/jobs/create',
-                                params: { category: cat.name }
-                            })}
-                            activeOpacity={0.8}
-                        >
-                            <LinearGradient
-                                colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']}
-                                style={styles.categoryCard}
-                            >
-                                <LinearGradient
-                                    colors={cat.colors as [string, string, ...string[]]}
-                                    style={styles.iconCircle}
+                {CATEGORY_GROUPS.map((group) => (
+                    <View key={group.id} style={styles.groupSection}>
+                        <View style={styles.groupHeader}>
+                            <Text style={styles.groupEmoji}>{group.emoji}</Text>
+                            <Text style={[styles.groupTitle, { color: colors.text }]}>{group.title}</Text>
+                        </View>
+
+                        <View style={styles.grid}>
+                            {group.categories.map((cat, idx) => (
+                                <TouchableOpacity
+                                    key={idx}
+                                    style={styles.cardWrapper}
+                                    onPress={() => router.push({
+                                        pathname: '/jobs/create',
+                                        params: { category: cat.name }
+                                    })}
+                                    activeOpacity={0.8}
                                 >
-                                    <Ionicons name={cat.icon as any} size={22} color="#FFF" />
-                                </LinearGradient>
-                                <Text style={styles.categoryName} numberOfLines={2}>{cat.name}</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                                    <LinearGradient
+                                        colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']}
+                                        style={styles.categoryCard}
+                                    >
+                                        <LinearGradient
+                                            colors={cat.colors as [string, string, ...string[]]}
+                                            style={styles.iconCircle}
+                                        >
+                                            <Ionicons name={cat.icon as any} size={22} color="#FFF" />
+                                        </LinearGradient>
+                                        <Text style={styles.categoryName} numberOfLines={2}>{cat.name}</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+                ))}
             </ScrollView>
         </View>
     );
@@ -75,8 +106,26 @@ const styles = StyleSheet.create({
         fontFamily: fonts.medium,
         fontSize: 14,
         color: '#94A3B8',
-        marginBottom: 24,
+        marginBottom: 28,
         lineHeight: 20,
+    },
+    groupSection: {
+        marginBottom: 32,
+    },
+    groupHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+        paddingLeft: 4,
+    },
+    groupEmoji: {
+        fontSize: 20,
+        marginRight: 10,
+    },
+    groupTitle: {
+        fontFamily: fonts.bold,
+        fontSize: 18,
+        letterSpacing: 0.3,
     },
     grid: {
         flexDirection: 'row',

@@ -438,7 +438,11 @@ export default function EditProfileScreen() {
                             style={[styles.successModalBtn, { shadowColor: colors.primary }]}
                             onPress={() => {
                                 setShowSuccessModal(false);
-                                router.back();
+                                if (mandatory) {
+                                    router.replace('/(tabs)');
+                                } else {
+                                    router.back();
+                                }
                             }}
                             activeOpacity={0.8}
                         >

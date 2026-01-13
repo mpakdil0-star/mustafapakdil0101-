@@ -115,7 +115,7 @@ function RootLayoutNav() {
     }
   }, [isAuthenticated, dispatch]);
 
-  // Check if electrician profile is incomplete and redirect to mandatory profile completion
+  // Check if professional profile is incomplete and redirect to mandatory profile completion
   useEffect(() => {
     // Wait for user data to be fully loaded
     if (!isAuthenticated || !isNavigationReady) return;
@@ -134,7 +134,8 @@ function RootLayoutNav() {
         specs: user.electricianProfile?.specialties
       });
 
-      // Only check for electricians
+      // Check for ALL professional types (ELECTRICIAN is the general userType for all professionals)
+      // This includes: elektrik, tesisat, çilingir, klima, beyaz-esya
       if (user.userType !== 'ELECTRICIAN') {
         setHasCheckedProfile(true);
         return;
