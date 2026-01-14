@@ -20,32 +20,45 @@ const adminMiddleware = (req: Request, res: Response, next: any) => {
 // GET /admin/users - Get all users
 router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Response) => {
     try {
-        const { search, userType, page = '1', limit = '20' } = req.query;
+        const { search, userType: filterType, page = '1', limit = '20' } = req.query;
 
         // Get all users from mock storage
         const allUsers = getAllMockUsers();
 
-        let users = Object.entries(allUsers).map(([id, data]: [string, any]) => ({
-            id,
-            fullName: data.fullName || 'İsimsiz Kullanıcı',
-            email: data.email || '',
-            phone: data.phone || '',
-            userType: data.userType || 'CITIZEN',
-            profileImageUrl: data.profileImageUrl,
-            creditBalance: data.creditBalance || 0,
-            isVerified: data.isVerified || false,
-            isActive: data.isActive !== false,
-            verificationStatus: data.verificationStatus,
-            createdAt: data.createdAt || new Date().toISOString(),
-            experienceYears: data.experienceYears,
-            specialties: data.specialties || [],
-            completedJobsCount: data.completedJobsCount || 0,
-            serviceCategory: data.serviceCategory
-        }));
+        let users = Object.entries(allUsers).map(([id, data]: [string, any]) => {
+            // Determine userType from ID suffix if not explicitly set in data
+            let derivedUserType = data.userType;
+            if (!derivedUserType) {
+                if (id.endsWith('-ELECTRICIAN')) {
+                    derivedUserType = 'ELECTRICIAN';
+                } else if (id.endsWith('-ADMIN')) {
+                    derivedUserType = 'ADMIN';
+                } else {
+                    derivedUserType = 'CITIZEN';
+                }
+            }
+            return {
+                id,
+                fullName: data.fullName || 'İsimsiz Kullanıcı',
+                email: data.email || '',
+                phone: data.phone || '',
+                userType: derivedUserType,
+                profileImageUrl: data.profileImageUrl,
+                creditBalance: data.creditBalance || 0,
+                isVerified: data.isVerified || false,
+                isActive: data.isActive !== false,
+                verificationStatus: data.verificationStatus,
+                createdAt: data.createdAt || new Date().toISOString(),
+                experienceYears: data.experienceYears,
+                specialties: data.specialties || [],
+                completedJobsCount: data.completedJobsCount || 0,
+                serviceCategory: data.serviceCategory
+            };
+        });
 
         // Filter by userType
-        if (userType && userType !== 'ALL') {
-            users = users.filter(u => u.userType === userType);
+        if (filterType && filterType !== 'ALL') {
+            users = users.filter(u => u.userType === filterType);
         }
 
         // Search filter
@@ -146,19 +159,138 @@ router.put('/users/:id', authenticate, adminMiddleware, async (req: Request, res
     }
 });
 
-// GET /admin/stats - Get platform statistics
+// GET /admin/stats - Get comprehensive platform statistics
 router.get('/stats', authenticate, adminMiddleware, async (req: Request, res: Response) => {
     try {
         const allUsers = getAllMockUsers();
-        const usersArray = Object.values(allUsers);
+
+        // Process users with derived userType from ID
+        const usersWithType = Object.entries(allUsers).map(([id, data]: [string, any]) => {
+            let userType = data.userType;
+            if (!userType) {
+                if (id.endsWith('-ELECTRICIAN')) {
+                    userType = 'ELECTRICIAN';
+                } else if (id.endsWith('-ADMIN')) {
+                    userType = 'ADMIN';
+                } else {
+                    userType = 'CITIZEN';
+                }
+            }
+            return { ...data, id, userType };
+        });
+
+        // Filter by user types
+        const citizens = usersWithType.filter((u: any) => u.userType === 'CITIZEN');
+        const electricians = usersWithType.filter((u: any) => u.userType === 'ELECTRICIAN');
+
+        // Service category breakdown
+        const serviceCategories = {
+            elektrik: electricians.filter((u: any) => u.serviceCategory === 'elektrik' || !u.serviceCategory).length,
+            cilingir: electricians.filter((u: any) => u.serviceCategory === 'cilingir').length,
+            klima: electricians.filter((u: any) => u.serviceCategory === 'klima').length,
+            'beyaz-esya': electricians.filter((u: any) => u.serviceCategory === 'beyaz-esya').length,
+            tesisat: electricians.filter((u: any) => u.serviceCategory === 'tesisat').length
+        };
+
+        // Regional distribution - count by city from locations
+        const regionStats: { [city: string]: { electricians: number; citizens: number } } = {};
+
+        usersWithType.forEach((user: any) => {
+            const locations = user.locations || [];
+            const city = locations[0]?.city || user.city || 'Belirtilmemiş';
+
+            if (!regionStats[city]) {
+                regionStats[city] = { electricians: 0, citizens: 0 };
+            }
+
+            if (user.userType === 'ELECTRICIAN') {
+                regionStats[city].electricians++;
+            } else if (user.userType === 'CITIZEN') {
+                regionStats[city].citizens++;
+            }
+        });
+
+        // Convert to sorted array (top cities first)
+        const topRegions = Object.entries(regionStats)
+            .map(([city, counts]) => ({
+                city,
+                electricians: counts.electricians,
+                citizens: counts.citizens,
+                total: counts.electricians + counts.citizens
+            }))
+            .sort((a, b) => b.total - a.total)
+            .slice(0, 10); // Top 10 cities
+
+        // Load job and bid stats from mock storage
+        let jobStats = { total: 0, open: 0, completed: 0, cancelled: 0 };
+        let bidStats = { total: 0, accepted: 0 };
+        let totalCredits = 0;
+
+        try {
+            // Get bids from mock storage file
+            const fs = require('fs');
+            const path = require('path');
+            const bidsFile = path.join(process.cwd(), 'data', 'mock-bids.json');
+            if (fs.existsSync(bidsFile)) {
+                const bidsData = JSON.parse(fs.readFileSync(bidsFile, 'utf8'));
+                // Handle both array and object formats
+                const bids = Array.isArray(bidsData) ? bidsData : Object.values(bidsData);
+                bidStats.total = bids.length;
+                bidStats.accepted = bids.filter((b: any) => b.status === 'ACCEPTED').length;
+            }
+        } catch (e) {
+            // Bids file not available
+            console.error('Error reading bids file:', e);
+        }
+
+        try {
+            // Get jobs from mock storage file
+            const fs = require('fs');
+            const path = require('path');
+            const jobsFile = path.join(process.cwd(), 'data', 'mock-jobs.json');
+            if (fs.existsSync(jobsFile)) {
+                const jobsData = JSON.parse(fs.readFileSync(jobsFile, 'utf8'));
+                // Handle both array and object formats
+                const jobs = Array.isArray(jobsData) ? jobsData : Object.values(jobsData);
+                jobStats.total = jobs.length;
+                jobStats.open = jobs.filter((j: any) => j.status === 'OPEN' || j.status === 'BIDDING').length;
+                jobStats.completed = jobs.filter((j: any) => j.status === 'COMPLETED').length;
+                jobStats.cancelled = jobs.filter((j: any) => j.status === 'CANCELLED').length;
+            }
+        } catch (e) {
+            // Jobs file not available
+            console.error('Error reading jobs file:', e);
+        }
+
+        // Calculate total credits in platform
+        electricians.forEach((u: any) => {
+            totalCredits += Number(u.creditBalance) || 0;
+        });
 
         const stats = {
-            totalUsers: usersArray.length,
-            totalCitizens: usersArray.filter((u: any) => u.userType === 'CITIZEN').length,
-            totalElectricians: usersArray.filter((u: any) => u.userType === 'ELECTRICIAN').length,
-            verifiedElectricians: usersArray.filter((u: any) => u.isVerified && u.userType === 'ELECTRICIAN').length,
-            pendingVerifications: usersArray.filter((u: any) => u.verificationStatus === 'PENDING').length,
-            suspendedUsers: usersArray.filter((u: any) => u.isActive === false).length
+            // User Summary
+            users: {
+                total: usersWithType.length,
+                citizens: citizens.length,
+                electricians: electricians.length,
+                admins: usersWithType.filter((u: any) => u.userType === 'ADMIN').length
+            },
+            // Service Categories
+            serviceCategories,
+            // Status
+            status: {
+                verified: electricians.filter((u: any) => u.isVerified).length,
+                pending: usersWithType.filter((u: any) => u.verificationStatus === 'PENDING').length,
+                suspended: usersWithType.filter((u: any) => u.isActive === false).length
+            },
+            // Platform Activity
+            activity: {
+                jobs: jobStats,
+                bids: bidStats,
+                totalCredits: Math.round(totalCredits)
+            },
+            // Regional Distribution
+            regions: topRegions
         };
 
         res.json({

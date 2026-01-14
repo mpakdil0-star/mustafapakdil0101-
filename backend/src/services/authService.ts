@@ -113,6 +113,7 @@ export const register = async (data: RegisterData) => {
       experienceYears: 0,
       creditBalance: userType === UserType.ELECTRICIAN ? 5 : 0,
       isActive: true, // Mark account as active
+      userType: userType, // Save userType directly to prevent future issues
       serviceCategory: userType === UserType.ELECTRICIAN ? (data.serviceCategory || 'elektrik') : undefined, // Save profession
     });
 
@@ -218,6 +219,7 @@ export const register = async (data: RegisterData) => {
       passwordHash: passwordHash, // Use hashed password
       experienceYears: 0,
       creditBalance: userType === UserType.ELECTRICIAN ? 5 : 0,
+      userType: userType, // Save userType directly
       serviceCategory: userType === UserType.ELECTRICIAN ? (data.serviceCategory || 'elektrik') : undefined, // Save profession
     });
 

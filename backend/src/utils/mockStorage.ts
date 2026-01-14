@@ -49,6 +49,25 @@ if (fs.existsSync(DATA_FILE)) {
         const fileData = fs.readFileSync(DATA_FILE, 'utf8');
         mockStore = JSON.parse(fileData);
         console.log(`📦 Mock data loaded from ${DATA_FILE}`);
+
+        // Migration: Add userType to existing users if missing
+        let migrationNeeded = false;
+        for (const id of Object.keys(mockStore)) {
+            if (!mockStore[id].userType) {
+                if (id.endsWith('-ELECTRICIAN')) {
+                    mockStore[id].userType = 'ELECTRICIAN';
+                } else if (id.endsWith('-ADMIN')) {
+                    mockStore[id].userType = 'ADMIN';
+                } else {
+                    mockStore[id].userType = 'CITIZEN';
+                }
+                migrationNeeded = true;
+            }
+        }
+        if (migrationNeeded) {
+            fs.writeFileSync(DATA_FILE, JSON.stringify(mockStore, null, 2), 'utf8');
+            console.log('🔄 Migration: Added userType to existing users');
+        }
     } catch (error) {
         console.error('❌ Failed to load mock data:', error);
         mockStore = {};
@@ -168,7 +187,8 @@ export const mockStorage = {
         district?: string,
         locations?: any[],
         completedJobsCount?: number,
-        serviceCategory?: string
+        serviceCategory?: string,
+        userType?: string  // Added: Store userType directly
     }) => {
         const store = mockStorage.get(userId);
         if (data.passwordHash !== undefined) store.passwordHash = data.passwordHash;
@@ -189,6 +209,7 @@ export const mockStorage = {
         if (data.locations !== undefined) store.locations = data.locations;
         if (data.completedJobsCount !== undefined) store.completedJobsCount = data.completedJobsCount;
         if (data.serviceCategory !== undefined) store.serviceCategory = data.serviceCategory;
+        if (data.userType !== undefined) store.userType = data.userType;  // Save userType directly
         saveToDisk();
         return store;
     },
@@ -354,6 +375,24 @@ export const mockReviewStorage = {
 };
 
 // Export helper to get all mock users (for notifications, etc.)
-export const getAllMockUsers = () => mockStore;
+// Returns raw store with derived userType for each user
+export const getAllMockUsers = () => {
+    const result: { [key: string]: any } = {};
+    for (const id of Object.keys(mockStore)) {
+        // Derive userType from ID suffix if not explicitly set
+        let userType = mockStore[id].userType;
+        if (!userType) {
+            if (id.endsWith('-ELECTRICIAN')) {
+                userType = 'ELECTRICIAN';
+            } else if (id.endsWith('-ADMIN')) {
+                userType = 'ADMIN';
+            } else {
+                userType = 'CITIZEN';
+            }
+        }
+        result[id] = { ...mockStore[id], id, userType };
+    }
+    return result;
+};
 
 export default mockStorage;

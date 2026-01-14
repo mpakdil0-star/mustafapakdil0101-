@@ -53,6 +53,8 @@ export default function ProfileScreen() {
   ];
 
   const ADMIN_MENU_ITEMS = [
+    { icon: 'settings-outline', label: 'Sistem Yöneticisi', route: '/admin', color: '#6366F1' },
+    { icon: 'people-outline', label: 'Kullanıcı Yönetimi', route: '/admin/users', color: '#8B5CF6' },
     { icon: 'shield-outline', label: 'Doğrulama Havuzu', route: '/profile/admin_verifications', color: staticColors.error },
   ];
 

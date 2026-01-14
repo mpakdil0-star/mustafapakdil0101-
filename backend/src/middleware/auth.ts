@@ -113,10 +113,23 @@ export const authenticate = async (
       // Database connection error or timeout - but token is valid, allow with decoded user info
       if (isConnectionError || (decoded && decoded.id && decoded.id.startsWith('mock-'))) {
         console.warn('⚠️ auth.ts: Database fail / Mock user, using token info as fallback');
+
+        // Derive userType from ID suffix if not in token
+        let fallbackUserType = decoded?.userType;
+        if (!fallbackUserType && decoded?.id) {
+          if (decoded.id.endsWith('-ELECTRICIAN')) {
+            fallbackUserType = 'ELECTRICIAN';
+          } else if (decoded.id.endsWith('-ADMIN')) {
+            fallbackUserType = 'ADMIN';
+          } else {
+            fallbackUserType = 'CITIZEN';
+          }
+        }
+
         req.user = {
           id: decoded?.id || 'unknown',
           email: decoded?.email || 'unknown',
-          userType: decoded?.userType || 'CITIZEN',
+          userType: fallbackUserType || 'CITIZEN',
         };
         return next();
       } else {
