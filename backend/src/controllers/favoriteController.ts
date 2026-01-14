@@ -1,4 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
+import { isDatabaseAvailable } from '../config/database';
+import { mockStorage, mockFavoriteStorage } from '../utils/mockStorage';
 
 interface AuthRequest extends Request {
     user?: {
@@ -18,21 +20,45 @@ export const getFavorites = async (req: AuthRequest, res: Response, next: NextFu
             });
         }
 
-        try {
-            const favoriteService = (await import('../services/favoriteService')).default;
-            const favorites = await favoriteService.getFavorites(req.user.id);
-            res.json({
-                success: true,
-                data: { favorites },
-            });
-        } catch (dbError: any) {
-            // Database bağlantısı yoksa boş liste döndür
-            console.warn('Database error, returning empty favorites:', dbError.message);
-            res.json({
-                success: true,
-                data: { favorites: [] },
-            });
+        if (isDatabaseAvailable) {
+            try {
+                const favoriteService = (await import('../services/favoriteService')).default;
+                const favorites = await favoriteService.getFavorites(req.user.id);
+                return res.json({
+                    success: true,
+                    data: { favorites },
+                });
+            } catch (dbError: any) {
+                console.warn('Database service error, falling back to mock:', dbError.message);
+            }
         }
+
+        // MOCK MODE: Handle favorites via mockStorage
+        const mockFavs = mockFavoriteStorage.getFavorites(req.user.id);
+        const enrichedFavorites = mockFavs.map(fav => {
+            const electrician = mockStorage.get(fav.electricianId);
+            return {
+                id: fav.id,
+                electricianId: fav.electricianId,
+                createdAt: fav.createdAt,
+                electrician: {
+                    id: fav.electricianId,
+                    fullName: electrician?.fullName || 'Bilinmeyen Usta',
+                    profileImageUrl: electrician?.profileImageUrl || null,
+                    rating: 4.5, // Default for mock
+                    reviewCount: 10,
+                    completedJobs: electrician?.completedJobsCount || 0,
+                    specialties: electrician?.specialties || [],
+                    isAvailable: true
+                }
+            };
+        });
+
+        res.json({
+            success: true,
+            data: { favorites: enrichedFavorites },
+        });
+
     } catch (error: any) {
         if (error.statusCode) {
             return res.status(error.statusCode).json({
@@ -56,22 +82,29 @@ export const addFavorite = async (req: AuthRequest, res: Response, next: NextFun
 
         const { electricianId } = req.params;
 
-        try {
-            const favoriteService = (await import('../services/favoriteService')).default;
-            const favorite = await favoriteService.addFavorite(req.user.id, electricianId);
+        if (isDatabaseAvailable) {
+            try {
+                const favoriteService = (await import('../services/favoriteService')).default;
+                const favorite = await favoriteService.addFavorite(req.user.id, electricianId);
 
-            res.status(201).json({
-                success: true,
-                data: { favorite },
-                message: 'Favorilere eklendi',
-            });
-        } catch (dbError: any) {
-            console.warn('Database error:', dbError.message);
-            res.status(503).json({
-                success: false,
-                error: { message: 'Veritabanı bağlantısı yok. Lütfen daha sonra tekrar deneyin.' },
-            });
+                return res.status(201).json({
+                    success: true,
+                    data: { favorite },
+                    message: 'Favorilere eklendi',
+                });
+            } catch (dbError: any) {
+                console.warn('Database error while adding favorite, falling back to mock:', dbError.message);
+            }
         }
+
+        // MOCK MODE
+        const favorite = mockFavoriteStorage.addFavorite(req.user.id, electricianId);
+        res.status(201).json({
+            success: true,
+            data: { favorite },
+            message: 'Favorilere eklendi (Mock)',
+        });
+
     } catch (error: any) {
         if (error.statusCode) {
             return res.status(error.statusCode).json({
@@ -95,21 +128,27 @@ export const removeFavorite = async (req: AuthRequest, res: Response, next: Next
 
         const { electricianId } = req.params;
 
-        try {
-            const favoriteService = (await import('../services/favoriteService')).default;
-            await favoriteService.removeFavorite(req.user.id, electricianId);
+        if (isDatabaseAvailable) {
+            try {
+                const favoriteService = (await import('../services/favoriteService')).default;
+                await favoriteService.removeFavorite(req.user.id, electricianId);
 
-            res.json({
-                success: true,
-                message: 'Favorilerden çıkarıldı',
-            });
-        } catch (dbError: any) {
-            console.warn('Database error:', dbError.message);
-            res.status(503).json({
-                success: false,
-                error: { message: 'Veritabanı bağlantısı yok.' },
-            });
+                return res.json({
+                    success: true,
+                    message: 'Favorilerden çıkarıldı',
+                });
+            } catch (dbError: any) {
+                console.warn('Database error while removing favorite, falling back to mock:', dbError.message);
+            }
         }
+
+        // MOCK MODE
+        mockFavoriteStorage.removeFavorite(req.user.id, electricianId);
+        res.json({
+            success: true,
+            message: 'Favorilerden çıkarıldı (Mock)',
+        });
+
     } catch (error: any) {
         if (error.statusCode) {
             return res.status(error.statusCode).json({
@@ -133,22 +172,29 @@ export const checkFavorite = async (req: AuthRequest, res: Response, next: NextF
 
         const { electricianId } = req.params;
 
-        try {
-            const favoriteService = (await import('../services/favoriteService')).default;
-            const result = await favoriteService.checkFavorite(req.user.id, electricianId);
+        if (isDatabaseAvailable) {
+            try {
+                const favoriteService = (await import('../services/favoriteService')).default;
+                const result = await favoriteService.checkFavorite(req.user.id, electricianId);
 
-            res.json({
-                success: true,
-                data: result,
-            });
-        } catch (dbError: any) {
-            // Database yoksa favoride değil olarak döndür
-            res.json({
-                success: true,
-                data: { isFavorite: false },
-            });
+                return res.json({
+                    success: true,
+                    data: result,
+                });
+            } catch (dbError: any) {
+                console.warn('Database error checking favorite, falling back to mock:', dbError.message);
+            }
         }
+
+        // MOCK MODE
+        const isFav = mockFavoriteStorage.isFavorite(req.user.id, electricianId);
+        res.json({
+            success: true,
+            data: { isFavorite: isFav },
+        });
+
     } catch (error: any) {
         next(error);
     }
 };
+

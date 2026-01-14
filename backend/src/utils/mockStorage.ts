@@ -454,4 +454,76 @@ export const mockTransactionStorage = {
     getAllTransactions: () => mockTransactions
 };
 
+// ============== MOCK FAVORITES STORAGE ==============
+
+interface MockFavorite {
+    id: string;
+    userId: string;
+    electricianId: string;
+    createdAt: string;
+}
+
+const FAVORITES_FILE = path.join(DATA_DIR, 'mock_favorites.json');
+
+// Load favorites from file
+let mockFavorites: MockFavorite[] = [];
+if (fs.existsSync(FAVORITES_FILE)) {
+    try {
+        const favData = fs.readFileSync(FAVORITES_FILE, 'utf8');
+        mockFavorites = JSON.parse(favData);
+        console.log(`❤️ Mock favorites loaded: ${mockFavorites.length} favorites`);
+    } catch (error) {
+        console.error('❌ Failed to load mock favorites:', error);
+        mockFavorites = [];
+    }
+}
+
+const saveFavoritesToDisk = () => {
+    try {
+        fs.writeFileSync(FAVORITES_FILE, JSON.stringify(mockFavorites, null, 2), 'utf8');
+    } catch (error) {
+        console.error('❌ Failed to save mock favorites:', error);
+    }
+};
+
+export const mockFavoriteStorage = {
+    // Get favorites for a user
+    getFavorites: (userId: string) => {
+        return mockFavorites.filter(fav => fav.userId === userId);
+    },
+
+    // Add a favorite
+    addFavorite: (userId: string, electricianId: string) => {
+        // Already favorited?
+        const exists = mockFavorites.find(f => f.userId === userId && f.electricianId === electricianId);
+        if (exists) return exists;
+
+        const favorite: MockFavorite = {
+            id: `mock-fav-${Date.now()}`,
+            userId,
+            electricianId,
+            createdAt: new Date().toISOString()
+        };
+        mockFavorites.unshift(favorite);
+        saveFavoritesToDisk();
+        return favorite;
+    },
+
+    // Remove a favorite
+    removeFavorite: (userId: string, electricianId: string) => {
+        const initialLength = mockFavorites.length;
+        mockFavorites = mockFavorites.filter(f => !(f.userId === userId && f.electricianId === electricianId));
+        if (mockFavorites.length !== initialLength) {
+            saveFavoritesToDisk();
+            return true;
+        }
+        return false;
+    },
+
+    // Check if favorited
+    isFavorite: (userId: string, electricianId: string) => {
+        return mockFavorites.some(f => f.userId === userId && f.electricianId === electricianId);
+    }
+};
+
 export default mockStorage;

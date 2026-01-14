@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, Alert, TouchableOpacity, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Card } from '../../components/common/Card';
@@ -40,9 +41,11 @@ export default function FavoritesScreen() {
         }
     }, []);
 
-    useEffect(() => {
-        fetchFavorites();
-    }, [fetchFavorites]);
+    useFocusEffect(
+        useCallback(() => {
+            fetchFavorites();
+        }, [fetchFavorites])
+    );
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
