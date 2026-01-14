@@ -30,8 +30,8 @@ interface MockUserStore {
     }
 }
 
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // Singleton storage
 const DATA_DIR = path.join(process.cwd(), 'data');
