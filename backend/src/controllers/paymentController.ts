@@ -2,7 +2,7 @@ import { Response, NextFunction } from 'express';
 import prisma, { isDatabaseAvailable } from '../config/database';
 import { AuthRequest } from '../middleware/auth';
 import { ValidationError, NotFoundError } from '../utils/errors';
-import { mockStorage } from '../utils/mockStorage';
+import { mockStorage, mockTransactionStorage } from '../utils/mockStorage';
 
 export const getCreditPackages = async (req: AuthRequest, res: Response) => {
     // Sabit kredi paketleri
@@ -94,6 +94,15 @@ export const purchaseCredits = async (req: AuthRequest, res: Response, next: Nex
             const userId = req.user.id;
             const mockData = mockStorage.addCredits(userId, selectedPackage.credits);
 
+            // Create transaction record in mock storage
+            mockTransactionStorage.addTransaction({
+                userId,
+                amount: selectedPackage.credits,
+                transactionType: 'PURCHASE',
+                description: `Kredi Yükleme`,
+                balanceAfter: mockData.creditBalance
+            });
+
             return res.json({
                 success: true,
                 message: 'İşlem başarılı (Test Modu - Geçici Bakiye Güncellendi)',
@@ -116,16 +125,13 @@ export const getTransactionHistory = async (req: AuthRequest, res: Response, nex
             const history = await prisma.credit.findMany({
                 where: { userId: req.user.id },
                 orderBy: { createdAt: 'desc' },
-                take: 20
+                take: 50
             });
 
             return res.json({ success: true, data: history });
         } else {
-            // Mock history
-            const mockHistory = [
-                { id: 't1', amount: 50, transactionType: 'PURCHASE', description: 'Kredi Yükleme', createdAt: new Date(), balanceAfter: 50 },
-                { id: 't2', amount: -1, transactionType: 'BID_SPENT', description: 'Teklif Verme', createdAt: new Date(Date.now() - 3600000), balanceAfter: 49 },
-            ];
+            // Get real transaction history from mock storage
+            const mockHistory = mockTransactionStorage.getTransactions(req.user.id, 50);
             return res.json({ success: true, data: mockHistory });
         }
     } catch (error) {

@@ -395,4 +395,63 @@ export const getAllMockUsers = () => {
     return result;
 };
 
+// ============== MOCK CREDIT TRANSACTIONS STORAGE ==============
+
+interface MockTransaction {
+    id: string;
+    userId: string;
+    amount: number;
+    transactionType: 'PURCHASE' | 'BID_SPENT' | 'REFUND' | 'BONUS';
+    description: string;
+    balanceAfter: number;
+    createdAt: string;
+}
+
+const TRANSACTIONS_FILE = path.join(DATA_DIR, 'mock_transactions.json');
+
+// Load transactions from file
+let mockTransactions: MockTransaction[] = [];
+if (fs.existsSync(TRANSACTIONS_FILE)) {
+    try {
+        const txData = fs.readFileSync(TRANSACTIONS_FILE, 'utf8');
+        mockTransactions = JSON.parse(txData);
+        console.log(`💳 Mock transactions loaded: ${mockTransactions.length} transactions`);
+    } catch (error) {
+        console.error('❌ Failed to load mock transactions:', error);
+        mockTransactions = [];
+    }
+}
+
+const saveTransactionsToDisk = () => {
+    try {
+        fs.writeFileSync(TRANSACTIONS_FILE, JSON.stringify(mockTransactions, null, 2), 'utf8');
+    } catch (error) {
+        console.error('❌ Failed to save mock transactions:', error);
+    }
+};
+
+export const mockTransactionStorage = {
+    // Add a new transaction
+    addTransaction: (data: Omit<MockTransaction, 'id' | 'createdAt'>) => {
+        const transaction: MockTransaction = {
+            id: `mock-tx-${Date.now()}`,
+            ...data,
+            createdAt: new Date().toISOString()
+        };
+        mockTransactions.unshift(transaction); // Add to beginning for chronological order
+        saveTransactionsToDisk();
+        return transaction;
+    },
+
+    // Get transactions for a user
+    getTransactions: (userId: string, limit: number = 50) => {
+        return mockTransactions
+            .filter(tx => tx.userId === userId)
+            .slice(0, limit);
+    },
+
+    // Get all transactions
+    getAllTransactions: () => mockTransactions
+};
+
 export default mockStorage;

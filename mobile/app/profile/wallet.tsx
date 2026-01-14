@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     View,
     Text,
@@ -13,6 +13,7 @@ import {
     Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors as staticColors } from '../../constants/colors';
@@ -79,9 +80,12 @@ export default function WalletScreen() {
         }
     };
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    // Refresh data when screen gains focus (e.g., after buying credits)
+    useFocusEffect(
+        useCallback(() => {
+            fetchData();
+        }, [])
+    );
 
     const groupTransactions = (transactions: Transaction[]) => {
         const groups: { [key: string]: Transaction[] } = {};

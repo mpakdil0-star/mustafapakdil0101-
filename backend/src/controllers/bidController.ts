@@ -4,7 +4,7 @@ import { AuthRequest } from '../middleware/auth';
 import { isDatabaseAvailable } from '../config/database';
 // import { jobStoreById, saveMockJobs } from './jobController'; // Removed for circular dependency fix
 import { notifyUser } from '../server';
-import { mockStorage } from '../utils/mockStorage';
+import { mockStorage, mockTransactionStorage } from '../utils/mockStorage';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -143,8 +143,19 @@ export const createBidController = async (
         }
 
         // Deduct 1 credit from mockStorage
-        mockStorage.updateBalance(req.user.id, currentBalance - 1);
-        console.log(`✅ [MOCK BID] Credit deducted. New balance: ${currentBalance - 1}`);
+        const newBalance = currentBalance - 1;
+        mockStorage.updateBalance(req.user.id, newBalance);
+
+        // Create transaction record in mock storage
+        mockTransactionStorage.addTransaction({
+          userId: req.user.id,
+          amount: -1,
+          transactionType: 'BID_SPENT',
+          description: `İlana teklif verildi`,
+          balanceAfter: newBalance
+        });
+
+        console.log(`✅ [MOCK BID] Credit deducted and transaction recorded. New balance: ${newBalance}`);
 
         // Try to get job details from jobStoreById
         const { jobStoreById } = require('./jobController');
