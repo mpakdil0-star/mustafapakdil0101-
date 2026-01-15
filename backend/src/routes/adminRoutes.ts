@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
 import { mockStorage, getAllMockUsers } from '../utils/mockStorage';
+import * as adminController from '../controllers/adminController';
 
 const router = Router();
 
@@ -302,5 +303,11 @@ router.get('/stats', authenticate, adminMiddleware, async (req: Request, res: Re
         res.status(500).json({ success: false, message: 'İstatistikler yüklenirken hata oluştu' });
     }
 });
+
+// GET /admin/verifications - Get all pending verifications
+router.get('/verifications', authenticate, adminMiddleware, adminController.getAllVerifications);
+
+// POST /admin/verifications/process - Approve/Reject verification
+router.post('/verifications/process', authenticate, adminMiddleware, adminController.processVerification);
 
 export default router;

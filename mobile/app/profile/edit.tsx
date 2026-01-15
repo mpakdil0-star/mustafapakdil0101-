@@ -99,10 +99,14 @@ export default function EditProfileScreen() {
     const [email, setEmail] = useState(user?.email || '');
     const [phoneNumber, setPhoneNumber] = useState(user?.phone || '');
     const [experienceYears, setExperienceYears] = useState(
-        draftProfile?.experienceYears ?? user?.electricianProfile?.experienceYears?.toString() ?? ''
+        draftProfile?.experienceYears ??
+        user?.electricianProfile?.experienceYears?.toString() ??
+        (user as any)?.experienceYears?.toString() ?? ''
     );
     const [selectedExpertise, setSelectedExpertise] = useState<string[]>(
-        draftProfile?.specialties ?? user?.electricianProfile?.specialties ?? []
+        draftProfile?.specialties ??
+        user?.electricianProfile?.specialties ??
+        (user as any)?.specialties ?? []
     );
     const [loading, setLoading] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -134,6 +138,32 @@ export default function EditProfileScreen() {
             }));
         }
     }, [experienceYears, selectedExpertise, user?.userType]);
+
+    // CRITICAL: Re-initialize form state when user data changes (e.g., after login)
+    // useState initializers only run once, so we need this effect to sync
+    useEffect(() => {
+        if (user && !draftProfile) {
+            // Only reinitialize if no draft exists (avoid overwriting user edits)
+            const newExpYears = user.electricianProfile?.experienceYears?.toString() ??
+                (user as any)?.experienceYears?.toString() ?? '';
+            const newSpecialties = user.electricianProfile?.specialties ??
+                (user as any)?.specialties ?? [];
+
+            // Only update if values are actually different and non-empty from server
+            if (newExpYears && newExpYears !== '0' && experienceYears === '') {
+                setExperienceYears(newExpYears);
+            }
+            if (newSpecialties.length > 0 && selectedExpertise.length === 0) {
+                setSelectedExpertise(newSpecialties);
+            }
+
+            // Update initial values ref for change detection
+            initialValues.current = {
+                experienceYears: newExpYears || '',
+                selectedExpertise: newSpecialties || [],
+            };
+        }
+    }, [user?.electricianProfile?.experienceYears, user?.electricianProfile?.specialties]);
 
     // Service areas / locations
     const [locations, setLocations] = useState<any[]>([]);

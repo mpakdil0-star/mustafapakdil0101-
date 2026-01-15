@@ -67,7 +67,7 @@ export default function AdminVerificationsScreen() {
 
     const loadRequests = async () => {
         try {
-            const response = await api.get('/users/admin/verifications');
+            const response = await api.get('/admin/verifications');
             if (response.data.success) {
                 setRequests(response.data.data);
             }
@@ -95,7 +95,7 @@ export default function AdminVerificationsScreen() {
                         setAlertConfig(prev => ({ ...prev, visible: false }));
                         setProcessingId(userId);
                         try {
-                            const response = await api.post('/users/admin/verifications/process', {
+                            const response = await api.post('/admin/verifications/process', {
                                 targetUserId: userId,
                                 status,
                                 reason: status === 'REJECTED' ? 'Belge uygun bulunmadı.' : undefined

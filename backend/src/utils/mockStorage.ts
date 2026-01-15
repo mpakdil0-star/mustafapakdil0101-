@@ -230,13 +230,16 @@ export const mockStorage = {
 
     getFullUser: (userId: string, userType: string = 'CITIZEN') => {
         const store = mockStorage.get(userId);
+        // Prefer stored userType if available, otherwise use the argument
+        const finalUserType = store.userType || userType;
+
         return {
             id: userId,
             fullName: (store.fullName && store.fullName.trim() !== '') ? store.fullName : 'Test Kullanıcısı',
             email: store.email || 'mock@example.com',
             passwordHash: store.passwordHash,
             phone: store.phone || '',
-            userType: userType,
+            userType: finalUserType,
             profileImageUrl: store.profileImageUrl || null,
             isVerified: store.isVerified || false,
             isActive: store.isActive !== undefined ? store.isActive : true,
@@ -244,7 +247,7 @@ export const mockStorage = {
             documentType: store.documentType || null,
             submittedAt: store.submittedAt || null,
             serviceCategory: store.serviceCategory || null, // Profession category for professionals
-            electricianProfile: userType === 'ELECTRICIAN' ? {
+            electricianProfile: finalUserType === 'ELECTRICIAN' ? {
                 completedJobsCount: store.completedJobsCount || 0,
                 experienceYears: store.experienceYears,
                 specialties: store.specialties,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Slot, useRouter, useSegments, SplashScreen } from 'expo-router';
+import { Slot, useRouter, useSegments, SplashScreen, useGlobalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Provider, useSelector } from 'react-redux';
 import { store } from '../store/store';
@@ -23,8 +23,9 @@ SplashScreen.preventAutoHideAsync();
 function RootLayoutNav() {
   const router = useRouter();
   const segments = useSegments();
+  const params = useGlobalSearchParams();
   const dispatch = useAppDispatch();
-  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, user, isLoading } = useSelector((state: RootState) => state.auth);
   const [isNavigationReady, setIsNavigationReady] = useState(false);
   const [hasCheckedProfile, setHasCheckedProfile] = useState(false);
 
@@ -119,6 +120,13 @@ function RootLayoutNav() {
             router.replace('/profile/edit?mandatory=true');
             return;
           }
+
+          // NEW: If profile is complete but we are still on the mandatory edit page, go home
+          if (!isIncomplete && isInsideProfileGroup && params.mandatory === 'true') {
+            console.log('✅ Profile complete, exiting mandatory edit mode');
+            router.replace('/(tabs)');
+            return;
+          }
         }
 
         // Default: If in auth group, go to tabs
@@ -129,7 +137,7 @@ function RootLayoutNav() {
     };
 
     runNavigationLogic();
-  }, [isAuthenticated, user, user?.electricianProfile, segments, isNavigationReady, router, checkIsProfileIncomplete]);
+  }, [isAuthenticated, user, user?.electricianProfile, segments, isNavigationReady, router, checkIsProfileIncomplete, params.mandatory]);
 
   // Fetch initial notification count and SYNC USER STATUS on login/app start
   useEffect(() => {
@@ -191,294 +199,77 @@ function RootLayoutNav() {
 
     requestNotificationPermission();
 
-    // Foreground Push Notification Listener
-    let pushSubscription: any;
-
-    // Using dynamic import for notifications
-    const setupNotifications = async () => {
-      try {
-        const { Platform } = await import('react-native');
-        const Constants = (await import('expo-constants')).default;
-
-        // Skip if Expo Go on Android
-        if (Constants.appOwnership === 'expo' && Platform.OS === 'android') {
-          return null;
-        }
-
-        const Notifications = await import('expo-notifications');
-        return Notifications.addNotificationReceivedListener(notification => {
-          console.log('📬 Background/Push Notification received in foreground:', notification);
-        });
-      } catch (err) {
-        console.warn('Push Notifications listener setup failed:', err);
-        return null;
-      }
-    };
-
-    setupNotifications().then(sub => {
-      if (sub) pushSubscription = sub;
-    });
-
-    const unsubscribe = socketService.onNotification((data: any) => {
-      console.log('🔔 Global Notification received:', data);
-
-      // Add to Redux store for the notification center
-      dispatch(addNotification({
-        id: data.id || `notif-${Date.now()}`,
-        type: data.type,
-        title: data.title || (data.type === 'new_job_available' ? 'Yeni İş İlanı!' : 'Bildirim'),
-        message: data.message || `${data.locationPreview || ''} yeni bir ilan açıldı`,
-        isRead: false,
-        relatedId: data.jobId || data.conversationId,
-        createdAt: new Date().toISOString()
-      }));
-
-      if (data.type === 'new_job_available') {
-        showAlert(
-          '🔔 Yeni İş İlanı!',
-          `${data.locationPreview} bölgesinde yeni bir ${data.category} ilanı açıldı: "${data.title}"`,
-          'info',
-          [
-            { text: 'Kapat', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },
-            {
-              text: 'Detayları Gör',
-              variant: 'primary',
-              onPress: () => {
-                setAlertConfig(prev => ({ ...prev, visible: false }));
-                router.push(`/jobs/${data.jobId}`);
-              }
-            }
-          ]
-        );
-      } else if (data.type === 'new_message' && segments[0] !== 'messages') {
-        // Only show if NOT already in chat
-        showAlert(
-          '💬 Yeni Mesaj',
-          `${data.senderName}: ${data.preview}`,
-          'info',
-          [
-            { text: 'Kapat', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },
-            {
-              text: 'Cevapla',
-              variant: 'primary',
-              onPress: () => {
-                setAlertConfig(prev => ({ ...prev, visible: false }));
-                router.push(`/messages/${data.conversationId}`);
-              }
-            }
-          ]
-        );
-      } else if (data.type === 'JOB_CANCELLED') {
-        // 💰 Kredi iadesi yapılmış olabilir, profili güncelle
-        dispatch(getMe() as any);
-
-        showAlert(
-          '🚫 İlan İptal Edildi',
-          data.body || data.message || 'Teklif verdiğiniz bir ilan iptal edildi. Krediniz iade edilmiştir.',
-          'warning',
-          [
-            { text: 'Tamam', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }
-          ]
-        );
-      } else if (data.type === 'JOB_COMPLETED') {
-        // İş bittiğinde de profil (puan vs) güncellensin
-        dispatch(getMe() as any);
-
-        showAlert(
-          '🎉 Tebrikler!',
-          data.body || 'İş tamamlandı ve onaylandı!',
-          'success',
-          [
-            { text: 'Harika!', variant: 'primary', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }
-          ]
-        );
-      }
-    });
-
-    // Bid notification listener - for citizens to see new bids
-    const unsubscribeBids = socketService.onBidNotification((data: any) => {
-      console.log('📢 Bid Notification received:', data);
-
+    // Listen for new notifications via socket
+    const unsubscribe = socketService.onNotification((notification) => {
       // Add to Redux store
-      dispatch(addNotification({
-        id: data.id || `bid-notif-${Date.now()}`,
-        type: data.type,
-        title: data.type === 'bid_received' ? 'Yeni Teklif!' : (data.type === 'bid_accepted' ? 'Teklif Kabul Edildi!' : 'Teklif Reddedildi'),
-        message: data.message || (data.type === 'bid_received' ? `"${data.jobTitle}" ilanınıza teklif verildi.` : `"${data.jobTitle}" ilanındaki teklifiniz güncellendi.`),
-        isRead: false,
-        relatedId: data.jobPostId || data.jobId,
-        createdAt: new Date().toISOString()
-      }));
+      dispatch(addNotification(notification));
 
-      if (data.type === 'bid_received') {
-        showAlert(
-          '💰 Yeni Teklif Aldınız!',
-          `"${data.jobTitle}" ilanınıza ${data.electricianName} tarafından ${data.amount}₺ teklif verildi.`,
-          'info',
-          [
-            { text: 'Kapat', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },
-            {
-              text: 'Teklifleri Gör',
-              variant: 'primary',
-              onPress: () => {
-                setAlertConfig(prev => ({ ...prev, visible: false }));
-                router.push(`/jobs/${data.jobPostId}`);
+      // Show in-app alert if appropriate
+      showAlert(
+        notification.title,
+        notification.message,
+        'info',
+        [
+          {
+            text: 'Görüntüle',
+            variant: 'primary',
+            onPress: () => {
+              setAlertConfig(prev => ({ ...prev, visible: false }));
+              // Navigate to notifications tab or specific job
+              if (notification.data?.jobId) {
+                router.push(`/jobs/${notification.data.jobId}`);
+              } else {
+                router.push('/(tabs)/notifications');
               }
             }
-          ]
-        );
-      } else if (data.type === 'bid_accepted') {
-        showAlert(
-          '✅ Teklifiniz Kabul Edildi!',
-          data.message || `"${data.jobTitle}" için teklifiniz kabul edildi.`,
-          'success',
-          [
-            {
-              text: 'Harika!', variant: 'primary', onPress: () => {
-                setAlertConfig(prev => ({ ...prev, visible: false }));
-                router.push(`/jobs/${data.jobPostId}`);
-              }
-            }
-          ]
-        );
-      } else if (data.type === 'bid_rejected') {
-        showAlert(
-          '❌ Teklifiniz Reddedildi',
-          data.message || `"${data.jobTitle}" için teklifiniz reddedildi.`,
-          'error',
-          [
-            { text: 'Tamam', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }
-          ]
-        );
-      }
-    });
-
-    const unsubscribeStatus = socketService.onJobStatusUpdate((data: any) => {
-      console.log('🔄 Job Status Notification received:', data);
-      dispatch(addNotification({
-        id: data.id || `status-notif-${Date.now()}`,
-        type: data.type,
-        title: data.title,
-        message: data.message,
-        isRead: false,
-        relatedId: data.jobId,
-        createdAt: new Date().toISOString()
-      }));
-
-      showAlert(data.title, data.message, 'info', [
-        { text: 'Tamam', variant: 'primary', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }
-      ]);
-    });
-
-    const unsubscribeReview = socketService.onNewReview((data: any) => {
-      console.log('⭐ Review Notification received:', data);
-      dispatch(addNotification({
-        id: data.id || `review-notif-${Date.now()}`,
-        type: data.type,
-        title: data.title,
-        message: data.message,
-        isRead: false,
-        relatedId: data.jobId,
-        createdAt: new Date().toISOString()
-      }));
-
-      showAlert(data.title, data.message, 'success', [
-        { text: 'Harika!', variant: 'primary', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }
-      ]);
-    });
-
-    const unsubscribeMessage = socketService.onMessage((data: any) => {
-      console.log('💬 Global Message received:', data);
-      // Only show notification if NOT on the messages tab
-      if (segments[0] !== 'messages') {
-        dispatch(addNotification({
-          id: data.message?.id || `msg-${Date.now()}`,
-          type: 'new_message',
-          title: '💬 Yeni Mesaj',
-          message: `${data.senderName || 'Bir kullanıcı'}: ${data.preview || 'Yeni bir mesajınız var'}`,
-          isRead: false,
-          relatedId: data.conversationId,
-          createdAt: new Date().toISOString()
-        }));
-
-        showAlert(
-          '💬 Yeni Mesaj',
-          `${data.senderName || 'Bir kullanıcı'}: ${data.preview || 'Yeni bir mesajınız var'}`,
-          'info',
-          [
-            { text: 'Kapat', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },
-            {
-              text: 'Cevapla',
-              variant: 'primary',
-              onPress: () => {
-                setAlertConfig(prev => ({ ...prev, visible: false }));
-                router.push(`/messages/${data.conversationId}`);
-              }
-            }
-          ]
-        );
-      }
+          },
+          { text: 'Kapat', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }
+        ]
+      );
     });
 
     return () => {
       unsubscribe();
-      unsubscribeBids();
-      unsubscribeStatus();
-      unsubscribeReview();
-      unsubscribeMessage();
     };
-  }, [isAuthenticated, segments]);
+  }, [isAuthenticated, dispatch, router]);
 
-  return (
-    <>
-      <Slot />
-      <PremiumAlert
-        visible={alertConfig.visible}
-        title={alertConfig.title}
-        message={alertConfig.message}
-        type={alertConfig.type}
-        buttons={alertConfig.buttons}
-        onClose={() => setAlertConfig((prev: any) => ({ ...prev, visible: false }))}
-      />
-    </>
-  );
-}
+  const [fontsLoaded] = useFonts(fontFiles);
 
-// Global Error Handler removed due to incompatibility
-// const setJSExceptionHandler...
-
-export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts(fontFiles);
-  const [lastError, setLastError] = useState<string | null>(null);
-
-  const onLayoutRootView = useCallback(async () => {
-    if (fontsLoaded || fontError) {
-      await SplashScreen.hideAsync();
+  useEffect(() => {
+    if (fontsLoaded && isNavigationReady) {
+      SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontError]);
-
-  // Catch component errors
-  if (fontError) {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#0f172a', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-        <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>Yazı Tipi Yükleme Hatası</Text>
-        <Text style={{ color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginTop: 10 }}>{fontError.message}</Text>
-      </View>
-    );
-  }
+  }, [fontsLoaded, isNavigationReady]);
 
   if (!fontsLoaded) {
     return null;
   }
 
   return (
-    <SafeAreaProvider onLayout={onLayoutRootView}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <Provider store={store}>
-          <StatusBar style="light" />
-          <RootLayoutNav />
-        </Provider>
-      </GestureHandlerRootView>
-    </SafeAreaProvider>
+    <Provider store={store}>
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <StatusBar style="dark" />
+          <Slot />
+
+          <PremiumAlert
+            visible={alertConfig.visible}
+            title={alertConfig.title}
+            message={alertConfig.message}
+            onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+            type={alertConfig.type}
+            buttons={alertConfig.buttons}
+          />
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
+    </Provider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <Provider store={store}>
+      <RootLayoutNav />
+    </Provider>
   );
 }

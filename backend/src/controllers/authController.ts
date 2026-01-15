@@ -78,6 +78,7 @@ export const registerController = async (
           passwordHash: password, // Store password in mock mode
           isVerified: userType === 'ELECTRICIAN' && !!phone,
           serviceCategory: userType === 'ELECTRICIAN' ? (serviceCategory || 'elektrik') : undefined, // Save profession
+          userType: userType, // Explicitly save userType
         });
 
         const tokens = generateTokens({ id: mockUserId, email, userType });
@@ -167,6 +168,16 @@ export const loginController = async (
 
         // IMPORTANT: Use getFullUser to get complete user data INCLUDING electricianProfile
         const fullUser = mockStorage.getFullUser(mockUserId, mockUserType);
+
+        // DEBUG: Log what we're sending back
+        console.log('📦 LOGIN RESPONSE DEBUG:', {
+          userId: mockUserId,
+          userType: mockUserType,
+          hasElectricianProfile: !!fullUser.electricianProfile,
+          experienceYears: fullUser.electricianProfile?.experienceYears,
+          specialtiesCount: fullUser.electricianProfile?.specialties?.length,
+          specialties: fullUser.electricianProfile?.specialties,
+        });
 
         return res.json({
           success: true,

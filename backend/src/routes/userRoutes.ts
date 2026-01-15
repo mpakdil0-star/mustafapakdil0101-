@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { uploadAvatar, uploadAvatarBase64, removeAvatar, getElectricianStats, changePassword, updateProfile, getVerificationStatus, submitVerification, updatePushToken, getElectricians, getElectricianById, getAllVerifications, processVerification, deleteAccount } from '../controllers/userController';
+import { uploadAvatar, uploadAvatarBase64, removeAvatar, getElectricianStats, changePassword, updateProfile, getVerificationStatus, submitVerification, updatePushToken, getElectricians, getElectricianById, deleteAccount } from '../controllers/userController';
 import { meController } from '../controllers/authController';
 import { getJobHistory } from '../controllers/historyController';
 import { getNotificationPreferences, updateNotificationPreferences } from '../controllers/notificationPreferencesController';
@@ -66,8 +66,7 @@ router.get('/electricians', optionalAuthenticate, getElectricians);
 router.get('/electricians/:id', optionalAuthenticate, getElectricianById);
 
 // Admin verification management
-router.get('/admin/verifications', authenticate, authorize('ADMIN'), getAllVerifications);
-router.post('/admin/verifications/process', authenticate, authorize('ADMIN'), processVerification);
+
 
 export default router;
 
