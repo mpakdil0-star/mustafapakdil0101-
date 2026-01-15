@@ -14,3 +14,7 @@ node_modules/
 
 # Logs
 *.log
+
+# Prevent root-level Expo config (monorepo conflict prevention)
+/app.json
+/eas.json
