@@ -116,9 +116,17 @@ export const userService = {
         // Add nested electrician profile update if needed
         if (currentUser.userType === 'ELECTRICIAN' && Object.keys(profileData).length > 0) {
             updateData.electricianProfile = {
-                update: {
-                    ...profileData,
-                    updatedAt: new Date()
+                upsert: {
+                    create: {
+                        ...profileData,
+                        isAvailable: profileData.isAvailable ?? true,
+                        experienceYears: Number(profileData.experienceYears) || 0,
+                        specialties: profileData.specialties || []
+                    },
+                    update: {
+                        ...profileData,
+                        updatedAt: new Date()
+                    }
                 }
             };
         }

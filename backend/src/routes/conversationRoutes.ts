@@ -2,14 +2,20 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate } from '../middleware/auth';
 import conversationService from '../services/conversationService';
 import messageService from '../services/messageService';
-import { isDatabaseAvailable } from '../config/database';
+import prisma, { isDatabaseAvailable } from '../config/database';
 import { mockStore } from '../utils/mockStore';
 
 // Mock veriler için yardımcı fonksiyonlar
 // Mock veriler için yardımcı fonksiyonlar
-const getMockConversations = (userId: string): any[] => [];
+const getMockConversations = (userId: string): any[] => {
+  const { mockStore: store } = require('../utils/mockStore');
+  return store.getConversationsByUserId(userId);
+};
 
-const getMockMessages = (convId: string, userId: string): any[] => [];
+const getMockMessages = (convId: string, userId: string): any[] => {
+  const { mockStore: store } = require('../utils/mockStore');
+  return store.getMessages(convId);
+};
 
 const router = Router();
 
@@ -148,10 +154,37 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
 
     try {
       if (!isDatabaseAvailable || req.user.id.startsWith('mock-') || recipientId.startsWith('mock-')) {
-        const mockConv = getMockConversations(req.user.id)[0];
+        const { mockStore } = require('../utils/mockStore');
+        const userId = req.user.id;
+
+        // Find existing conversation
+        let conversation = mockStore.findConversationByParticipants(userId, recipientId, jobPostId);
+
+        if (!conversation) {
+          // Create new with consistent ID format
+          const participants = [userId, recipientId].sort();
+          const p1 = participants[0];
+          const p2 = participants[1];
+          const conversationId = jobPostId
+            ? `mock-conv-${jobPostId}-${p1}-${p2}`
+            : `mock-conv-${p1}-${p2}`;
+
+          conversation = {
+            id: conversationId,
+            participant1Id: userId,
+            participant2Id: recipientId,
+            jobPostId: jobPostId || null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            lastMessage: null,
+            lastMessageAt: null,
+          };
+          mockStore.saveConversation(conversation);
+        }
+
         return res.status(201).json({
           success: true,
-          data: { conversation: mockConv },
+          data: { conversation },
         });
       }
 
@@ -185,6 +218,79 @@ router.post('/', async (req: AuthRequest, res: Response, next: NextFunction) => 
   }
 });
 
+// GET /conversations/find - Katılımcılara göre konuşma bul
+router.get('/find', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: { message: 'Unauthorized' },
+      });
+    }
+
+    const { recipientId, electricianId, jobPostId, jobId } = req.query;
+    const targetUserId = (recipientId || electricianId) as string;
+    const targetJobId = (jobPostId || jobId) as string;
+
+    if (!targetUserId) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Recipient ID required' },
+      });
+    }
+
+    try {
+      if (!isDatabaseAvailable || req.user.id.startsWith('mock-') || targetUserId.startsWith('mock-')) {
+        const { mockStore } = require('../utils/mockStore');
+        const userId = req.user.id;
+
+        // Find existing conversation in mock store
+        const conversation = mockStore.findConversationByParticipants(userId, targetUserId, targetJobId);
+
+        if (!conversation) {
+          return res.json({
+            success: true,
+            data: { conversation: null },
+          });
+        }
+
+        return res.json({
+          success: true,
+          data: { conversation },
+        });
+      }
+
+      // Real DB lookup
+      // Note: We might need to implement findConversation in conversationService if not exists
+      // For now, we'll iterate or use getOrCreate logic but purely for finding
+      // Efficient way: use existing getOrCreate but only if it doesn't create? 
+      // Start with service check.
+      const conversation = await conversationService.findConversation(req.user.id, targetUserId, targetJobId);
+
+      if (!conversation) {
+        return res.json({
+          success: true,
+          data: { conversation: null },
+        });
+      }
+
+      res.json({
+        success: true,
+        data: { conversation },
+      });
+
+    } catch (dbError: any) {
+      console.warn('Database error in find, returning 404:', dbError.message);
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Conversation not found (DB Error)' },
+      });
+    }
+  } catch (error: any) {
+    next(error);
+  }
+});
+
 // GET /conversations/:id - Tek bir konuşmayı getir
 router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -199,20 +305,38 @@ router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
 
     try {
       if (!isDatabaseAvailable || req.user.id.startsWith('mock-') || id.startsWith('mock-')) {
-        const mockConvs = getMockConversations(req.user.id);
-        // Find existing or create a dynamic one
-        let conv = mockConvs.find(c => c.id === id);
+        const { mockStore } = require('../utils/mockStore');
+        const { mockStorage: userStorage } = require('../utils/mockStorage');
+
+        // 1. Check for existence or reconstruct if it's a valid pattern
+        const conv = mockStore.getOrReconstruct(id, req.user.id);
 
         if (!conv) {
-          const baseConv = mockConvs[0] || { id: 'fallback', otherUser: { fullName: 'Kullanıcı' } };
-          const newConv = JSON.parse(JSON.stringify(baseConv));
-          newConv.id = id;
-          conv = newConv;
+          return res.status(404).json({
+            success: false,
+            error: { message: 'Konuşma bulunamadı' }
+          });
         }
+
+        // 2. Security Check (Lenient in mock mode)
+        if (!mockStore.isParticipant(id, req.user.id)) {
+          return res.status(403).json({
+            success: false,
+            error: { message: 'Bu konuşmaya erişim izniniz yok' }
+          });
+        }
+
+        const otherUserId = conv.participant1Id === req.user.id ? conv.participant2Id : conv.participant1Id;
+        const otherUser = userStorage.get(otherUserId);
 
         return res.json({
           success: true,
-          data: { conversation: conv! },
+          data: {
+            conversation: {
+              ...conv,
+              otherUser
+            }
+          },
         });
       }
 
@@ -260,8 +384,26 @@ router.get('/:id/messages', async (req: AuthRequest, res: Response, next: NextFu
 
     try {
       if (!isDatabaseAvailable || req.user.id.startsWith('mock-') || id.startsWith('mock-')) {
-        //  Get messages from mockStore first
         const { mockStore: store } = require('../utils/mockStore');
+
+        // Check for existence or reconstruct if valid pattern
+        const conv = store.getOrReconstruct(id, req.user.id);
+
+        if (!conv) {
+          return res.status(404).json({
+            success: false,
+            error: { message: 'Konuşma bulunamadı' }
+          });
+        }
+
+        // Security Check
+        if (!store.isParticipant(id, req.user.id)) {
+          return res.status(403).json({
+            success: false,
+            error: { message: 'Bu mesajlara erişim izniniz yok' }
+          });
+        }
+
         const storedMessages = store.getMessages(id);
 
         if (storedMessages.length > 0) {
@@ -395,7 +537,7 @@ router.post('/:id/messages', async (req: AuthRequest, res: Response, next: NextF
         };
 
         // Find conversation to get real receiverId
-        const conversation = mockStore.getConversation(id);
+        const conversation = mockStore.getOrReconstruct(id, req.user.id);
         if (conversation) {
           const receiverId = conversation.participant1Id === req.user.id ? conversation.participant2Id : conversation.participant1Id;
           messageData.receiverId = receiverId;
@@ -472,6 +614,11 @@ router.put('/:id/read', async (req: AuthRequest, res: Response, next: NextFuncti
 
       if (!isDatabaseAvailable || req.user.id.startsWith('mock-') || id.startsWith('mock-')) {
         mockStore.clearUnreadCount(id);
+
+        // Bildirimleri de temizle
+        const { clearMockNotificationsByRelatedId } = require('./notificationRoutes');
+        clearMockNotificationsByRelatedId(req.user.id, 'new_message', id);
+
         return res.json({
           success: true,
           message: 'Mesajlar okundu olarak işaretlendi (Mock)',
@@ -479,6 +626,17 @@ router.put('/:id/read', async (req: AuthRequest, res: Response, next: NextFuncti
       }
 
       await messageService.markAsRead(id, req.user.id);
+
+      // Bildirimleri de temizle
+      await prisma.notification.updateMany({
+        where: {
+          userId: req.user.id,
+          relatedId: id,
+          type: 'new_message',
+          isRead: false
+        },
+        data: { isRead: true }
+      });
 
       res.json({
         success: true,

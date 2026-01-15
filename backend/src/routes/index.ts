@@ -14,6 +14,12 @@ import adminRoutes from './adminRoutes';
 
 const router = Router();
 
+// Debugging: Log all incoming requests to the API router
+router.use((req, res, next) => {
+  console.log(`📡 [API ROUTER] ${req.method} ${req.url}`);
+  next();
+});
+
 // Health check
 router.get('/', (req, res) => {
   res.json({

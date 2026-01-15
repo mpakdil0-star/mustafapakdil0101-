@@ -33,9 +33,24 @@ export const notificationService = {
     return response.data.data;
   },
 
+  async getUnreadCount() {
+    const response = await apiClient.get(
+      `${API_ENDPOINTS.NOTIFICATIONS || '/notifications'}/unread-count`
+    );
+    return response.data.data.count;
+  },
+
   async markAllAsRead() {
     const response = await apiClient.put(
       `${API_ENDPOINTS.NOTIFICATIONS || '/notifications'}/read-all`
+    );
+    return response.data.data;
+  },
+
+  async markRelatedAsRead(type: string, relatedId: string) {
+    const response = await apiClient.put(
+      `${API_ENDPOINTS.NOTIFICATIONS || '/notifications'}/related-read`,
+      { type, relatedId }
     );
     return response.data.data;
   },

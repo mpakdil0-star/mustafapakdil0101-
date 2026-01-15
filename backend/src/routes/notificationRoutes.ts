@@ -16,6 +16,16 @@ export const addMockNotification = (userId: string, notification: any) => {
   console.log(`✅ Mock notification added for user ${userId}:`, notification.title);
 };
 
+export const clearMockNotificationsByRelatedId = (userId: string, type: string, relatedId: string) => {
+  const userNotifications = mockNotifications.get(userId) || [];
+  userNotifications.forEach(n => {
+    if (n.type === type && n.relatedId === relatedId) {
+      n.isRead = true;
+    }
+  });
+  console.log(`🧹 Mock notifications cleared for user ${userId} (type: ${type}, relatedId: ${relatedId})`);
+};
+
 // Mock bildirim verileri üreten yardımcı fonksiyon
 const getMockNotifications = (userId: string, userType: string = 'CITIZEN'): any[] => {
   // Return stored notifications for this user
@@ -126,6 +136,49 @@ router.get('/unread-count', async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to fetch unread count',
+    });
+  }
+});
+
+// Mark notifications for a specific related item as read (e.g. all messages for a conversation)
+router.put('/related-read', async (req, res) => {
+  try {
+    const { type, relatedId } = req.body;
+    const userId = (req as any).user.id;
+
+    if (!type || !relatedId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Type and relatedId are required'
+      });
+    }
+
+    if (!isDatabaseAvailable || userId.startsWith('mock-')) {
+      clearMockNotificationsByRelatedId(userId, type, relatedId);
+      return res.json({
+        success: true,
+        data: { message: 'Related notifications marked as read (Mock)' },
+      });
+    }
+
+    await prisma.notification.updateMany({
+      where: {
+        userId,
+        type,
+        relatedId,
+        isRead: false
+      },
+      data: { isRead: true }
+    });
+
+    res.json({
+      success: true,
+      data: { message: 'Related notifications marked as read' },
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to mark related notifications as read',
     });
   }
 });

@@ -37,7 +37,7 @@ const TUNNEL_URL = 'https://leptospiral-palaeontologically-hilton.ngrok-free.dev
 // Environment-based configuration
 const getApiUrl = () => {
   // Use TUNNEL for remote access (works from any network)
-  const baseUrl = `${TUNNEL_URL}/api/${API_VERSION}`;
+  const baseUrl = `${TUNNEL_URL}/api/${API_VERSION}/`;
   console.log('🔌 Backend URL (Ngrok Tunnel):', baseUrl);
   return process.env.EXPO_PUBLIC_API_URL || baseUrl;
 };
@@ -50,62 +50,62 @@ export const WS_BASE_URL = TUNNEL_URL;
 // API Endpoints
 export const API_ENDPOINTS = {
   // Auth
-  LOGIN: '/auth/login',
-  REGISTER: '/auth/register',
-  LOGOUT: '/auth/logout',
-  REFRESH_TOKEN: '/auth/refresh-token',
-  VERIFY_EMAIL: '/auth/verify-email',
+  LOGIN: 'auth/login',
+  REGISTER: 'auth/register',
+  LOGOUT: 'auth/logout',
+  REFRESH_TOKEN: 'auth/refresh-token',
+  VERIFY_EMAIL: 'auth/verify-email',
 
   // User
-  ME: '/users/me',
-  USER_PROFILE: '/users/profile',
-  UPDATE_PROFILE: '/users/profile',
-  CHANGE_PASSWORD: '/users/change-password',
-  UPLOAD_AVATAR: '/users/avatar',
-  UPLOAD_AVATAR_BASE64: '/users/avatar/base64',
+  ME: 'users/me',
+  USER_PROFILE: 'users/profile',
+  UPDATE_PROFILE: 'users/profile',
+  CHANGE_PASSWORD: 'users/change-password',
+  UPLOAD_AVATAR: 'users/avatar',
+  UPLOAD_AVATAR_BASE64: 'users/avatar/base64',
 
   // Jobs
-  JOBS: '/jobs',
-  JOB_DETAIL: (id: string) => `/jobs/${id}`,
-  CREATE_JOB: '/jobs',
-  MY_JOBS: '/jobs/my-jobs',
+  JOBS: 'jobs',
+  JOB_DETAIL: (id: string) => `jobs/${id}`,
+  CREATE_JOB: 'jobs',
+  MY_JOBS: 'jobs/my-jobs',
 
   // Bids
-  BIDS: '/bids',
-  BID_DETAIL: (id: string) => `/bids/${id}`,
-  CREATE_BID: '/bids',
-  MY_BIDS: '/bids/my-bids',
-  JOB_BIDS: (jobId: string) => `/bids/job/${jobId}`,
-  ACCEPT_BID: (bidId: string) => `/bids/${bidId}/accept`,
-  REJECT_BID: (bidId: string) => `/bids/${bidId}/reject`,
-  WITHDRAW_BID: (bidId: string) => `/bids/${bidId}/withdraw`,
+  BIDS: 'bids',
+  BID_DETAIL: (id: string) => `bids/${id}`,
+  CREATE_BID: 'bids',
+  MY_BIDS: 'bids/my-bids',
+  JOB_BIDS: (jobId: string) => `bids/job/${jobId}`,
+  ACCEPT_BID: (bidId: string) => `bids/${bidId}/accept`,
+  REJECT_BID: (bidId: string) => `bids/${bidId}/reject`,
+  WITHDRAW_BID: (bidId: string) => `bids/${bidId}/withdraw`,
 
   // Messages
-  CONVERSATIONS: '/conversations',
-  MESSAGES: (conversationId: string) => `/conversations/${conversationId}/messages`,
-  SEND_MESSAGE: (conversationId: string) => `/conversations/${conversationId}/messages`,
+  CONVERSATIONS: 'conversations',
+  MESSAGES: (conversationId: string) => `conversations/${conversationId}/messages`,
+  SEND_MESSAGE: (conversationId: string) => `conversations/${conversationId}/messages`,
 
   // Notifications
-  NOTIFICATIONS: '/notifications',
+  NOTIFICATIONS: 'notifications',
 
   // Locations
-  LOCATIONS: '/locations',
+  LOCATIONS: 'locations',
 
   // Favorites
-  FAVORITES: '/favorites',
-  ADD_FAVORITE: (electricianId: string) => `/favorites/${electricianId}`,
-  REMOVE_FAVORITE: (electricianId: string) => `/favorites/${electricianId}`,
-  CHECK_FAVORITE: (electricianId: string) => `/favorites/${electricianId}/check`,
+  FAVORITES: 'favorites',
+  ADD_FAVORITE: (electricianId: string) => `favorites/${electricianId}`,
+  REMOVE_FAVORITE: (electricianId: string) => `favorites/${electricianId}`,
+  CHECK_FAVORITE: (electricianId: string) => `favorites/${electricianId}/check`,
 
   // Reviews
-  REVIEWS: '/reviews',
-  ELECTRICIAN_REVIEWS: (electricianId: string) => `/reviews/electrician/${electricianId}`,
-  SUBMIT_REVIEW: '/reviews',
+  REVIEWS: 'reviews',
+  ELECTRICIAN_REVIEWS: (electricianId: string) => `reviews/electrician/${electricianId}`,
+  SUBMIT_REVIEW: 'reviews',
 
   // Payments & Credits
-  CREDIT_PACKAGES: '/payments/packages',
-  PURCHASE_CREDITS: '/payments/purchase',
-  TRANSACTION_HISTORY: '/payments/transactions',
+  CREDIT_PACKAGES: 'payments/packages',
+  PURCHASE_CREDITS: 'payments/purchase',
+  TRANSACTION_HISTORY: 'payments/transactions',
 };
 
 // Helper function to get full file URL

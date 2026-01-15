@@ -217,6 +217,60 @@ export const conversationService = {
     },
 
     /**
+     * Katılımcılara göre konuşma bul
+     */
+    async findConversation(user1Id: string, user2Id: string, jobPostId?: string) {
+        if (!isDatabaseAvailable) {
+            throw new Error('DATABASE_NOT_CONNECTED');
+        }
+
+        const conversation = await prisma.conversation.findFirst({
+            where: {
+                OR: [
+                    { participant1Id: user1Id, participant2Id: user2Id },
+                    { participant1Id: user2Id, participant2Id: user1Id },
+                ],
+                ...(jobPostId ? { jobPostId } : {}),
+            },
+            include: {
+                participant1: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                        profileImageUrl: true,
+                        userType: true,
+                    },
+                },
+                participant2: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                        profileImageUrl: true,
+                        userType: true,
+                    },
+                },
+                jobPost: {
+                    select: {
+                        id: true,
+                        title: true,
+                    },
+                },
+            },
+        });
+
+        if (!conversation) return null;
+
+        const otherUser = conversation.participant1Id === user1Id
+            ? conversation.participant2
+            : conversation.participant1;
+
+        return {
+            ...conversation,
+            otherUser,
+        };
+    },
+
+    /**
      * Konuşma mesajlarını getir
      */
     async getMessages(conversationId: string, userId: string, page = 1, limit = 50) {

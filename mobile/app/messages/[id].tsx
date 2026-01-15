@@ -14,7 +14,8 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppSelector } from '../../hooks/redux';
+import { useAppSelector, useAppDispatch } from '../../hooks/redux';
+import { fetchUnreadCount, markTypeAsRead, markRelatedNotificationsAsRead } from '../../store/slices/notificationSlice';
 import { colors as staticColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
@@ -51,6 +52,7 @@ interface OtherUser {
 export default function ChatScreen() {
     const { id: conversationId } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
+    const dispatch = useAppDispatch();
     const { user } = useAppSelector((state) => state.auth);
     const colors = useAppColors();
     const flatListRef = useRef<FlatList>(null);
@@ -98,6 +100,10 @@ export default function ChatScreen() {
 
             // Mesajları okundu olarak işaretle
             socketService.markAsRead(conversationId);
+            const messageTypes = ['new_message', 'MESSAGE_RECEIVED'];
+            dispatch(markTypeAsRead({ type: messageTypes, relatedId: conversationId }));
+            dispatch(markRelatedNotificationsAsRead({ type: 'new_message', relatedId: conversationId }));
+            dispatch(markRelatedNotificationsAsRead({ type: 'MESSAGE_RECEIVED', relatedId: conversationId }));
         } catch (error: any) {
             console.error('Error loading conversation:', error);
         } finally {
@@ -145,6 +151,10 @@ export default function ChatScreen() {
 
                 // Mesajı okundu olarak işaretle
                 socketService.markAsRead(conversationId);
+                const messageTypes = ['new_message', 'MESSAGE_RECEIVED'];
+                dispatch(markTypeAsRead({ type: messageTypes, relatedId: conversationId }));
+                dispatch(markRelatedNotificationsAsRead({ type: 'new_message', relatedId: conversationId }));
+                dispatch(markRelatedNotificationsAsRead({ type: 'MESSAGE_RECEIVED', relatedId: conversationId }));
             }
         });
 

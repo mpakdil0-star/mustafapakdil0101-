@@ -17,28 +17,21 @@ export default function TabsLayout() {
   const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
   const isGuest = !user;
 
-  const { notifications } = useAppSelector((state) => state.notifications);
+  const { notifications, unreadCount } = useAppSelector((state) => state.notifications);
 
   // Calculate unread messages from Redux store for real-time updates
-  const unreadMessagesCount = notifications.filter(
-    (n) => n.type === 'new_message' && !n.isRead
-  ).length;
+  // Total unread notifications (includes messages and others)
+  const totalUnreadCount = unreadCount;
 
   // Initial fetch for unread messages (to sync with server on mount)
+  const dispatch = require('../../hooks/redux').useAppDispatch();
+  const { fetchNotifications } = require('../../store/slices/notificationSlice');
+
   useEffect(() => {
-    const fetchUnreadCount = async () => {
-      if (!isAuthenticated) return;
-      try {
-        // This will update the notification store if we dispatch it
-        const { fetchNotifications } = require('../../store/slices/notificationSlice');
-        const { useAppDispatch } = require('../../hooks/redux');
-        // But TabsLayout is a component, we can use dispatch here if we get it
-      } catch (error) {
-        console.log('Could not sync unread count');
-      }
-    };
-    fetchUnreadCount();
-  }, [isAuthenticated, notifications.length]);
+    if (isAuthenticated) {
+      dispatch(fetchNotifications());
+    }
+  }, [isAuthenticated, dispatch]);
 
   const renderHomeIcon = ({ focused }: { focused: boolean }) => (
     <Ionicons
@@ -63,10 +56,10 @@ export default function TabsLayout() {
         size={22}
         color={focused ? colors.primary : colors.textLight}
       />
-      {unreadMessagesCount > 0 && (
+      {totalUnreadCount > 0 && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>
-            {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+            {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
           </Text>
         </View>
       )}

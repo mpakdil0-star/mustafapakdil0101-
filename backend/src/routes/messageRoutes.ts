@@ -16,11 +16,18 @@ router.post('/', async (req, res) => {
 
     // Find or create conversation between sender and receiver
     const { mockStore } = require('../utils/mockStore');
-    let conversation = mockStore.findConversationByParticipants(userId, receiverId);
+    let conversation = mockStore.findConversationByParticipants(userId, receiverId, jobId);
 
     if (!conversation) {
       // Create new conversation
-      const conversationId = jobId ? `mock-conv-${jobId}` : `mock-conv-${userId}-${receiverId}`;
+      // Ensure IDs are consistent regardless of who starts the conversation
+      const participants = [userId, receiverId].sort();
+      const p1 = participants[0];
+      const p2 = participants[1];
+
+      const conversationId = jobId
+        ? `mock-conv-${jobId}-${p1}-${p2}`
+        : `mock-conv-${p1}-${p2}`;
       conversation = {
         id: conversationId,
         participant1Id: userId,

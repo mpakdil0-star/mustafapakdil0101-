@@ -72,10 +72,17 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
         // Konuşmaya katıl
         socket.on('join_conversation', async (conversationId: string) => {
             try {
-                // Mock veya veritabanı yoksa direkt katıl
+                // Mock veya veritabanı yoksa
                 if (!isDatabaseAvailable || userId.startsWith('mock-') || conversationId.startsWith('mock-')) {
-                    socket.join(`conversation:${conversationId}`);
-                    console.log(`📝 User ${userId} joined conversation ${conversationId} (Mock/No DB)`);
+                    const { mockStore } = require('../utils/mockStore');
+
+                    if (mockStore.isParticipant(conversationId, userId)) {
+                        socket.join(`conversation:${conversationId}`);
+                        console.log(`📝 User ${userId} joined conversation ${conversationId} (Mock/No DB)`);
+                    } else {
+                        console.warn(`🔒 Access denied: User ${userId} tried to join ${conversationId}`);
+                        socket.emit('error', { message: 'Access denied to this conversation' });
+                    }
                     return;
                 }
 
@@ -139,18 +146,37 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                         },
                     };
 
-                    // Find conversation to set correct receiverId
-                    const conversation = mockStore.getConversation(conversationId);
-                    if (conversation) {
-                        const receiverId = conversation.participant1Id === userId ? conversation.participant2Id : conversation.participant1Id;
-                        mockMessage.receiverId = receiverId;
-                    }
+                    // Determine receiverId (using robust detection from ID if memory is cleared)
+                    const receiverId = mockStore.getOtherParticipant(conversationId, userId);
+                    mockMessage.receiverId = receiverId;
 
                     // Save to mockStore
                     mockStore.saveMessage(mockMessage);
 
+                    // Add to mock notifications for persistence
+                    const { addMockNotification } = require('../routes/notificationRoutes');
+                    addMockNotification(mockMessage.receiverId, {
+                        id: `mock-notif-${Date.now()}`,
+                        userId: mockMessage.receiverId,
+                        type: 'new_message',
+                        title: '💬 Yeni Mesaj',
+                        message: `${senderUser?.fullName || 'Bir kullanıcı'}: ${content.substring(0, 50)}`,
+                        relatedType: 'CONVERSATION',
+                        relatedId: conversationId,
+                        isRead: false,
+                        createdAt: new Date().toISOString()
+                    });
+
                     io.to(`conversation:${conversationId}`).emit('new_message', {
                         message: mockMessage
+                    });
+
+                    // Send notification to force badge update if user is not in the room
+                    io.to(`user:${mockMessage.receiverId}`).emit('notification', {
+                        type: 'new_message',
+                        conversationId,
+                        senderName: senderUser?.fullName || 'Kullanıcı',
+                        preview: content.substring(0, 50),
                     });
 
                     console.log(`💬 Mock message sent & saved via socket in conversation ${conversationId}`);
@@ -237,6 +263,18 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                     preview: content.substring(0, 50),
                 });
 
+                // Bildirimi veritabanına kaydet (Kalıcı rozet için)
+                await prisma.notification.create({
+                    data: {
+                        userId: recipientId,
+                        type: 'new_message',
+                        title: '💬 Yeni Mesaj',
+                        message: `${message.sender.fullName}: ${content.substring(0, 50)}`,
+                        relatedType: 'CONVERSATION',
+                        relatedId: conversationId,
+                    }
+                });
+
                 console.log(`💬 Message sent in conversation ${conversationId}`);
             } catch (error) {
                 console.error('Error sending message:', error);
@@ -261,6 +299,10 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                 // Mock veya veritabanı yoksa direkt başarılı dön
                 if (!isDatabaseAvailable || userId.startsWith('mock-') || conversationId.startsWith('mock-')) {
                     mockStore.clearUnreadCount(conversationId);
+
+                    // Bildirimleri de temizle (Örn: rozet için)
+                    const { clearMockNotificationsByRelatedId } = require('../routes/notificationRoutes');
+                    clearMockNotificationsByRelatedId(userId, 'new_message', conversationId);
                     return;
                 }
 
@@ -300,6 +342,17 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                 await prisma.conversation.update({
                     where: { id: conversationId },
                     data: updateData,
+                });
+
+                // Rozeti temizlemek için ilgili bildirimleri de okundu yap
+                await prisma.notification.updateMany({
+                    where: {
+                        userId,
+                        relatedId: conversationId,
+                        type: 'new_message',
+                        isRead: false
+                    },
+                    data: { isRead: true }
                 });
 
                 // Karşı tarafa okundu bilgisi gönder

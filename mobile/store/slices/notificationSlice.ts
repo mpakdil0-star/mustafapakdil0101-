@@ -15,6 +15,18 @@ const initialState: NotificationState = {
   error: null,
 };
 
+export const fetchUnreadCount = createAsyncThunk(
+  'notifications/fetchUnreadCount',
+  async () => {
+    try {
+      return await notificationService.getUnreadCount();
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+      return 0;
+    }
+  }
+);
+
 export const fetchNotifications = createAsyncThunk(
   'notifications/fetchNotifications',
   async () => {
@@ -45,6 +57,14 @@ export const deleteNotification = createAsyncThunk(
   }
 );
 
+export const markRelatedNotificationsAsRead = createAsyncThunk(
+  'notifications/markRelatedAsRead',
+  async ({ type, relatedId }: { type: string; relatedId: string }) => {
+    await notificationService.markRelatedAsRead(type, relatedId);
+    return { type, relatedId };
+  }
+);
+
 const notificationSlice = createSlice({
   name: 'notifications',
   initialState,
@@ -60,6 +80,17 @@ const notificationSlice = createSlice({
     },
     incrementUnreadCount: (state) => {
       state.unreadCount += 1;
+    },
+    markTypeAsRead: (state, action: { payload: { type: string | string[]; relatedId?: string } }) => {
+      const { type, relatedId } = action.payload;
+      const types = Array.isArray(type) ? type : [type];
+
+      state.notifications.forEach(n => {
+        if (types.includes(n.type) && (!relatedId || n.relatedId === relatedId) && !n.isRead) {
+          n.isRead = true;
+          state.unreadCount = Math.max(0, state.unreadCount - 1);
+        }
+      });
     },
   },
   extraReducers: (builder) => {
@@ -106,11 +137,24 @@ const notificationSlice = createSlice({
           state.unreadCount = Math.max(0, state.unreadCount - 1);
         }
         state.notifications = state.notifications.filter((n) => n.id !== action.payload);
+      })
+      .addCase(fetchUnreadCount.fulfilled, (state, action) => {
+        state.unreadCount = action.payload;
+      })
+      .addCase(markRelatedNotificationsAsRead.fulfilled, (state, action) => {
+        const { type, relatedId } = action.payload;
+        // Also clear locally just in case it wasn't cleared by the synchronous reducer
+        state.notifications.forEach(n => {
+          if (n.type === type && (!relatedId || n.relatedId === relatedId) && !n.isRead) {
+            n.isRead = true;
+            state.unreadCount = Math.max(0, state.unreadCount - 1);
+          }
+        });
       });
   },
 });
 
-export const { clearError, addNotification, incrementUnreadCount } = notificationSlice.actions;
+export const { clearError, addNotification, incrementUnreadCount, markTypeAsRead } = notificationSlice.actions;
 export default notificationSlice.reducer;
 
 

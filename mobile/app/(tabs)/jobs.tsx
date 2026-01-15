@@ -16,6 +16,8 @@ import { useAppColors } from '../../hooks/useAppColors';
 import { AuthGuardModal } from '../../components/common/AuthGuardModal';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import api from '../../services/api';
+import { messageService } from '../../services/messageService';
+import { API_ENDPOINTS } from '../../constants/api';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CITY_NAMES, getDistrictsByCity } from '../../constants/locations';
@@ -528,8 +530,29 @@ export default function JobsScreen() {
                     {isAssigned && job.status !== 'OPEN' ? (
                       <>
                         <TouchableOpacity style={[styles.actionBtnSmall, { borderColor: colors.primary + '30' }]} onPress={async () => {
-                          const resp = await api.get(`/conversations/find?jobId=${job.id}&electricianId=${job.assignedElectricianId}`);
-                          if (resp.data.data) router.push(`/messages/${resp.data.data.id}`);
+                          try {
+                            // 1. Önce mevcut konuşmayı ara
+                            let conversation = await messageService.findConversation(job.assignedElectricianId, job.id);
+
+                            // 2. Yoksa oluştur
+                            if (!conversation) {
+                              const createRes = await api.post(API_ENDPOINTS.CONVERSATIONS || 'conversations', {
+                                recipientId: job.assignedElectricianId,
+                                jobPostId: job.id
+                              });
+                              conversation = createRes.data.data.conversation;
+                            }
+
+                            // 3. Sohbet detayına git
+                            if (conversation && conversation.id) {
+                              router.push(`/messages/${conversation.id}`);
+                            } else {
+                              Alert.alert('Hata', 'Sohbet başlatılamadı.');
+                            }
+                          } catch (error) {
+                            console.error('Chat start error:', error);
+                            Alert.alert('Hata', 'İşlem sırasında bir sorun oluştu.');
+                          }
                         }}>
                           <Ionicons name="chatbubbles" size={16} color={colors.primary} />
                           <Text style={[styles.actionBtnTextSmall, { color: colors.primary }]}>Mesaj</Text>

@@ -128,13 +128,20 @@ class ApiService {
         }
 
         // Show detailed error alert for debugging (Removed for production UX)
-        const errorMessage = (error.response?.data as any)?.message || error.message || 'Bilinmeyen Hata';
+        let errorMessage = (error.response?.data as any)?.message || (error.response?.data as any)?.error || error.message || 'Bilinmeyen Hata';
+
+        if (typeof errorMessage === 'object') {
+          try {
+            errorMessage = JSON.stringify(errorMessage);
+          } catch (e) {
+            errorMessage = '[Complex Error Object]';
+          }
+        }
+
         const statusCode = error.response?.status || 'No Status';
         const errorUrl = error.config?.url || 'Unknown URL';
 
-        if (__DEV__) {
-          console.warn(`[API ERROR] ${errorUrl} (${statusCode}): ${errorMessage}`);
-        }
+        console.error(`❌ [API ERROR] ${originalRequest?.method?.toUpperCase()} ${errorUrl} -> Status: ${statusCode}, Message: ${errorMessage}`);
 
         return Promise.reject(error);
       }
