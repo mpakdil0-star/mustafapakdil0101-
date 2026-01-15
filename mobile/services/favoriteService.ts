@@ -1,4 +1,5 @@
 import api from './api';
+import { API_ENDPOINTS } from '../constants/api';
 import * as SecureStore from 'expo-secure-store';
 import { MOCK_ELECTRICIANS } from '../data/mockElectricians';
 
@@ -74,7 +75,7 @@ export const favoriteService = {
      */
     async getFavorites(): Promise<FavoriteElectrician[]> {
         try {
-            const response = await api.get('/favorites');
+            const response = await api.get(API_ENDPOINTS.FAVORITES);
             const apiFavorites = response.data.data.favorites || [];
 
             // Also get local favorites for mock electricians
@@ -121,7 +122,7 @@ export const favoriteService = {
 
         // Try API for real electricians
         try {
-            const response = await api.post(`/favorites/${electricianId}`);
+            const response = await api.post(API_ENDPOINTS.ADD_FAVORITE(electricianId));
             return response.data;
         } catch (error: any) {
             // If API fails (503), store locally as fallback
@@ -155,7 +156,7 @@ export const favoriteService = {
 
         // Try API for real electricians
         try {
-            const response = await api.delete(`/favorites/${electricianId}`);
+            const response = await api.delete(API_ENDPOINTS.REMOVE_FAVORITE(electricianId));
             return response.data;
         } catch (error: any) {
             // If API fails, still return success since we removed from local
@@ -184,7 +185,7 @@ export const favoriteService = {
 
         // Try API for real electricians
         try {
-            const response = await api.get(`/favorites/${electricianId}/check`);
+            const response = await api.get(API_ENDPOINTS.CHECK_FAVORITE(electricianId));
             return response.data.data;
         } catch {
             return { isFavorite: false };

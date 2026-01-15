@@ -90,6 +90,22 @@ export const API_ENDPOINTS = {
 
   // Locations
   LOCATIONS: '/locations',
+
+  // Favorites
+  FAVORITES: '/favorites',
+  ADD_FAVORITE: (electricianId: string) => `/favorites/${electricianId}`,
+  REMOVE_FAVORITE: (electricianId: string) => `/favorites/${electricianId}`,
+  CHECK_FAVORITE: (electricianId: string) => `/favorites/${electricianId}/check`,
+
+  // Reviews
+  REVIEWS: '/reviews',
+  ELECTRICIAN_REVIEWS: (electricianId: string) => `/reviews/electrician/${electricianId}`,
+  SUBMIT_REVIEW: '/reviews',
+
+  // Payments & Credits
+  CREDIT_PACKAGES: '/payments/packages',
+  PURCHASE_CREDITS: '/payments/purchase',
+  TRANSACTION_HISTORY: '/payments/transactions',
 };
 
 // Helper function to get full file URL

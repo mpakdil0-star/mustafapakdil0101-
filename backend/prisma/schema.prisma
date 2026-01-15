@@ -71,252 +71,254 @@ enum CreditTransactionType {
 
 // User Model
 model User {
-  id                    String    @id @default(uuid())
-  email                 String    @unique
-  phone                 String?   @unique
-  passwordHash          String    @map("password_hash")
-  userType              UserType  @default(CITIZEN) @map("user_type")
-  fullName              String    @map("full_name")
-  city                  String?   // User's city for location-based filtering
-  profileImageUrl       String?   @map("profile_image_url")
-  isVerified            Boolean   @default(false) @map("is_verified")
-  isActive              Boolean   @default(true) @map("is_active")
-  isBanned              Boolean   @default(false) @map("is_banned")
-  banReason             String?   @map("ban_reason")
-  banUntil              DateTime? @map("ban_until")
-  lastLoginAt           DateTime? @map("last_login_at")
-  lastSeenAt            DateTime? @map("last_seen_at")
-  languagePreference    String    @default("tr") @map("language_preference")
-  notificationSettings  Json?     @default("{\"push\": true, \"email\": true, \"sms\": false}") @map("notification_settings")
-  pushToken             String?   @map("push_token")
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @updatedAt @map("updated_at")
-  deletedAt             DateTime? @map("deleted_at")
+  id                   String    @id @default(uuid())
+  email                String    @unique
+  phone                String?   @unique
+  passwordHash         String    @map("password_hash")
+  userType             UserType  @default(CITIZEN) @map("user_type")
+  fullName             String    @map("full_name")
+  city                 String? // User's city for location-based filtering
+  profileImageUrl      String?   @map("profile_image_url")
+  isVerified           Boolean   @default(false) @map("is_verified")
+  isActive             Boolean   @default(true) @map("is_active")
+  isBanned             Boolean   @default(false) @map("is_banned")
+  banReason            String?   @map("ban_reason")
+  banUntil             DateTime? @map("ban_until")
+  lastLoginAt          DateTime? @map("last_login_at")
+  lastSeenAt           DateTime? @map("last_seen_at")
+  languagePreference   String    @default("tr") @map("language_preference")
+  notificationSettings Json?     @default("{\"push\": true, \"email\": true, \"sms\": false}") @map("notification_settings")
+  pushToken            String?   @map("push_token")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  deletedAt            DateTime? @map("deleted_at")
 
   // Relations
-  electricianProfile    ElectricianProfile?
-  jobPosts              JobPost[]             @relation("JobPostsOwner")
-  bids                  Bid[]
-  conversationsAsP1     Conversation[]        @relation("Participant1")
-  conversationsAsP2     Conversation[]        @relation("Participant2")
-  sentMessages          Message[]
-  receivedMessages      Message[]             @relation("MessageRecipient")
-  reviewsGiven          Review[]              @relation("ReviewGiven")
-  reviewsReceived       Review[]              @relation("ReviewReceived")
-  notifications         Notification[]
-  locations             Location[]
-  paymentsAsPayer       Payment[]             @relation("PaymentPayer")
-  paymentsAsPayee       Payment[]             @relation("PaymentPayee")
-  credits               Credit[]
-  supportTickets        SupportTicket[]
-  favorites             Favorite[]            @relation("UserFavorites")
-  favoritedBy           Favorite[]            @relation("FavoritedBy")
+  electricianProfile ElectricianProfile?
+  jobPosts           JobPost[]           @relation("JobPostsOwner")
+  bids               Bid[]
+  conversationsAsP1  Conversation[]      @relation("Participant1")
+  conversationsAsP2  Conversation[]      @relation("Participant2")
+  sentMessages       Message[]
+  receivedMessages   Message[]           @relation("MessageRecipient")
+  reviewsGiven       Review[]            @relation("ReviewGiven")
+  reviewsReceived    Review[]            @relation("ReviewReceived")
+  notifications      Notification[]
+  locations          Location[]
+  paymentsAsPayer    Payment[]           @relation("PaymentPayer")
+  paymentsAsPayee    Payment[]           @relation("PaymentPayee")
+  credits            Credit[]
+  supportTickets     SupportTicket[]
+  favorites          Favorite[]          @relation("UserFavorites")
+  favoritedBy        Favorite[]          @relation("FavoritedBy")
 
-  @@map("users")
   @@index([email])
   @@index([phone])
   @@index([userType])
+  @@map("users")
 }
 
 // Electrician Profile
 model ElectricianProfile {
-  id                    String            @id @default(uuid())
-  userId                String            @unique @map("user_id")
-  companyName           String?           @map("company_name")
-  taxNumber             String?           @map("tax_number")
+  id                    String             @id @default(uuid())
+  userId                String             @unique @map("user_id")
+  companyName           String?            @map("company_name")
+  taxNumber             String?            @map("tax_number")
   bio                   String?
-  experienceYears       Int               @default(0) @map("experience_years")
-  licenseNumber         String?           @map("license_number")
-  licenseVerified       Boolean           @default(false) @map("license_verified")
-  serviceAreas          Json?             @map("service_areas")
-  specialties           String[]          @default([])
-  ratingAverage         Decimal           @default(0) @db.Decimal(3, 2) @map("rating_average")
-  totalReviews          Int               @default(0) @map("total_reviews")
-  completedJobsCount    Int               @default(0) @map("completed_jobs_count")
-  hourlyRate            Decimal?          @db.Decimal(10, 2) @map("hourly_rate")
-  minimumCharge         Decimal?          @db.Decimal(10, 2) @map("minimum_charge")
-  isAvailable           Boolean           @default(true) @map("is_available")
-  availabilityHours     Json?             @map("availability_hours")
+  experienceYears       Int                @default(0) @map("experience_years")
+  licenseNumber         String?            @map("license_number")
+  licenseVerified       Boolean            @default(false) @map("license_verified")
+  serviceAreas          Json?              @map("service_areas")
+  specialties           String[]           @default([])
+  ratingAverage         Decimal            @default(0) @map("rating_average") @db.Decimal(3, 2)
+  totalReviews          Int                @default(0) @map("total_reviews")
+  completedJobsCount    Int                @default(0) @map("completed_jobs_count")
+  hourlyRate            Decimal?           @map("hourly_rate") @db.Decimal(10, 2)
+  minimumCharge         Decimal?           @map("minimum_charge") @db.Decimal(10, 2)
+  isAvailable           Boolean            @default(true) @map("is_available")
+  availabilityHours     Json?              @map("availability_hours")
   verificationStatus    VerificationStatus @default(PENDING) @map("verification_status")
-  verificationDocuments Json?             @map("verification_documents")
-  creditBalance         Decimal           @default(0) @db.Decimal(10, 2) @map("credit_balance")
-  responseTimeAvg       Int?              @map("response_time_avg")
-  acceptanceRate        Decimal?          @db.Decimal(5, 2) @map("acceptance_rate")
-  createdAt             DateTime          @default(now()) @map("created_at")
-  updatedAt             DateTime          @updatedAt @map("updated_at")
+  verificationDocuments Json?              @map("verification_documents")
+  creditBalance         Decimal            @default(0) @map("credit_balance") @db.Decimal(10, 2)
+  responseTimeAvg       Int?               @map("response_time_avg")
+  acceptanceRate        Decimal?           @map("acceptance_rate") @db.Decimal(5, 2)
+  serviceCategory       String             @default("elektrik") @map("service_category") // Ana hizmet kategorisi: elektrik, cilingir, klima, beyaz-esya, tesisat
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
 
-  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("electrician_profiles")
   @@index([ratingAverage])
   @@index([verificationStatus])
+  @@map("electrician_profiles")
 }
 
 // Job Post
 model JobPost {
-  id                String        @id @default(uuid())
-  citizenId         String        @map("citizen_id")
-  title             String
-  description       String        @db.Text
-  category          String
-  subcategory       String?
-  location          Json
-  urgencyLevel      UrgencyLevel  @default(MEDIUM) @map("urgency_level")
-  estimatedBudget   Decimal?      @db.Decimal(10, 2) @map("estimated_budget")
-  budgetRange       Json?         @map("budget_range")
-  preferredTime     DateTime?     @map("preferred_time")
-  status            JobStatus     @default(OPEN)
-  images            String[]      @default([])
-  videoUrl          String?       @map("video_url")
-  assignedElectricianId String?   @map("assigned_electrician_id")
-  acceptedBidId     String?       @map("accepted_bid_id")
-  viewCount         Int           @default(0) @map("view_count")
-  bidCount          Int           @default(0) @map("bid_count")
-  expiresAt         DateTime?     @map("expires_at")
-  completedAt       DateTime?     @map("completed_at")
-  cancelledAt       DateTime?     @map("cancelled_at")
-  cancellationReason String?      @db.Text @map("cancellation_reason")
-  createdAt         DateTime      @default(now()) @map("created_at")
-  updatedAt         DateTime      @updatedAt @map("updated_at")
-  deletedAt         DateTime?     @map("deleted_at")
+  id                    String       @id @default(uuid())
+  citizenId             String       @map("citizen_id")
+  title                 String
+  description           String       @db.Text
+  category              String
+  subcategory           String?
+  serviceCategory       String?      @default("elektrik") @map("service_category") // Ana hizmet kategorisi
+  location              Json
+  urgencyLevel          UrgencyLevel @default(MEDIUM) @map("urgency_level")
+  estimatedBudget       Decimal?     @map("estimated_budget") @db.Decimal(10, 2)
+  budgetRange           Json?        @map("budget_range")
+  preferredTime         DateTime?    @map("preferred_time")
+  status                JobStatus    @default(OPEN)
+  images                String[]     @default([])
+  videoUrl              String?      @map("video_url")
+  assignedElectricianId String?      @map("assigned_electrician_id")
+  acceptedBidId         String?      @map("accepted_bid_id")
+  viewCount             Int          @default(0) @map("view_count")
+  bidCount              Int          @default(0) @map("bid_count")
+  expiresAt             DateTime?    @map("expires_at")
+  completedAt           DateTime?    @map("completed_at")
+  cancelledAt           DateTime?    @map("cancelled_at")
+  cancellationReason    String?      @map("cancellation_reason") @db.Text
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
+  deletedAt             DateTime?    @map("deleted_at")
 
-  citizen           User          @relation("JobPostsOwner", fields: [citizenId], references: [id])
-  bids              Bid[]
-  conversations     Conversation[]
-  reviews           Review[]
-  payments          Payment[]
-  escrowAccount     EscrowAccount?
+  citizen       User           @relation("JobPostsOwner", fields: [citizenId], references: [id])
+  bids          Bid[]
+  conversations Conversation[]
+  reviews       Review[]
+  payments      Payment[]
+  escrowAccount EscrowAccount?
 
-  @@map("job_posts")
   @@index([citizenId])
   @@index([status])
   @@index([category])
   @@index([createdAt])
   @@index([assignedElectricianId])
+  @@map("job_posts")
 }
 
 // Bid
 model Bid {
-  id                String    @id @default(uuid())
-  jobPostId         String    @map("job_post_id")
-  electricianId     String    @map("electrician_id")
-  amount            Decimal   @db.Decimal(10, 2)
-  estimatedDuration Int       @map("estimated_duration")
+  id                 String    @id @default(uuid())
+  jobPostId          String    @map("job_post_id")
+  electricianId      String    @map("electrician_id")
+  amount             Decimal   @db.Decimal(10, 2)
+  estimatedDuration  Int       @map("estimated_duration")
   estimatedStartDate DateTime? @map("estimated_start_date")
-  message           String    @db.Text
-  status            BidStatus @default(PENDING)
-  creditSpent       Decimal   @default(0) @db.Decimal(10, 2) @map("credit_spent")
-  isFeatured        Boolean   @default(false) @map("is_featured")
-  expiresAt         DateTime? @map("expires_at")
-  acceptedAt        DateTime? @map("accepted_at")
-  rejectedAt        DateTime? @map("rejected_at")
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
+  message            String    @db.Text
+  status             BidStatus @default(PENDING)
+  creditSpent        Decimal   @default(0) @map("credit_spent") @db.Decimal(10, 2)
+  isFeatured         Boolean   @default(false) @map("is_featured")
+  expiresAt          DateTime? @map("expires_at")
+  acceptedAt         DateTime? @map("accepted_at")
+  rejectedAt         DateTime? @map("rejected_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
 
-  jobPost           JobPost   @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
-  electrician       User      @relation(fields: [electricianId], references: [id])
+  jobPost     JobPost @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+  electrician User    @relation(fields: [electricianId], references: [id])
 
-  @@map("bids")
   @@index([jobPostId])
   @@index([electricianId])
   @@index([status])
   @@index([createdAt])
+  @@map("bids")
 }
 
 // Conversation
 model Conversation {
-  id                        String    @id @default(uuid())
-  jobPostId                 String?   @map("job_post_id")
-  participant1Id            String    @map("participant_1_id")
-  participant2Id            String    @map("participant_2_id")
-  lastMessageAt             DateTime? @map("last_message_at")
-  lastMessagePreview        String?   @map("last_message_preview")
-  unreadCountParticipant1   Int       @default(0) @map("unread_count_participant_1")
-  unreadCountParticipant2   Int       @default(0) @map("unread_count_participant_2")
-  isArchivedParticipant1    Boolean   @default(false) @map("is_archived_participant_1")
-  isArchivedParticipant2    Boolean   @default(false) @map("is_archived_participant_2")
-  createdAt                 DateTime  @default(now()) @map("created_at")
-  updatedAt                 DateTime  @updatedAt @map("updated_at")
+  id                      String    @id @default(uuid())
+  jobPostId               String?   @map("job_post_id")
+  participant1Id          String    @map("participant_1_id")
+  participant2Id          String    @map("participant_2_id")
+  lastMessageAt           DateTime? @map("last_message_at")
+  lastMessagePreview      String?   @map("last_message_preview")
+  unreadCountParticipant1 Int       @default(0) @map("unread_count_participant_1")
+  unreadCountParticipant2 Int       @default(0) @map("unread_count_participant_2")
+  isArchivedParticipant1  Boolean   @default(false) @map("is_archived_participant_1")
+  isArchivedParticipant2  Boolean   @default(false) @map("is_archived_participant_2")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
 
-  jobPost                   JobPost?  @relation(fields: [jobPostId], references: [id], onDelete: SetNull)
-  participant1              User      @relation("Participant1", fields: [participant1Id], references: [id])
-  participant2              User      @relation("Participant2", fields: [participant2Id], references: [id])
-  messages                  Message[]
+  jobPost      JobPost?  @relation(fields: [jobPostId], references: [id], onDelete: SetNull)
+  participant1 User      @relation("Participant1", fields: [participant1Id], references: [id])
+  participant2 User      @relation("Participant2", fields: [participant2Id], references: [id])
+  messages     Message[]
 
-  @@map("conversations")
   @@index([participant1Id])
   @@index([participant2Id])
   @@index([jobPostId])
   @@index([lastMessageAt])
+  @@map("conversations")
 }
 
 // Message
 model Message {
-  id            String      @id @default(uuid())
-  conversationId String     @map("conversation_id")
-  senderId      String      @map("sender_id")
-  recipientId   String      @map("recipient_id")
-  content       String      @db.Text
-  messageType   MessageType @default(TEXT) @map("message_type")
-  mediaUrl      String?     @map("media_url")
-  fileName      String?     @map("file_name")
-  fileSize      Int?        @map("file_size")
-  isRead        Boolean     @default(false) @map("is_read")
-  readAt        DateTime?   @map("read_at")
-  isEdited      Boolean     @default(false) @map("is_edited")
-  editedAt      DateTime?   @map("edited_at")
-  isDeleted     Boolean     @default(false) @map("is_deleted")
-  deletedAt     DateTime?   @map("deleted_at")
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
+  id             String      @id @default(uuid())
+  conversationId String      @map("conversation_id")
+  senderId       String      @map("sender_id")
+  recipientId    String      @map("recipient_id")
+  content        String      @db.Text
+  messageType    MessageType @default(TEXT) @map("message_type")
+  mediaUrl       String?     @map("media_url")
+  fileName       String?     @map("file_name")
+  fileSize       Int?        @map("file_size")
+  isRead         Boolean     @default(false) @map("is_read")
+  readAt         DateTime?   @map("read_at")
+  isEdited       Boolean     @default(false) @map("is_edited")
+  editedAt       DateTime?   @map("edited_at")
+  isDeleted      Boolean     @default(false) @map("is_deleted")
+  deletedAt      DateTime?   @map("deleted_at")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
 
-  conversation  Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender        User         @relation(fields: [senderId], references: [id])
-  recipient     User         @relation("MessageRecipient", fields: [recipientId], references: [id])
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id])
+  recipient    User         @relation("MessageRecipient", fields: [recipientId], references: [id])
 
-  @@map("messages")
   @@index([conversationId])
   @@index([senderId])
   @@index([isRead])
   @@index([createdAt])
+  @@map("messages")
 }
 
 // Review
 model Review {
-  id              String    @id @default(uuid())
-  jobPostId       String    @unique @map("job_post_id")
-  reviewerId      String    @map("reviewer_id")
-  reviewedId      String    @map("reviewed_id")
-  rating          Int
-  ratingBreakdown Json?     @map("rating_breakdown")
-  comment         String?   @db.Text
-  images          String[]  @default([])
-  isVerifiedPurchase Boolean @default(true) @map("is_verified_purchase")
-  helpfulCount    Int       @default(0) @map("helpful_count")
-  isVisible       Boolean   @default(true) @map("is_visible")
-  adminNotes      String?   @db.Text @map("admin_notes")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  id                 String   @id @default(uuid())
+  jobPostId          String   @unique @map("job_post_id")
+  reviewerId         String   @map("reviewer_id")
+  reviewedId         String   @map("reviewed_id")
+  rating             Int
+  ratingBreakdown    Json?    @map("rating_breakdown")
+  comment            String?  @db.Text
+  images             String[] @default([])
+  isVerifiedPurchase Boolean  @default(true) @map("is_verified_purchase")
+  helpfulCount       Int      @default(0) @map("helpful_count")
+  isVisible          Boolean  @default(true) @map("is_visible")
+  adminNotes         String?  @map("admin_notes") @db.Text
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
 
-  jobPost         JobPost   @relation(fields: [jobPostId], references: [id])
-  reviewer        User      @relation("ReviewGiven", fields: [reviewerId], references: [id])
-  reviewed        User      @relation("ReviewReceived", fields: [reviewedId], references: [id])
+  jobPost  JobPost @relation(fields: [jobPostId], references: [id])
+  reviewer User    @relation("ReviewGiven", fields: [reviewerId], references: [id])
+  reviewed User    @relation("ReviewReceived", fields: [reviewedId], references: [id])
 
-  @@map("reviews")
   @@index([reviewedId])
   @@index([rating])
   @@index([createdAt])
+  @@map("reviews")
 }
 
 // Payment
 model Payment {
   id              String        @id @default(uuid())
-  jobPostId       String        @map("job_post_id")
+  jobPostId       String?       @map("job_post_id")
   payerId         String        @map("payer_id")
   payeeId         String        @map("payee_id")
   amount          Decimal       @db.Decimal(10, 2)
-  platformFee     Decimal       @db.Decimal(10, 2) @map("platform_fee")
-  netAmount       Decimal       @db.Decimal(10, 2) @map("net_amount")
+  platformFee     Decimal       @map("platform_fee") @db.Decimal(10, 2)
+  netAmount       Decimal       @map("net_amount") @db.Decimal(10, 2)
   paymentMethod   String        @map("payment_method")
   paymentStatus   PaymentStatus @default(PENDING) @map("payment_status")
   transactionId   String?       @unique @map("transaction_id")
@@ -325,31 +327,31 @@ model Payment {
   metadata        Json?         @default("{}")
   completedAt     DateTime?     @map("completed_at")
   refundedAt      DateTime?     @map("refunded_at")
-  refundReason    String?       @db.Text @map("refund_reason")
+  refundReason    String?       @map("refund_reason") @db.Text
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
-  jobPost         JobPost       @relation(fields: [jobPostId], references: [id])
-  payer           User          @relation("PaymentPayer", fields: [payerId], references: [id])
-  payee           User          @relation("PaymentPayee", fields: [payeeId], references: [id])
+  jobPost JobPost? @relation(fields: [jobPostId], references: [id])
+  payer   User     @relation("PaymentPayer", fields: [payerId], references: [id])
+  payee   User     @relation("PaymentPayee", fields: [payeeId], references: [id])
 
-  @@map("payments")
   @@index([jobPostId])
   @@index([payerId])
   @@index([payeeId])
   @@index([paymentStatus])
+  @@map("payments")
 }
 
 // Escrow Account
 model EscrowAccount {
-  id        String    @id @default(uuid())
-  jobPostId String    @unique @map("job_post_id")
-  amount    Decimal   @db.Decimal(10, 2)
-  status    String    @default("pending") // pending, held, released, refunded
+  id         String    @id @default(uuid())
+  jobPostId  String    @unique @map("job_post_id")
+  amount     Decimal   @db.Decimal(10, 2)
+  status     String    @default("pending") // pending, held, released, refunded
   releasedAt DateTime? @map("released_at")
-  createdAt DateTime  @default(now()) @map("created_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
 
-  jobPost   JobPost   @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+  jobPost JobPost @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
 
   @@map("escrow_accounts")
 }
@@ -362,16 +364,16 @@ model Credit {
   transactionType CreditTransactionType @map("transaction_type")
   relatedId       String?               @map("related_id")
   description     String                @db.Text
-  balanceAfter    Decimal               @db.Decimal(10, 2) @map("balance_after")
+  balanceAfter    Decimal               @map("balance_after") @db.Decimal(10, 2)
   createdAt       DateTime              @default(now()) @map("created_at")
   updatedAt       DateTime              @updatedAt @map("updated_at")
 
-  user            User                  @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  @@map("credits")
   @@index([userId])
   @@index([transactionType])
   @@index([createdAt])
+  @@map("credits")
 }
 
 // Notification
@@ -392,36 +394,36 @@ model Notification {
   createdAt   DateTime  @default(now()) @map("created_at")
   expiresAt   DateTime? @map("expires_at")
 
-  user        User      @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  @@map("notifications")
   @@index([userId])
   @@index([isRead])
   @@index([type])
   @@index([createdAt])
+  @@map("notifications")
 }
 
 // Location
 model Location {
-  id          String    @id @default(uuid())
-  userId      String    @map("user_id")
-  address     String
-  city        String
-  district    String
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  address      String
+  city         String
+  district     String
   neighborhood String?  @default("")
-  postalCode  String?   @map("postal_code")
-  latitude    Decimal   @db.Decimal(10, 8)
-  longitude   Decimal   @db.Decimal(11, 8)
-  isDefault   Boolean   @default(false) @map("is_default")
-  isActive    Boolean   @default(true) @map("is_active")
-  createdAt   DateTime  @default(now()) @map("created_at")
+  postalCode   String?  @map("postal_code")
+  latitude     Decimal  @db.Decimal(10, 8)
+  longitude    Decimal  @db.Decimal(11, 8)
+  isDefault    Boolean  @default(false) @map("is_default")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
 
-  user        User      @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  @@map("locations")
   @@index([userId])
   @@index([city])
   @@index([district])
+  @@map("locations")
 }
 
 // Support Ticket
@@ -441,13 +443,13 @@ model SupportTicket {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
-  user        User      @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  @@map("support_tickets")
   @@index([userId])
   @@index([status])
   @@index([ticketType])
   @@index([createdAt])
+  @@map("support_tickets")
 }
 
 // Favorite Model - Kullanıcıların favori elektrikçileri
@@ -461,7 +463,7 @@ model Favorite {
   electrician User @relation("FavoritedBy", fields: [electricianId], references: [id], onDelete: Cascade)
 
   @@unique([userId, electricianId])
-  @@map("favorites")
   @@index([userId])
   @@index([electricianId])
+  @@map("favorites")
 }
