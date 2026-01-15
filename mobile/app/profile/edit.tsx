@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Text, TouchableOpacity, Modal, Platform } from 'react-native';
+import React, { useState, useRef, useMemo } from 'react';
+import { View, StyleSheet, ScrollView, Alert, Text, TouchableOpacity, Modal, Platform, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { fonts } from '../../constants/typography';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -79,9 +79,10 @@ const SPECIALTIES_BY_CATEGORY: Record<string, { id: string; label: string; icon:
 };
 
 import { useFocusEffect } from 'expo-router';
-import { API_ENDPOINTS } from '../../constants/api';
+import { API_ENDPOINTS, getFileUrl } from '../../constants/api';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
+import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
 
 export default function EditProfileScreen() {
     const router = useRouter();
@@ -99,7 +100,24 @@ export default function EditProfileScreen() {
     const [selectedExpertise, setSelectedExpertise] = useState<string[]>(user?.electricianProfile?.specialties || []);
     const [loading, setLoading] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
-    const [isExpertiseExpanded, setIsExpertiseExpanded] = useState(false);
+    const [isExpertiseExpanded, setIsExpertiseExpanded] = useState(true); // Default open for easier access
+
+    // Track initial values to detect changes
+    const initialValues = useRef({
+        experienceYears: user?.electricianProfile?.experienceYears?.toString() || '',
+        selectedExpertise: user?.electricianProfile?.specialties || [],
+    });
+
+    // Check if any editable field has changed
+    const hasChanges = useMemo(() => {
+        if (user?.userType !== 'ELECTRICIAN') return false;
+        const expChanged = experienceYears !== initialValues.current.experienceYears;
+        // Create copies before sorting to avoid mutating read-only arrays
+        const currentSorted = [...selectedExpertise].sort();
+        const initialSorted = [...initialValues.current.selectedExpertise].sort();
+        const expertiseChanged = JSON.stringify(currentSorted) !== JSON.stringify(initialSorted);
+        return expChanged || expertiseChanged;
+    }, [experienceYears, selectedExpertise, user?.userType]);
 
     // Service areas / locations
     const [locations, setLocations] = useState<any[]>([]);
@@ -255,6 +273,48 @@ export default function EditProfileScreen() {
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
             >
+                {/* Profile Preview Card - Quick glance at how profile looks */}
+                {user?.userType === 'ELECTRICIAN' && (
+                    <View style={[styles.previewCard, { shadowColor: colors.primary }]}>
+                        <View style={styles.previewAvatarWrapper}>
+                            {user?.profileImageUrl ? (
+                                <Image
+                                    source={{ uri: getFileUrl(user.profileImageUrl) || '' }}
+                                    style={styles.previewAvatar}
+                                />
+                            ) : (
+                                <View style={[styles.previewAvatarPlaceholder, { backgroundColor: colors.primary + '15' }]}>
+                                    <Text style={[styles.previewAvatarText, { color: colors.primary }]}>
+                                        {user?.fullName?.charAt(0).toUpperCase() || 'U'}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                        <View style={styles.previewInfo}>
+                            <Text style={styles.previewName}>{user?.fullName}</Text>
+                            <View style={styles.previewMetaRow}>
+                                <View style={[styles.previewBadge, { backgroundColor: colors.primary + '15' }]}>
+                                    <Text style={[styles.previewBadgeText, { color: colors.primary }]}>
+                                        {SERVICE_CATEGORIES.find(c => c.id === user?.electricianProfile?.serviceCategory)?.name || 'Usta'}
+                                    </Text>
+                                </View>
+                                <View style={styles.previewStat}>
+                                    <Ionicons name="star" size={12} color="#F59E0B" />
+                                    <Text style={styles.previewStatText}>{Number((user?.electricianProfile as any)?.ratingAverage || 0).toFixed(1)}</Text>
+                                </View>
+                                <View style={styles.previewStat}>
+                                    <Ionicons name="briefcase-outline" size={12} color={staticColors.textLight} />
+                                    <Text style={styles.previewStatText}>{experienceYears || '0'} Yıl</Text>
+                                </View>
+                            </View>
+                        </View>
+                        <View style={styles.previewHint}>
+                            <Ionicons name="eye-outline" size={14} color={staticColors.textLight} />
+                            <Text style={styles.previewHintText}>Önizleme</Text>
+                        </View>
+                    </View>
+                )}
+
                 <Card variant="default" style={[styles.mainCard, { shadowColor: colors.primary }]}>
                     {/* Temel Bilgiler */}
                     <View style={styles.sectionPadding}>
@@ -405,14 +465,25 @@ export default function EditProfileScreen() {
                     )}
                 </Card>
 
-                <Button
-                    title="Değişiklikleri Kaydet"
-                    onPress={handleSave}
-                    loading={loading}
-                    variant="primary"
-                    fullWidth
-                    style={styles.saveButton}
-                />
+                <View style={styles.saveButtonContainer}>
+                    {user?.userType === 'ELECTRICIAN' && hasChanges && (
+                        <View style={styles.changesIndicator}>
+                            <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                            <Text style={styles.changesIndicatorText}>Değişiklikler kaydedilmeyi bekliyor</Text>
+                        </View>
+                    )}
+                    <Button
+                        title={hasChanges ? "Değişiklikleri Kaydet ✓" : "Değişiklikleri Kaydet"}
+                        onPress={handleSave}
+                        loading={loading}
+                        variant="primary"
+                        fullWidth
+                        style={[
+                            styles.saveButton,
+                            hasChanges && styles.saveButtonActive
+                        ]}
+                    />
+                </View>
             </ScrollView>
 
             <Modal visible={showSuccessModal} transparent animationType="fade">
@@ -577,10 +648,6 @@ const styles = StyleSheet.create({
     },
     expertiseButton: {
         marginTop: 5,
-    },
-    saveButton: {
-        marginTop: spacing.lg,
-        marginBottom: 30,
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -859,5 +926,111 @@ const styles = StyleSheet.create({
         fontFamily: fonts.bold,
         fontSize: 16,
         color: staticColors.white,
+    },
+    // Profile Preview Card Styles
+    previewCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: staticColors.white,
+        borderRadius: 20,
+        padding: 16,
+        marginBottom: 16,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 3,
+    },
+    previewAvatarWrapper: {
+        marginRight: 14,
+    },
+    previewAvatar: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+    },
+    previewAvatarPlaceholder: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    previewAvatarText: {
+        fontFamily: fonts.bold,
+        fontSize: 22,
+    },
+    previewInfo: {
+        flex: 1,
+    },
+    previewName: {
+        fontFamily: fonts.bold,
+        fontSize: 17,
+        color: staticColors.text,
+        marginBottom: 6,
+    },
+    previewMetaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    previewBadge: {
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    previewBadgeText: {
+        fontFamily: fonts.semiBold,
+        fontSize: 11,
+    },
+    previewStat: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 3,
+    },
+    previewStatText: {
+        fontFamily: fonts.medium,
+        fontSize: 12,
+        color: staticColors.textSecondary,
+    },
+    previewHint: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: '#F1F5F9',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    previewHintText: {
+        fontFamily: fonts.medium,
+        fontSize: 10,
+        color: staticColors.textLight,
+    },
+    // Save Button Container & Changes Indicator
+    saveButtonContainer: {
+        marginTop: spacing.lg,
+        marginBottom: 30,
+    },
+    changesIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        marginBottom: 10,
+    },
+    changesIndicatorText: {
+        fontFamily: fonts.medium,
+        fontSize: 12,
+        color: '#10B981',
+    },
+    saveButton: {
+        // Base styles handled by Button component
+    },
+    saveButtonActive: {
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
     },
 });
