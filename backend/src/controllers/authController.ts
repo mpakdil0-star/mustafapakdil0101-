@@ -164,10 +164,14 @@ export const loginController = async (
 
         // Generate tokens with correct user data
         const tokens = generateTokens({ id: mockUserId, email, userType: mockUserType });
+
+        // IMPORTANT: Use getFullUser to get complete user data INCLUDING electricianProfile
+        const fullUser = mockStorage.getFullUser(mockUserId, mockUserType);
+
         return res.json({
           success: true,
           data: {
-            user: existingUser,
+            user: fullUser,
             accessToken: tokens.accessToken,
             refreshToken: tokens.refreshToken,
           },

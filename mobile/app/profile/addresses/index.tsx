@@ -130,7 +130,7 @@ export default function AddressesScreen() {
             <PremiumHeader
                 title={isElectrician ? 'Hizmet Bölgeleri' : 'Adreslerim'}
                 showBackButton
-                onBackPress={() => router.replace('/profile/edit')}
+                onBackPress={() => router.back()}
             />
 
             {loading && locations.length === 0 ? (

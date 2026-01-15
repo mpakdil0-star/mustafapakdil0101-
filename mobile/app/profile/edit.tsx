@@ -12,10 +12,12 @@ import { colors as staticColors } from '../../constants/colors';
 import { useAppColors } from '../../hooks/useAppColors';
 import { spacing } from '../../constants/spacing';
 import { useDispatch } from 'react-redux';
-import { setUser } from '../../store/slices/authSlice';
+import { setUser, setDraftProfile, clearDraftProfile } from '../../store/slices/authSlice';
 import api from '../../services/api';
+import { useEffect } from 'react';
 
 // Uzmanlık alanları listesi
+// ... (rest of imports remains similar)
 // Uzmanlık alanları listesi - Kategorilere göre
 const SPECIALTIES_BY_CATEGORY: Record<string, { id: string; label: string; icon: string }[]> = {
     elektrik: [
@@ -90,14 +92,18 @@ export default function EditProfileScreen() {
     const { user } = useAppSelector((state) => state.auth);
     const colors = useAppColors();
     const { mandatory } = useLocalSearchParams();
-    // Zorunlu moddaysa veya kullanıcı tipi Usta ise
+    const { draftProfile } = useAppSelector((state) => state.auth);
     const isElectrician = user?.userType === 'ELECTRICIAN' || !!mandatory;
 
     const [fullName, setFullName] = useState(user?.fullName || '');
     const [email, setEmail] = useState(user?.email || '');
     const [phoneNumber, setPhoneNumber] = useState(user?.phone || '');
-    const [experienceYears, setExperienceYears] = useState(user?.electricianProfile?.experienceYears?.toString() || '');
-    const [selectedExpertise, setSelectedExpertise] = useState<string[]>(user?.electricianProfile?.specialties || []);
+    const [experienceYears, setExperienceYears] = useState(
+        draftProfile?.experienceYears ?? user?.electricianProfile?.experienceYears?.toString() ?? ''
+    );
+    const [selectedExpertise, setSelectedExpertise] = useState<string[]>(
+        draftProfile?.specialties ?? user?.electricianProfile?.specialties ?? []
+    );
     const [loading, setLoading] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [isExpertiseExpanded, setIsExpertiseExpanded] = useState(true); // Default open for easier access
@@ -117,6 +123,16 @@ export default function EditProfileScreen() {
         const initialSorted = [...initialValues.current.selectedExpertise].sort();
         const expertiseChanged = JSON.stringify(currentSorted) !== JSON.stringify(initialSorted);
         return expChanged || expertiseChanged;
+    }, [experienceYears, selectedExpertise, user?.userType]);
+
+    // Sync state to Redux Draft
+    useEffect(() => {
+        if (user?.userType === 'ELECTRICIAN') {
+            dispatch(setDraftProfile({
+                experienceYears,
+                specialties: selectedExpertise
+            }));
+        }
     }, [experienceYears, selectedExpertise, user?.userType]);
 
     // Service areas / locations
@@ -248,6 +264,9 @@ export default function EditProfileScreen() {
                 // Update local redux state
                 dispatch(setUser(response.data.data.user || response.data.data));
 
+                // Clear draft on success
+                dispatch(clearDraftProfile());
+
                 setShowSuccessModal(true);
             } else {
                 throw new Error(response.data.message || 'Bir hata oluştu');
@@ -265,7 +284,7 @@ export default function EditProfileScreen() {
         <View style={styles.container}>
             <PremiumHeader
                 title={mandatory ? "Profilinizi Tamamlayın" : "Profili Düzenle"}
-                showBackButton={!mandatory}
+                showBackButton
             />
 
             <ScrollView

@@ -124,8 +124,11 @@ export const register = async (data: RegisterData) => {
       userType: user.userType,
     });
 
+    // IMPORTANT: Get full user data including electricianProfile for the client
+    const fullUser = mockStorage.getFullUser(user.id, user.userType);
+
     console.log('✅ Registered via Mock Storage:', user.email);
-    return { user, ...tokens };
+    return { user: fullUser, ...tokens };
   }
 
   // Check if user exists (DB)
@@ -240,7 +243,10 @@ export const register = async (data: RegisterData) => {
       userType: user.userType,
     });
 
-    return { user, ...tokens };
+    // IMPORTANT: Get full user data including electricianProfile for the client
+    const fullUser = mockStorage.getFullUser(user.id, user.userType);
+
+    return { user: fullUser, ...tokens };
   }
 };
 
@@ -310,6 +316,7 @@ export const login = async (data: LoginData) => {
         profileImageUrl: true,
         isVerified: true,
         createdAt: true,
+        electricianProfile: true,
       },
     });
 

@@ -29,6 +29,10 @@ interface AuthState {
   isAuthenticated: boolean;
   error: string | null;
   guestRole: 'CITIZEN' | 'ELECTRICIAN' | null;
+  draftProfile: {
+    experienceYears?: string;
+    specialties?: string[];
+  } | null;
 }
 
 const initialState: AuthState = {
@@ -38,6 +42,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   error: null,
   guestRole: null,
+  draftProfile: null,
 };
 
 const handleAuthError = (error: any, defaultMessage: string) => {
@@ -146,6 +151,15 @@ const authSlice = createSlice({
         state.user.electricianProfile.creditBalance = action.payload;
       }
     },
+    setDraftProfile: (state, action: PayloadAction<{ experienceYears?: string; specialties?: string[] }>) => {
+      state.draftProfile = {
+        ...state.draftProfile,
+        ...action.payload,
+      };
+    },
+    clearDraftProfile: (state) => {
+      state.draftProfile = null;
+    },
   },
   extraReducers: (builder) => {
     // Register & Login (aynı mantık)
@@ -195,6 +209,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, setUser, setGuestRole, updateCreditBalance } = authSlice.actions;
+export const { clearError, setUser, setGuestRole, updateCreditBalance, setDraftProfile, clearDraftProfile } = authSlice.actions;
 export default authSlice.reducer;
 

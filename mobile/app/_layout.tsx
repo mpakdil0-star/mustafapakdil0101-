@@ -48,6 +48,21 @@ function RootLayoutNav() {
     return () => interaction.cancel();
   }, []);
 
+  // Helper to check if electrician profile is incomplete
+  const checkIsProfileIncomplete = useCallback((userData: any) => {
+    if (userData?.userType !== 'ELECTRICIAN') return false;
+
+    const profile = userData.electricianProfile;
+    if (!profile) return true; // No profile object yet
+
+    const hasExperience = profile.experienceYears && profile.experienceYears > 0;
+    const hasSpecialties = profile.specialties &&
+      profile.specialties.length > 0 &&
+      profile.specialties.some((s: string) => s !== 'Genel' && s !== 'Genel Elektrik');
+
+    return !hasExperience || !hasSpecialties;
+  }, []);
+
   useEffect(() => {
     if (!isNavigationReady) return;
 
@@ -70,42 +85,51 @@ function RootLayoutNav() {
     const runNavigationLogic = async () => {
       const inAuthGroup = segments[0] === '(auth)';
       const isOnboarding = segments[0] === 'onboarding';
+      const currentPath = segments.join('/');
+      const isInsideProfileGroup = segments[0] === 'profile';
 
-      // Check onboarding first if not already there
+      // 1. Check onboarding first if not already there
       if (!isOnboarding) {
         const redirectedToOnboarding = await checkOnboarding();
         if (redirectedToOnboarding) return;
       }
 
-      // If we are at root, or not in a specific group, we might need a default redirect
-      // but expo-router usually handles the initial route. 
-      // The following logic handles auth-based redirection.
-
+      // 2. Auth-based redirection
       if (!segments.length) return;
 
-      // Allow guests to browse everything in tabs
-      if (isAuthenticated && inAuthGroup) {
-        // Connect socket if authenticated and in auth group (redirecting to tabs)
+      if (isAuthenticated) {
+        // Ensure socket is connected
         socketService.connect();
-        try {
-          // Redirect admins to admin dashboard
-          if (user?.userType === 'ADMIN') {
-            console.log('🛡️ Admin kullanıcısı tespit edildi, admin paneline yönlendiriliyor...');
+
+        // Admin check
+        if (user?.userType === 'ADMIN') {
+          if (inAuthGroup || currentPath === '') {
             router.replace('/admin');
-          } else {
-            router.replace('/(tabs)');
           }
-        } catch (error) {
-          console.warn('Navigation error, will retry:', error);
+          return;
         }
-      } else if (isAuthenticated) {
-        // Ensure socket is connected if authenticated anywhere else
-        socketService.connect();
+
+        // Profile completion check for professionals
+        if (user?.userType === 'ELECTRICIAN') {
+          // Wait for profile data to be fully loaded if possible, 
+          // but if we are in auth group and just registered, we should check what we have
+          const isIncomplete = checkIsProfileIncomplete(user);
+
+          if (isIncomplete && !isInsideProfileGroup) {
+            router.replace('/profile/edit?mandatory=true');
+            return;
+          }
+        }
+
+        // Default: If in auth group, go to tabs
+        if (inAuthGroup) {
+          router.replace('/(tabs)');
+        }
       }
     };
 
     runNavigationLogic();
-  }, [isAuthenticated, segments, isNavigationReady, router]);
+  }, [isAuthenticated, user, user?.electricianProfile, segments, isNavigationReady, router, checkIsProfileIncomplete]);
 
   // Fetch initial notification count and SYNC USER STATUS on login/app start
   useEffect(() => {
@@ -115,57 +139,6 @@ function RootLayoutNav() {
     }
   }, [isAuthenticated, dispatch]);
 
-  // Check if professional profile is incomplete and redirect to mandatory profile completion
-  useEffect(() => {
-    // Wait for user data to be fully loaded
-    if (!isAuthenticated || !isNavigationReady) return;
-    if (hasCheckedProfile) return;
-
-    // Small delay to ensure getMe() has completed and user data is populated
-    const timer = setTimeout(() => {
-      if (!user) {
-        console.log('🔧 Profil kontrolü: user henüz yüklenmedi');
-        return;
-      }
-
-      console.log('🔧 Profil kontrolü:', {
-        userType: user.userType,
-        exp: user.electricianProfile?.experienceYears,
-        specs: user.electricianProfile?.specialties
-      });
-
-      // Check for ALL professional types (ELECTRICIAN is the general userType for all professionals)
-      // This includes: elektrik, tesisat, çilingir, klima, beyaz-esya
-      if (user.userType !== 'ELECTRICIAN') {
-        setHasCheckedProfile(true);
-        return;
-      }
-
-      // Check if profile is incomplete
-      const profile = user.electricianProfile;
-      const hasExperience = profile?.experienceYears && profile.experienceYears > 0;
-      const hasSpecialties = profile?.specialties && profile.specialties.length > 0 &&
-        profile.specialties.some((s: string) => s !== 'Genel' && s !== 'Genel Elektrik');
-
-      const isProfileIncomplete = !hasExperience || !hasSpecialties;
-
-      console.log('🔧 Profil durumu:', { hasExperience, hasSpecialties, isProfileIncomplete });
-
-      if (isProfileIncomplete) {
-        // Don't redirect if already on edit page
-        const currentPath = segments.join('/');
-        const isOnEditPage = currentPath.includes('profile') && currentPath.includes('edit');
-        if (!isOnEditPage) {
-          console.log('🔧 Usta profili eksik, yönlendiriliyor...');
-          router.replace('/profile/edit?mandatory=true');
-        }
-      }
-
-      setHasCheckedProfile(true);
-    }, 1000); // 1 saniye bekle - getMe() için yeterli süre
-
-    return () => clearTimeout(timer);
-  }, [isAuthenticated, user, isNavigationReady, hasCheckedProfile, segments, router]);
 
   // Global Socket Notification Listener
   useEffect(() => {
