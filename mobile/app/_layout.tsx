@@ -216,8 +216,10 @@ function RootLayoutNav() {
             onPress: () => {
               setAlertConfig(prev => ({ ...prev, visible: false }));
               // Navigate to notifications tab or specific job
-              if (notification.data?.jobId) {
-                router.push(`/jobs/${notification.data.jobId}`);
+              // Socket notifications have jobId directly, push notifications have it in data
+              const jobId = (notification as any).jobId || notification.data?.jobId;
+              if (jobId) {
+                router.push(`/jobs/${jobId}`);
               } else {
                 router.push('/(tabs)/notifications');
               }

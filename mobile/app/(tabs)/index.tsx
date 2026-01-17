@@ -766,7 +766,7 @@ export default function HomeScreen() {
                       isVerified={elec.isVerified || elec.electricianProfile?.verificationStatus === 'VERIFIED'}
                       imageUrl={elec.profileImageUrl ? getFileUrl(elec.profileImageUrl) || undefined : undefined}
                       location={elec.locations?.[0] ? `${elec.locations[0].district || ''}, ${elec.locations[0].city || ''}`.replace(/^, /, '').replace(/, $/, '') || 'Türkiye' : 'Türkiye'}
-                      onPress={() => router.push(`/electrician/${elec.id}` as any)}
+                      onPress={() => router.push(`/electricians/${elec.id}` as any)}
                       onBook={() => handleActionWithAuth('/jobs/create', { electricianId: elec.id })}
                     />
                   ))
