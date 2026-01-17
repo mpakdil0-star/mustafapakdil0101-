@@ -14,8 +14,8 @@ export const config = {
   // JWT
   jwtSecret: process.env.JWT_SECRET || 'your-secret-key',
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '15m',
-  jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
 
   // Redis
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
