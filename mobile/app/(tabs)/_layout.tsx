@@ -19,13 +19,30 @@ export default function TabsLayout() {
 
   const { notifications, unreadCount } = useAppSelector((state) => state.notifications);
 
-  // Calculate unread messages from Redux store for real-time updates
-  // Total unread notifications (includes messages and others)
-  const totalUnreadCount = unreadCount;
+  // Separate state for unread messages (from conversations, not notifications)
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
 
   // Initial fetch for unread messages (to sync with server on mount)
   const dispatch = require('../../hooks/redux').useAppDispatch();
   const { fetchNotifications } = require('../../store/slices/notificationSlice');
+  const { messageService } = require('../../services/messageService');
+
+  // Fetch unread messages count from conversations
+  useEffect(() => {
+    const fetchUnreadMessages = async () => {
+      if (!isAuthenticated) return;
+      try {
+        const conversations = await messageService.getConversations();
+        // Sum up unreadCount from all conversations
+        const totalUnread = conversations.reduce((sum: number, conv: any) => sum + (conv.unreadCount || 0), 0);
+        setUnreadMessagesCount(totalUnread);
+      } catch (error) {
+        console.log('Could not fetch unread messages count:', error);
+      }
+    };
+
+    fetchUnreadMessages();
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -56,10 +73,10 @@ export default function TabsLayout() {
         size={22}
         color={focused ? colors.primary : colors.textLight}
       />
-      {totalUnreadCount > 0 && (
+      {unreadMessagesCount > 0 && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>
-            {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+            {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
           </Text>
         </View>
       )}

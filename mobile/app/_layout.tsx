@@ -230,8 +230,61 @@ function RootLayoutNav() {
       );
     });
 
+    // Listen for bid-related notifications (bid_received, bid_accepted, bid_rejected)
+    const unsubscribeBid = socketService.onBidNotification((bidNotification) => {
+      console.log('📢 [GLOBAL] Bid notification received:', bidNotification.type);
+
+      // Determine alert type based on bid notification type
+      let alertType: 'success' | 'error' | 'info' = 'info';
+      let alertTitle = 'Bildirim';
+
+      if (bidNotification.type === 'bid_received') {
+        alertType = 'info';
+        alertTitle = '💼 Yeni Teklif Alındı';
+      } else if (bidNotification.type === 'bid_accepted') {
+        alertType = 'success';
+        alertTitle = '🎉 Teklifiniz Kabul Edildi';
+      } else if (bidNotification.type === 'bid_rejected') {
+        alertType = 'error';
+        alertTitle = '❌ Teklifiniz Reddedildi';
+      }
+
+      // Add to Redux notification store as well
+      dispatch(addNotification({
+        id: `bid-${Date.now()}`,
+        type: bidNotification.type,
+        title: alertTitle,
+        message: bidNotification.message,
+        isRead: false,
+        relatedId: bidNotification.jobPostId,
+        relatedType: 'JOB',
+        createdAt: new Date().toISOString()
+      }));
+
+      // Show in-app alert
+      showAlert(
+        alertTitle,
+        bidNotification.message,
+        alertType,
+        [
+          {
+            text: 'İlanı Gör',
+            variant: 'primary',
+            onPress: () => {
+              setAlertConfig(prev => ({ ...prev, visible: false }));
+              if (bidNotification.jobPostId) {
+                router.push(`/jobs/${bidNotification.jobPostId}`);
+              }
+            }
+          },
+          { text: 'Kapat', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }
+        ]
+      );
+    });
+
     return () => {
       unsubscribe();
+      unsubscribeBid();
     };
   }, [isAuthenticated, dispatch, router]);
 
