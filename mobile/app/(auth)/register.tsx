@@ -109,10 +109,19 @@ export default function RegisterScreen() {
           } : undefined
         })
       ).unwrap();
-      if (redirectTo) {
-        router.replace(redirectTo as any);
-      } else {
-        router.replace('/(tabs)');
+
+      // Small delay to let _layout.tsx handle navigation properly
+      // This avoids race condition between register screen and root layout
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      try {
+        if (redirectTo) {
+          router.replace(redirectTo as any);
+        } else {
+          router.replace('/(tabs)');
+        }
+      } catch (navErr) {
+        console.log('Navigation handled by _layout.tsx');
       }
     } catch (err: any) {
       showAlert('Kayıt Hatası', err || 'Kayıt olunamadı. Lütfen tekrar deneyin.', 'error');
