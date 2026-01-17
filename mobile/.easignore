@@ -1,9 +1,3 @@
-node_modules/
-.expo/
-.git/
-types/
-*.log
-dist/
-.env*
-android/
-ios/
+# Ignore native folders so EAS uses Prebuild (CNG)
+/android
+/ios
