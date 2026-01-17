@@ -121,28 +121,11 @@ function RootLayoutNav() {
             return;
           }
 
-          // NEW: If profile is complete but we are still on the mandatory edit page, go home
+          // If profile is complete but we are still on the mandatory edit page, go home
           if (!isIncomplete && isInsideProfileGroup && params.mandatory === 'true') {
             console.log('✅ Profile complete, exiting mandatory edit mode');
-            // Check if electrician onboarding was completed
-            const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-            const hasSeenElectricianOnboarding = await AsyncStorage.getItem('electrician_onboarding_completed');
-            if (!hasSeenElectricianOnboarding) {
-              router.replace('/onboarding/electrician');
-              return;
-            }
             router.replace('/(tabs)');
             return;
-          }
-
-          // Check electrician onboarding for returning users
-          if (!isIncomplete && inAuthGroup) {
-            const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-            const hasSeenElectricianOnboarding = await AsyncStorage.getItem('electrician_onboarding_completed');
-            if (!hasSeenElectricianOnboarding) {
-              router.replace('/onboarding/electrician');
-              return;
-            }
           }
         }
 
