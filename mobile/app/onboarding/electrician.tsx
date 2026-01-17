@@ -33,7 +33,7 @@ const slides: OnboardingSlide[] = [
         id: '1',
         icon: 'rocket',
         iconColor: '#7C3AED',
-        title: 'İşbitir\'e Hoş Geldiniz!',
+        title: 'işbitir\'e Hoş Geldiniz!',
         description: 'Türkiye\'nin en kolay iş bulma platformu. Binlerce müşteri sizi bekliyor.',
     },
     {

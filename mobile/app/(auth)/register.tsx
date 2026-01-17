@@ -82,6 +82,36 @@ export default function RegisterScreen() {
   };
 
 
+  // Format phone number to E.164 (e.g. +905554443322)
+  const formatPhoneNumber = (number: string) => {
+    let cleaned = number.replace(/\D/g, '');
+    if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
+    if (!cleaned.startsWith('90')) cleaned = '90' + cleaned;
+    return '+' + cleaned;
+  };
+
+  const handleSendCode = async () => {
+    if (!validate()) return;
+
+    setIsSendingCode(true);
+    try {
+      const formattedPhone = formatPhoneNumber(phone);
+      console.log('Sending code to:', formattedPhone);
+      const confirmation = await auth().signInWithPhoneNumber(formattedPhone);
+      setConfirm(confirmation);
+      setIsPhoneModalVisible(true);
+    } catch (error: any) {
+      console.error('SMS Error:', error);
+      let errorMessage = 'SMS gönderilemedi. Lütfen numaranızı kontrol edin.';
+      if (error.code === 'auth/invalid-phone-number') errorMessage = 'Geçersiz telefon numarası formatı.';
+      if (error.code === 'auth/too-many-requests') errorMessage = 'Çok fazla deneme yaptınız. Lütfen daha sonra tekrar deneyin.';
+
+      showAlert('Hata', errorMessage, 'error');
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
   const handleRegister = async (forceRegister = false) => {
     if (!validate()) return;
 

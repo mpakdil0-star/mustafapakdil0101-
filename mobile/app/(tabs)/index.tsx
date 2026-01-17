@@ -594,9 +594,10 @@ export default function HomeScreen() {
               </View>
               <TouchableOpacity
                 onPress={() => router.push('/onboarding/electrician')}
-                style={{ padding: 8, backgroundColor: 'rgba(139, 92, 246, 0.15)', borderRadius: 20 }}
+                style={{ flexDirection: 'row', alignItems: 'center', padding: 8, paddingHorizontal: 12, backgroundColor: 'rgba(139, 92, 246, 0.15)', borderRadius: 20, gap: 6 }}
               >
-                <Ionicons name="help-circle" size={24} color="#8B5CF6" />
+                <Ionicons name="help-circle" size={18} color="#8B5CF6" />
+                <Text style={{ fontFamily: fonts.semiBold, fontSize: 12, color: '#8B5CF6' }}>Nasıl Çalışır?</Text>
               </TouchableOpacity>
             </View>
 
@@ -667,18 +668,6 @@ export default function HomeScreen() {
                 </LinearGradient>
                 <Text style={styles.toolCardTitle}>Teklif Hazırla</Text>
                 <Text style={styles.toolCardDesc}>PDF oluştur ve paylaş</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.toolCardHalf}
-                onPress={() => router.push('/onboarding/electrician')}
-                activeOpacity={0.85}
-              >
-                <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.toolIconBox}>
-                  <Ionicons name="help-circle" size={28} color="#FFF" />
-                </LinearGradient>
-                <Text style={styles.toolCardTitle}>Nasıl Çalışır?</Text>
-                <Text style={styles.toolCardDesc}>Kredi sistemi ve ipuçları</Text>
               </TouchableOpacity>
             </View>
           </View>

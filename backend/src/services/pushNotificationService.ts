@@ -31,6 +31,8 @@ export const pushNotificationService = {
                 body,
                 data,
                 badge,
+                priority: 'high',
+                channelId: 'default',
             });
         }
 
