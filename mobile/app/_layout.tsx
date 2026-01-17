@@ -206,8 +206,8 @@ function RootLayoutNav() {
 
       // Show in-app alert if appropriate
       showAlert(
-        notification.title,
-        notification.message,
+        (notification as any).title || 'Bildirim',
+        (notification as any).message || notification.preview || '',
         'info',
         [
           {
@@ -215,13 +215,27 @@ function RootLayoutNav() {
             variant: 'primary',
             onPress: () => {
               setAlertConfig(prev => ({ ...prev, visible: false }));
-              // Navigate to notifications tab or specific job
-              // Socket notifications have jobId directly, push notifications have it in data
-              const jobId = (notification as any).jobId || notification.data?.jobId;
-              if (jobId) {
+
+              // Check notification type and route accordingly
+              const notificationType = (notification as any).type;
+              const conversationId = (notification as any).conversationId;
+              const jobId = (notification as any).jobId || (notification as any).data?.jobId;
+
+              // Message notifications - route to messages screen
+              if (notificationType === 'new_message' || conversationId) {
+                if (conversationId) {
+                  router.push(`/messages/${conversationId}`);
+                } else {
+                  router.push('/(tabs)/messages');
+                }
+              }
+              // Job notifications - route to job details
+              else if (jobId) {
                 router.push(`/jobs/${jobId}`);
-              } else {
-                router.push('/(tabs)/notifications');
+              }
+              // Default - go to notifications list
+              else {
+                router.push('/(tabs)/profile');
               }
             }
           },
