@@ -45,7 +45,7 @@ const slides: OnboardingSlide[] = [
         bulletPoints: [
             'Her teklif verdiğinizde 1 kredi harcanır',
             'İlan vatandaş tarafından iptal edilirse krediniz iade edilir',
-            'Krediniz bittiğinde Profil → Cüzdanım → Kredi Yükle',
+            'Krediniz bittiğinde Profil → Cüzdanım → Kredi Yükle sayfasından yeni kredi satın alabilirsiniz',
         ],
     },
     {
