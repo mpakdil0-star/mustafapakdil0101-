@@ -592,6 +592,12 @@ export default function HomeScreen() {
                 <Text style={styles.sectionTitle}>Hızlı İşlemler</Text>
                 <Text style={styles.sectionSubtitle}>İşlerini ve profilini buradan yönet</Text>
               </View>
+              <TouchableOpacity
+                onPress={() => router.push('/onboarding/electrician')}
+                style={{ padding: 8, backgroundColor: 'rgba(139, 92, 246, 0.15)', borderRadius: 20 }}
+              >
+                <Ionicons name="help-circle" size={24} color="#8B5CF6" />
+              </TouchableOpacity>
             </View>
 
             <View style={styles.electricianQuickCards}>
