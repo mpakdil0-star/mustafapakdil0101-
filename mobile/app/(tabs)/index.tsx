@@ -662,6 +662,18 @@ export default function HomeScreen() {
                 <Text style={styles.toolCardTitle}>Teklif Hazırla</Text>
                 <Text style={styles.toolCardDesc}>PDF oluştur ve paylaş</Text>
               </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.toolCardHalf}
+                onPress={() => router.push('/onboarding/electrician')}
+                activeOpacity={0.85}
+              >
+                <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.toolIconBox}>
+                  <Ionicons name="help-circle" size={28} color="#FFF" />
+                </LinearGradient>
+                <Text style={styles.toolCardTitle}>Nasıl Çalışır?</Text>
+                <Text style={styles.toolCardDesc}>Kredi sistemi ve ipuçları</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
