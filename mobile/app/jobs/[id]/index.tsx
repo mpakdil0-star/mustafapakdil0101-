@@ -468,7 +468,7 @@ export default function JobDetailScreen() {
         )}
 
         {/* İlan İptal Et Butonu - Sadece ilan sahibi ve iş başlamadıysa görünür */}
-        {isOwner && (jobData.status === 'OPEN' || jobData.status === 'BIDDING') && (
+        {isOwner && (jobData.status === 'OPEN' || jobData.status === 'BIDDING') && !jobData.assignedElectricianId && (
           <View style={styles.cancelSection}>
             <TouchableOpacity
               style={[styles.cancelBtn, { borderColor: staticColors.error, backgroundColor: staticColors.error + '08' }]}
