@@ -5,7 +5,7 @@ import { Provider, useSelector } from 'react-redux';
 import { store } from '../store/store';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { InteractionManager, View, Text } from 'react-native';
+import { InteractionManager, View, Text, Platform } from 'react-native';
 import { RootState } from '../store/store';
 import { useFonts } from 'expo-font';
 import { fontFiles } from '../constants/typography';
@@ -16,9 +16,21 @@ import { useAppDispatch } from '../hooks/redux';
 import { addNotification, fetchNotifications } from '../store/slices/notificationSlice';
 import { getMe } from '../store/slices/authSlice';
 import { Alert } from 'react-native';
+import * as Notifications from 'expo-notifications';
+
+// CRITICAL: Configure notification handler for foreground AND background display
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    priority: Notifications.AndroidNotificationPriority.MAX,
+  }),
+});
 
 // Prevent splash from auto-hiding
 SplashScreen.preventAutoHideAsync();
+
 
 function RootLayoutNav() {
   const router = useRouter();
