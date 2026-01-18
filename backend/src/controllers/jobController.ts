@@ -256,6 +256,18 @@ export const createJobController = async (
               createdAt: new Date().toISOString()
             };
             addMockNotification(userId, notification);
+
+            // CRITICAL: Send PUSH notification (for background/closed app)
+            const pushToken = userData.pushToken;
+            if (pushToken) {
+              const pushNotificationService = require('../services/pushNotificationService').default;
+              pushNotificationService.sendNotification({
+                to: pushToken,
+                title: 'Yeni İş İlanı! ⚡',
+                body: `Bölgenizde yeni ilan verildi: ${jobData.title}`,
+                data: { jobId: mockJob.id, type: 'new_job_available' }
+              }).catch((err: any) => console.error('Push Notification Error:', err));
+            }
           }
         });
 

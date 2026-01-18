@@ -82,6 +82,20 @@ router.post('/', async (req, res) => {
     };
     addMockNotification(receiverId, notification);
 
+    // CRITICAL: Send PUSH notification (for background/closed app)
+    const { mockStorage } = require('../utils/mockStorage');
+    const senderData = mockStorage.get(userId);
+    const receiverData = mockStorage.get(receiverId);
+    if (receiverData?.pushToken) {
+      const pushNotificationService = require('../services/pushNotificationService').default;
+      pushNotificationService.sendNotification({
+        to: receiverData.pushToken,
+        title: `${senderData?.fullName || 'Birisi'} mesaj gönderdi 💬`,
+        body: content?.substring(0, 80) + (content?.length > 80 ? '...' : ''),
+        data: { conversationId: conversation.id, type: 'new_message' }
+      }).catch((err: any) => console.error('Push Notification Error:', err));
+    }
+
     res.json({
       success: true,
       data: {

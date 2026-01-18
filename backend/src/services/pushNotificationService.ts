@@ -34,6 +34,11 @@ export const pushNotificationService = {
                 priority: 'high',
                 channelId: 'default',
             });
+
+            console.log(`\n📤 SENDING PUSH NOTIFICATION:`);
+            console.log(`   To: ${pushToken}`);
+            console.log(`   Title: ${title}`);
+            console.log(`   Body: ${body}\n`);
         }
 
         if (messages.length === 0) return;

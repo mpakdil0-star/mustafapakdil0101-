@@ -239,6 +239,19 @@ export const createBidController = async (
           };
           addMockNotification(job.citizenId, notification);
 
+          // CRITICAL: Send PUSH notification (for background/closed app)
+          const { mockStorage } = require('../utils/mockStorage');
+          const citizenData = mockStorage.get(job.citizenId);
+          if (citizenData?.pushToken) {
+            const pushNotificationService = require('../services/pushNotificationService').default;
+            pushNotificationService.sendNotification({
+              to: citizenData.pushToken,
+              title: 'Yeni Teklif Aldınız! 💰',
+              body: `${mockBid.electrician?.fullName || 'Bir usta'} ilanınıza ${bidData.amount} ₺ teklif verdi.`,
+              data: { jobId: bidData.jobPostId, type: 'bid_received' }
+            }).catch((err: any) => console.error('Push Notification Error:', err));
+          }
+
           // Also send socket notification for real-time update
           console.log(`📢 [SOCKET] Sending bid_received notification to ${job.citizenId}`);
           notifyUser(job.citizenId, 'bid_received', {
@@ -641,6 +654,19 @@ export const acceptBidController = async (
           createdAt: new Date().toISOString()
         };
         addMockNotification(acceptedBid.electricianId, notification);
+
+        // CRITICAL: Send PUSH notification (for background/closed app)
+        const { mockStorage } = require('../utils/mockStorage');
+        const electricianData = mockStorage.get(acceptedBid.electricianId);
+        if (electricianData?.pushToken) {
+          const pushNotificationService = require('../services/pushNotificationService').default;
+          pushNotificationService.sendNotification({
+            to: electricianData.pushToken,
+            title: 'Teklifiniz Kabul Edildi! 🎉',
+            body: `${acceptedBid.amount} ₺ teklifiniz kabul edildi. İşe başlayabilirsiniz!`,
+            data: { jobId: acceptedBid.jobPostId, type: 'bid_accepted' }
+          }).catch((err: any) => console.error('Push Notification Error:', err));
+        }
 
         // --- ADDED: Real-time notification for electrician ---
         console.log(`📢 [MOCK] Sending bid_accepted notification to electrician ${acceptedBid.electricianId}`);

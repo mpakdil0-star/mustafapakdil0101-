@@ -27,6 +27,7 @@ interface MockUserStore {
         completedJobsCount?: number;
         locations?: any[];
         serviceCategory?: string; // Ana hizmet kategorisi: 'elektrik' | 'cilingir' | 'klima' | 'beyaz-esya' | 'tesisat'
+        pushToken?: string; // Expo push token for notifications
     }
 }
 
@@ -188,7 +189,8 @@ export const mockStorage = {
         locations?: any[],
         completedJobsCount?: number,
         serviceCategory?: string,
-        userType?: string  // Added: Store userType directly
+        userType?: string,  // Added: Store userType directly
+        pushToken?: string  // Added: Push notification token
     }) => {
         const store = mockStorage.get(userId);
         if (data.passwordHash !== undefined) store.passwordHash = data.passwordHash;
@@ -210,6 +212,7 @@ export const mockStorage = {
         if (data.completedJobsCount !== undefined) store.completedJobsCount = data.completedJobsCount;
         if (data.serviceCategory !== undefined) store.serviceCategory = data.serviceCategory;
         if (data.userType !== undefined) store.userType = data.userType;  // Save userType directly
+        if (data.pushToken !== undefined) store.pushToken = data.pushToken;  // Save push token
         saveToDisk();
         return store;
     },

@@ -179,6 +179,18 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                         preview: content.substring(0, 50),
                     });
 
+                    // CRITICAL: Send PUSH notification (for background/closed app)
+                    const receiverData = mockStorage.get(mockMessage.receiverId);
+                    if (receiverData?.pushToken) {
+                        const pushNotificationService = require('../services/pushNotificationService').default;
+                        pushNotificationService.sendNotification({
+                            to: receiverData.pushToken,
+                            title: `${senderUser?.fullName || 'Birisi'} mesaj gönderdi 💬`,
+                            body: content.substring(0, 80) + (content.length > 80 ? '...' : ''),
+                            data: { conversationId, type: 'new_message' }
+                        }).catch((err: any) => console.error('Push Notification Error:', err));
+                    }
+
                     console.log(`💬 Mock message sent & saved via socket in conversation ${conversationId}`);
                     return;
                 }

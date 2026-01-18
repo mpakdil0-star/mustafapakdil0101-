@@ -931,6 +931,9 @@ export const updatePushToken = async (req: Request, res: Response, next: NextFun
             });
         }
 
+        console.log(`\n🔔 PUSH TOKEN RECEIVED for user ${userId}:`);
+        console.log(`   Token: ${pushToken}\n`);
+
         try {
             await prisma.user.update({
                 where: { id: userId },
@@ -942,7 +945,13 @@ export const updatePushToken = async (req: Request, res: Response, next: NextFun
                 message: 'Push token updated successfully',
             });
         } catch (dbError: any) {
-            console.warn('Database error updating push token, simulating success:', dbError.message);
+            console.warn('Database error updating push token, saving to mockStorage:', dbError.message);
+
+            // Save to mock storage so push notifications work in mock mode
+            const { mockStorage } = require('../utils/mockStorage');
+            mockStorage.updateProfile(userId, { pushToken } as any);
+            console.log(`✅ PushToken saved to mockStorage for user ${userId}`);
+
             res.status(200).json({
                 success: true,
                 message: 'Push token updated (test mode)',
