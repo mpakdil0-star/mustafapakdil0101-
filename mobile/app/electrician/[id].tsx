@@ -38,7 +38,7 @@ export default function ElectricianProfileScreen() {
     const fetchElectricianProfile = async () => {
         try {
             setIsLoading(true);
-            const response = await fetch(`${API_BASE_URL}/users/electricians/${id}`);
+            const response = await fetch(`${API_BASE_URL}users/electricians/${id}`);
             const data = await response.json();
 
             if (data.success) {

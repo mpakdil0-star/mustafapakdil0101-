@@ -178,7 +178,7 @@ export default function EditJobScreen() {
                 estimatedBudget: estimatedBudget ? parseFloat(estimatedBudget) : undefined,
             };
 
-            const response = await fetch(`${API_BASE_URL}/jobs/${id}`, {
+            const response = await fetch(`${API_BASE_URL}jobs/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

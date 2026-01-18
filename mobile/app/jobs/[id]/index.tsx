@@ -188,24 +188,14 @@ export default function JobDetailScreen() {
       );
 
       if (existingConversation) {
-        // Mevcut konuşma varsa, mesaj göndermeden direkt oraya git
+        // Mevcut konuşma varsa, direkt oraya git
         router.push(`/messages/${existingConversation.id}`);
         return;
       }
 
-      // Mevcut konuşma yoksa, yeni konuşma başlat ve ilk mesajı gönder
-      const resp = await messageService.sendMessage({
-        receiverId: receiverId,
-        content: initialMessage || 'Merhaba, ilanımla ilgili görüşmek istiyorum.',
-        bidId: bidId,
-        jobId: id
-      });
-
-      if (resp?.conversationId) {
-        // Mesajın veritabanına kaydedilmesi için kısa bir bekleme
-        await new Promise(resolve => setTimeout(resolve, 500));
-        router.push(`/messages/${resp.conversationId}`);
-      }
+      // Mevcut konuşma yoksa, yeni konuşma oluştur (mesaj göndermeden)
+      // receiverId ve jobId bilgisini query param olarak geç
+      router.push(`/messages/new?receiverId=${receiverId}&jobId=${id}&bidId=${bidId}`);
     } catch (error) {
       showAlert('Hata', 'Sohbet başlatılamadı.', 'error');
     }
@@ -515,7 +505,7 @@ export default function JobDetailScreen() {
                   </View>
                 </View>
                 <View style={styles.activeActions}>
-                  <TouchableOpacity style={[styles.actionBtn, { borderColor: colors.primary + '40' }]} onPress={() => handleMessagePress(bid.electricianId, bid.id)}>
+                  <TouchableOpacity style={[styles.actionBtn, { borderColor: colors.primary + '40' }]} onPress={() => handleMessagePress(bid.electricianId, bid.id, 'Merhaba, ilanınızla ilgili görüşmek istiyorum.')}>
                     <Ionicons name="chatbubbles" size={18} color={colors.primary} />
                     <Text style={[styles.actionBtnText, { color: colors.primary }]}>Mesaj Gönder</Text>
                   </TouchableOpacity>

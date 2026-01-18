@@ -18,6 +18,7 @@ import { userService } from '../../services/userService';
 import { AuthGuardModal } from '../../components/common/AuthGuardModal';
 import { JOB_CATEGORIES } from '../../constants/jobCategories';
 import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 // --- Premium Service Category Component ---
@@ -112,6 +113,7 @@ export default function HomeScreen() {
   const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
   const [featuredElectricians, setFeaturedElectricians] = useState<any[]>([]);
   const [isLoadingElectricians, setIsLoadingElectricians] = useState(false);
+  const [hideHowItWorks, setHideHowItWorks] = useState(false);
 
   // Pulse animation for health action buttons
   const healthPulseAnim = useRef(new Animated.Value(1)).current;
@@ -160,6 +162,17 @@ export default function HomeScreen() {
       badgePulseAnim.setValue(1);
     }
   }, [unreadCount]);
+
+  // Nasıl Çalışır butonunu gizleme tercihini yükle
+  useEffect(() => {
+    const loadHidePreference = async () => {
+      try {
+        const hidden = await AsyncStorage.getItem('hide_how_it_works_button');
+        if (hidden === 'true') setHideHowItWorks(true);
+      } catch (e) { }
+    };
+    if (isElectrician) loadHidePreference();
+  }, [isElectrician]);
 
   // Interpolate border color through RGB spectrum
   const animatedBorderColor = borderColorAnim.interpolate({
@@ -592,13 +605,60 @@ export default function HomeScreen() {
                 <Text style={styles.sectionTitle}>Hızlı İşlemler</Text>
                 <Text style={styles.sectionSubtitle}>İşlerini ve profilini buradan yönet</Text>
               </View>
-              <TouchableOpacity
-                onPress={() => router.push('/onboarding/electrician')}
-                style={{ flexDirection: 'row', alignItems: 'center', padding: 8, paddingHorizontal: 12, backgroundColor: 'rgba(139, 92, 246, 0.15)', borderRadius: 20, gap: 6 }}
-              >
-                <Ionicons name="help-circle" size={18} color="#8B5CF6" />
-                <Text style={{ fontFamily: fonts.semiBold, fontSize: 12, color: '#8B5CF6' }}>Nasıl Çalışır?</Text>
-              </TouchableOpacity>
+              {!hideHowItWorks && (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <TouchableOpacity
+                    onPress={() => router.push('/onboarding/electrician')}
+                    activeOpacity={0.8}
+                    style={{
+                      borderRadius: 20,
+                      overflow: 'hidden',
+                      shadowColor: '#3B82F6',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.4,
+                      shadowRadius: 8,
+                      elevation: 6,
+                    }}
+                  >
+                    <LinearGradient
+                      colors={['#3B82F6', '#1D4ED8']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        paddingVertical: 5,
+                        paddingLeft: 8,
+                        paddingRight: 4,
+                        gap: 4,
+                      }}
+                    >
+                      <Ionicons name="bulb" size={12} color="#FFFFFF" />
+                      <Text style={{ fontFamily: fonts.bold, fontSize: 10, color: '#FFFFFF' }}>Nasıl Çalışır?</Text>
+                      <TouchableOpacity
+                        onPress={async () => {
+                          try {
+                            await AsyncStorage.setItem('hide_how_it_works_button', 'true');
+                            setHideHowItWorks(true);
+                          } catch (e) { }
+                        }}
+                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
+                        style={{
+                          marginLeft: 2,
+                          width: 14,
+                          height: 14,
+                          borderRadius: 7,
+                          backgroundColor: 'rgba(255, 255, 255, 0.25)',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Ionicons name="close" size={9} color="#FFFFFF" />
+                      </TouchableOpacity>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
 
             <View style={styles.electricianQuickCards}>

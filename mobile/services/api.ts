@@ -98,7 +98,7 @@ class ApiService {
               return Promise.reject(error);
             }
 
-            const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
+            const response = await axios.post(`${API_BASE_URL}auth/refresh-token`, {
               refreshToken,
             }, {
               headers: {
