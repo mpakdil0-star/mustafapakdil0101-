@@ -84,7 +84,7 @@ export default function WelcomeScreen() {
                                 <Ionicons name="flash" size={42} color={colors.white} />
                             </LinearGradient>
                         </View>
-                        <Text style={styles.title}>Ustalar</Text>
+                        <Text style={styles.title}>İşbitir</Text>
                         <Text style={styles.subtitle}>Sektörün uzmanlarıyla buluşun</Text>
                     </View>
 
