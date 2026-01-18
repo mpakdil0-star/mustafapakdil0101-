@@ -54,7 +54,11 @@
       [
         "expo-notifications",
         {
-          "color": "#6200EE"
+          "color": "#6200EE",
+          "sounds": [],
+          "icon": "./assets/images/icon.png",
+          "defaultChannel": "default",
+          "enableBackgroundRemoteNotifications": true
         }
       ]
     ],
