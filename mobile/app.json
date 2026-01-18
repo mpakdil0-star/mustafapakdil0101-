@@ -62,7 +62,7 @@
         }
       ]
     ],
-    "scheme": "elektrikciler",
+    "scheme": "isbitir",
     "platforms": [
       "ios",
       "android"

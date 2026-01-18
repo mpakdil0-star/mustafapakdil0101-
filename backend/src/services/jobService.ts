@@ -891,7 +891,20 @@ export const jobService = {
         }
       }).catch(err => console.error('Electrician notification save error:', err));
 
-      // 3. Push Bildirimi (Token bulmak için sorgu lazım, ama şimdilik socket ve DB öncelikli)
+      // 3. Push Bildirimi (Token bulmak için sorgu lazım)
+      const electrician = await prisma.user.findUnique({
+        where: { id: updatedJob.assignedElectricianId },
+        select: { pushToken: true }
+      });
+
+      if (electrician?.pushToken) {
+        pushNotificationService.sendNotification({
+          to: electrician.pushToken,
+          title: 'İş Onaylandı! 🎉',
+          body: `"${updatedJob.title}" ilanı vatandaş tarafından onaylandı. Tebrikler!`,
+          data: { jobId: updatedJob.id, type: 'job_confirmed' }
+        }).catch(err => console.error('Electrician push error:', err));
+      }
 
       // 4. Ustanın Tamamlanan İş Sayısını Artır
       await prisma.electricianProfile.update({
@@ -998,6 +1011,21 @@ export const jobService = {
             relatedId: jobId,
           }
         });
+      }
+
+      // 3. Push notification
+      const electrician = await prisma.user.findUnique({
+        where: { id: electricianId },
+        select: { pushToken: true }
+      });
+
+      if (electrician?.pushToken) {
+        pushNotificationService.sendNotification({
+          to: electrician.pushToken,
+          title: 'Yeni Değerlendirme!',
+          body: `"${jobPost.title}" ilanı için ${data.rating} yıldızlı bir değerlendirme aldınız.`,
+          data: { jobId: jobId, type: 'new_review' }
+        }).catch(err => console.error('Electrician review push error:', err));
       }
     } catch (error) {
       console.error('Failed to notify electrician about new review:', error);

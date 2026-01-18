@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config/env';
 import prisma, { isDatabaseAvailable } from '../config/database';
 import { mockStore } from '../utils/mockStore';
+import pushNotificationService from './pushNotificationService';
 
 interface AuthenticatedSocket extends Socket {
     userId?: string;
@@ -276,7 +277,7 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                 });
 
                 // Bildirimi veritabanına kaydet (Kalıcı rozet için)
-                await prisma.notification.create({
+                const dbNotification = await prisma.notification.create({
                     data: {
                         userId: recipientId,
                         type: 'new_message',
@@ -286,6 +287,22 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                         relatedId: conversationId,
                     }
                 });
+
+                // CRITICAL: Alıcıya PUSH bildirimi gönder (Arka plan/ Kapalı uygulama için)
+                // Real DB path was missing this!
+                const recipient = await prisma.user.findUnique({
+                    where: { id: recipientId },
+                    select: { pushToken: true }
+                });
+
+                if (recipient?.pushToken) {
+                    pushNotificationService.sendNotification({
+                        to: recipient.pushToken,
+                        title: `${message.sender.fullName} mesaj gönderdi 💬`,
+                        body: content.substring(0, 80) + (content.length > 80 ? '...' : ''),
+                        data: { conversationId, type: 'new_message' }
+                    }).catch((err: any) => console.error('Push Notification Error (Real DB):', err));
+                }
 
                 console.log(`💬 Message sent in conversation ${conversationId}`);
             } catch (error) {

@@ -656,6 +656,21 @@ export const bidService = {
           }
         });
       }
+
+      // 3. Push notification
+      const electrician = await prisma.user.findUnique({
+        where: { id: bid.electricianId },
+        select: { pushToken: true }
+      });
+
+      if (electrician?.pushToken) {
+        pushNotificationService.sendNotification({
+          to: electrician.pushToken,
+          title: 'Teklif Reddedildi',
+          body: `"${bid.jobPost.title}" ilanı için verdiğiniz teklif reddedildi.`,
+          data: { jobId: bid.jobPostId, type: 'bid_rejected' }
+        }).catch(err => console.error('Push error:', err));
+      }
     } catch (error) {
       console.error('Failed to notify electrician about rejected bid:', error);
     }

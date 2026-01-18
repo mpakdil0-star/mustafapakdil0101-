@@ -770,6 +770,19 @@ export const rejectBidController = async (
           jobTitle: job?.title || 'İş İlanı',
           message: `❌ Üzgünüz, "${job?.title || 'İş'}" ilanına verdiğiniz teklif vatandaş tarafından reddedildi.`
         });
+
+        // CRITICAL: Send PUSH notification (for background/closed app)
+        const { mockStorage } = require('../utils/mockStorage');
+        const electricianData = mockStorage.get(rejectedBid.electricianId);
+        if (electricianData?.pushToken) {
+          const pushNotificationService = require('../services/pushNotificationService').default;
+          pushNotificationService.sendNotification({
+            to: electricianData.pushToken,
+            title: 'Teklif Reddedildi',
+            body: `"${job?.title || 'İş'}" ilanı için verdiğiniz teklif reddedildi.`,
+            data: { jobId: rejectedBid.jobPostId, type: 'bid_rejected' }
+          }).catch((err: any) => console.error('Push Notification Error (Mock Reject):', err));
+        }
       }
 
       return res.json({
