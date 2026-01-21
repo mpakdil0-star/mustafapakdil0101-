@@ -165,12 +165,13 @@ export const createJobController = async (
 
       if (isConnectionError || req.user.id.startsWith('mock-')) {
         console.warn('⚠️ Database connection failed, returning mock job data for creation');
+        console.log('📦 Job Data Service Category:', jobData.serviceCategory);
         const mockJob = {
           id: `mock-${Date.now()}`,
           citizenId: req.user.id,
           title: jobData.title,
           description: jobData.description,
-          serviceCategory: jobData.serviceCategory || 'elektrik', // Ana hizmet kategorisi
+          serviceCategory: jobData.serviceCategory, // Ana hizmet kategorisi
           category: jobData.category,
           subcategory: jobData.subcategory || null,
           location: jobData.location,
@@ -190,48 +191,57 @@ export const createJobController = async (
           },
         };
 
-        // Store the job in memory for this user
+        // Store the job in memory
         if (!userJobsStore.has(req.user.id)) {
           userJobsStore.set(req.user.id, []);
         }
         const userJobs = userJobsStore.get(req.user.id) || [];
-        userJobs.unshift(mockJob); // Add to beginning
+        userJobs.unshift(mockJob);
         userJobsStore.set(req.user.id, userJobs);
-
-        // Also store in global ID-based store for quick lookup
         jobStoreById.set(mockJob.id, mockJob);
-
-        // Save to disk
         saveMockJobs();
 
-        // Bildirim Gönder: İlgili bölgedeki elektrikçilere haber ver
+        // Notification Logic
         const { notifyUser } = require('../server');
         const { addMockNotification } = require('../routes/notificationRoutes');
         const { getAllMockUsers } = require('../utils/mockStorage');
 
-        // Get all electrician users and send them notification (filtered by serviceCategory + location)
         const allUsers = getAllMockUsers();
-        const jobServiceCategory = jobData.serviceCategory || 'elektrik';
-
-        const electricians = Object.entries(allUsers).filter(([id, data]: [string, any]) =>
-          id.includes('ELECTRICIAN')
-        );
-
-        // Create notification for each electrician in the same city or district AND matching serviceCategory
+        const jobServiceCategory = jobData.serviceCategory;
         const targetCity = jobData.location?.city;
         const targetDistrict = jobData.location?.district;
+        const targetRooms: string[] = [];
+
+        // 1. WebSocket Rooms Preparation
+        if (jobServiceCategory && targetCity) {
+          targetRooms.push(`area:${targetCity}:all:${jobServiceCategory}`);
+          if (targetDistrict && targetDistrict !== 'Tüm Şehir' && targetDistrict !== 'Merkez') {
+            targetRooms.push(`area:${targetCity}:${targetDistrict}:${jobServiceCategory}`);
+          }
+        }
+
+        // 2. Iterate users for Mock Notifications and Push Notifications
+        const electricians = Object.entries(allUsers).filter(([id]) => id.includes('ELECTRICIAN'));
+
+        console.log(`📡 Sending notifications. Job: ${jobServiceCategory}, City: ${targetCity}, Creator: ${req.user.id}`);
 
         electricians.forEach(([userId, userData]: [string, any]) => {
-          // Check if usta's serviceCategory matches the job's serviceCategory
-          const ustaServiceCategory = userData.serviceCategory || 'elektrik';
-          const serviceCategoryMatch = ustaServiceCategory === jobServiceCategory;
-
-          // If serviceCategory doesn't match, skip this usta
-          if (!serviceCategoryMatch) {
+          // SKIP the current user (even if they have an electrician profile)
+          if (req.user && userId === req.user.id) {
+            console.log(`   ⏭️ Skipping current user: ${userId}`);
             return;
           }
 
-          // Check if usta is in the same city or has this specific region in locations
+          const ustaServiceCategory = userData.serviceCategory;
+          const serviceCategoryMatch = ustaServiceCategory && jobServiceCategory && ustaServiceCategory === jobServiceCategory;
+
+          if (!serviceCategoryMatch) {
+            if (userData.pushToken) {
+              console.log(`   ❌ Category Mismatch for ${userId}: Usta(${ustaServiceCategory}) != Job(${jobServiceCategory})`);
+            }
+            return;
+          }
+
           const hasLocationMatch = userData.locations?.some((loc: any) =>
             loc.city?.toLowerCase() === targetCity?.toLowerCase() &&
             (
@@ -244,6 +254,8 @@ export const createJobController = async (
           );
 
           if (hasLocationMatch) {
+            console.log(`   ✅ MATCH FOUND: ${userId} (${userData.email}). Token: ${userData.pushToken ? 'YES' : 'NO'}`);
+            // Internal Mock Notification
             const notification = {
               id: `mock-notif-${Date.now()}-${userId}`,
               userId,
@@ -257,53 +269,40 @@ export const createJobController = async (
             };
             addMockNotification(userId, notification);
 
-            // CRITICAL: Send PUSH notification (for background/closed app)
-            const pushToken = userData.pushToken;
-            if (pushToken) {
+            // Push Notification
+            if (userData.pushToken) {
               const pushNotificationService = require('../services/pushNotificationService').default;
               pushNotificationService.sendNotification({
-                to: pushToken,
+                to: userData.pushToken,
                 title: 'Yeni İş İlanı! ⚡',
                 body: `Bölgenizde yeni ilan verildi: ${jobData.title}`,
                 data: { jobId: mockJob.id, type: 'new_job_available' }
               }).catch((err: any) => console.error('Push Notification Error:', err));
             }
+          } else if (userData.pushToken) {
+            console.log(`   ❌ Location Mismatch for ${userId}`);
           }
         });
 
-        // Also send socket notification to specific area rooms (with serviceCategory)
-        const targetRooms = [];
-        const jobServiceCategoryForRoom = jobData.serviceCategory || 'elektrik';
-
-        if (targetCity) {
-          // Always target category-specific city-wide room
-          targetRooms.push(`area:${targetCity}:all:${jobServiceCategoryForRoom}`);
-
-          const targetDistrict = jobData.location?.district;
-          if (targetDistrict && targetDistrict !== 'Tüm Şehir' && targetDistrict !== 'Merkez') {
-            targetRooms.push(`area:${targetCity}:${targetDistrict}:${jobServiceCategoryForRoom}`);
-          }
+        // 3. Send Socket Notifications
+        if (targetRooms.length > 0) {
+          notifyUser(targetRooms, 'new_job_available', {
+            title: 'Yeni İş İlanı! ⚡',
+            message: `Bölgenizde yeni ilan verildi: ${jobData.title}`,
+            jobId: mockJob.id,
+            locationPreview: targetDistrict || targetCity,
+            category: jobData.category
+          });
+        } else {
+          console.warn('⚠️ No target rooms for new job notification (Missing category or city)');
         }
-
-        // If no location info, don't fallback to all to avoid spam
-        if (targetRooms.length === 0) {
-          console.warn('⚠️ No target rooms for new job notification (Missing location)');
-          // targetRooms.push('all_electricians'); // REMOVED PER USER REQUEST
-        }
-
-        notifyUser(targetRooms, 'new_job_available', {
-          title: 'Yeni İş İlanı! ⚡',
-          message: `Bölgenizde yeni ilan verildi: ${jobData.title}`,
-          jobId: mockJob.id,
-          locationPreview: jobData.location?.district || jobData.location?.city,
-          category: jobData.category
-        });
 
         return res.status(201).json({
           success: true,
           data: { job: mockJob },
         });
       }
+
       throw dbError;
     }
   } catch (error) {

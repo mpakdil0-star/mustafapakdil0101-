@@ -27,6 +27,7 @@ export interface CreateJobData {
   description: string;
   category: string;
   subcategory?: string;
+  serviceCategory?: string;
   location: {
     address: string;
     city: string;
@@ -77,6 +78,7 @@ export const jobService = {
       description,
       category,
       subcategory,
+      serviceCategory,
       location,
       urgencyLevel = UrgencyLevel.MEDIUM,
       estimatedBudget,
@@ -113,6 +115,7 @@ export const jobService = {
         description,
         category,
         subcategory,
+        serviceCategory,
         location: location as any,
         urgencyLevel,
         estimatedBudget: estimatedBudget ? estimatedBudget.toString() : null,
@@ -120,7 +123,7 @@ export const jobService = {
         preferredTime,
         images,
         status: JobStatus.OPEN,
-      },
+      } as any,
       include: {
         citizen: {
           select: {
@@ -146,6 +149,10 @@ export const jobService = {
   async notifyNearbyElectricians(job: any) {
     const { city, district } = job.location as any;
     const serviceCategory = job.serviceCategory || 'elektrik';
+
+    console.log(`🔔 notifyNearbyElectricians triggered for JOB: ${job.id}`);
+    console.log(`   - Service Category: ${serviceCategory} (Original in job: ${job.serviceCategory})`);
+    console.log(`   - Location: ${city}, ${district}`);
 
     try {
       // 1. SEND REAL-TIME SOCKET NOTIFICATION VIA TARGETED ROOMS (with serviceCategory)
@@ -190,7 +197,10 @@ export const jobService = {
                   { district: 'Merkez' }
                 ]
               }
-            }
+            },
+            electricianProfile: {
+              serviceCategory: serviceCategory
+            } as any
           },
           select: { id: true, pushToken: true }
         });
