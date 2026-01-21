@@ -84,8 +84,8 @@ export default function WelcomeScreen() {
                                 <Ionicons name="flash" size={42} color={colors.white} />
                             </LinearGradient>
                         </View>
-                        <Text style={styles.title}>işbitir</Text>
-                        <Text style={styles.subtitle}>Sektörün uzmanlarıyla buluşun</Text>
+                        <Text style={styles.title}>İşbitir</Text>
+                        <Text style={styles.subtitle}>Hizmet almanın kolay hali.</Text>
                     </View>
 
                     <View style={styles.buttonSection}>
@@ -103,8 +103,8 @@ export default function WelcomeScreen() {
                                         <Ionicons name="people" size={24} color={colors.white} />
                                     </View>
                                     <View style={{ flex: 1 }}>
-                                        <Text style={styles.buttonTitle} numberOfLines={1} adjustsFontSizeToFit>Vatandaş Olarak Gez</Text>
-                                        <Text style={styles.buttonSubtitle}>Hızlıca usta bul ve ilan ver</Text>
+                                        <Text style={styles.buttonTitle} numberOfLines={1} adjustsFontSizeToFit>Hizmet Alan</Text>
+                                        <Text style={styles.buttonSubtitle}>Hızlıca uzman bul, ilan ver</Text>
                                     </View>
                                     <Ionicons name="arrow-forward" size={20} color="#7C3AED" />
                                 </LinearGradient>
@@ -125,8 +125,8 @@ export default function WelcomeScreen() {
                                         <Ionicons name="construct" size={24} color={colors.white} />
                                     </View>
                                     <View style={{ flex: 1 }}>
-                                        <Text style={styles.buttonTitle} numberOfLines={1} adjustsFontSizeToFit>Usta Olarak Gez</Text>
-                                        <Text style={styles.buttonSubtitle}>İşleri gör ve teklif ver</Text>
+                                        <Text style={styles.buttonTitle} numberOfLines={1} adjustsFontSizeToFit>Hizmet Veren</Text>
+                                        <Text style={styles.buttonSubtitle}>İşleri gör, teklif ver</Text>
                                     </View>
                                     <Ionicons name="arrow-forward" size={20} color="#3B82F6" />
                                 </LinearGradient>
