@@ -125,7 +125,7 @@ if (fs.existsSync(LEGAL_FILE)) {
             type: 'KVKK',
             version: 'v1.0',
             title: 'KVKK Aydınlatma Metni',
-            content: 'Örnek KVKK Metni: Kişisel verileriniz 6698 sayılı KVKK uyarınca işlenmektedir. Verileriniz üçüncü şahıslarla paylaşılmaz...',
+            content: 'Veri Sorumlusu: [ADINIZ SOYADINIZ]\\n\\n1. İŞLEME AMACI VE HUKUKİ SEBEP: Kişisel verileriniz, 6698 sayılı KVKK Madde 5/2-c uyarınca "bir sözleşmenin kurulması veya ifasıyla doğrudan doğruya ilgili olması" hukuki sebebine dayanarak; hizmet eşleştirme, hesap yönetimi ve platform güvenliği amaçlarıyla işlenmektedir.\\n2. İŞLENEN VERİLER: Kimlik (Ad-Soyad), İletişim (E-posta, Tel), Cihaz/İşlem Güvenliği (IP, Cihaz ID) ve Konum (İş ilanı/Usta bulma için).\\n3. VERİ AKTARIMI: Verileriniz, hizmetin sunulması için gerekli teknik altyapı sağlayıcıları (Expo, Firebase) ve bağımsız denetim/yasal zorunluluklar dışında 3. taraflara aktarılmaz.\\n4. SAKLAMA SÜRESİ: Kişisel verileriniz, yasal zamanaşımı süreleri ve platform kullanım süreniz boyunca saklanır.\\n5. HAKLARINIZ: KVKK Madde 11 uyarınca [E-POSTA ADRESİNİZ] üzerinden verilerinize erişme, düzeltme veya silme talebinde bulunabilirsiniz.',
             isActive: true,
             updatedAt: new Date().toISOString()
         },
@@ -134,7 +134,7 @@ if (fs.existsSync(LEGAL_FILE)) {
             type: 'TERMS',
             version: 'v1.0',
             title: 'Kullanıcı Sözleşmesi',
-            content: 'Örnek Kullanıcı Sözleşmesi: İşbu sözleşme İşbitir platformunun kullanım koşullarını belirler. Tüm hakları saklıdır.',
+            content: '1. TARAFLAR: İşbitir platformu, Geliştirici [ADINIZ SOYADINIZ] ile kullanıcı arasındadır.\\n2. YAŞ SINIRI: Platformu kullanabilmek için 18 yaşını doldurmuş olmanız gerekmektedir.\\n3. FİKRİ MÜLKİYET: Uygulamanın tasarımı, yazılım kodları, logosu ve tüm içeriği Geliştiriciye aittir; izinsiz kopyalanamaz.\\n4. SORUMLULUK REDDİ: Platform, kullanıcılar arasındaki iletişimi sağlayan bir köprüdür. Geliştirici; sunulan hizmetin kalitesi, gecikmesi veya taraflar arasındaki uyuşmazlıklardan maddi/manevi sorumlu tutulamaz.\\n5. HESAP FESHİ: Kullanım kurallarını ihlal eden veya platform güvenliğini tehdit eden hesaplar, Geliştirici tarafından önceden bildirim yapmaksızın kapatılabilir.\\n6. UYUŞMAZLIKLAR: İşbu sözleşmeden doğan uyuşmazlıklarda İstanbul (Çağlayan) Mahkemeleri ve İcra Daireleri yetkilidir.',
             isActive: true,
             updatedAt: new Date().toISOString()
         },
@@ -143,7 +143,7 @@ if (fs.existsSync(LEGAL_FILE)) {
             type: 'PRIVACY',
             version: 'v1.0',
             title: 'Gizlilik Politikası',
-            content: 'Örnek Gizlilik Politikası: Verilerinizin gizliliği bizim için önemlidir. Çerez politikamız ve veri işlenme süreçlerimiz hakkında detaylı bilgi için okumaya devam edin...',
+            content: 'Gizliliğiniz bizim için önceliğimizdir. Toplanan verilerinizin korunması için endüstri standardı şifreleme yöntemleri kullanılmaktadır. Konum verileriniz sadece uygulama açıkken ve sizin izninizle, size en yakın hizmet noktalarını göstermek için işlenir. Çerezler ve yerel depolama verileri sadece oturum yönetimi için kullanılır; reklam amaçlı profil oluşturma yapılmaz.',
             isActive: true,
             updatedAt: new Date().toISOString()
         },
@@ -152,7 +152,7 @@ if (fs.existsSync(LEGAL_FILE)) {
             type: 'MARKETING',
             version: 'v1.0',
             title: 'Pazarlama İletişim Onayı',
-            content: 'Örnek Pazarlama Metni: Kampanyalar, indirimler ve yeni özellikler hakkında bilgilendirilmek istiyorsanız bu onayı verebilirsiniz.',
+            content: 'Bu onayı vererek, İşbitir tarafından sunulan yeni özellikler, özel teklifler, indirimli kredi paketleri ve güncellemeler hakkında tarafınıza e-posta veya anlık bildirim yoluyla ticari elektronik ileti gönderilmesini kabul etmiş olursunuz. Onayınızı Profil/Ayarlar menüsünden dilediğiniz zaman kaldırabilirsiniz.',
             isActive: true,
             updatedAt: new Date().toISOString()
         }
