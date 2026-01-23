@@ -55,7 +55,7 @@ export default function LegalPolicyScreen() {
                     {doc ? (
                         <>
                             <Text style={styles.versionText}>Versiyon: {doc.version} - Son Güncelleme: {new Date(doc.updatedAt).toLocaleDateString('tr-TR')}</Text>
-                            <Text style={styles.content}>{doc.content}</Text>
+                            <Text style={styles.content}>{doc.content.replace(/\\n/g, '\n')}</Text>
                         </>
                     ) : (
                         <Text style={styles.errorText}>Metin yüklenemedi.</Text>

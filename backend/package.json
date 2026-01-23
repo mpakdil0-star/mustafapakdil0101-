@@ -4,7 +4,7 @@
   "description": "Elektrikçiler Platform Backend API",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon",
+    "dev": "node scripts/kill-port.js && nodemon",
     "build": "tsc",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",

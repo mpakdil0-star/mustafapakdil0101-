@@ -3,6 +3,7 @@ import { getLegalDocuments, recordConsent } from '../controllers/legalController
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
+console.log('⚖️ Legal Routes Loaded');
 
 // Public routes
 router.get('/texts', getLegalDocuments);

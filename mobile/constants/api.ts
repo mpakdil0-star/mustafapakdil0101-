@@ -28,17 +28,24 @@ const getLocalhostAddress = () => {
 };
 
 const LOCALHOST = getLocalhostAddress();
-const PORT = '3001';
+const PORT = '5000'; // Fixed: Backend runs on 5000, not 3001
 const API_VERSION = 'v1';
 
-// Tünel Adresi (Nihai)
-const TUNNEL_URL = 'https://leptospiral-palaeontologically-hilton.ngrok-free.dev';
+// Tünel Adresi (Opsiyonel - Sadece dışarıdan erişim için)
+const TUNNEL_URL = ''; // Boş bırakıldı, yerel ağ kullanılacak
 
 // Environment-based configuration
 const getApiUrl = () => {
-  // Use TUNNEL for remote access (works from any network)
-  const baseUrl = `${TUNNEL_URL}/api/${API_VERSION}/`;
-  console.log('🔌 Backend URL (Ngrok Tunnel):', baseUrl);
+  // 1. Eğer TUNNEL_URL doluysa onu kullan (Remote test)
+  if (TUNNEL_URL && TUNNEL_URL.length > 0) {
+    const baseUrl = `${TUNNEL_URL}/api/${API_VERSION}/`;
+    console.log('🔌 Backend URL (Ngrok Tunnel):', baseUrl);
+    return baseUrl;
+  }
+
+  // 2. Yoksa Yerel IP'yi kullan (Local test - Fast & Stable)
+  const baseUrl = `http://${LOCALHOST}:${PORT}/api/${API_VERSION}/`;
+  console.log('🏠 Backend URL (Local IP):', baseUrl);
   return process.env.EXPO_PUBLIC_API_URL || baseUrl;
 };
 

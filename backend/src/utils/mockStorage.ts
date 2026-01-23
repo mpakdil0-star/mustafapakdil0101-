@@ -3,6 +3,7 @@
  * verilerin session boyunca "kalıcı" kalmasını sağlar.
  */
 
+
 interface MockUserStore {
     [userId: string]: {
         id: string;
@@ -113,6 +114,7 @@ interface UserConsent {
 
 let legalDocuments: LegalDocument[] = [];
 if (fs.existsSync(LEGAL_FILE)) {
+    console.log('📜 Loading legal docs from disk...');
     try {
         legalDocuments = JSON.parse(fs.readFileSync(LEGAL_FILE, 'utf8'));
     } catch (e) {

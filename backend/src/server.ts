@@ -94,7 +94,7 @@ async function startServer() {
     // Note: Database connection is handled in database.ts with a timeout
     // We just ensure we listen here
     httpServer.listen(PORT, '0.0.0.0', () => {
-      logger.info(`🚀 Server running on port ${PORT}`);
+      logger.info(`🚀 SERVER RESTARTED SUCCESFULLY - LEGAL READY on port ${PORT}`);
       logger.info(`🏠 Local: http://localhost:${PORT}`);
     });
   } catch (error) {

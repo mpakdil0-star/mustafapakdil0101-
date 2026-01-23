@@ -117,7 +117,7 @@ export default function RegisterScreen() {
           visible: true,
           type: found.type,
           title: found.title,
-          content: found.content
+          content: found.content.replace(/\\n/g, '\n')
         });
       }
     } catch (err) {

@@ -35,10 +35,9 @@ const initDatabase = async () => {
     logger.info('✅ Database connected successfully');
   } catch (error: any) {
     isDatabaseAvailable = false;
-    logger.warn('⚠️  Database connection failed - API will work in mock mode');
-    logger.warn('   Please configure DATABASE_URL in .env file');
-    logger.warn('   See DATABASE_KURULUM.md for setup instructions');
-    // Server başlamaya devam edecek
+    logger.info('⚠️  Database URL not found or connection failed.');
+    logger.info('✅ Switching to MOCK STORAGE MODE (In-Memory). This is normal for local dev.');
+    // logger.warn('   Please configure DATABASE_URL in .env file');
   }
 };
 

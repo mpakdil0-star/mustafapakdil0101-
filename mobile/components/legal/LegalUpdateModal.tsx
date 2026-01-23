@@ -80,7 +80,9 @@ export default function LegalUpdateModal({ visible, onAccept, requiredVersion }:
                                 {docs.map(doc => (
                                     <View key={doc.id} style={styles.docItem}>
                                         <Text style={styles.docTitle}>{doc.title}</Text>
-                                        <Text style={styles.docPreview} numberOfLines={3}>{doc.content}</Text>
+                                        <Text style={styles.docPreview}>
+                                            {doc.content.replace(/\\n/g, '\n')}
+                                        </Text>
                                     </View>
                                 ))}
                             </ScrollView>
