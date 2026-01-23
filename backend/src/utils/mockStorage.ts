@@ -26,8 +26,10 @@ interface MockUserStore {
         bio?: string;
         completedJobsCount?: number;
         locations?: any[];
-        serviceCategory?: string; // Ana hizmet kategorisi: 'elektrik' | 'cilingir' | 'klima' | 'beyaz-esya' | 'tesisat'
-        pushToken?: string; // Expo push token for notifications
+        serviceCategory?: string;
+        pushToken?: string;
+        acceptedLegalVersion?: string; // Last accepted version (e.g. 'v1.0')
+        marketingAllowed?: boolean;    // Marketing opt-in status
     }
 }
 
@@ -37,6 +39,8 @@ import * as path from 'path';
 // Singleton storage
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'mock_users.json');
+const LEGAL_FILE = path.join(DATA_DIR, 'mock_legal.json');
+const CONSENT_FILE = path.join(DATA_DIR, 'mock_consents.json');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -83,6 +87,90 @@ const saveToDisk = () => {
         console.error('❌ Failed to save mock data:', error);
     }
 };
+
+// --- LEGAL & CONSENT PERSISTENCE ---
+
+interface LegalDocument {
+    id: string;
+    type: 'KVKK' | 'TERMS' | 'PRIVACY' | 'MARKETING';
+    version: string;
+    title: string;
+    content: string;
+    isActive: boolean;
+    updatedAt: string;
+}
+
+interface UserConsent {
+    id: string;
+    userId: string;
+    documentType: string;
+    documentVersion: string;
+    ipAddress?: string;
+    userAgent?: string;
+    action: 'ACCEPTED' | 'REJECTED';
+    createdAt: string;
+}
+
+let legalDocuments: LegalDocument[] = [];
+if (fs.existsSync(LEGAL_FILE)) {
+    try {
+        legalDocuments = JSON.parse(fs.readFileSync(LEGAL_FILE, 'utf8'));
+    } catch (e) {
+        legalDocuments = [];
+    }
+} else {
+    legalDocuments = [
+        {
+            id: 'doc-kvkk-v1',
+            type: 'KVKK',
+            version: 'v1.0',
+            title: 'KVKK Aydınlatma Metni',
+            content: 'Örnek KVKK Metni: Kişisel verileriniz 6698 sayılı KVKK uyarınca işlenmektedir. Verileriniz üçüncü şahıslarla paylaşılmaz...',
+            isActive: true,
+            updatedAt: new Date().toISOString()
+        },
+        {
+            id: 'doc-terms-v1',
+            type: 'TERMS',
+            version: 'v1.0',
+            title: 'Kullanıcı Sözleşmesi',
+            content: 'Örnek Kullanıcı Sözleşmesi: İşbu sözleşme İşbitir platformunun kullanım koşullarını belirler. Tüm hakları saklıdır.',
+            isActive: true,
+            updatedAt: new Date().toISOString()
+        },
+        {
+            id: 'doc-privacy-v1',
+            type: 'PRIVACY',
+            version: 'v1.0',
+            title: 'Gizlilik Politikası',
+            content: 'Örnek Gizlilik Politikası: Verilerinizin gizliliği bizim için önemlidir. Çerez politikamız ve veri işlenme süreçlerimiz hakkında detaylı bilgi için okumaya devam edin...',
+            isActive: true,
+            updatedAt: new Date().toISOString()
+        },
+        {
+            id: 'doc-marketing-v1',
+            type: 'MARKETING',
+            version: 'v1.0',
+            title: 'Pazarlama İletişim Onayı',
+            content: 'Örnek Pazarlama Metni: Kampanyalar, indirimler ve yeni özellikler hakkında bilgilendirilmek istiyorsanız bu onayı verebilirsiniz.',
+            isActive: true,
+            updatedAt: new Date().toISOString()
+        }
+    ];
+    fs.writeFileSync(LEGAL_FILE, JSON.stringify(legalDocuments, null, 2), 'utf8');
+}
+
+let userConsents: UserConsent[] = [];
+if (fs.existsSync(CONSENT_FILE)) {
+    try {
+        userConsents = JSON.parse(fs.readFileSync(CONSENT_FILE, 'utf8'));
+    } catch (e) {
+        userConsents = [];
+    }
+}
+
+const saveLegalToDisk = () => fs.writeFileSync(LEGAL_FILE, JSON.stringify(legalDocuments, null, 2), 'utf8');
+const saveConsentsToDisk = () => fs.writeFileSync(CONSENT_FILE, JSON.stringify(userConsents, null, 2), 'utf8');
 
 // Initialize demo accounts for testing (can be removed after testing)
 const initDemoAccounts = () => {
@@ -190,7 +278,9 @@ export const mockStorage = {
         completedJobsCount?: number,
         serviceCategory?: string,
         userType?: string,  // Added: Store userType directly
-        pushToken?: string  // Added: Push notification token
+        pushToken?: string, // Added: Push notification token
+        acceptedLegalVersion?: string,
+        marketingAllowed?: boolean
     }) => {
         const store = mockStorage.get(userId);
         if (data.passwordHash !== undefined) store.passwordHash = data.passwordHash;
@@ -213,6 +303,8 @@ export const mockStorage = {
         if (data.serviceCategory !== undefined) store.serviceCategory = data.serviceCategory;
         if (data.userType !== undefined) store.userType = data.userType;  // Save userType directly
         if (data.pushToken !== undefined) store.pushToken = data.pushToken;  // Save push token
+        if (data.acceptedLegalVersion !== undefined) store.acceptedLegalVersion = data.acceptedLegalVersion;
+        if (data.marketingAllowed !== undefined) store.marketingAllowed = data.marketingAllowed;
         saveToDisk();
         return store;
     },
@@ -249,7 +341,9 @@ export const mockStorage = {
             verificationStatus: store.verificationStatus || null,
             documentType: store.documentType || null,
             submittedAt: store.submittedAt || null,
-            serviceCategory: store.serviceCategory || null, // Profession category for professionals
+            acceptedLegalVersion: store.acceptedLegalVersion || null,
+            marketingAllowed: store.marketingAllowed || false,
+            serviceCategory: store.serviceCategory || null,
             electricianProfile: finalUserType === 'ELECTRICIAN' ? {
                 completedJobsCount: store.completedJobsCount || 0,
                 experienceYears: store.experienceYears,
@@ -265,6 +359,30 @@ export const mockStorage = {
                 serviceCategory: store.serviceCategory || 'elektrik'
             } : null
         };
+    },
+
+    getLegalDocs: () => {
+        return legalDocuments.filter(d => d.isActive);
+    },
+
+    addConsent: (consent: Omit<UserConsent, 'id' | 'createdAt'>) => {
+        const newConsent: UserConsent = {
+            id: `consent-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            ...consent,
+            createdAt: new Date().toISOString()
+        };
+        userConsents.push(newConsent);
+        saveConsentsToDisk();
+
+        // Update user's version if it's an acceptance
+        if (consent.userId && consent.action === 'ACCEPTED') {
+            const user = mockStore[consent.userId];
+            if (user) {
+                user.acceptedLegalVersion = consent.documentVersion;
+                saveToDisk();
+            }
+        }
+        return newConsent;
     },
 
     getAllUsers: () => {

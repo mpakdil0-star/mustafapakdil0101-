@@ -49,6 +49,8 @@ export default function ProfileScreen() {
   const BOTTOM_MENU_ITEMS = [
     { icon: 'notifications-outline', label: 'Bildirim Ayarları', route: '/profile/notification_settings', color: '#6B7280' },
     { icon: 'shield-checkmark-outline', label: 'Güvenlik', route: '/profile/security', color: '#10B981' },
+    { icon: 'document-text-outline', label: 'Kullanım Koşulları', route: '/legal/terms', color: '#6B7280' },
+    { icon: 'shield-outline', label: 'KVKK Politikası', route: '/legal/kvkk', color: '#6B7280' },
     { icon: 'help-circle-outline', label: 'Yardım & Destek', route: '/profile/help', color: '#374151' },
   ];
 

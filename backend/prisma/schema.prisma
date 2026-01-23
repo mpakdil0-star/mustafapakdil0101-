@@ -89,12 +89,15 @@ model User {
   languagePreference   String    @default("tr") @map("language_preference")
   notificationSettings Json?     @default("{\"push\": true, \"email\": true, \"sms\": false}") @map("notification_settings")
   pushToken            String?   @map("push_token")
+  acceptedLegalVersion String?   @map("accepted_legal_version")
+  marketingAllowed     Boolean   @default(false) @map("marketing_allowed")
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
   deletedAt            DateTime? @map("deleted_at")
 
   // Relations
   electricianProfile ElectricianProfile?
+  consents           UserConsent[]
   jobPosts           JobPost[]           @relation("JobPostsOwner")
   bids               Bid[]
   conversationsAsP1  Conversation[]      @relation("Participant1")
@@ -116,6 +119,39 @@ model User {
   @@index([phone])
   @@index([userType])
   @@map("users")
+}
+
+// Content Management for Legal Texts
+model LegalDocument {
+  id        String   @id @default(uuid())
+  type      String   // KVKK, TERMS, PRIVACY, COOKIE, MARKETING
+  version   String   // v1, v1.1 etc.
+  title     String
+  content   String   @db.Text
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type, isActive])
+  @@map("legal_documents")
+}
+
+// Immutable Logs of User Consents
+model UserConsent {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  documentType    String   @map("document_type")
+  documentVersion String   @map("document_version")
+  ipAddress       String?  @map("ip_address")
+  userAgent       String?  @map("user_agent")
+  action          String   @default("ACCEPTED") // ACCEPTED, REJECTED, WITHDRAWN
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([documentType])
+  @@map("user_consents")
 }
 
 // Electrician Profile

@@ -14,7 +14,8 @@ import { authService } from '../services/authService';
 import { PremiumAlert } from '../components/common/PremiumAlert';
 import { useAppDispatch } from '../hooks/redux';
 import { addNotification, fetchNotifications } from '../store/slices/notificationSlice';
-import { getMe } from '../store/slices/authSlice';
+import { getMe, setRequiredLegalVersion } from '../store/slices/authSlice';
+import LegalUpdateModal from '../components/legal/LegalUpdateModal';
 import { Alert } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
@@ -24,6 +25,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     priority: Notifications.AndroidNotificationPriority.MAX,
   }),
 });
@@ -37,7 +40,8 @@ function RootLayoutNav() {
   const segments = useSegments();
   const params = useGlobalSearchParams();
   const dispatch = useAppDispatch();
-  const { isAuthenticated, user, isLoading } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, user, isLoading, requiredLegalVersion } = useSelector((state: RootState) => state.auth);
+  const [showLegalModal, setShowLegalModal] = useState(false);
   const [isNavigationReady, setIsNavigationReady] = useState(false);
   const [hasCheckedProfile, setHasCheckedProfile] = useState(false);
 
@@ -158,6 +162,21 @@ function RootLayoutNav() {
       dispatch(getMe());
     }
   }, [isAuthenticated, dispatch]);
+
+  // Legal Version Check
+  useEffect(() => {
+    if (isAuthenticated && user && requiredLegalVersion) {
+      if (user.acceptedLegalVersion !== requiredLegalVersion) {
+        setShowLegalModal(true);
+      }
+    }
+  }, [isAuthenticated, user?.acceptedLegalVersion, requiredLegalVersion]);
+
+  const handleLegalAccept = (version: string) => {
+    setShowLegalModal(false);
+    // Locally update required version to hide modal
+    dispatch(setRequiredLegalVersion(version));
+  };
 
 
   // Global Socket Notification Listener
@@ -340,6 +359,12 @@ function RootLayoutNav() {
             onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
             type={alertConfig.type}
             buttons={alertConfig.buttons}
+          />
+
+          <LegalUpdateModal
+            visible={showLegalModal}
+            requiredVersion={requiredLegalVersion || 'v1.0'}
+            onAccept={handleLegalAccept}
           />
         </GestureHandlerRootView>
       </SafeAreaProvider>

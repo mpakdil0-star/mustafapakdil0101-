@@ -140,6 +140,7 @@ class ApiService {
 
         const statusCode = error.response?.status || 'No Status';
         const errorUrl = error.config?.url || 'Unknown URL';
+        const responseHeaders = error.response?.headers;
 
         console.error(`❌ [API ERROR] ${originalRequest?.method?.toUpperCase()} ${errorUrl} -> Status: ${statusCode}, Message: ${errorMessage}`);
 

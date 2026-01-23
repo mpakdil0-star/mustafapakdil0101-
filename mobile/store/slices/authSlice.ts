@@ -11,6 +11,7 @@ interface User {
   district?: string;
   profileImageUrl?: string;
   isVerified: boolean;
+  acceptedLegalVersion?: string;
   specialties?: string[];
   electricianProfile?: {
     creditBalance: number;
@@ -21,7 +22,6 @@ interface User {
     serviceCategory?: string;
   };
 }
-
 interface AuthState {
   user: User | null;
   token: string | null;
@@ -33,6 +33,7 @@ interface AuthState {
     experienceYears?: string;
     specialties?: string[];
   } | null;
+  requiredLegalVersion: string | null;
 }
 
 const initialState: AuthState = {
@@ -43,6 +44,7 @@ const initialState: AuthState = {
   error: null,
   guestRole: null,
   draftProfile: null,
+  requiredLegalVersion: null,
 };
 
 const handleAuthError = (error: any, defaultMessage: string) => {
@@ -160,6 +162,9 @@ const authSlice = createSlice({
     clearDraftProfile: (state) => {
       state.draftProfile = null;
     },
+    setRequiredLegalVersion: (state, action: PayloadAction<string | null>) => {
+      state.requiredLegalVersion = action.payload;
+    },
   },
   extraReducers: (builder) => {
     // Register & Login (aynı mantık)
@@ -174,6 +179,8 @@ const authSlice = createSlice({
       state.token = action.payload.accessToken;
       state.isAuthenticated = true;
       state.error = null;
+      state.guestRole = null;
+      state.requiredLegalVersion = action.payload.currentLegalVersion || null;
     };
 
     const handleAuthRejected = (state: AuthState, action: any) => {
@@ -209,6 +216,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, setUser, setGuestRole, updateCreditBalance, setDraftProfile, clearDraftProfile } = authSlice.actions;
+export const { clearError, setUser, setGuestRole, updateCreditBalance, setDraftProfile, clearDraftProfile, setRequiredLegalVersion } = authSlice.actions;
 export default authSlice.reducer;
 

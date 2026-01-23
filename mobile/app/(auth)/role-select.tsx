@@ -63,7 +63,7 @@ export default function RoleSelectScreen() {
             >
                 {/* Back Button */}
                 <TouchableOpacity
-                    onPress={() => router.replace('/(auth)/welcome')}
+                    onPress={() => router.back()}
                     style={styles.backButton}
                 >
                     <Ionicons name="arrow-back" size={24} color="#FFFFFF" />

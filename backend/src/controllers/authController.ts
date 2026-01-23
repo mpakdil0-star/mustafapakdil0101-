@@ -11,7 +11,7 @@ export const registerController = async (
   next: NextFunction
 ) => {
   try {
-    const { email, password, fullName, phone, userType, serviceCategory } = req.body;
+    const { email, password, fullName, phone, userType, serviceCategory, acceptedLegalVersion, marketingAllowed } = req.body;
 
     if (!email || !password || !fullName || !userType || !phone) {
       throw new ValidationError('Missing required fields');
@@ -79,6 +79,8 @@ export const registerController = async (
           isVerified: userType === 'ELECTRICIAN' && !!phone,
           serviceCategory: userType === 'ELECTRICIAN' ? (serviceCategory || 'elektrik') : undefined, // Save profession
           userType: userType, // Explicitly save userType
+          acceptedLegalVersion,
+          marketingAllowed: !!marketingAllowed,
         });
 
         const tokens = generateTokens({ id: mockUserId, email, userType });
@@ -185,6 +187,7 @@ export const loginController = async (
             user: fullUser,
             accessToken: tokens.accessToken,
             refreshToken: tokens.refreshToken,
+            currentLegalVersion: 'v1.0', // Latest version in mock mode
           },
         });
       }
@@ -260,7 +263,10 @@ export const meController = async (
       const userData = mockStorage.getFullUser(req.user.id, req.user.userType);
       return res.json({
         success: true,
-        data: { user: userData },
+        data: {
+          user: userData,
+          currentLegalVersion: 'v1.0'
+        },
       });
     }
 
@@ -300,7 +306,10 @@ export const meController = async (
         console.warn('⚠️ Database connection failed, returning mock user data for /auth/me');
         return res.json({
           success: true,
-          data: { user: mockStorage.getFullUser(req.user.id, req.user.userType) },
+          data: {
+            user: mockStorage.getFullUser(req.user.id, req.user.userType),
+            currentLegalVersion: 'v1.0'
+          },
         });
       }
       throw dbError;

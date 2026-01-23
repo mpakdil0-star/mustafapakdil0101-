@@ -171,7 +171,7 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   logger.info(`\n✅ Backend hazır! Mobil uygulamadan bağlanabilirsiniz.\n`);
 
   // Database bağlantısını test et (async, blocking yapmaz)
-  import('./config/database').then(async (dbModule) => {
+  import('./config/database').then(async (dbModule: any) => {
     try {
       await dbModule.default.$connect();
       logger.info('✅ Database connected');

@@ -39,12 +39,17 @@ export default function RegisterScreen() {
   // Use values from role-select screen
   const userType = initialRole === 'ELECTRICIAN' ? 'ELECTRICIAN' : 'CITIZEN';
   const serviceCategory = initialServiceCategory || 'elektrik';
+  const [marketingAllowed, setMarketingAllowed] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [kvkkAccepted, setKvkkAccepted] = useState(false);
 
   // Theme selection based on userType
   const colors = userType === 'CITIZEN' ? baseColors : (baseColors as any).ELECTRICIAN_COLORS || baseColors;
   const accentColor = userType === 'CITIZEN' ? '#7C3AED' : '#3B82F6';
 
   const [isPhoneModalVisible, setIsPhoneModalVisible] = useState(false);
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [confirm, setConfirm] = useState<any>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -55,6 +60,13 @@ export default function RegisterScreen() {
     type?: 'success' | 'error' | 'warning' | 'info' | 'confirm';
     buttons?: { text: string; onPress: () => void; variant?: 'primary' | 'secondary' | 'danger' | 'ghost' }[];
   }>({ visible: false, title: '', message: '' });
+
+  const [legalModal, setLegalModal] = useState<{ visible: boolean; type: string; title: string; content: string }>({
+    visible: false,
+    type: '',
+    title: '',
+    content: ''
+  });
 
   const showAlert = (title: string, message: string, type: any = 'info', buttons?: any[]) => {
     setAlertConfig({ visible: true, title, message, type, buttons });
@@ -91,29 +103,35 @@ export default function RegisterScreen() {
   };
 
   const handleSendCode = async () => {
-    if (!validate()) return;
+    // SMS flow is currently placeholder
+    setIsPhoneModalVisible(true);
+  };
 
-    setIsSendingCode(true);
+  const openLegalModal = async (type: string) => {
     try {
-      const formattedPhone = formatPhoneNumber(phone);
-      console.log('Sending code to:', formattedPhone);
-      const confirmation = await auth().signInWithPhoneNumber(formattedPhone);
-      setConfirm(confirmation);
-      setIsPhoneModalVisible(true);
-    } catch (error: any) {
-      console.error('SMS Error:', error);
-      let errorMessage = 'SMS gönderilemedi. Lütfen numaranızı kontrol edin.';
-      if (error.code === 'auth/invalid-phone-number') errorMessage = 'Geçersiz telefon numarası formatı.';
-      if (error.code === 'auth/too-many-requests') errorMessage = 'Çok fazla deneme yaptınız. Lütfen daha sonra tekrar deneyin.';
-
-      showAlert('Hata', errorMessage, 'error');
-    } finally {
-      setIsSendingCode(false);
+      const { getLegalDocuments } = await import('../../services/legalService');
+      const docs = await getLegalDocuments();
+      const found = docs.find(d => d.type.toLowerCase() === type.toLowerCase());
+      if (found) {
+        setLegalModal({
+          visible: true,
+          type: found.type,
+          title: found.title,
+          content: found.content
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load legal doc for modal:', err);
     }
   };
 
   const handleRegister = async (forceRegister = false) => {
     if (!validate()) return;
+
+    if (!termsAccepted || !kvkkAccepted) {
+      showAlert('Bilgi', 'Devam etmek için Kullanıcı Sözleşmesi ve KVKK metinlerini onaylamanız gerekmektedir.', 'warning');
+      return;
+    }
 
     // Show confirmation modal for everyone since phone is mandatory
     if (!forceRegister) {
@@ -130,6 +148,8 @@ export default function RegisterScreen() {
           password,
           userType,
           serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined,
+          acceptedLegalVersion: 'v1.0', // Mandatory checkbox or notice
+          marketingAllowed,
           location: location ? {
             city: location.city,
             district: location.district,
@@ -239,7 +259,7 @@ export default function RegisterScreen() {
             {/* Header with Back Button */}
             <View style={styles.headerTop}>
               <TouchableOpacity
-                onPress={() => router.replace('/(auth)/welcome')}
+                onPress={() => router.back()}
                 style={styles.backButton}
               >
                 <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
@@ -350,6 +370,45 @@ export default function RegisterScreen() {
                 placeholderTextColor="rgba(255,255,255,0.45)"
               />
 
+              <View style={styles.legalSection}>
+                <TouchableOpacity
+                  style={styles.legalCheckboxContainer}
+                  onPress={() => setTermsAccepted(!termsAccepted)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.checkbox, termsAccepted && { backgroundColor: accentColor, borderColor: accentColor }]}>
+                    {termsAccepted && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
+                  </View>
+                  <Text style={styles.legalNoticeText}>
+                    <Text style={[styles.legalLink, { color: accentColor }]} onPress={(e) => { e.stopPropagation(); openLegalModal('terms'); }}>Kullanıcı Sözleşmesi</Text>'ni okudum ve kabul ediyorum.
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.legalCheckboxContainer}
+                  onPress={() => setKvkkAccepted(!kvkkAccepted)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.checkbox, kvkkAccepted && { backgroundColor: accentColor, borderColor: accentColor }]}>
+                    {kvkkAccepted && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
+                  </View>
+                  <Text style={styles.legalNoticeText}>
+                    <Text style={[styles.legalLink, { color: accentColor }]} onPress={(e) => { e.stopPropagation(); openLegalModal('kvkk'); }}>KVKK Aydınlatma Metni</Text>'ni okudum ve kabul ediyorum.
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={styles.marketingContainer}
+                onPress={() => setMarketingAllowed(!marketingAllowed)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.checkbox, marketingAllowed && { backgroundColor: accentColor, borderColor: accentColor }]}>
+                  {marketingAllowed && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
+                </View>
+                <Text style={styles.marketingText}>Kampanya ve duyuruları e-posta/SMS yoluyla almayı kabul ediyorum.</Text>
+              </TouchableOpacity>
+
               {error && (
                 <View style={styles.errorContainer}>
                   <Text style={styles.errorText}>{error}</Text>
@@ -358,9 +417,13 @@ export default function RegisterScreen() {
 
               <TouchableOpacity
                 onPress={() => handleRegister()}
-                disabled={isLoading}
+                disabled={isLoading || !termsAccepted || !kvkkAccepted}
                 activeOpacity={0.8}
-                style={[styles.registerButtonWrapper, { shadowColor: accentColor }]}
+                style={[
+                  styles.registerButtonWrapper,
+                  { shadowColor: accentColor },
+                  (!termsAccepted || !kvkkAccepted) && { opacity: 0.5 }
+                ]}
               >
                 <LinearGradient
                   colors={[accentColor, accentColor + 'CC']}
@@ -392,6 +455,28 @@ export default function RegisterScreen() {
         buttons={alertConfig.buttons}
         onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
       />
+
+      {/* Legal Document Modal */}
+      <Modal
+        visible={legalModal.visible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setLegalModal(prev => ({ ...prev, visible: false }))}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: '#FFFFFF', height: '80%' }]}>
+            <View style={[styles.modalHeader, { padding: 20, flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#eee' }]}>
+              <Text style={[styles.modalTitle, { color: '#333' }]}>{legalModal.title}</Text>
+              <TouchableOpacity onPress={() => setLegalModal(prev => ({ ...prev, visible: false }))}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView contentContainerStyle={{ padding: 20 }}>
+              <Text style={{ fontSize: 14, lineHeight: 22, color: '#444' }}>{legalModal.content}</Text>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView >
   );
 }
@@ -509,10 +594,51 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   errorText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: '#F87171',
     textAlign: 'center',
+  },
+  legalSection: {
+    marginVertical: 12,
+    gap: 8,
+  },
+  legalCheckboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    gap: 10,
+  },
+  legalNoticeText: {
+    flex: 1,
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
+    lineHeight: 18,
+  },
+  legalLink: {
+    fontFamily: fonts.bold,
+    textDecorationLine: 'underline',
+  },
+  marketingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 8,
+    gap: 10,
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  marketingText: {
+    flex: 1,
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
   },
   registerButtonWrapper: {
     marginTop: spacing.sm,

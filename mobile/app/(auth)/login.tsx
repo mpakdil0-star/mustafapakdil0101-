@@ -101,21 +101,19 @@ export default function LoginScreen() {
 
     try {
       await dispatch(login({ email, password })).unwrap();
-      // Small delay to allow Redux state to fully update
+
+      // The guestRole is now automatically cleared in the Redux slice.
+      // We wait a tiny bit for the state to settle before checking the role.
       setTimeout(() => {
         try {
           if (redirectTo) {
             router.replace(redirectTo as any);
           } else {
-            // Redirection logic is handled in _layout.tsx generally, but we force it here too for smoothness
-            // We can check the Redux state, but inside this closure state might be stale.
-            // Rely on _layout.tsx or make a simple check if we could access userType from response (requires changing unwrap() usage)
-            // For now, let's just push to root and let _layout handle it, OR push to tabs as default.
-
-            // Check if email indicates admin (simple client-side check for immediate feedback)
+            // Check Redux state for the final decision (or use email for simple check)
             if (email.toLowerCase().includes('admin')) {
               router.replace('/admin');
             } else {
+              // The _layout.tsx will handle the final guarding, but we can be explicit
               router.replace('/(tabs)');
             }
           }
@@ -123,7 +121,7 @@ export default function LoginScreen() {
           console.error('[Login] Navigation failed:', navError);
           router.replace('/');
         }
-      }, 150);
+      }, 200);
     } catch (err: any) {
       // Check if this is a "user not found" error
       const errorMessage = err?.message || err || 'Giriş yapılamadı';
@@ -351,6 +349,16 @@ export default function LoginScreen() {
                 >
                   <Text style={styles.guestLinkText}>Giriş yapmadan devam et</Text>
                 </TouchableOpacity>
+
+                <View style={styles.legalFooter}>
+                  <TouchableOpacity onPress={() => router.push('/legal/terms')}>
+                    <Text style={styles.legalFooterText}>Kullanım Koşulları</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.legalFooterDivider}>•</Text>
+                  <TouchableOpacity onPress={() => router.push('/legal/kvkk')}>
+                    <Text style={styles.legalFooterText}>KVKK Aydınlatma Metni</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
               {/* Test Buttons - Only in Development */}
@@ -528,6 +536,23 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     fontSize: 14,
     color: 'rgba(255,255,255,0.75)',
+  },
+  legalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 24,
+    gap: 8,
+  },
+  legalFooterText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.4)',
+    textDecorationLine: 'underline',
+  },
+  legalFooterDivider: {
+    color: 'rgba(255,255,255,0.2)',
+    fontSize: 12,
   },
   testSection: {
     marginTop: 30,

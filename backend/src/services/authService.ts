@@ -12,6 +12,8 @@ export interface RegisterData {
   phone?: string;
   userType: UserType;
   serviceCategory?: string; // Profession category: 'elektrik' | 'cilingir' | 'klima' | 'beyaz-esya' | 'tesisat'
+  acceptedLegalVersion?: string;
+  marketingAllowed?: boolean;
 }
 
 export interface LoginData {
@@ -115,6 +117,8 @@ export const register = async (data: RegisterData) => {
       isActive: true, // Mark account as active
       userType: userType, // Save userType directly to prevent future issues
       serviceCategory: userType === UserType.ELECTRICIAN ? (data.serviceCategory || 'elektrik') : undefined, // Save profession
+      acceptedLegalVersion: data.acceptedLegalVersion,
+      marketingAllowed: data.marketingAllowed,
     });
 
     // Generate tokens
@@ -167,6 +171,8 @@ export const register = async (data: RegisterData) => {
         phone,
         userType,
         isVerified: userType === UserType.ELECTRICIAN && !!phone,
+        acceptedLegalVersion: data.acceptedLegalVersion || null,
+        marketingAllowed: data.marketingAllowed || false,
       },
       select: {
         id: true,
@@ -179,6 +185,40 @@ export const register = async (data: RegisterData) => {
         createdAt: true,
       },
     });
+
+    // Record formal consent in UserConsent table/mock
+    const acceptedVersion = data.acceptedLegalVersion || 'v1.0';
+    if (!isDatabaseAvailable) {
+      const { mockStorage } = require('../utils/mockStorage');
+      mockStorage.addConsent({
+        userId: user.id,
+        documentType: 'KVKK',
+        documentVersion: acceptedVersion,
+        action: 'ACCEPTED'
+      });
+      mockStorage.addConsent({
+        userId: user.id,
+        documentType: 'TERMS',
+        documentVersion: acceptedVersion,
+        action: 'ACCEPTED'
+      });
+      if (data.marketingAllowed) {
+        mockStorage.addConsent({
+          userId: user.id,
+          documentType: 'MARKETING',
+          documentVersion: acceptedVersion,
+          action: 'ACCEPTED'
+        });
+      }
+    } else {
+      await prisma.userConsent.createMany({
+        data: [
+          { userId: user.id, documentType: 'KVKK', documentVersion: acceptedVersion, action: 'ACCEPTED' },
+          { userId: user.id, documentType: 'TERMS', documentVersion: acceptedVersion, action: 'ACCEPTED' },
+          ...(data.marketingAllowed ? [{ userId: user.id, documentType: 'MARKETING', documentVersion: acceptedVersion, action: 'ACCEPTED' }] : [])
+        ]
+      });
+    }
 
     // Create electrician profile if user is electrician
     if (userType === UserType.ELECTRICIAN) {
@@ -224,6 +264,8 @@ export const register = async (data: RegisterData) => {
       creditBalance: userType === UserType.ELECTRICIAN ? 5 : 0,
       userType: userType, // Save userType directly
       serviceCategory: userType === UserType.ELECTRICIAN ? (data.serviceCategory || 'elektrik') : undefined, // Save profession
+      acceptedLegalVersion: data.acceptedLegalVersion,
+      marketingAllowed: data.marketingAllowed,
     });
 
     const user = {
