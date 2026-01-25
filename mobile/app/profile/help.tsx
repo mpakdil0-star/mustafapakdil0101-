@@ -123,6 +123,22 @@ export default function HelpScreen() {
 
                 {/* Support Channels */}
                 <Text style={styles.sectionTitle}>Bize Ulaşın</Text>
+
+                {/* New Ticket System */}
+                <TouchableOpacity
+                    style={[styles.mainSupportCard, { borderColor: colors.primary + '30', backgroundColor: colors.primary + '05' }]}
+                    onPress={() => router.push('/profile/support')}
+                >
+                    <View style={[styles.mainSupportIcon, { backgroundColor: colors.primary }]}>
+                        <Ionicons name="chatbox-ellipses" size={24} color="#fff" />
+                    </View>
+                    <View style={styles.mainSupportContent}>
+                        <Text style={[styles.mainSupportTitle, { color: colors.primary }]}>Canlı Destek Talebi</Text>
+                        <Text style={styles.mainSupportDesc}>Sorunlarınızı bildirip durumunu takip edin.</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+                </TouchableOpacity>
+
                 <View style={styles.supportGrid}>
                     <TouchableOpacity style={styles.supportCard} onPress={handleContactSupport}>
                         <LinearGradient colors={['#3B82F610', '#3B82F605']} style={styles.supportCardGrad} />
@@ -373,5 +389,34 @@ const styles = StyleSheet.create({
         fontFamily: fonts.medium,
         fontSize: 11,
         color: staticColors.textLight,
+    },
+    mainSupportCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 20,
+        borderWidth: 1,
+        marginBottom: 16,
+    },
+    mainSupportIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    mainSupportContent: {
+        flex: 1,
+    },
+    mainSupportTitle: {
+        fontFamily: fonts.bold,
+        fontSize: 16,
+        marginBottom: 4,
+    },
+    mainSupportDesc: {
+        fontFamily: fonts.medium,
+        fontSize: 13,
+        color: staticColors.textSecondary,
     },
 });

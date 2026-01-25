@@ -19,7 +19,7 @@ export const userService = {
      */
     async getElectricianById(id: string) {
         try {
-            const response = await apiClient.get(`/users/electricians/${id}`);
+            const response = await apiClient.get(`/users/electricians/${encodeURIComponent(id)}`);
             return response.data;
         } catch (error) {
             console.error('Error fetching electrician detail:', error);

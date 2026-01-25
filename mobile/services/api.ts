@@ -34,6 +34,7 @@ class ApiService {
         const isPublicEndpoint = url.includes('/jobs') &&
           !url.includes('/my-jobs') &&
           !url.includes('/bids') &&
+          !url.includes('/admin') &&
           method === 'get';
 
         if (isPublicEndpoint) {
@@ -65,6 +66,7 @@ class ApiService {
 
         const isPublicEndpoint = url.includes('/jobs') &&
           !url.includes('/my-jobs') &&
+          !url.includes('/admin') &&
           originalRequest?.method === 'get';
 
         // Public endpoint'lerde 401 alınırsa, token'ı kaldır ve tekrar dene

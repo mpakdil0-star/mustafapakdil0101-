@@ -1171,7 +1171,8 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
                         bio: mockData.bio || null,
                         verificationStatus: (mockData.isVerified ?? true) ? 'APPROVED' : 'PENDING',
                         completedJobsCount: mockData.completedJobsCount || 0,
-                        responseTimeAvg: 2
+                        responseTimeAvg: 2,
+                        serviceCategory: mockData.serviceCategory || (mockData.specialties.some((s: string) => s.toLowerCase().includes('klima')) ? 'klima' : 'elektrik')
                     },
                     locations: userLocations,
                     reviewsReceived: mockReviews.map(r => {
@@ -1215,7 +1216,8 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
                         bio: true,
                         verificationStatus: true,
                         completedJobsCount: true,
-                        responseTimeAvg: true
+                        responseTimeAvg: true,
+                        serviceCategory: true
                     }
                 },
                 locations: {

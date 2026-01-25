@@ -115,7 +115,7 @@ app.get('/favicon.ico', (req, res) => {
 });
 
 // Serve static uploads
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Routes
 app.use(routes);

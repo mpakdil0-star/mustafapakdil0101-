@@ -74,7 +74,7 @@ export const bidService = {
   },
 
   async getBidById(id: string) {
-    const response = await apiClient.get(`${API_ENDPOINTS.BIDS}/${id}`);
+    const response = await apiClient.get(API_ENDPOINTS.BID_DETAIL(id));
     return response.data.data.bid;
   },
 
@@ -89,14 +89,14 @@ export const bidService = {
   },
 
   async updateBid(id: string, data: Partial<CreateBidData>) {
-    const response = await apiClient.put(`${API_ENDPOINTS.BIDS}/${id}`, data);
+    const response = await apiClient.put(API_ENDPOINTS.BID_DETAIL(id), data);
     return response.data.data.bid;
   },
 
   async acceptBid(id: string) {
     console.log(`📤 Accepting bid: ${id}...`);
     try {
-      const response = await apiClient.post(`${API_ENDPOINTS.BIDS}/${id}/accept`);
+      const response = await apiClient.post(API_ENDPOINTS.ACCEPT_BID(id));
       console.log('✅ Bid accepted successfully:', response.data);
       return response.data.data.bid;
     } catch (error: any) {
@@ -113,17 +113,17 @@ export const bidService = {
   },
 
   async rejectBid(id: string) {
-    const response = await apiClient.post(`${API_ENDPOINTS.BIDS}/${id}/reject`);
+    const response = await apiClient.post(API_ENDPOINTS.REJECT_BID(id));
     return response.data.data.bid;
   },
 
   async withdrawBid(id: string) {
-    const response = await apiClient.post(`${API_ENDPOINTS.BIDS}/${id}/withdraw`);
+    const response = await apiClient.post(API_ENDPOINTS.WITHDRAW_BID(id));
     return response.data.data.bid;
   },
 
   async deleteBid(id: string) {
-    const response = await apiClient.delete(`${API_ENDPOINTS.BIDS}/${id}`);
+    const response = await apiClient.delete(API_ENDPOINTS.BID_DETAIL(id));
     return response.data.data;
   },
 };

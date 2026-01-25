@@ -8,10 +8,27 @@ import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
 import { LinearGradient } from 'expo-linear-gradient';
+import api from '../../services/api';
 
 export default function AdminDashboardScreen() {
     const router = useRouter();
     const colors = useAppColors();
+    const [stats, setStats] = React.useState<any>(null);
+
+    React.useEffect(() => {
+        fetchStats();
+    }, []);
+
+    const fetchStats = async () => {
+        try {
+            const response = await api.get('/admin/dashboard-stats');
+            if (response.data.success) {
+                setStats(response.data.data);
+            }
+        } catch (error) {
+            console.error('Fetch stats error:', error);
+        }
+    };
 
     const menuItems = [
         {
@@ -22,6 +39,13 @@ export default function AdminDashboardScreen() {
             route: '/profile/admin_verifications'
         },
         {
+            title: 'İlan Yönetimi',
+            subtitle: 'İlanları incele ve sil',
+            icon: 'list',
+            color: '#EF4444',
+            route: '/admin/jobs'
+        },
+        {
             title: 'Kullanıcı Yönetimi',
             subtitle: 'Tüm kullanıcıları listele',
             icon: 'people',
@@ -29,13 +53,20 @@ export default function AdminDashboardScreen() {
             route: '/admin/users' // Placeholder
         },
         {
-            title: 'Sistem Raporları',
-            subtitle: 'Platform istatistikleri',
-            icon: 'bar-chart',
-            color: '#8B5CF6',
-            route: '/admin/reports' // Placeholder
+            title: 'Destek Talepleri',
+            subtitle: 'Kullanıcı sorunlarını yönet',
+            icon: 'chatbubbles',
+            color: '#F59E0B',
+            route: '/admin/support'
         }
     ];
+
+    const StatCard = ({ label, value, color }: any) => (
+        <View style={[styles.statCard, { backgroundColor: color + '15' }]}>
+            <Text style={[styles.statValue, { color }]}>{value || 0}</Text>
+            <Text style={styles.statLabel}>{label}</Text>
+        </View>
+    );
 
     return (
         <View style={styles.container}>
@@ -45,6 +76,22 @@ export default function AdminDashboardScreen() {
                 <View style={styles.headerSection}>
                     <Text style={styles.welcomeText}>Hoş Geldiniz,</Text>
                     <Text style={[styles.roleText, { color: colors.primary }]}>Admin</Text>
+                </View>
+
+                {/* Stats Grid */}
+                <View style={styles.statsContainer}>
+                    <View style={styles.statsRow}>
+                        <StatCard label="Toplam Üye" value={stats?.totalUsers} color="#3B82F6" />
+                        <StatCard label="Aktif İlan" value={stats?.activeJobs} color="#10B981" />
+                    </View>
+                    <View style={styles.statsRow}>
+                        <StatCard label="Bekleyen Onay" value={stats?.pendingVerifications} color="#F59E0B" />
+                        <StatCard label="Ciro (TL)" value={stats?.totalRevenue} color="#8B5CF6" />
+                    </View>
+                </View>
+
+                <View style={styles.menuTitleContainer}>
+                    <Text style={styles.menuTitle}>Hızlı İşlemler</Text>
                 </View>
 
                 <View style={styles.grid}>
@@ -85,7 +132,7 @@ const styles = StyleSheet.create({
         padding: spacing.lg,
     },
     headerSection: {
-        marginBottom: 24,
+        marginBottom: 20,
     },
     welcomeText: {
         fontFamily: fonts.medium,
@@ -96,6 +143,39 @@ const styles = StyleSheet.create({
         fontFamily: fonts.extraBold,
         fontSize: 28,
         marginTop: 4,
+    },
+    statsContainer: {
+        marginBottom: 24,
+        gap: 12
+    },
+    statsRow: {
+        flexDirection: 'row',
+        gap: 12
+    },
+    statCard: {
+        flex: 1,
+        padding: 16,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    statValue: {
+        fontFamily: fonts.extraBold,
+        fontSize: 20,
+        marginBottom: 4
+    },
+    statLabel: {
+        fontFamily: fonts.medium,
+        fontSize: 12,
+        color: staticColors.textSecondary
+    },
+    menuTitleContainer: {
+        marginBottom: 12
+    },
+    menuTitle: {
+        fontFamily: fonts.bold,
+        fontSize: 16,
+        color: staticColors.text
     },
     grid: {
         gap: 16,

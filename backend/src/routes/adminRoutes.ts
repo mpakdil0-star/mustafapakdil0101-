@@ -310,4 +310,13 @@ router.get('/verifications', authenticate, adminMiddleware, adminController.getA
 // POST /admin/verifications/process - Approve/Reject verification
 router.post('/verifications/process', authenticate, adminMiddleware, adminController.processVerification);
 
+// GET /admin/dashboard-stats - Fast lookup for dashboard cards
+router.get('/dashboard-stats', authenticate, adminMiddleware, adminController.getDashboardStats);
+
+// GET /admin/jobs - Get all jobs for management
+router.get('/jobs', authenticate, adminMiddleware, adminController.getAllJobs);
+
+// DELETE /admin/jobs/:id - Force delete a job
+router.delete('/jobs/:id', authenticate, adminMiddleware, adminController.deleteJob);
+
 export default router;

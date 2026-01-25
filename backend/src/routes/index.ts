@@ -11,6 +11,7 @@ import favoriteRoutes from './favoriteRoutes';
 import paymentRoutes from './paymentRoutes';
 import reviewRoutes from './reviewRoutes';
 import adminRoutes from './adminRoutes';
+import supportRoutes from './supportRoutes';
 import legalRoutes from './legalRoutes';
 
 const router = Router();
@@ -43,5 +44,6 @@ router.use('/payments', paymentRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/admin', adminRoutes);
 router.use('/legal', legalRoutes);
+router.use('/support', supportRoutes);
 
 export default router;

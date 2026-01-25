@@ -1,21 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, ScrollView, View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { getThemeColors } from '../../constants/colors';
-import { useAppSelector } from '../../hooks/redux';
+import { colors as staticColors } from '../../constants/colors';
+import { fonts } from '../../constants/typography';
+import { spacing } from '../../constants/spacing';
+import { useAppColors } from '../../hooks/useAppColors';
+import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { getLegalDocuments, LegalDocument } from '../../services/legalService';
 
 export default function LegalPolicyScreen() {
     const { type } = useLocalSearchParams<{ type: string }>();
     const router = useRouter();
+    const colors = useAppColors();
     const [loading, setLoading] = useState(true);
     const [doc, setDoc] = useState<LegalDocument | null>(null);
-    const { user } = useAppSelector((state) => state.auth);
-
-    const colors = getThemeColors(user?.userType);
-    const themeColor = colors.primary;
 
     useEffect(() => {
         fetchDoc();
@@ -36,81 +35,135 @@ export default function LegalPolicyScreen() {
         }
     };
 
+    const handleBack = () => {
+        // Force navigation to profile tab to ensure we don't drop to home or login
+        router.navigate('/(tabs)/profile');
+    };
+
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>{doc?.title || 'Yasal Metin'}</Text>
-                <View style={{ width: 40 }} />
-            </View>
+        <View style={styles.container}>
+            <PremiumHeader
+                title={doc?.title || 'Yasal Metin'}
+                subtitle={doc ? `Versiyon: ${doc.version}` : ''}
+                showBackButton
+                onBackPress={handleBack}
+            />
 
             {loading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={themeColor} />
+                    <ActivityIndicator size="large" color={colors.primary} />
                 </View>
             ) : (
-                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <ScrollView
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.content}
+                    showsVerticalScrollIndicator={false}
+                >
                     {doc ? (
                         <>
-                            <Text style={styles.versionText}>Versiyon: {doc.version} - Son Güncelleme: {new Date(doc.updatedAt).toLocaleDateString('tr-TR')}</Text>
-                            <Text style={styles.content}>{doc.content.replace(/\\n/g, '\n')}</Text>
+                            <View style={[styles.card, { shadowColor: colors.primary }]}>
+                                <Text style={styles.lastUpdate}>Son Güncelleme: {new Date(doc.updatedAt).toLocaleDateString('tr-TR')}</Text>
+                                <Text style={styles.text}>{doc.content.replace(/\\n/g, '\n')}</Text>
+                            </View>
+
+                            <TouchableOpacity
+                                style={[styles.closeButton, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
+                                onPress={handleBack}
+                            >
+                                <Text style={styles.closeButtonText}>Okudum, Anladım</Text>
+                                <Ionicons name="checkmark-circle" size={20} color={staticColors.white} style={{ marginLeft: 8 }} />
+                            </TouchableOpacity>
                         </>
                     ) : (
-                        <Text style={styles.errorText}>Metin yüklenemedi.</Text>
+                        <View style={styles.center}>
+                            <Ionicons name="alert-circle-outline" size={48} color={staticColors.textLight} />
+                            <Text style={styles.errorText}>Metin yüklenemedi.</Text>
+                            <TouchableOpacity onPress={handleBack} style={styles.errorButton}>
+                                <Text style={styles.errorButtonText}>Geri Dön</Text>
+                            </TouchableOpacity>
+                        </View>
                     )}
-                    <View style={{ height: 40 }} />
                 </ScrollView>
             )}
-        </SafeAreaView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#F8FAFC',
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+    scrollView: {
+        flex: 1,
     },
-    backButton: {
-        padding: 4,
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#333',
+    content: {
+        padding: spacing.lg,
+        paddingBottom: 40,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    scrollContent: {
-        padding: 20,
+    card: {
+        backgroundColor: staticColors.white,
+        borderRadius: 24,
+        padding: 24,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        marginBottom: 32,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.05,
+        shadowRadius: 12,
+        elevation: 3,
     },
-    versionText: {
+    lastUpdate: {
+        fontFamily: fonts.medium,
         fontSize: 12,
-        color: '#999',
-        marginBottom: 20,
+        color: staticColors.textLight,
+        marginBottom: 16,
         fontStyle: 'italic',
     },
-    content: {
+    text: {
+        fontFamily: fonts.medium,
         fontSize: 15,
-        lineHeight: 24,
-        color: '#444',
+        color: staticColors.textSecondary,
+        lineHeight: 26,
+    },
+    closeButton: {
+        borderRadius: 16,
+        paddingVertical: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 5,
+        marginBottom: 20
+    },
+    closeButtonText: {
+        fontFamily: fonts.bold,
+        fontSize: 16,
+        color: staticColors.white,
+    },
+    center: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 60,
+        gap: 16,
     },
     errorText: {
-        textAlign: 'center',
-        marginTop: 40,
-        color: '#999',
+        fontFamily: fonts.medium,
+        fontSize: 16,
+        color: staticColors.textSecondary,
+    },
+    errorButton: {
+        padding: 10,
+    },
+    errorButtonText: {
+        fontFamily: fonts.bold,
+        color: staticColors.primary,
     }
 });

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image, Modal } from 'react-native';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -16,6 +16,34 @@ import { getFileUrl } from '../../constants/api';
 import { AuthGuardModal } from '../../components/common/AuthGuardModal';
 import { MOCK_ELECTRICIANS } from '../../data/mockElectricians';
 import favoriteService from '../../services/favoriteService';
+
+
+
+// Helper for badge color
+const getServiceBadgeColor = (service: string) => {
+    const s = service?.toLowerCase() || '';
+    if (s.includes('elektrik')) return '#F59E0B'; // Amber
+    if (s.includes('klima')) return '#3B82F6'; // Blue
+    if (s.includes('güvenlik') || s.includes('alarm')) return '#EF4444'; // Red
+    if (s.includes('uydu') || s.includes('anten')) return '#8B5CF6'; // Violet
+    if (s.includes('akıllı') || s.includes('otomasyon')) return '#10B981'; // Emerald
+    return '#6B7280'; // Gray
+};
+
+const getServiceLabel = (category: string) => {
+    const cat = category?.toLowerCase() || '';
+    if (cat === 'elektrik') return 'Elektrikçi';
+    if (cat === 'cilingir') return 'Çilingir';
+    if (cat === 'klima') return 'Klima Ustası';
+    if (cat === 'beyaz-esya') return 'Beyaz Eşya Servisi';
+    if (cat === 'tesisat') return 'Su Tesisatçısı';
+    if (cat === 'kombi') return 'Kombi Servisi';
+    if (cat === 'boya') return 'Boya Badana';
+    if (cat === 'temizlik') return 'Temizlik';
+    if (cat === 'nakliyat') return 'Nakliyat';
+    if (cat === 'montaj') return 'Montaj Ustası';
+    return 'Usta'; // Default fallback
+};
 
 export default function ElectricianDetailScreen() {
     const router = useRouter();
@@ -39,6 +67,51 @@ export default function ElectricianDetailScreen() {
         type?: 'success' | 'error' | 'warning' | 'info' | 'confirm';
         buttons?: { text: string; onPress: () => void; variant?: 'primary' | 'secondary' | 'danger' | 'ghost' }[];
     }>({ visible: false, title: '', message: '' });
+
+    const scrollRef = useRef<ScrollView>(null);
+
+    // Auto-scroll effect for specialties
+    const contentWidthRef = useRef(0);
+    const containerWidthRef = useRef(0);
+    const scrollPosRef = useRef(0);
+    const directionRef = useRef(1); // 1 = right, -1 = left
+    const isPausedRef = useRef(false);
+
+    // Smooth Auto-Scroll Implementation
+    useEffect(() => {
+        if (isLoading) return;
+
+        const intervalId = setInterval(() => {
+            if (!scrollRef.current || isPausedRef.current) return;
+
+            const maxScroll = contentWidthRef.current - containerWidthRef.current;
+            if (maxScroll <= 0) return; // No need to scroll if content fits
+
+            // Move 1 pixel per tick (slow smooth scroll)
+            scrollPosRef.current += directionRef.current * 1;
+
+            // Boundary checks
+            if (scrollPosRef.current >= maxScroll) {
+                scrollPosRef.current = maxScroll;
+                isPausedRef.current = true;
+                setTimeout(() => {
+                    directionRef.current = -1;
+                    isPausedRef.current = false;
+                }, 1000); // Pause at end
+            } else if (scrollPosRef.current <= 0) {
+                scrollPosRef.current = 0;
+                isPausedRef.current = true;
+                setTimeout(() => {
+                    directionRef.current = 1;
+                    isPausedRef.current = false;
+                }, 1000); // Pause at start
+            }
+
+            scrollRef.current.scrollTo({ x: scrollPosRef.current, animated: false });
+        }, 40); // 25fps update rate for smoothness
+
+        return () => clearInterval(intervalId);
+    }, [isLoading]);
 
     const showAlert = (title: string, message: string, type: any = 'info', buttons?: any[]) => {
         setAlertConfig({ visible: true, title, message, type, buttons });
@@ -75,7 +148,8 @@ export default function ElectricianDetailScreen() {
                             bio: mockItem.about,
                             responseTimeAvg: mockItem.responseTime,
                             completedJobsCount: mockItem.completedJobs,
-                            verificationStatus: mockItem.isVerified ? 'VERIFIED' : 'PENDING'
+                            verificationStatus: mockItem.isVerified ? 'VERIFIED' : 'PENDING',
+                            serviceCategory: (mockItem as any).category || 'elektrik'
                         },
                         locations: [{ city: mockItem.city, district: mockItem.location.split(',')[0] }],
                         reviewsReceived: mockItem.latestReview ? [{
@@ -182,7 +256,11 @@ export default function ElectricianDetailScreen() {
         : 'Konum belirtilmemiş';
 
     // Güven skoru hesaplama (demo mantığı)
-    const trustScore = 85 + (electrician.isVerified ? 10 : 0) + (profile.ratingAverage >= 4.5 ? 5 : 0);
+    // Güven skoru hesaplama (demo mantığı)
+    // const trustScore = 85 + (electrician.isVerified ? 10 : 0) + (profile.ratingAverage >= 4.5 ? 5 : 0);
+
+    const serviceName = profile.serviceCategory ? getServiceLabel(profile.serviceCategory) : (electrician.specialty || (profile.specialties && profile.specialties.length > 0 ? profile.specialties[0] : 'Usta'));
+    const badgeColor = getServiceBadgeColor(profile.serviceCategory || serviceName);
 
     return (
         <ScrollView
@@ -190,29 +268,58 @@ export default function ElectricianDetailScreen() {
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
         >
+
+
             {/* Profile Card */}
             <Card style={styles.profileCard} elevated>
                 <View style={styles.profileHeader}>
-                    <View style={styles.avatar}>
-                        {electrician.profileImageUrl ? (
-                            <Image
-                                source={{ uri: getFileUrl(electrician.profileImageUrl) || '' }}
-                                style={styles.avatarImage}
-                            />
-                        ) : (
-                            <Text style={styles.avatarText}>{electrician.fullName.charAt(0)}</Text>
+                    <View style={{ alignItems: 'center', marginRight: spacing.md }}>
+                        <View style={styles.avatar}>
+                            {electrician.profileImageUrl ? (
+                                <Image
+                                    source={{ uri: getFileUrl(electrician.profileImageUrl) || '' }}
+                                    style={styles.avatarImage}
+                                />
+                            ) : (
+                                <Text style={styles.avatarText}>{electrician.fullName.charAt(0)}</Text>
+                            )}
+                        </View>
+                        {electrician.isVerified && (
+                            <TouchableOpacity
+                                style={{ marginTop: 8 }}
+                                onPress={() => showAlert(
+                                    "Onaylı Usta",
+                                    "Bu ustanın mesleki belgeleri ve kimliği platformumuz tarafından doğrulanmıştır. Güvenle hizmet alabilirsiniz.",
+                                    "success"
+                                )}
+                                activeOpacity={0.7}
+                            >
+                                <VerificationBadge
+                                    status={profile.verificationStatus || "APPROVED"}
+                                    licenseVerified={true}
+                                    size="small"
+                                />
+                            </TouchableOpacity>
                         )}
                     </View>
                     <View style={styles.profileInfo}>
                         <View style={styles.nameRow}>
-                            <Text style={styles.name} numberOfLines={1}>{electrician.fullName}</Text>
-                            {electrician.isVerified && (
-                                <VerificationBadge
-                                    status={profile.verificationStatus || "APPROVED"}
-                                    licenseVerified={true}
-                                    size="medium"
-                                />
-                            )}
+                            <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginRight: 8 }}>
+                                <Text style={styles.name}>
+                                    {electrician.fullName}
+                                </Text>
+
+                                <View style={[styles.serviceBadge, { backgroundColor: badgeColor + '20' }]}>
+                                    <Text style={[styles.serviceBadgeText, { color: badgeColor }]}>
+                                        {serviceName}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            {/* Verification Badge & Favorite (Keep aligned right or flowing? Favorite fits better top right absolute or flex-end) */}
+                            {/* The original layout had favorite button in nameRow. Let's keep it but maybe absolute or separate flex item? */}
+                            {/* With flex-wrap, the favorite button might get pushed. Let's make the wrapper flex:1 and favorite button separate. */}
+
                             <TouchableOpacity
                                 style={[styles.headerFavoriteBtn, isFavorite && styles.headerFavoriteBtnActive]}
                                 onPress={handleToggleFavorite}
@@ -230,9 +337,26 @@ export default function ElectricianDetailScreen() {
                                 )}
                             </TouchableOpacity>
                         </View>
-                        <Text style={styles.specialty}>
-                            {profile.specialties?.join(', ') || 'Elektrik Ustası'}
-                        </Text>
+
+
+
+                        <View style={{ height: 34, marginBottom: 4 }}>
+                            <ScrollView
+                                ref={scrollRef}
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={{ paddingRight: 20, gap: 6 }}
+                                onContentSizeChange={(w) => contentWidthRef.current = w}
+                                onLayout={(e) => containerWidthRef.current = e.nativeEvent.layout.width}
+                                scrollEventThrottle={16}
+                            >
+                                {(profile.specialties || ['Elektrik Ustası']).map((specialty: string, index: number) => (
+                                    <View key={index} style={styles.specialtyChip}>
+                                        <Text style={styles.specialtyChipText}>{specialty}</Text>
+                                    </View>
+                                ))}
+                            </ScrollView>
+                        </View>
                         <View style={styles.metaRow}>
                             <Ionicons name="location" size={14} color={colors.textSecondary} />
                             <Text style={styles.location}>{locationStr}</Text>
@@ -264,29 +388,7 @@ export default function ElectricianDetailScreen() {
                 </View>
             </Card>
 
-            {/* Trust Score Section */}
-            <Card style={[styles.sectionCard, styles.trustCard]}>
-                <LinearGradient
-                    colors={[colors.primary + '10', colors.primary + '05']}
-                    style={styles.trustGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                >
-                    <View style={styles.trustInfo}>
-                        <Text style={styles.trustLabel}>Güven Skoru</Text>
-                        <View style={styles.trustValueRow}>
-                            <Text style={styles.trustValue}>%{trustScore}</Text>
-                            <Ionicons name="shield-checkmark" size={18} color={colors.primary} />
-                        </View>
-                    </View>
-                    <View style={styles.trustProgressWrapper}>
-                        <View style={styles.trustProgressBar}>
-                            <View style={[styles.trustProgressFill, { width: `${trustScore}%` }]} />
-                        </View>
-                        <Text style={styles.trustStatus}>Yüksek Güvenilirlik</Text>
-                    </View>
-                </LinearGradient>
-            </Card>
+
 
 
             {/* Services */}
@@ -335,42 +437,44 @@ export default function ElectricianDetailScreen() {
                 )}
             </View>
 
-            {electrician.reviewsReceived?.length > 0 ? (
-                electrician.reviewsReceived.map((review: any, index: number) => (
-                    <Card key={index} style={styles.reviewCardSmall}>
-                        <View style={styles.reviewHeader}>
-                            <Image
-                                source={{ uri: getFileUrl(review.reviewer?.profileImageUrl) || '' }}
-                                style={styles.reviewerAvatar}
-                            />
-                            <View style={styles.reviewerInfo}>
-                                <Text style={styles.reviewerName}>{review.reviewer?.fullName || 'Anonim Kullanıcı'}</Text>
-                                <View style={styles.reviewRatingStars}>
-                                    {[1, 2, 3, 4, 5].map((s) => (
-                                        <Ionicons
-                                            key={s}
-                                            name={s <= review.rating ? "star" : "star-outline"}
-                                            size={12}
-                                            color={colors.warning}
-                                        />
-                                    ))}
+            {
+                electrician.reviewsReceived?.length > 0 ? (
+                    electrician.reviewsReceived.map((review: any, index: number) => (
+                        <Card key={index} style={styles.reviewCardSmall}>
+                            <View style={styles.reviewHeader}>
+                                <Image
+                                    source={{ uri: getFileUrl(review.reviewer?.profileImageUrl) || '' }}
+                                    style={styles.reviewerAvatar}
+                                />
+                                <View style={styles.reviewerInfo}>
+                                    <Text style={styles.reviewerName}>{review.reviewer?.fullName || 'Anonim Kullanıcı'}</Text>
+                                    <View style={styles.reviewRatingStars}>
+                                        {[1, 2, 3, 4, 5].map((s) => (
+                                            <Ionicons
+                                                key={s}
+                                                name={s <= review.rating ? "star" : "star-outline"}
+                                                size={12}
+                                                color={colors.warning}
+                                            />
+                                        ))}
+                                    </View>
                                 </View>
+                                <Text style={styles.reviewDate}>
+                                    {new Date(review.createdAt).toLocaleDateString('tr-TR')}
+                                </Text>
                             </View>
-                            <Text style={styles.reviewDate}>
-                                {new Date(review.createdAt).toLocaleDateString('tr-TR')}
+                            <Text style={styles.reviewComment} numberOfLines={3}>
+                                {review.comment}
                             </Text>
-                        </View>
-                        <Text style={styles.reviewComment} numberOfLines={3}>
-                            {review.comment}
-                        </Text>
+                        </Card>
+                    ))
+                ) : (
+                    <Card style={styles.emptyReviewsCard}>
+                        <Ionicons name="chatbubbles-outline" size={32} color={colors.textLight} />
+                        <Text style={styles.emptyReviewsText}>Henüz değerlendirme yapılmamış.</Text>
                     </Card>
-                ))
-            ) : (
-                <Card style={styles.emptyReviewsCard}>
-                    <Ionicons name="chatbubbles-outline" size={32} color={colors.textLight} />
-                    <Text style={styles.emptyReviewsText}>Henüz değerlendirme yapılmamış.</Text>
-                </Card>
-            )}
+                )
+            }
 
             {/* Action Buttons */}
             <View style={styles.actionButtons}>
@@ -530,18 +634,43 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        marginBottom: 6,
+        marginBottom: 8,
+        width: '100%',
+        paddingRight: 4,
     },
     name: {
         fontFamily: fonts.bold,
         fontSize: 20,
         color: colors.text,
+        marginRight: 8,
     },
-    specialty: {
+
+    serviceBadge: {
+        paddingVertical: 4,
+        paddingHorizontal: 10,
+        borderRadius: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    serviceBadgeText: {
+        fontFamily: fonts.bold,
+        fontSize: 11,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    specialtyChip: {
+        paddingVertical: 4,
+        paddingHorizontal: 10,
+        backgroundColor: colors.primary + '15',
+        borderRadius: 12,
+        marginRight: 4,
+    },
+    specialtyChipText: {
         fontFamily: fonts.medium,
-        fontSize: 14,
-        color: colors.textSecondary,
-        marginBottom: 8,
+        fontSize: 12,
+        color: colors.primary,
     },
     metaRow: {
         flexDirection: 'row',
@@ -655,58 +784,7 @@ const styles = StyleSheet.create({
         height: '100%',
         borderRadius: 36,
     },
-    trustCard: {
-        padding: 0,
-        overflow: 'hidden',
-        borderWidth: 0,
-    },
-    trustGradient: {
-        padding: spacing.lg,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    trustInfo: {
-        flex: 1,
-    },
-    trustLabel: {
-        fontFamily: fonts.medium,
-        fontSize: 12,
-        color: colors.textSecondary,
-        marginBottom: 4,
-    },
-    trustValueRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    trustValue: {
-        fontFamily: fonts.bold,
-        fontSize: 24,
-        color: colors.primary,
-    },
-    trustProgressWrapper: {
-        width: 120,
-        alignItems: 'flex-end',
-    },
-    trustProgressBar: {
-        width: '100%',
-        height: 6,
-        backgroundColor: colors.primary + '20',
-        borderRadius: 3,
-        marginBottom: 6,
-        overflow: 'hidden',
-    },
-    trustProgressFill: {
-        height: '100%',
-        backgroundColor: colors.primary,
-        borderRadius: 3,
-    },
-    trustStatus: {
-        fontFamily: fonts.bold,
-        fontSize: 10,
-        color: colors.success,
-    },
+
     statDividerVertical: {
         width: 1,
         height: '60%',
@@ -909,4 +987,5 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: colors.white,
     },
+
 });

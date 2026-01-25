@@ -121,17 +121,17 @@ export const jobService = {
   },
 
   async completeJob(id: string, review?: { rating: number, comment: string }) {
-    const response = await apiClient.post(`${API_ENDPOINTS.JOB_DETAIL(id)}/complete`, review);
+    const response = await apiClient.post(API_ENDPOINTS.COMPLETE_JOB(id), review);
     return response.data.data;
   },
 
   async createReview(id: string, data: { rating: number, comment?: string }) {
-    const response = await apiClient.post(`${API_ENDPOINTS.JOB_DETAIL(id)}/review`, data);
+    const response = await apiClient.post(API_ENDPOINTS.REVIEW_JOB(id), data);
     return response.data.data;
   },
 
   async cancelJob(id: string, reason?: string) {
-    const response = await apiClient.post(`${API_ENDPOINTS.JOB_DETAIL(id)}/cancel`, { reason });
+    const response = await apiClient.post(API_ENDPOINTS.CANCEL_JOB(id), { reason });
     return response.data.data;
   },
 };

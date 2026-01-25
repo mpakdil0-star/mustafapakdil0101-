@@ -3,6 +3,8 @@ import prisma, { isDatabaseAvailable } from '../config/database';
 import { mockStorage } from '../utils/mockStorage';
 import { notifyUser } from '../server';
 import pushNotificationService from '../services/pushNotificationService';
+import { jobStoreById, deleteMockJob, getMockJobs, loadMockJobs } from './jobController';
+import { mockTransactionStorage } from '../utils/mockStorage';
 
 /**
  * Get all pending verifications
@@ -29,6 +31,7 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
                     userId: u.id,
                     verificationStatus: 'PENDING',
                     verificationDocuments: u.electricianProfile?.verificationDocuments,
+                    serviceCategory: u.electricianProfile?.serviceCategory,
                     user: {
                         id: u.id,
                         fullName: u.fullName,
@@ -52,6 +55,7 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
                             documentUrl: undefined,
                             submittedAt: new Date().toISOString(),
                         },
+                        serviceCategory: 'elektrik',
                         user: {
                             id: 'mock-electrician-1',
                             fullName: 'Ahmet Yılmaz (Örnek)',
@@ -106,6 +110,7 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
                             documentUrl: undefined,
                             submittedAt: new Date().toISOString(),
                         },
+                        serviceCategory: 'elektrik',
                         user: {
                             id: 'mock-electrician-1',
                             fullName: 'Ahmet Yılmaz (Mock - Fallback)',
@@ -266,6 +271,158 @@ export const processVerification = async (req: Request, res: Response, next: Nex
         }
     } catch (error) {
         console.error('Error in processVerification:', error);
+        next(error);
+    }
+};
+
+// Imports moved to top
+// Imports moved to top
+export const getDashboardStats = async (req: Request, res: Response, next: NextFunction) => {
+    console.log('📊 getDashboardStats called');
+    try {
+        const user = (req as any).user;
+        if (user.userType !== 'ADMIN') throw new Error('Unauthorized');
+
+        // 1. Total Users
+        const allUsers = mockStorage.getAllUsers();
+        // Since getAllUsers returns an array, we can filter
+        const users = Object.values(allUsers);
+        const totalUsers = users.length;
+        const totalElectricians = users.filter((u: any) => u.userType === 'ELECTRICIAN').length;
+        const totalCitizens = users.filter((u: any) => u.userType === 'CITIZEN').length;
+
+        // 2. Active Jobs
+        // Ensure jobs are loaded
+        if (jobStoreById.size === 0) loadMockJobs();
+
+        // Count OPEN jobs
+        let activeJobsCount = 0;
+        jobStoreById.forEach((job) => {
+            if (job.status === 'OPEN') activeJobsCount++;
+        });
+
+        // Fallback removed per user request (only show dynamic jobs)
+        // if (activeJobsCount === 0) { ... }
+
+        // 3. Pending Verifications
+        const pendingCount = users.filter((u: any) => u.verificationStatus === 'PENDING').length;
+
+        // 4. Total Revenue (Mock)
+        // Sum of all purchase transactions
+        const transactions = mockTransactionStorage.getAllTransactions();
+        const totalRevenue = transactions
+            .filter(t => t.transactionType === 'PURCHASE')
+            .reduce((sum, t) => sum + t.amount, 0);
+
+        res.json({
+            success: true,
+            data: {
+                totalUsers,
+                totalElectricians,
+                totalCitizens,
+                activeJobs: activeJobsCount,
+                pendingVerifications: pendingCount,
+                totalRevenue
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Get All Jobs for Administration
+ * Admin ONLY
+ * Supports Pagination: ?page=1&limit=20
+ */
+export const getAllJobs = async (req: Request, res: Response, next: NextFunction) => {
+    console.log('📋 getAllJobs called');
+    try {
+        const user = (req as any).user;
+        if (user.userType !== 'ADMIN') throw new Error('Unauthorized');
+
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
+        const skip = (page - 1) * limit;
+
+        if (jobStoreById.size === 0) loadMockJobs();
+
+        // Convert Map to Array
+        const jobs = Array.from(jobStoreById.values());
+
+        // Static mocks removed per user request (only show dynamic jobs)
+        /*
+        const staticJobs = getMockJobs().jobs;
+        staticJobs.forEach(staticJob => {
+            if (!jobStoreById.has(staticJob.id)) {
+                jobs.push(staticJob);
+            }
+        });
+        */
+
+        // Sort by newest
+        jobs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        // Apply Pagination
+        const paginatedJobs = jobs.slice(skip, skip + limit);
+        const totalJobs = jobs.length;
+        const totalPages = Math.ceil(totalJobs / limit);
+
+        res.json({
+            success: true,
+            data: paginatedJobs,
+            pagination: {
+                page,
+                limit,
+                totalJobs,
+                totalPages,
+                hasMore: page < totalPages
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Delete a Job (Admin Force Delete)
+ * Admin ONLY
+ */
+export const deleteJob = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const user = (req as any).user;
+        if (user.userType !== 'ADMIN') throw new Error('Unauthorized');
+
+        const { id } = req.params;
+
+        if (isDatabaseAvailable && !id.startsWith('mock-')) {
+            // DB Implementation
+            try {
+                await prisma.jobPost.delete({ where: { id } });
+                console.log(`🗑️ Database job deleted: ${id}`);
+
+                // Also remove from mock store if it exists there to keep sync
+                if (jobStoreById.has(id)) {
+                    deleteMockJob(id);
+                }
+
+                return res.json({ success: true, message: 'İlan veritabanından silindi' });
+            } catch (dbError) {
+                console.error('Database deletion error:', dbError);
+                // Fallthrough to mock deletion or return error if confirmed DB ID
+                return res.status(500).json({ success: false, message: 'İlan silinirken veritabanı hatası oluştu' });
+            }
+        }
+
+        // Mock Implementation
+        const success = deleteMockJob(id);
+
+        if (success) {
+            res.json({ success: true, message: 'İlan silindi' });
+        } else {
+            res.status(404).json({ success: false, message: 'İlan bulunamadı' });
+        }
+    } catch (error) {
         next(error);
     }
 };

@@ -652,4 +652,96 @@ export const mockFavoriteStorage = {
     }
 };
 
+// ============== MOCK SUPPORT TICKETS STORAGE ==============
+
+interface MockSupportTicket {
+    id: string;
+    userId: string;
+    ticketType: string;
+    subject: string;
+    description: string;
+    status: string;
+    priority: string;
+    createdAt: string;
+    messages: Array<{
+        id: string;
+        senderId: string;
+        text: string;
+        createdAt: string;
+        isAdmin: boolean;
+    }>;
+}
+
+const TICKETS_FILE = path.join(DATA_DIR, 'mock_tickets.json');
+
+let mockTickets: MockSupportTicket[] = [];
+if (fs.existsSync(TICKETS_FILE)) {
+    try {
+        mockTickets = JSON.parse(fs.readFileSync(TICKETS_FILE, 'utf8'));
+        console.log(`🎫 Mock tickets loaded: ${mockTickets.length} tickets`);
+    } catch (error) {
+        mockTickets = [];
+    }
+}
+
+const saveTicketsToDisk = () => {
+    try {
+        fs.writeFileSync(TICKETS_FILE, JSON.stringify(mockTickets, null, 2), 'utf8');
+    } catch (error) {
+        console.error('❌ Failed to save mock tickets:', error);
+    }
+};
+
+export const mockTicketStorage = {
+    addTicket: (data: Omit<MockSupportTicket, 'id' | 'createdAt' | 'status' | 'messages'>) => {
+        const ticket: MockSupportTicket = {
+            id: `ticket-${Date.now()}`,
+            ...data,
+            status: 'open',
+            createdAt: new Date().toISOString(),
+            messages: []
+        };
+        mockTickets.unshift(ticket);
+        saveTicketsToDisk();
+        return ticket;
+    },
+
+    addMessage: (ticketId: string, message: { senderId: string, text: string, isAdmin: boolean }) => {
+        const ticket = mockTickets.find(t => t.id === ticketId);
+        if (ticket) {
+            if (!ticket.messages) ticket.messages = [];
+            ticket.messages.push({
+                id: `msg-${Date.now()}`,
+                ...message,
+                createdAt: new Date().toISOString()
+            });
+            saveTicketsToDisk();
+            return ticket;
+        }
+        return null;
+    },
+
+    getTicketsByUser: (userId: string) => {
+        return mockTickets.filter(t => t.userId === userId);
+    },
+
+    getTicket: (id: string) => {
+        return mockTickets.find(t => t.id === id);
+    },
+
+    getAllTickets: () => {
+        return mockTickets;
+    },
+
+    updateTicket: (id: string, updates: Partial<MockSupportTicket>) => {
+        const ticket = mockTickets.find(t => t.id === id);
+        if (ticket) {
+            Object.assign(ticket, updates);
+            saveTicketsToDisk();
+            return ticket;
+        }
+        return null;
+    }
+};
+
 export default mockStorage;

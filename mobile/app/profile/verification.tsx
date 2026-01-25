@@ -39,11 +39,19 @@ interface VerificationData {
     rejectionReason?: string;
 }
 
-const DOCUMENT_TYPES = [
-    { value: 'ELEKTRIK_USTASI' as DocumentType, label: 'Elektrik Ustası Belgesi' },
-    { value: 'MYK_BELGESI' as DocumentType, label: 'MYK Yeterlilik Belgesi' },
-    { value: 'ODA_KAYIT' as DocumentType, label: 'Oda Kayıt Belgesi' },
-];
+// Helper to get document label based on service category
+const getServiceDocumentLabel = (category: string = 'elektrik') => {
+    switch (category.toLowerCase()) {
+        case 'tesisat': return 'Su Tesisatçısı Belgesi';
+        case 'klima': return 'Klima Teknikerliği Belgesi';
+        case 'beyaz-esya': return 'Beyaz Eşya Servis Belgesi';
+        case 'cilingir': return 'Anahtarcı/Çilingir Belgesi';
+        case 'boya': return 'Boya ve Badana Ustalık Belgesi';
+        case 'nakliyat': return 'Nakliyat Yetki Belgesi';
+        case 'temizlik': return 'Temizlik Şirketi Yetki Belgesi';
+        case 'elektrik': default: return 'Elektrik Ustası Belgesi';
+    }
+};
 
 export default function VerificationScreen() {
     const router = useRouter();
@@ -57,6 +65,14 @@ export default function VerificationScreen() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const colors = useAppColors();
+
+    const serviceCategory = user?.electricianProfile?.serviceCategory || 'elektrik';
+
+    const documentTypes = [
+        { value: 'ELEKTRIK_USTASI' as DocumentType, label: getServiceDocumentLabel(serviceCategory) },
+        { value: 'MYK_BELGESI' as DocumentType, label: 'MYK Yeterlilik Belgesi' },
+        { value: 'ODA_KAYIT' as DocumentType, label: 'Oda Kayıt Belgesi' },
+    ];
 
     const [alertConfig, setAlertConfig] = useState<{
         visible: boolean;
@@ -207,7 +223,7 @@ export default function VerificationScreen() {
                         <View style={styles.summaryContainer}>
                             <View style={styles.summaryRow}>
                                 <Text style={styles.summaryLabel}>Belge Türü</Text>
-                                <Text style={styles.summaryValue}>{DOCUMENT_TYPES.find(d => d.value === verificationData.documentType)?.label}</Text>
+                                <Text style={styles.summaryValue}>{documentTypes.find(d => d.value === verificationData.documentType)?.label}</Text>
                             </View>
                             <View style={styles.summaryRow}>
                                 <Text style={styles.summaryLabel}>Gönderim Tarihi</Text>
@@ -245,8 +261,9 @@ export default function VerificationScreen() {
                 <Card style={styles.formCard}>
                     {/* 1. Belge Türü */}
                     <Text style={styles.inputLabel}>Belge Türünü Seçin</Text>
+                    <Text style={styles.helperText}>Aşağıdaki belgelerden <Text style={styles.boldText}>sadece birini</Text> seçip yüklemeniz yeterlidir.</Text>
                     <View style={styles.typeGrid}>
-                        {DOCUMENT_TYPES.map((type) => (
+                        {documentTypes.map((type) => (
                             <TouchableOpacity
                                 key={type.value}
                                 style={[styles.typeItem, selectedType === type.value && styles.typeItemSelected]}
@@ -415,7 +432,17 @@ const styles = StyleSheet.create({
         fontFamily: fonts.bold,
         fontSize: 14,
         color: staticColors.text,
-        marginBottom: 12,
+        marginBottom: 8,
+    },
+    helperText: {
+        fontFamily: fonts.regular,
+        fontSize: 13,
+        color: staticColors.textSecondary,
+        marginBottom: 16,
+    },
+    boldText: {
+        fontFamily: fonts.bold,
+        color: staticColors.text,
     },
     optional: {
         fontFamily: fonts.medium,

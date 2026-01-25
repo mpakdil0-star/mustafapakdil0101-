@@ -58,12 +58,18 @@ export default function LegalScreen() {
     const colors = useAppColors();
     const content = CONTENT[type || 'terms'];
 
+    const handleBack = () => {
+        // Force navigation to profile tab to ensure we don't drop to home
+        router.navigate('/(tabs)/profile');
+    };
+
     return (
         <View style={styles.container}>
             <PremiumHeader
                 title={content.title}
                 subtitle={`Son Güncelleme: ${content.lastUpdate}`}
                 showBackButton
+                onBackPress={handleBack}
             />
 
             <ScrollView
@@ -77,9 +83,10 @@ export default function LegalScreen() {
 
                 <TouchableOpacity
                     style={[styles.closeButton, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
-                    onPress={() => router.back()}
+                    onPress={handleBack}
                 >
                     <Text style={styles.closeButtonText}>Okudum, Anladım</Text>
+                    <Ionicons name="checkmark-circle" size={20} color={staticColors.white} style={{ marginLeft: 8 }} />
                 </TouchableOpacity>
             </ScrollView>
         </View>
@@ -114,12 +121,15 @@ const styles = StyleSheet.create({
     },
     closeButton: {
         borderRadius: 16,
-        paddingVertical: 18,
+        paddingVertical: 16,
         alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 5,
+        marginBottom: 20
     },
     closeButtonText: {
         fontFamily: fonts.bold,

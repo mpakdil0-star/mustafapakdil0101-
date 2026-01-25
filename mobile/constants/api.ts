@@ -32,7 +32,7 @@ const PORT = '5000'; // Fixed: Backend runs on 5000, not 3001
 const API_VERSION = 'v1';
 
 // Tünel Adresi (Opsiyonel - Sadece dışarıdan erişim için)
-const TUNNEL_URL = ''; // Boş bırakıldı, yerel ağ kullanılacak
+const TUNNEL_URL: string = ''; // Boş bırakıldı, yerel ağ kullanılacak
 
 // Environment-based configuration
 const getApiUrl = () => {
@@ -73,40 +73,50 @@ export const API_ENDPOINTS = {
 
   // Jobs
   JOBS: 'jobs',
-  JOB_DETAIL: (id: string) => `jobs/${id}`,
+  JOB_DETAIL: (id: string) => `jobs/${encodeURIComponent(id)}`,
+  COMPLETE_JOB: (id: string) => `jobs/${encodeURIComponent(id)}/complete`,
+  REVIEW_JOB: (id: string) => `jobs/${encodeURIComponent(id)}/review`,
+  CANCEL_JOB: (id: string) => `jobs/${encodeURIComponent(id)}/cancel`,
   CREATE_JOB: 'jobs',
   MY_JOBS: 'jobs/my-jobs',
 
   // Bids
   BIDS: 'bids',
-  BID_DETAIL: (id: string) => `bids/${id}`,
+  BID_DETAIL: (id: string) => `bids/${encodeURIComponent(id)}`,
   CREATE_BID: 'bids',
   MY_BIDS: 'bids/my-bids',
-  JOB_BIDS: (jobId: string) => `bids/job/${jobId}`,
-  ACCEPT_BID: (bidId: string) => `bids/${bidId}/accept`,
-  REJECT_BID: (bidId: string) => `bids/${bidId}/reject`,
-  WITHDRAW_BID: (bidId: string) => `bids/${bidId}/withdraw`,
+  JOB_BIDS: (jobId: string) => `bids/job/${encodeURIComponent(jobId)}`,
+  ACCEPT_BID: (bidId: string) => `bids/${encodeURIComponent(bidId)}/accept`,
+  REJECT_BID: (bidId: string) => `bids/${encodeURIComponent(bidId)}/reject`,
+  WITHDRAW_BID: (bidId: string) => `bids/${encodeURIComponent(bidId)}/withdraw`,
 
   // Messages
   CONVERSATIONS: 'conversations',
-  MESSAGES: (conversationId: string) => `conversations/${conversationId}/messages`,
-  SEND_MESSAGE: (conversationId: string) => `conversations/${conversationId}/messages`,
+  CONVERSATION_DETAIL: (id: string) => `conversations/${encodeURIComponent(id)}`,
+  MESSAGES: (conversationId: string) => `conversations/${encodeURIComponent(conversationId)}/messages`,
+  SEND_MESSAGE: (conversationId: string) => `conversations/${encodeURIComponent(conversationId)}/messages`,
+  MARK_CONVERSATION_READ: (id: string) => `conversations/${encodeURIComponent(id)}/read`,
 
   // Notifications
   NOTIFICATIONS: 'notifications',
+  NOTIFICATION_DETAIL: (id: string) => `notifications/${encodeURIComponent(id)}`,
+  NOTIFICATION_READ: (id: string) => `notifications/${encodeURIComponent(id)}/read`,
+  NOTIFICATIONS_UNREAD_COUNT: 'notifications/unread-count',
+  NOTIFICATIONS_READ_ALL: 'notifications/read-all',
+  NOTIFICATIONS_RELATED_READ: 'notifications/related-read',
 
   // Locations
   LOCATIONS: 'locations',
 
   // Favorites
   FAVORITES: 'favorites',
-  ADD_FAVORITE: (electricianId: string) => `favorites/${electricianId}`,
-  REMOVE_FAVORITE: (electricianId: string) => `favorites/${electricianId}`,
-  CHECK_FAVORITE: (electricianId: string) => `favorites/${electricianId}/check`,
+  ADD_FAVORITE: (electricianId: string) => `favorites/${encodeURIComponent(electricianId)}`,
+  REMOVE_FAVORITE: (electricianId: string) => `favorites/${encodeURIComponent(electricianId)}`,
+  CHECK_FAVORITE: (electricianId: string) => `favorites/${encodeURIComponent(electricianId)}/check`,
 
   // Reviews
   REVIEWS: 'reviews',
-  ELECTRICIAN_REVIEWS: (electricianId: string) => `reviews/electrician/${electricianId}`,
+  ELECTRICIAN_REVIEWS: (electricianId: string) => `reviews/electrician/${encodeURIComponent(electricianId)}`,
   SUBMIT_REVIEW: 'reviews',
 
   // Payments & Credits
@@ -131,7 +141,12 @@ export const getFileUrl = (filePath: string | null | undefined): string | null =
   }
 
   // For file paths, use the TUNNEL URL for remote access
-  return `${TUNNEL_URL}${filePath}`;
+  if (TUNNEL_URL && TUNNEL_URL.length > 0) {
+    return `${TUNNEL_URL}${filePath}`;
+  }
+
+  // Or fallback to Local IP
+  return `http://${LOCALHOST}:${PORT}${filePath}`;
 };
 
 // Log configuration on app start

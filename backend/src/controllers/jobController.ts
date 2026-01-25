@@ -23,7 +23,7 @@ if (!fs.existsSync(DATA_DIR)) {
 
 // In-memory store for jobs created when database is not available
 // Key: userId, Value: array of jobs
-const userJobsStore = new Map<string, any[]>();
+export const userJobsStore = new Map<string, any[]>();
 // Global job store for quick lookup by ID
 // Key: jobId, Value: job object
 export const jobStoreById = new Map<string, any>();
@@ -37,6 +37,26 @@ export const saveMockJobs = () => {
   } catch (error) {
     console.error('❌ Error saving mock jobs:', error);
   }
+};
+
+// Helper to delete a mock job
+export const deleteMockJob = (jobId: string) => {
+  const job = jobStoreById.get(jobId);
+  if (job) {
+    // Remove from global store
+    jobStoreById.delete(jobId);
+
+    // Remove from user store
+    if (job.citizenId && userJobsStore.has(job.citizenId)) {
+      const userJobs = userJobsStore.get(job.citizenId) || [];
+      const filtered = userJobs.filter(j => j.id !== jobId);
+      userJobsStore.set(job.citizenId, filtered);
+    }
+
+    saveMockJobs();
+    return true;
+  }
+  return false;
 };
 
 // Helper to load mock jobs from disk

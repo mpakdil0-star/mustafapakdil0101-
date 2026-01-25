@@ -15,7 +15,7 @@ export interface Notification {
 export const notificationService = {
   async getNotifications() {
     try {
-      const response = await apiClient.get(API_ENDPOINTS.NOTIFICATIONS || '/notifications');
+      const response = await apiClient.get(API_ENDPOINTS.NOTIFICATIONS);
       return response.data.data?.notifications || [];
     } catch (error: any) {
       // Backend endpoint henüz hazır değilse boş liste döndür
@@ -28,28 +28,28 @@ export const notificationService = {
 
   async markAsRead(notificationId: string) {
     const response = await apiClient.put(
-      `${API_ENDPOINTS.NOTIFICATIONS || '/notifications'}/${notificationId}/read`
+      API_ENDPOINTS.NOTIFICATION_READ(notificationId)
     );
     return response.data.data;
   },
 
   async getUnreadCount() {
     const response = await apiClient.get(
-      `${API_ENDPOINTS.NOTIFICATIONS || '/notifications'}/unread-count`
+      API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT
     );
     return response.data.data.count;
   },
 
   async markAllAsRead() {
     const response = await apiClient.put(
-      `${API_ENDPOINTS.NOTIFICATIONS || '/notifications'}/read-all`
+      API_ENDPOINTS.NOTIFICATIONS_READ_ALL
     );
     return response.data.data;
   },
 
   async markRelatedAsRead(type: string, relatedId: string) {
     const response = await apiClient.put(
-      `${API_ENDPOINTS.NOTIFICATIONS || '/notifications'}/related-read`,
+      API_ENDPOINTS.NOTIFICATIONS_RELATED_READ,
       { type, relatedId }
     );
     return response.data.data;
@@ -57,7 +57,7 @@ export const notificationService = {
 
   async deleteNotification(notificationId: string) {
     const response = await apiClient.delete(
-      `${API_ENDPOINTS.NOTIFICATIONS || '/notifications'}/${notificationId}`
+      API_ENDPOINTS.NOTIFICATION_DETAIL(notificationId)
     );
     return response.data.data;
   },

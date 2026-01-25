@@ -26,6 +26,7 @@ import { getFileUrl } from '../../constants/api';
 
 interface VerificationRequest {
     userId: string;
+    serviceCategory?: string; // Added service category
     user: {
         id: string;
         fullName: string;
@@ -40,6 +41,27 @@ interface VerificationRequest {
 }
 
 const { width } = Dimensions.get('window');
+
+// Helper to get document label based on service category
+const getServiceDocumentLabel = (category: string = 'elektrik') => {
+    switch (category.toLowerCase()) {
+        case 'tesisat': return 'Su Tesisatçısı Belgesi';
+        case 'klima': return 'Klima Teknikerliği Belgesi';
+        case 'beyaz-esya': return 'Beyaz Eşya Servis Belgesi';
+        case 'cilingir': return 'Anahtarcı/Çilingir Belgesi';
+        case 'boya': return 'Boya ve Badana Ustalık Belgesi';
+        case 'nakliyat': return 'Nakliyat Yetki Belgesi';
+        case 'temizlik': return 'Temizlik Şirketi Yetki Belgesi';
+        case 'elektrik': default: return 'Elektrik Ustası Belgesi';
+    }
+};
+
+const getDocumentDisplayLabel = (type: string, category?: string) => {
+    if (type === 'ELEKTRIK_USTASI') return getServiceDocumentLabel(category);
+    if (type === 'MYK_BELGESI') return 'MYK Yeterlilik Belgesi';
+    if (type === 'ODA_KAYIT') return 'Oda Kayıt Belgesi';
+    return type;
+};
 
 export default function AdminVerificationsScreen() {
     const router = useRouter();
@@ -125,7 +147,9 @@ export default function AdminVerificationsScreen() {
                     <Text style={styles.userPhone}>{item.user.phone || 'Telefon yok'}</Text>
                 </View>
                 <View style={[styles.badge, { backgroundColor: colors.primary + '10' }]}>
-                    <Text style={[styles.badgeText, { color: colors.primary }]}>{item.verificationDocuments.documentType}</Text>
+                    <Text style={[styles.badgeText, { color: colors.primary }]}>
+                        {getDocumentDisplayLabel(item.verificationDocuments.documentType, item.serviceCategory)}
+                    </Text>
                 </View>
             </View>
 

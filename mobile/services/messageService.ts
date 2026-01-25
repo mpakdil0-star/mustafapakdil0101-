@@ -69,15 +69,13 @@ export const messageService = {
 
   async getConversation(conversationId: string) {
     if (!conversationId) return null;
-    const response = await apiClient.get(
-      `${API_ENDPOINTS.CONVERSATIONS || 'conversations'}/${conversationId}`
-    );
+    const response = await apiClient.get(API_ENDPOINTS.CONVERSATION_DETAIL(conversationId));
     return response.data.data?.conversation;
   },
 
   async findConversation(recipientId: string, jobId?: string) {
     try {
-      const response = await apiClient.get(`${API_ENDPOINTS.CONVERSATIONS || 'conversations'}/find`, {
+      const response = await apiClient.get(`${API_ENDPOINTS.CONVERSATIONS}/find`, {
         params: { recipientId, jobId }
       });
       return response.data.data?.conversation;
@@ -89,9 +87,7 @@ export const messageService = {
 
   async getMessages(conversationId: string) {
     if (!conversationId) return [];
-    const response = await apiClient.get(
-      `${API_ENDPOINTS.CONVERSATIONS || 'conversations'}/${conversationId}/messages`
-    );
+    const response = await apiClient.get(API_ENDPOINTS.MESSAGES(conversationId));
     return response.data.data?.messages || [];
   },
 
@@ -116,7 +112,7 @@ export const messageService = {
         convId = existing.id;
       } else {
         // Create new
-        const createRes = await apiClient.post(API_ENDPOINTS.CONVERSATIONS || 'conversations', {
+        const createRes = await apiClient.post(API_ENDPOINTS.CONVERSATIONS, {
           recipientId: data.receiverId,
           jobPostId: data.jobId
         });
@@ -137,7 +133,7 @@ export const messageService = {
 
   async markAsRead(conversationId: string) {
     const response = await apiClient.put(
-      `${API_ENDPOINTS.CONVERSATIONS || '/conversations'}/${conversationId}/read`
+      API_ENDPOINTS.MARK_CONVERSATION_READ(conversationId)
     );
     return response.data.data;
   },
