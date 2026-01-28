@@ -327,9 +327,79 @@ function RootLayoutNav() {
       );
     });
 
+    // Listen for job status updates (job completed, cancelled, etc.)
+    const unsubscribeJobStatus = socketService.onJobStatusUpdate((statusNotification: any) => {
+      console.log('🔄 [GLOBAL] Job status update received:', statusNotification);
+
+      dispatch(addNotification({
+        id: `job-status-${Date.now()}`,
+        type: 'job_status_updated',
+        title: statusNotification.title || '📋 İş Durumu Güncellendi',
+        message: statusNotification.message || 'İşinizin durumu değişti.',
+        isRead: false,
+        relatedId: statusNotification.jobId,
+        relatedType: 'JOB',
+        createdAt: new Date().toISOString()
+      }));
+
+      showAlert(
+        statusNotification.title || '📋 İş Durumu Güncellendi',
+        statusNotification.message || 'İşinizin durumu değişti.',
+        'info',
+        [
+          {
+            text: 'Görüntüle',
+            variant: 'primary',
+            onPress: () => {
+              setAlertConfig(prev => ({ ...prev, visible: false }));
+              if (statusNotification.jobId) {
+                router.push(`/jobs/${statusNotification.jobId}`);
+              }
+            }
+          },
+          { text: 'Kapat', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }
+        ]
+      );
+    });
+
+    // Listen for new reviews
+    const unsubscribeReview = socketService.onNewReview((reviewNotification: any) => {
+      console.log('⭐ [GLOBAL] New review received:', reviewNotification);
+
+      dispatch(addNotification({
+        id: `review-${Date.now()}`,
+        type: 'new_review',
+        title: '⭐ Yeni Değerlendirme',
+        message: reviewNotification.message || 'Yeni bir değerlendirme aldınız!',
+        isRead: false,
+        relatedId: reviewNotification.reviewId || reviewNotification.jobId,
+        relatedType: 'REVIEW',
+        createdAt: new Date().toISOString()
+      }));
+
+      showAlert(
+        '⭐ Yeni Değerlendirme',
+        reviewNotification.message || 'Yeni bir değerlendirme aldınız!',
+        'success',
+        [
+          {
+            text: 'Profili Gör',
+            variant: 'primary',
+            onPress: () => {
+              setAlertConfig(prev => ({ ...prev, visible: false }));
+              router.push('/profile');
+            }
+          },
+          { text: 'Kapat', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }
+        ]
+      );
+    });
+
     return () => {
       unsubscribe();
       unsubscribeBid();
+      unsubscribeJobStatus();
+      unsubscribeReview();
     };
   }, [isAuthenticated, dispatch, router]);
 
