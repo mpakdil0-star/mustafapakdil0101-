@@ -51,8 +51,10 @@ const getApiUrl = () => {
 
 export const API_BASE_URL = getApiUrl();
 
-// WebSocket URL (also via tunnel for remote access)
-export const WS_BASE_URL = TUNNEL_URL;
+// WebSocket URL (also via tunnel for remote access, fallback to local IP)
+export const WS_BASE_URL = TUNNEL_URL && TUNNEL_URL.length > 0
+  ? TUNNEL_URL
+  : `http://${LOCALHOST}:${PORT}`;
 
 // API Endpoints
 export const API_ENDPOINTS = {

@@ -232,8 +232,11 @@ function RootLayoutNav() {
 
     // Listen for new notifications via socket
     const unsubscribe = socketService.onNotification((notification) => {
+      console.log('🔔 [_layout] Socket notification received:', JSON.stringify(notification));
+
       // Add to Redux store
       dispatch(addNotification(notification));
+      console.log('🔔 [_layout] addNotification dispatched');
 
       // Show in-app alert if appropriate
       showAlert(
