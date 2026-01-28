@@ -316,17 +316,9 @@ export const createJobController = async (
             category: jobData.category,
             serviceCategory: jobServiceCategory
           });
+        } else {
+          console.warn('⚠️ No target rooms for new job notification (Missing category or city)');
         }
-
-        // ALSO send to all_electricians room as fallback (filtered by serviceCategory on client)
-        notifyUser('all_electricians', 'new_job_available', {
-          title: 'Yeni İş İlanı! ⚡',
-          message: `Yeni ilan: ${jobData.title} (${targetCity || 'Belirtilmedi'})`,
-          jobId: mockJob.id,
-          locationPreview: targetDistrict || targetCity,
-          category: jobData.category,
-          serviceCategory: jobServiceCategory
-        });
 
         return res.status(201).json({
           success: true,
