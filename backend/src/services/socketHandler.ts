@@ -508,16 +508,33 @@ async function joinUserLocationRooms(socket: AuthenticatedSocket) {
         if (!isDatabaseAvailable || userId.startsWith('mock-')) {
             const { mockStorage } = require('../utils/mockStorage');
             const mockData = mockStorage.get(userId);
-            serviceCategory = mockData.serviceCategory || 'elektrik';
+
+            if (!mockData) {
+                console.warn(`⚠️ [joinUserLocationRooms] No mock data found for user: ${userId}`);
+                return;
+            }
+
+            serviceCategory = mockData.serviceCategory || mockData.electricianProfile?.serviceCategory || 'elektrik';
+
+            console.log(`📍 [joinUserLocationRooms] User ${userId}: serviceCategory=${serviceCategory}, locations count=${mockData.locations?.length || 0}`);
 
             // 1. Eklediği tüm hizmet bölgelerinden odaya katıl
-            if (mockData.locations && Array.isArray(mockData.locations)) {
+            if (mockData.locations && Array.isArray(mockData.locations) && mockData.locations.length > 0) {
                 mockData.locations.forEach((loc: any) => {
                     userLocations.push({
                         city: loc.city,
                         district: loc.district || 'Merkez'
                     });
                 });
+            } else {
+                // Fallback: Kullanıcının şehri varsa o şehrin genel odasına katıl
+                if (mockData.city) {
+                    console.log(`📍 [joinUserLocationRooms] No locations, using user city: ${mockData.city}`);
+                    userLocations.push({
+                        city: mockData.city,
+                        district: mockData.district || 'Merkez'
+                    });
+                }
             }
         } else {
             const userWithLocations = await prisma.user.findUnique({
@@ -526,6 +543,11 @@ async function joinUserLocationRooms(socket: AuthenticatedSocket) {
             });
             userLocations = userWithLocations?.locations || [];
             serviceCategory = (userWithLocations?.electricianProfile as any)?.serviceCategory || 'elektrik';
+        }
+
+        if (userLocations.length === 0) {
+            console.warn(`⚠️ [joinUserLocationRooms] User ${userId} has NO locations to join rooms for`);
+            return;
         }
 
         userLocations.forEach(loc => {
