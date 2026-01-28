@@ -7,6 +7,7 @@ import { meController } from '../controllers/authController';
 import { getJobHistory } from '../controllers/historyController';
 import { getNotificationPreferences, updateNotificationPreferences } from '../controllers/notificationPreferencesController';
 import { authenticate, optionalAuthenticate, authorize } from '../middleware/auth';
+import { validate, updateProfileValidation, changePasswordValidation, updatePushTokenValidation, updateNotificationPreferencesValidation } from '../validators';
 
 const router = express.Router();
 
@@ -49,8 +50,8 @@ router.post('/avatar', authenticate, upload.single('image'), uploadAvatar);
 router.post('/avatar/base64', authenticate, uploadAvatarBase64);
 router.delete('/avatar', authenticate, removeAvatar);
 router.get('/stats', authenticate, getElectricianStats);
-router.put('/password', authenticate, changePassword);
-router.put('/profile', authenticate, updateProfile);
+router.put('/password', authenticate, validate(changePasswordValidation), changePassword);
+router.put('/profile', authenticate, validate(updateProfileValidation), updateProfile);
 router.delete('/', authenticate, deleteAccount);
 router.get('/history', authenticate, getJobHistory);
 
@@ -59,9 +60,9 @@ router.get('/verification', authenticate, getVerificationStatus);
 router.post('/verification', authenticate, submitVerification);
 
 // Notification routes
-router.post('/push-token', authenticate, updatePushToken);
+router.post('/push-token', authenticate, validate(updatePushTokenValidation), updatePushToken);
 router.get('/notification-preferences', authenticate, getNotificationPreferences);
-router.put('/notification-preferences', authenticate, updateNotificationPreferences);
+router.put('/notification-preferences', authenticate, validate(updateNotificationPreferencesValidation), updateNotificationPreferences);
 router.get('/electricians', optionalAuthenticate, getElectricians);
 router.get('/electricians/:id', optionalAuthenticate, getElectricianById);
 
