@@ -85,6 +85,26 @@ export const messageService = {
     }
   },
 
+  async findOrCreateConversation(recipientId: string, jobId?: string): Promise<Conversation | null> {
+    try {
+      // Önce mevcut konuşmayı ara
+      const existing = await this.findConversation(recipientId, jobId);
+      if (existing) {
+        return existing;
+      }
+
+      // Bulunamadıysa yeni konuşma oluştur
+      const createRes = await apiClient.post(API_ENDPOINTS.CONVERSATIONS, {
+        recipientId: recipientId,
+        jobPostId: jobId
+      });
+      return createRes.data.data?.conversation || null;
+    } catch (error: any) {
+      console.error('findOrCreateConversation error:', error);
+      return null;
+    }
+  },
+
   async getMessages(conversationId: string) {
     if (!conversationId) return [];
     const response = await apiClient.get(API_ENDPOINTS.MESSAGES(conversationId));

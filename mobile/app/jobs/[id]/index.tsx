@@ -193,9 +193,13 @@ export default function JobDetailScreen() {
         return;
       }
 
-      // Mevcut konuşma yoksa, yeni konuşma oluştur (mesaj göndermeden)
-      // receiverId ve jobId bilgisini query param olarak geç
-      router.push(`/messages/new?receiverId=${receiverId}&jobId=${id}&bidId=${bidId}`);
+      // Mevcut konuşma yoksa, yeni konuşma oluştur
+      const newConversation = await messageService.findOrCreateConversation(receiverId, id);
+      if (newConversation && newConversation.id) {
+        router.push(`/messages/${newConversation.id}`);
+      } else {
+        showAlert('Hata', 'Sohbet başlatılamadı.', 'error');
+      }
     } catch (error) {
       showAlert('Hata', 'Sohbet başlatılamadı.', 'error');
     }

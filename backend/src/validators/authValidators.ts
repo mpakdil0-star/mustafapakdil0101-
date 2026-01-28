@@ -18,11 +18,11 @@ export const registerValidation = [
         .withMessage('Şifre en az 6 karakter olmalıdır'),
 
     body('fullName')
+        .trim()
         .notEmpty()
         .withMessage('Ad soyad gerekli')
         .isLength({ min: 2, max: 100 })
-        .withMessage('Ad soyad 2-100 karakter arasında olmalıdır')
-        .trim(),
+        .withMessage('Ad soyad 2-100 karakter arasında olmalıdır'),
 
     body('phone')
         .notEmpty()
