@@ -32,7 +32,7 @@ const PORT = '5000'; // Fixed: Backend runs on 5000, not 3001
 const API_VERSION = 'v1';
 
 // Tünel Adresi (Opsiyonel - Sadece dışarıdan erişim için)
-const TUNNEL_URL: string = 'https://leptospiral-palaeontologically-hilton.ngrok-free.app'; // Güncellendi
+const TUNNEL_URL: string = 'https://leptospiral-palaeontologically-hilton.ngrok-free.dev'; // .dev olarak düzeltildi
 
 // Environment-based configuration
 const getApiUrl = () => {
