@@ -35,14 +35,12 @@ export default function ProfileScreen() {
   ];
 
   const CITIZEN_MENU_ITEMS = [
-    { icon: 'time-outline', label: 'Geçmiş İlanlarım', route: '/profile/history', color: (colors as any).amethystLight || '#8B5CF6' },
     { icon: 'heart-outline', label: 'Favori Ustalarım', route: '/profile/favorites', color: '#EF4444' },
   ];
 
   const ELECTRICIAN_MENU_ITEMS = [
     { icon: 'wallet-outline', label: 'Cüzdanım ve Krediler', route: '/profile/wallet', color: colors.primary },
     { icon: 'shield-checkmark-outline', label: 'Belge Onayı', route: '/profile/verification', color: '#10B981' },
-    { icon: 'time-outline', label: 'Geçmiş İşlerim', route: '/profile/history', color: '#F59E0B' },
     { icon: 'stats-chart-outline', label: 'İstatistiklerim', route: '/electrician/stats', color: '#8B5CF6' },
   ];
 
@@ -175,6 +173,8 @@ export default function ProfileScreen() {
       setIsLoading(false);
     }
   };
+
+
 
   if (!user) {
     return (
@@ -341,6 +341,8 @@ export default function ProfileScreen() {
             ))}
           </Card>
         </View>
+
+
 
         <Button
           title="ÇIKIŞ YAP"

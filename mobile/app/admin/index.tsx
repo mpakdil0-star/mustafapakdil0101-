@@ -32,6 +32,13 @@ export default function AdminDashboardScreen() {
 
     const menuItems = [
         {
+            title: 'Şikayet Yönetimi',
+            subtitle: 'Kullanıcı şikayetlerini incele',
+            icon: 'warning',
+            color: '#8B5CF6',
+            route: '/admin/reports'
+        },
+        {
             title: 'Doğrulama Havuzu',
             subtitle: 'Onay bekleyen belgeler',
             icon: 'shield-checkmark',

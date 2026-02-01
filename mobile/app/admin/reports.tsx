@@ -1,67 +1,72 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
+import {
+    View,
+    Text,
+    StyleSheet,
+    FlatList,
+    TouchableOpacity,
+    ActivityIndicator,
+    Alert,
+    Modal,
+    TextInput
+} from 'react-native';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
-import { Card } from '../../components/common/Card';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { fonts } from '../../constants/typography';
 import { spacing } from '../../constants/spacing';
-import { LinearGradient } from 'expo-linear-gradient';
 import api from '../../services/api';
+import { format } from 'date-fns';
+import { tr } from 'date-fns/locale';
 
-interface Stats {
-    users: {
-        total: number;
-        citizens: number;
-        electricians: number;
-        admins: number;
-    };
-    serviceCategories: {
-        elektrik: number;
-        cilingir: number;
-        klima: number;
-        'beyaz-esya': number;
-        tesisat: number;
-    };
-    status: {
-        verified: number;
-        pending: number;
-        suspended: number;
-    };
-    activity: {
-        jobs: { total: number; open: number; completed: number; cancelled: number };
-        bids: { total: number; accepted: number };
-        totalCredits: number;
-    };
-    regions: Array<{
-        city: string;
-        electricians: number;
-        citizens: number;
-        total: number;
-    }>;
+interface Report {
+    id: string;
+    reporterId: string;
+    reportedId: string;
+    jobId?: string;
+    reason: string;
+    description: string;
+    status: 'PENDING' | 'UNDER_REVIEW' | 'RESOLVED' | 'DISMISSED';
+    createdAt: string;
+    reporter?: { fullName: string }; // Optional mock data support
+    reported?: { fullName: string; userType: string };
 }
 
-const SERVICE_CATEGORY_INFO = [
-    { id: 'elektrik', name: 'Elektrikçi', icon: 'flash', color: '#F59E0B' },
-    { id: 'cilingir', name: 'Çilingir', icon: 'key', color: '#6366F1' },
-    { id: 'klima', name: 'Klima', icon: 'snow', color: '#06B6D4' },
-    { id: 'beyaz-esya', name: 'Beyaz Eşya', icon: 'cube', color: '#8B5CF6' },
-    { id: 'tesisat', name: 'Tesisat', icon: 'water', color: '#3B82F6' },
-];
+const STATUS_CONFIG = {
+    PENDING: { label: 'Bekliyor', color: '#F59E0B', icon: 'time' },
+    UNDER_REVIEW: { label: 'İnceleniyor', color: '#3B82F6', icon: 'eye' },
+    RESOLVED: { label: 'Çözüldü', color: '#10B981', icon: 'checkmark-circle' },
+    DISMISSED: { label: 'Reddedildi', color: '#EF4444', icon: 'close-circle' }
+};
+
+const REASON_LABELS: Record<string, string> = {
+    FRAUD: 'Dolandırıcılık',
+    HARASSMENT: 'Taciz',
+    NO_SHOW: 'Gelmedi',
+    UNPROFESSIONAL: 'Profesyonellik Dışı',
+    FAKE_PROFILE: 'Sahte Profil',
+    SPAM: 'Spam',
+    INAPPROPRIATE_CONTENT: 'Uygunsuz İçerik',
+    OTHER: 'Diğer'
+};
 
 export default function AdminReportsScreen() {
-    const [stats, setStats] = useState<Stats | null>(null);
+    const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+    const [adminNote, setAdminNote] = useState('');
+    const [processing, setProcessing] = useState(false);
 
-    const fetchStats = useCallback(async () => {
+    const fetchReports = useCallback(async () => {
         try {
-            const response = await api.get('/admin/stats');
+            const response = await api.get('/reports/admin/all');
             if (response.data.success) {
-                setStats(response.data.data);
+                setReports(response.data.data);
             }
         } catch (error) {
-            console.error('Failed to fetch stats:', error);
+            console.error('Failed to fetch reports:', error);
+            Alert.alert('Hata', 'Şikayetler yüklenirken bir sorun oluştu.');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -69,438 +74,343 @@ export default function AdminReportsScreen() {
     }, []);
 
     useEffect(() => {
-        fetchStats();
+        fetchReports();
     }, []);
 
-    const onRefresh = () => {
-        setRefreshing(true);
-        fetchStats();
+    const handleUpdateStatus = async (status: string, banUser: boolean = false) => {
+        if (!selectedReport) return;
+        setProcessing(true);
+
+        try {
+            await api.patch(`/reports/admin/${selectedReport.id}`, {
+                status,
+                adminNotes: adminNote,
+                banUser
+            });
+
+            Alert.alert('Başarılı', 'Şikayet durumu güncellendi.');
+            setSelectedReport(null);
+            setAdminNote('');
+            fetchReports(); // Refresh list
+        } catch (error: any) {
+            Alert.alert('Hata', error.response?.data?.message || 'İşlem başarısız.');
+        } finally {
+            setProcessing(false);
+        }
     };
 
-    if (loading) {
+    const renderItem = ({ item }: { item: Report }) => {
+        const statusInfo = STATUS_CONFIG[item.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.PENDING;
+        const reasonLabel = REASON_LABELS[item.reason] || item.reason;
+
         return (
-            <View style={styles.container}>
-                <PremiumHeader title="Sistem Raporları" showBackButton />
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                    <Text style={styles.loadingText}>Yükleniyor...</Text>
+            <TouchableOpacity
+                style={styles.card}
+                onPress={() => setSelectedReport(item)}
+                activeOpacity={0.7}
+            >
+                <View style={styles.cardHeader}>
+                    <View style={[styles.statusBadge, { backgroundColor: statusInfo.color + '15' }]}>
+                        <Ionicons name={statusInfo.icon as any} size={14} color={statusInfo.color} />
+                        <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
+                    </View>
+                    <Text style={styles.dateText}>
+                        {format(new Date(item.createdAt), 'd MMM HH:mm', { locale: tr })}
+                    </Text>
                 </View>
-            </View>
+
+                <Text style={styles.reasonTitle}>{reasonLabel}</Text>
+                <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
+
+                <View style={styles.userRow}>
+                    <Ionicons name="person" size={14} color={colors.textLight} />
+                    <Text style={styles.userInfo}>
+                        Şikayet edilen ID: {item.reportedId.substring(0, 8)}...
+                    </Text>
+                </View>
+            </TouchableOpacity>
         );
-    }
+    };
 
     return (
         <View style={styles.container}>
-            <PremiumHeader title="Sistem Raporları" showBackButton />
+            <PremiumHeader title="Şikayet Yönetimi" showBackButton />
 
-            <ScrollView
-                contentContainerStyle={styles.content}
-                refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                }
-                showsVerticalScrollIndicator={false}
+            {loading ? (
+                <View style={styles.center}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                </View>
+            ) : (
+                <FlatList
+                    data={reports}
+                    renderItem={renderItem}
+                    keyExtractor={item => item.id}
+                    contentContainerStyle={styles.listContent}
+                    refreshing={refreshing}
+                    onRefresh={() => {
+                        setRefreshing(true);
+                        fetchReports();
+                    }}
+                    ListEmptyComponent={
+                        <View style={styles.center}>
+                            <Ionicons name="checkmark-circle-outline" size={48} color={colors.textLight} />
+                            <Text style={styles.emptyText}>Bekleyen şikayet yok</Text>
+                        </View>
+                    }
+                />
+            )}
+
+            {/* Detail Modal */}
+            <Modal
+                visible={!!selectedReport}
+                animationType="slide"
+                presentationStyle="pageSheet"
+                onRequestClose={() => setSelectedReport(null)}
             >
-                {/* User Summary */}
-                <Text style={styles.sectionTitle}>👥 Kullanıcı Özeti</Text>
-                <View style={styles.summaryGrid}>
-                    <StatCard
-                        value={stats?.users.total || 0}
-                        label="Toplam"
-                        icon="people"
-                        color="#6366F1"
-                    />
-                    <StatCard
-                        value={stats?.users.citizens || 0}
-                        label="Vatandaş"
-                        icon="home"
-                        color="#8B5CF6"
-                    />
-                    <StatCard
-                        value={stats?.users.electricians || 0}
-                        label="Usta"
-                        icon="construct"
-                        color="#10B981"
-                    />
-                </View>
+                {selectedReport && (
+                    <View style={styles.modalContainer}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Şikayet Detayı</Text>
+                            <TouchableOpacity onPress={() => setSelectedReport(null)} style={styles.closeButton}>
+                                <Ionicons name="close" size={24} color={colors.text} />
+                            </TouchableOpacity>
+                        </View>
 
-                {/* Service Categories */}
-                <Text style={styles.sectionTitle}>🔧 Hizmet Türleri</Text>
-                <Card style={styles.categoryCard}>
-                    {SERVICE_CATEGORY_INFO.map((cat) => (
-                        <View key={cat.id} style={styles.categoryRow}>
-                            <View style={[styles.categoryIcon, { backgroundColor: cat.color + '15' }]}>
-                                <Ionicons name={cat.icon as any} size={20} color={cat.color} />
+                        <View style={styles.modalContent}>
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Sebep:</Text>
+                                <Text style={styles.detailValue}>{REASON_LABELS[selectedReport.reason] || selectedReport.reason}</Text>
                             </View>
-                            <Text style={styles.categoryName}>{cat.name}</Text>
-                            <View style={styles.categoryCountBadge}>
-                                <Text style={styles.categoryCount}>
-                                    {stats?.serviceCategories[cat.id as keyof typeof stats.serviceCategories] || 0}
-                                </Text>
+
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Şikayet Eden:</Text>
+                                <Text style={styles.detailValue}>{selectedReport.reporterId}</Text>
+                            </View>
+
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Şikayet Edilen:</Text>
+                                <Text style={styles.detailValue}>{selectedReport.reportedId}</Text>
+                            </View>
+
+                            <Text style={styles.detailLabel}>Açıklama:</Text>
+                            <View style={styles.descriptionBox}>
+                                <Text style={styles.descriptionText}>{selectedReport.description}</Text>
+                            </View>
+
+                            <Text style={styles.inputLabel}>Admin Notu (Opsiyonel):</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Not ekleyin..."
+                                value={adminNote}
+                                onChangeText={setAdminNote}
+                                multiline
+                            />
+
+                            <View style={styles.actionButtons}>
+                                <TouchableOpacity
+                                    style={[styles.actionBtn, { backgroundColor: '#10B981' }]}
+                                    onPress={() => handleUpdateStatus('RESOLVED')}
+                                    disabled={processing}
+                                >
+                                    <Text style={styles.btnText}>Çözüldü Olarak İşaretle</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.actionBtn, { backgroundColor: '#EF4444' }]}
+                                    onPress={() => Alert.alert(
+                                        'Kullanıcıyı Yasakla',
+                                        'Bu kullanıcıyı yasaklamak istediğinize emin misiniz?',
+                                        [
+                                            { text: 'İptal', style: 'cancel' },
+                                            { text: 'Evet, Yasakla', style: 'destructive', onPress: () => handleUpdateStatus('RESOLVED', true) }
+                                        ]
+                                    )}
+                                    disabled={processing}
+                                >
+                                    <Text style={styles.btnText}>Çözüldü + Yasakla</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.actionBtn, { backgroundColor: '#6B7280', marginTop: 8 }]}
+                                    onPress={() => handleUpdateStatus('DISMISSED')}
+                                    disabled={processing}
+                                >
+                                    <Text style={styles.btnText}>Reddet (Asılsız)</Text>
+                                </TouchableOpacity>
                             </View>
                         </View>
-                    ))}
-                </Card>
-
-                {/* Platform Activity */}
-                <Text style={styles.sectionTitle}>📊 Platform Aktivitesi</Text>
-                <View style={styles.activityGrid}>
-                    <ActivityCard
-                        title="İlanlar"
-                        items={[
-                            { label: 'Toplam', value: stats?.activity.jobs.total || 0, color: '#6366F1' },
-                            { label: 'Açık', value: stats?.activity.jobs.open || 0, color: '#10B981' },
-                            { label: 'Tamamlanan', value: stats?.activity.jobs.completed || 0, color: '#3B82F6' },
-                            { label: 'İptal', value: stats?.activity.jobs.cancelled || 0, color: '#EF4444' },
-                        ]}
-                    />
-                    <ActivityCard
-                        title="Teklifler"
-                        items={[
-                            { label: 'Toplam', value: stats?.activity.bids.total || 0, color: '#8B5CF6' },
-                            { label: 'Kabul', value: stats?.activity.bids.accepted || 0, color: '#10B981' },
-                        ]}
-                    />
-                </View>
-
-                {/* Credits */}
-                <Card style={styles.creditCard}>
-                    <LinearGradient
-                        colors={['#F59E0B', '#D97706']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.creditGradient}
-                    >
-                        <Ionicons name="flash" size={32} color="#FFF" />
-                        <View style={styles.creditInfo}>
-                            <Text style={styles.creditLabel}>Platformdaki Toplam Kredi</Text>
-                            <Text style={styles.creditValue}>{stats?.activity.totalCredits || 0}</Text>
-                        </View>
-                    </LinearGradient>
-                </Card>
-
-                {/* Status */}
-                <Text style={styles.sectionTitle}>✅ Durum Kontrolü</Text>
-                <View style={styles.statusGrid}>
-                    <StatusBadge
-                        value={stats?.status.verified || 0}
-                        label="Onaylı"
-                        icon="shield-checkmark"
-                        color="#10B981"
-                    />
-                    <StatusBadge
-                        value={stats?.status.pending || 0}
-                        label="Bekleyen"
-                        icon="time"
-                        color="#F59E0B"
-                    />
-                    <StatusBadge
-                        value={stats?.status.suspended || 0}
-                        label="Askıda"
-                        icon="ban"
-                        color="#EF4444"
-                    />
-                </View>
-
-                {/* Regional Distribution */}
-                <Text style={styles.sectionTitle}>📍 Bölge Dağılımı</Text>
-                <Card style={styles.regionCard}>
-                    {stats?.regions && stats.regions.length > 0 ? (
-                        <>
-                            <View style={styles.regionHeader}>
-                                <Text style={styles.regionHeaderText}>Şehir</Text>
-                                <Text style={styles.regionHeaderText}>Usta</Text>
-                                <Text style={styles.regionHeaderText}>Vatandaş</Text>
-                            </View>
-                            {stats.regions.map((region, index) => (
-                                <View key={region.city} style={[styles.regionRow, index === stats.regions.length - 1 && { borderBottomWidth: 0 }]}>
-                                    <View style={styles.regionCityContainer}>
-                                        <Ionicons name="location" size={16} color={colors.primary} />
-                                        <Text style={styles.regionCity}>{region.city}</Text>
-                                    </View>
-                                    <Text style={styles.regionCount}>{region.electricians}</Text>
-                                    <Text style={styles.regionCount}>{region.citizens}</Text>
-                                </View>
-                            ))}
-                        </>
-                    ) : (
-                        <Text style={styles.noDataText}>Bölge verisi bulunamadı</Text>
-                    )}
-                </Card>
-
-                <View style={{ height: 40 }} />
-            </ScrollView>
+                    </View>
+                )}
+            </Modal>
         </View>
     );
 }
-
-// Stat Card Component
-const StatCard = ({ value, label, icon, color }: { value: number; label: string; icon: string; color: string }) => (
-    <View style={[styles.statCard, { shadowColor: color }]}>
-        <LinearGradient
-            colors={['#FFFFFF', '#F8FAFC']}
-            style={styles.statCardGradient}
-        >
-            <View style={[styles.statIconBox, { backgroundColor: color + '15' }]}>
-                <Ionicons name={icon as any} size={24} color={color} />
-            </View>
-            <Text style={[styles.statValue, { color }]}>{value}</Text>
-            <Text style={styles.statLabel}>{label}</Text>
-        </LinearGradient>
-    </View>
-);
-
-// Activity Card Component
-const ActivityCard = ({ title, items }: { title: string; items: Array<{ label: string; value: number; color: string }> }) => (
-    <Card style={styles.activityCard}>
-        <Text style={styles.activityTitle}>{title}</Text>
-        {items.map((item, index) => (
-            <View key={index} style={styles.activityRow}>
-                <View style={[styles.activityDot, { backgroundColor: item.color }]} />
-                <Text style={styles.activityLabel}>{item.label}</Text>
-                <Text style={[styles.activityValue, { color: item.color }]}>{item.value}</Text>
-            </View>
-        ))}
-    </Card>
-);
-
-// Status Badge Component
-const StatusBadge = ({ value, label, icon, color }: { value: number; label: string; icon: string; color: string }) => (
-    <View style={[styles.statusBadge, { backgroundColor: color + '10', borderColor: color + '30' }]}>
-        <Ionicons name={icon as any} size={20} color={color} />
-        <Text style={[styles.statusValue, { color }]}>{value}</Text>
-        <Text style={styles.statusLabel}>{label}</Text>
-    </View>
-);
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F8FAFC',
     },
-    content: {
+    listContent: {
         padding: spacing.md,
     },
-    loadingContainer: {
+    center: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        padding: 20
     },
-    loadingText: {
-        fontFamily: fonts.medium,
-        fontSize: 14,
-        color: colors.textSecondary,
-        marginTop: 12,
+    card: {
+        backgroundColor: colors.white,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
     },
-    sectionTitle: {
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    statusBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        gap: 6
+    },
+    statusText: {
+        fontFamily: fonts.bold,
+        fontSize: 12,
+    },
+    dateText: {
+        fontFamily: fonts.regular,
+        fontSize: 12,
+        color: colors.textLight,
+    },
+    reasonTitle: {
         fontFamily: fonts.bold,
         fontSize: 16,
         color: colors.text,
-        marginTop: 20,
+        marginBottom: 6,
+    },
+    description: {
+        fontFamily: fonts.regular,
+        fontSize: 14,
+        color: colors.textSecondary,
         marginBottom: 12,
+        lineHeight: 20,
     },
-    summaryGrid: {
+    userRow: {
         flexDirection: 'row',
-        gap: 12,
-    },
-    statCard: {
-        flex: 1,
-        borderRadius: 16,
-        overflow: 'hidden',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 3,
-    },
-    statCardGradient: {
-        padding: 16,
         alignItems: 'center',
+        gap: 6,
     },
-    statIconBox: {
-        width: 48,
-        height: 48,
-        borderRadius: 14,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    statValue: {
-        fontFamily: fonts.extraBold,
-        fontSize: 28,
-    },
-    statLabel: {
+    userInfo: {
         fontFamily: fonts.medium,
         fontSize: 12,
+        color: colors.textLight,
+    },
+    emptyText: {
+        fontFamily: fonts.medium,
+        fontSize: 16,
         color: colors.textSecondary,
-        marginTop: 2,
+        marginTop: 12,
     },
-    categoryCard: {
-        borderRadius: 16,
-        padding: 8,
-    },
-    categoryRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.borderLight,
-    },
-    categoryIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
-    },
-    categoryName: {
+    // Modal Styles
+    modalContainer: {
         flex: 1,
-        fontFamily: fonts.semiBold,
+        backgroundColor: '#F8FAFC',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E2E8F0',
+        backgroundColor: colors.white,
+    },
+    modalTitle: {
+        fontFamily: fonts.bold,
+        fontSize: 18,
+        color: colors.text,
+    },
+    closeButton: {
+        padding: 4,
+    },
+    modalContent: {
+        padding: 20,
+    },
+    detailRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E2E8F0',
+    },
+    detailLabel: {
+        fontFamily: fonts.medium,
+        fontSize: 14,
+        color: colors.textSecondary,
+    },
+    detailValue: {
+        fontFamily: fonts.bold,
+        fontSize: 14,
+        color: colors.text,
+        maxWidth: '70%',
+        textAlign: 'right'
+    },
+    descriptionBox: {
+        backgroundColor: colors.white,
+        padding: 16,
+        borderRadius: 12,
+        marginTop: 8,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    descriptionText: {
+        fontFamily: fonts.regular,
         fontSize: 15,
         color: colors.text,
+        lineHeight: 22,
     },
-    categoryCountBadge: {
-        backgroundColor: colors.primary + '15',
-        paddingHorizontal: 14,
-        paddingVertical: 6,
-        borderRadius: 20,
-    },
-    categoryCount: {
-        fontFamily: fonts.bold,
-        fontSize: 14,
-        color: colors.primary,
-    },
-    activityGrid: {
-        flexDirection: 'row',
-        gap: 12,
-    },
-    activityCard: {
-        flex: 1,
-        padding: 16,
-        borderRadius: 16,
-    },
-    activityTitle: {
+    inputLabel: {
         fontFamily: fonts.bold,
         fontSize: 14,
         color: colors.text,
-        marginBottom: 12,
-    },
-    activityRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
         marginBottom: 8,
     },
-    activityDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        marginRight: 8,
+    input: {
+        backgroundColor: colors.white,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 12,
+        padding: 12,
+        minHeight: 80,
+        marginBottom: 24,
+        textAlignVertical: 'top',
+        fontFamily: fonts.regular,
     },
-    activityLabel: {
-        flex: 1,
-        fontFamily: fonts.medium,
-        fontSize: 13,
-        color: colors.textSecondary,
-    },
-    activityValue: {
-        fontFamily: fonts.bold,
-        fontSize: 14,
-    },
-    creditCard: {
-        marginTop: 16,
-        borderRadius: 16,
-        overflow: 'hidden',
-        padding: 0,
-    },
-    creditGradient: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 20,
-        gap: 16,
-    },
-    creditInfo: {
-        flex: 1,
-    },
-    creditLabel: {
-        fontFamily: fonts.medium,
-        fontSize: 13,
-        color: 'rgba(255,255,255,0.8)',
-    },
-    creditValue: {
-        fontFamily: fonts.extraBold,
-        fontSize: 32,
-        color: '#FFF',
-    },
-    statusGrid: {
-        flexDirection: 'row',
+    actionButtons: {
         gap: 12,
     },
-    statusBadge: {
-        flex: 1,
+    actionBtn: {
+        padding: 16,
+        borderRadius: 12,
         alignItems: 'center',
-        paddingVertical: 16,
-        borderRadius: 16,
-        borderWidth: 1,
+        justifyContent: 'center',
     },
-    statusValue: {
-        fontFamily: fonts.extraBold,
-        fontSize: 24,
-        marginVertical: 4,
-    },
-    statusLabel: {
-        fontFamily: fonts.medium,
-        fontSize: 11,
-        color: colors.textSecondary,
-    },
-    regionCard: {
-        borderRadius: 16,
-        padding: 0,
-        overflow: 'hidden',
-    },
-    regionHeader: {
-        flexDirection: 'row',
-        backgroundColor: colors.primary + '10',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-    },
-    regionHeaderText: {
-        flex: 1,
+    btnText: {
         fontFamily: fonts.bold,
-        fontSize: 12,
-        color: colors.primary,
-        textAlign: 'center',
-    },
-    regionRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.borderLight,
-    },
-    regionCityContainer: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    regionCity: {
-        fontFamily: fonts.semiBold,
-        fontSize: 14,
-        color: colors.text,
-    },
-    regionCount: {
-        flex: 1,
-        fontFamily: fonts.bold,
-        fontSize: 14,
-        color: colors.text,
-        textAlign: 'center',
-    },
-    noDataText: {
-        fontFamily: fonts.medium,
-        fontSize: 14,
-        color: colors.textSecondary,
-        textAlign: 'center',
-        padding: 20,
-    },
+        fontSize: 15,
+        color: 'white',
+    }
 });

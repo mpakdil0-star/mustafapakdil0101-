@@ -16,6 +16,7 @@ import { getFileUrl } from '../../constants/api';
 import { AuthGuardModal } from '../../components/common/AuthGuardModal';
 import { MOCK_ELECTRICIANS } from '../../data/mockElectricians';
 import favoriteService from '../../services/favoriteService';
+import { ReportButton } from '../../components/common/ReportButton';
 
 
 
@@ -492,6 +493,15 @@ export default function ElectricianDetailScreen() {
                     fullWidth
                     icon={<Ionicons name="briefcase" size={20} color={colors.white} />}
                 />
+
+                {/* Report Button */}
+                {user && user.id !== electrician.id && (
+                    <ReportButton
+                        userId={electrician.id}
+                        userName={electrician.fullName}
+                        variant="full"
+                    />
+                )}
             </View>
 
             <AuthGuardModal
@@ -587,7 +597,7 @@ const styles = StyleSheet.create({
     },
     content: {
         padding: spacing.screenPadding,
-        paddingBottom: spacing.xxl,
+        paddingBottom: 100, // Navigation bar overlap fix
     },
     errorContainer: {
         flex: 1,

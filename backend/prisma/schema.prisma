@@ -114,6 +114,8 @@ model User {
   supportTickets     SupportTicket[]
   favorites          Favorite[]          @relation("UserFavorites")
   favoritedBy        Favorite[]          @relation("FavoritedBy")
+  reportsMade        Report[]            @relation("ReportsMade")
+  reportsReceived    Report[]            @relation("ReportsReceived")
 
   @@index([email])
   @@index([phone])
@@ -502,4 +504,50 @@ model Favorite {
   @@index([userId])
   @@index([electricianId])
   @@map("favorites")
+}
+
+// Report Status Enum
+enum ReportStatus {
+  PENDING
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+// Report Reason Enum
+enum ReportReason {
+  FRAUD
+  HARASSMENT
+  NO_SHOW
+  UNPROFESSIONAL
+  FAKE_PROFILE
+  SPAM
+  INAPPROPRIATE_CONTENT
+  OTHER
+}
+
+// User Report Model - Şikayet/Raporlama sistemi
+model Report {
+  id          String       @id @default(uuid())
+  reporterId  String       @map("reporter_id")
+  reportedId  String       @map("reported_id")
+  jobId       String?      @map("job_id")
+  reason      ReportReason
+  description String       @db.Text
+  evidence    String[]     @default([]) // Screenshot URLs
+  status      ReportStatus @default(PENDING)
+  adminNotes  String?      @map("admin_notes") @db.Text
+  resolvedAt  DateTime?    @map("resolved_at")
+  resolvedBy  String?      @map("resolved_by")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  reporter User @relation("ReportsMade", fields: [reporterId], references: [id])
+  reported User @relation("ReportsReceived", fields: [reportedId], references: [id])
+
+  @@index([reporterId])
+  @@index([reportedId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("reports")
 }

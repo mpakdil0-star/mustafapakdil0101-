@@ -744,4 +744,100 @@ export const mockTicketStorage = {
     }
 };
 
+// ============== MOCK REPORTS STORAGE ==============
+
+interface MockReport {
+    id: string;
+    reporterId: string;
+    reportedId: string;
+    jobId?: string;
+    reason: string;
+    description: string;
+    evidence: string[];
+    status: 'PENDING' | 'UNDER_REVIEW' | 'RESOLVED' | 'DISMISSED';
+    adminNotes?: string;
+    resolvedAt?: string;
+    resolvedBy?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+const REPORTS_FILE = path.join(DATA_DIR, 'mock_reports.json');
+
+let mockReportsData: MockReport[] = [];
+if (fs.existsSync(REPORTS_FILE)) {
+    try {
+        mockReportsData = JSON.parse(fs.readFileSync(REPORTS_FILE, 'utf8'));
+        console.log(`🚩 Mock reports loaded: ${mockReportsData.length} reports`);
+    } catch (error) {
+        mockReportsData = [];
+    }
+}
+
+const saveReportsToDisk = () => {
+    try {
+        fs.writeFileSync(REPORTS_FILE, JSON.stringify(mockReportsData, null, 2), 'utf8');
+    } catch (error) {
+        console.error('❌ Failed to save mock reports:', error);
+    }
+};
+
+export const mockReportStorage = {
+    create: (data: Omit<MockReport, 'id' | 'createdAt' | 'updatedAt'>) => {
+        const report: MockReport = {
+            id: `report-${Date.now()}`,
+            ...data,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        mockReportsData.unshift(report);
+        saveReportsToDisk();
+        return report;
+    },
+
+    findFirst: (where: { reporterId?: string; reportedId?: string; status?: string }) => {
+        return mockReportsData.find(r =>
+            (!where.reporterId || r.reporterId === where.reporterId) &&
+            (!where.reportedId || r.reportedId === where.reportedId) &&
+            (!where.status || r.status === where.status)
+        ) || null;
+    },
+
+    findMany: (where?: { reporterId?: string; status?: string }, skip?: number, take?: number) => {
+        let results = mockReportsData;
+        if (where?.reporterId) {
+            results = results.filter(r => r.reporterId === where.reporterId);
+        }
+        if (where?.status) {
+            results = results.filter(r => r.status === where.status);
+        }
+        if (skip) {
+            results = results.slice(skip);
+        }
+        if (take) {
+            results = results.slice(0, take);
+        }
+        return results;
+    },
+
+    count: (where?: { status?: string }) => {
+        if (!where) return mockReportsData.length;
+        return mockReportsData.filter(r => !where.status || r.status === where.status).length;
+    },
+
+    update: (id: string, data: Partial<MockReport>) => {
+        const report = mockReportsData.find(r => r.id === id);
+        if (report) {
+            Object.assign(report, data, { updatedAt: new Date().toISOString() });
+            saveReportsToDisk();
+            return report;
+        }
+        return null;
+    },
+
+    getById: (id: string) => {
+        return mockReportsData.find(r => r.id === id) || null;
+    }
+};
+
 export default mockStorage;

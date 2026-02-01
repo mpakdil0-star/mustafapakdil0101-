@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { authService, RegisterData, LoginData } from '../../services/authService';
+import Analytics from '../../services/analyticsService';
 
 interface User {
   id: string;
@@ -181,6 +182,12 @@ const authSlice = createSlice({
       state.error = null;
       state.guestRole = null;
       state.requiredLegalVersion = action.payload.currentLegalVersion || null;
+
+      // Track analytics
+      const userType = action.payload.user?.userType || 'CITIZEN';
+      Analytics.setUser(action.payload.user?.id);
+      Analytics.setProperty('user_type', userType);
+      Analytics.userLoggedIn(userType);
     };
 
     const handleAuthRejected = (state: AuthState, action: any) => {

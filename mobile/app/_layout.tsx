@@ -18,6 +18,8 @@ import { getMe, setRequiredLegalVersion } from '../store/slices/authSlice';
 import LegalUpdateModal from '../components/legal/LegalUpdateModal';
 import { Alert } from 'react-native';
 import * as Notifications from 'expo-notifications';
+// TODO: Uncomment after running: npx expo install expo-network
+// import { OfflineBanner } from '../components/common/OfflineBanner';
 
 // CRITICAL: Configure notification handler for foreground AND background display
 Notifications.setNotificationHandler({
@@ -406,6 +408,60 @@ function RootLayoutNav() {
     };
   }, [isAuthenticated, dispatch, router]);
 
+  // PUSH NOTIFICATION TAP HANDLER (Deep Linking for background/closed app)
+  useEffect(() => {
+    // Handle notification tap when app is in background or closed
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('🔔 [DEEP LINK] Push notification tapped:', JSON.stringify(response.notification.request.content.data));
+
+      const data = response.notification.request.content.data as any;
+
+      // Route based on notification data
+      if (data?.conversationId) {
+        // Message notification
+        router.push(`/messages/${data.conversationId}`);
+      } else if (data?.jobId) {
+        // Job-related notification (new bid, bid accepted, job status, etc.)
+        router.push(`/jobs/${data.jobId}`);
+      } else if (data?.type === 'new_review') {
+        // Review notification
+        router.push('/(tabs)/profile');
+      } else {
+        // Default: go to notifications
+        router.push('/(tabs)/profile');
+      }
+    });
+
+    // Also check for initial notification (app was opened from killed state via notification)
+    const checkInitialNotification = async () => {
+      const lastNotification = await Notifications.getLastNotificationResponseAsync();
+      if (lastNotification) {
+        console.log('🔔 [DEEP LINK] App opened from notification:', JSON.stringify(lastNotification.notification.request.content.data));
+
+        const data = lastNotification.notification.request.content.data as any;
+
+        // Small delay to ensure navigation is ready
+        setTimeout(() => {
+          if (data?.conversationId) {
+            router.push(`/messages/${data.conversationId}`);
+          } else if (data?.jobId) {
+            router.push(`/jobs/${data.jobId}`);
+          } else if (data?.type === 'new_review') {
+            router.push('/(tabs)/profile');
+          }
+        }, 1000);
+      }
+    };
+
+    if (isNavigationReady) {
+      checkInitialNotification();
+    }
+
+    return () => {
+      responseSubscription.remove();
+    };
+  }, [router, isNavigationReady]);
+
   const [fontsLoaded] = useFonts(fontFiles);
 
   useEffect(() => {
@@ -440,6 +496,8 @@ function RootLayoutNav() {
             onAccept={handleLegalAccept}
           />
         </GestureHandlerRootView>
+        {/* TODO: Uncomment after running: npx expo install expo-network */}
+        {/* <OfflineBanner /> */}
       </SafeAreaProvider>
     </Provider>
   );

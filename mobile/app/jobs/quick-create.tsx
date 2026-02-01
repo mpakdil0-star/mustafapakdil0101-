@@ -71,6 +71,7 @@ export default function QuickCreateScreen() {
     const [selectedType, setSelectedType] = useState<string | null>(null);
     const [images, setImages] = useState<string[]>([]);
     const [description, setDescription] = useState<string>('');
+    const [budget, setBudget] = useState<string>('');
 
     // Location State - Start with empty values, will be filled by GPS
     const [city, setCity] = useState('');
@@ -576,37 +577,31 @@ export default function QuickCreateScreen() {
                         </View>
                     </Card>
 
-                    {/* Detaylar ve Görsel */}
+                    {/* Görsel ve Bütçe */}
                     <Card variant="default" style={styles.sectionCard}>
                         <View style={styles.sectionHeader}>
                             <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '10' }]}>
                                 <Ionicons name="camera-outline" size={20} color={colors.primary} />
                             </View>
-                            <Text style={styles.sectionTitle}>Ek Detaylar (Opsiyonel)</Text>
+                            <Text style={styles.sectionTitle}>Görsel ve Bütçe</Text>
                         </View>
 
-                        <TextInput
-                            style={styles.descInput}
-                            placeholder="Kısaca sorunu açıklayın..."
-                            placeholderTextColor={colors.textLight}
-                            value={description}
-                            onChangeText={setDescription}
-                            multiline
-                            numberOfLines={2}
-                            autoCorrect={false}
-                            spellCheck={false}
-                            autoCapitalize="sentences"
-                        />
-
-                        <View style={styles.imageActionRow}>
-                            <TouchableOpacity style={[styles.imgActionBtn, { borderColor: colors.primary + '20' }]} onPress={handleTakePhoto}>
-                                <Ionicons name="camera" size={24} color={colors.primary} />
+                        {/* Fotoğraf Ekle */}
+                        <Text style={styles.optionalLabel}>Fotoğraf Ekle (Opsiyonel)</Text>
+                        <View style={styles.photoPillRow}>
+                            <TouchableOpacity style={styles.photoPillBtn} onPress={handleTakePhoto}>
+                                <Ionicons name="camera-outline" size={18} color={colors.primary} />
+                                <Text style={[styles.photoPillText, { color: colors.primary }]}>Çek</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={[styles.imgActionBtn, { borderColor: colors.primary + '20' }]} onPress={handlePickImage}>
-                                <Ionicons name="images" size={24} color={colors.primary} />
+                            <TouchableOpacity style={styles.photoPillBtn} onPress={handlePickImage}>
+                                <Ionicons name="images-outline" size={18} color={colors.primary} />
+                                <Text style={[styles.photoPillText, { color: colors.primary }]}>Galeri</Text>
                             </TouchableOpacity>
+                        </View>
 
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
+                        {/* Fotoğraf Önizlemeleri */}
+                        {images.length > 0 && (
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagePreviewScroll}>
                                 {images.map((img, index) => (
                                     <View key={index} style={styles.imgWrapper}>
                                         <Image source={{ uri: img }} style={styles.previewImg} />
@@ -619,6 +614,20 @@ export default function QuickCreateScreen() {
                                     </View>
                                 ))}
                             </ScrollView>
+                        )}
+
+                        {/* Tahmini Bütçe */}
+                        <Text style={[styles.optionalLabel, { marginTop: 16 }]}>Tahmini Bütçe (₺) (Opsiyonel)</Text>
+                        <View style={styles.budgetInputContainer}>
+                            <Ionicons name="wallet-outline" size={20} color={colors.textLight} style={{ marginRight: 8 }} />
+                            <TextInput
+                                style={styles.budgetInput}
+                                placeholder="Bütçeniz (Opsiyonel)"
+                                placeholderTextColor={colors.textLight}
+                                value={budget}
+                                onChangeText={setBudget}
+                                keyboardType="numeric"
+                            />
                         </View>
                     </Card>
 
@@ -631,9 +640,7 @@ export default function QuickCreateScreen() {
                         icon={<Ionicons name="flash" size={20} color={colors.white} />}
                     />
 
-                    <Text style={styles.footerNote}>
-                        * Acil çağrılarda servis ücreti farklılık gösterebilir.
-                    </Text>
+
                 </ScrollView>
             </KeyboardAvoidingView>
 
@@ -1117,5 +1124,50 @@ const styles = StyleSheet.create({
         fontFamily: fonts.bold,
         fontSize: 14,
         color: staticColors.white,
+    },
+    // New styles for Görsel ve Bütçe section
+    optionalLabel: {
+        fontFamily: fonts.medium,
+        fontSize: 13,
+        color: staticColors.textSecondary,
+        marginBottom: 10,
+    },
+    photoPillRow: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 12,
+    },
+    photoPillBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        backgroundColor: staticColors.white,
+        gap: 6,
+    },
+    photoPillText: {
+        fontFamily: fonts.semiBold,
+        fontSize: 14,
+    },
+    imagePreviewScroll: {
+        flexDirection: 'row',
+        marginBottom: 8,
+    },
+    budgetInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F3F4F6',
+        borderRadius: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+    },
+    budgetInput: {
+        flex: 1,
+        fontFamily: fonts.regular,
+        fontSize: 14,
+        color: staticColors.text,
     },
 });

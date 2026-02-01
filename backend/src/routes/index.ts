@@ -13,6 +13,7 @@ import reviewRoutes from './reviewRoutes';
 import adminRoutes from './adminRoutes';
 import supportRoutes from './supportRoutes';
 import legalRoutes from './legalRoutes';
+import reportRoutes from './reportRoutes';
 
 const router = Router();
 
@@ -45,5 +46,6 @@ router.use('/reviews', reviewRoutes);
 router.use('/admin', adminRoutes);
 router.use('/legal', legalRoutes);
 router.use('/support', supportRoutes);
+router.use('/reports', reportRoutes);
 
 export default router;
