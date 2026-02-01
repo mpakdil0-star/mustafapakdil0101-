@@ -50,6 +50,24 @@ export const pushNotificationService = {
             try {
                 const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
                 tickets.push(...ticketChunk);
+
+                // Log each ticket result for debugging
+                ticketChunk.forEach((ticket, index) => {
+                    const token = chunk[index]?.to;
+                    if (ticket.status === 'ok') {
+                        console.log(`   ✅ PUSH DELIVERED to Expo: ${token}`);
+                        console.log(`      Ticket ID: ${ticket.id}`);
+                    } else if (ticket.status === 'error') {
+                        console.error(`   ❌ PUSH FAILED for ${token}:`);
+                        console.error(`      Error: ${ticket.message}`);
+                        if (ticket.details?.error) {
+                            console.error(`      Details: ${ticket.details.error}`);
+                            if (ticket.details.error === 'DeviceNotRegistered') {
+                                console.error(`      ⚠️ This token is INVALID - device unregistered or token expired!`);
+                            }
+                        }
+                    }
+                });
             } catch (error) {
                 console.error('❌ Error sending push notification chunk:', error);
             }

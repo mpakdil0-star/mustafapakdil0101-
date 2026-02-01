@@ -134,6 +134,14 @@ export const authService = {
   },
 
   async logout() {
+    // Clear push token from backend BEFORE clearing auth tokens
+    try {
+      await apiClient.post('/users/push-token', { pushToken: null });
+      console.log('Push token cleared from backend on logout');
+    } catch (error) {
+      console.warn('Failed to clear push token on logout:', error);
+    }
+
     await apiService.clearTokens();
   },
 
