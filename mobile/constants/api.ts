@@ -6,7 +6,7 @@ import { Platform } from 'react-native';
 const getLocalhostAddress = () => {
   try {
     const debuggerHost = Constants.expoConfig?.hostUri?.split(':')[0];
-    const fallbackIP = '192.168.1.78'; // Sunucunun Gerçek Wi-Fi IP'si
+    const fallbackIP = '192.168.1.5'; // Sunucunun Gerçek Wi-Fi IP'si
 
     if (debuggerHost &&
       !debuggerHost.includes('localhost') &&
