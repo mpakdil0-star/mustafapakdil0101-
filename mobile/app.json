@@ -4,8 +4,9 @@
     "slug": "elektrikciler-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
+    "backgroundColor": "#0F172A",
+    "userInterfaceStyle": "automatic",
     "icon": "./assets/images/icon.png",
-    "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",

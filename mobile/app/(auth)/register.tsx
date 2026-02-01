@@ -180,7 +180,7 @@ export default function RegisterScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}
     >
       <Modal
@@ -245,6 +245,7 @@ export default function RegisterScreen() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        style={{ backgroundColor: userType === 'CITIZEN' ? '#1E1B4B' : '#0F172A' }}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>

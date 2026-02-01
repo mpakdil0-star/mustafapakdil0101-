@@ -108,10 +108,14 @@ export default function ForgotPasswordScreen() {
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={styles.container}
         >
-            <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                style={{ backgroundColor: '#1E1B4B' }}
+            >
                 <LinearGradient
                     colors={['#1E1B4B', '#4C1D95', '#1E1B4B']}
                     style={StyleSheet.absoluteFill}
