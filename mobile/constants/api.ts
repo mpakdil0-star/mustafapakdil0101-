@@ -6,7 +6,7 @@ import { Platform } from 'react-native';
 const getLocalhostAddress = () => {
   try {
     const debuggerHost = Constants.expoConfig?.hostUri?.split(':')[0];
-    const fallbackIP = '192.168.1.5'; // Sunucunun Gerçek Wi-Fi IP'si
+    const fallbackIP = '192.168.1.54'; // Sunucunun Gerçek Wi-Fi IP'si
 
     if (debuggerHost &&
       !debuggerHost.includes('localhost') &&
@@ -23,7 +23,7 @@ const getLocalhostAddress = () => {
     // Physical Device or Production Build
     return fallbackIP;
   } catch (error) {
-    return '192.168.1.78';
+    return '192.168.1.54';
   }
 };
 
@@ -32,7 +32,7 @@ const PORT = '5000'; // Fixed: Backend runs on 5000, not 3001
 const API_VERSION = 'v1';
 
 // Tünel Adresi (Opsiyonel - Sadece dışarıdan erişim için)
-const TUNNEL_URL: string = ''; // Boş bırakıldı, yerel ağ kullanılacak
+const TUNNEL_URL: string = 'https://leptospiral-palaeontologically-hiltton.ngrok-free.dev'; // Ngrok tünel adresi eklendi
 
 // Environment-based configuration
 const getApiUrl = () => {
