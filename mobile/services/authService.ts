@@ -190,12 +190,17 @@ export const authService = {
       await apiClient.post('/users/push-token', { pushToken: token });
 
       if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('default', {
-          name: 'default',
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#FF231F7C',
-        });
+        try {
+          await Notifications.setNotificationChannelAsync('default', {
+            name: 'default',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: '#FF231F7C',
+          });
+          console.log('Push Notification: Notification channel created successfully');
+        } catch (channelError) {
+          console.error('Push Notification: Failed to create notification channel:', channelError);
+        }
       }
 
       return token;
