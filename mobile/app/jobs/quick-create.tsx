@@ -327,7 +327,10 @@ export default function QuickCreateScreen() {
             validationErrors.push('• Detaylı adres en az 10 karakter olmalı');
         }
 
-        // 6. Check description character limit (max 500)
+        // 6. Check description character limit (min 10, max 500)
+        if (description.length > 0 && description.length < 10) {
+            validationErrors.push('• Açıklama en az 10 karakter olmalı');
+        }
         if (description.length > 500) {
             validationErrors.push('• Açıklama en fazla 500 karakter olabilir');
         }
@@ -575,6 +578,31 @@ export default function QuickCreateScreen() {
                             />
                             {errors.address && <Text style={styles.errorText}>{errors.address}</Text>}
                         </View>
+                    </Card>
+
+                    {/* Açıklama */}
+                    <Card variant="default" style={styles.sectionCard}>
+                        <View style={styles.sectionHeader}>
+                            <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '10' }]}>
+                                <Ionicons name="document-text-outline" size={20} color={colors.primary} />
+                            </View>
+                            <Text style={styles.sectionTitle}>Sorun Detayı</Text>
+                        </View>
+
+                        <Text style={styles.optionalLabel}>Sorunu kısaca açıklayın (Opsiyonel)</Text>
+                        <TextInput
+                            style={styles.textAreaSmall}
+                            placeholder="Örn: Sigorta sürekli atıyor, prizden koku geliyor..."
+                            placeholderTextColor={colors.textLight}
+                            value={description}
+                            onChangeText={setDescription}
+                            multiline
+                            numberOfLines={3}
+                            maxLength={500}
+                        />
+                        <Text style={{ textAlign: 'right', fontSize: 11, color: colors.textLight, marginTop: 4 }}>
+                            {description.length}/500
+                        </Text>
                     </Card>
 
                     {/* Görsel ve Bütçe */}
