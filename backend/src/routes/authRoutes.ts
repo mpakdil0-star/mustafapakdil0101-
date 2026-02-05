@@ -7,6 +7,7 @@ import {
   forgotPasswordController,
   resetPasswordController,
 } from '../controllers/authController';
+import { googleLoginController } from '../controllers/googleAuthController';
 import { authenticate } from '../middleware/auth';
 import { authLimiter, registerLimiter } from '../middleware/rateLimiter';
 import {
@@ -26,6 +27,7 @@ router.post('/refresh-token', validate(refreshTokenValidation), refreshTokenCont
 router.get('/me', authenticate, meController);
 router.post('/forgot-password', authLimiter, validate(forgotPasswordValidation), forgotPasswordController);
 router.post('/reset-password', authLimiter, validate(resetPasswordValidation), resetPasswordController);
+router.post('/google', authLimiter, googleLoginController);
 
 export default router;
 

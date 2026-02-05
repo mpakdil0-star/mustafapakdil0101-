@@ -477,8 +477,8 @@ function RootLayoutNav() {
   return (
     <Provider store={store}>
       <SafeAreaProvider>
-        <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0F172A' }}>
-          <StatusBar style="light" />
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <StatusBar style="dark" />
           <Slot />
 
           <PremiumAlert

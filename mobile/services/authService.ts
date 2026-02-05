@@ -134,14 +134,6 @@ export const authService = {
   },
 
   async logout() {
-    // Clear push token from backend BEFORE clearing auth tokens
-    try {
-      await apiClient.post('/users/push-token', { pushToken: null });
-      console.log('Push token cleared from backend on logout');
-    } catch (error) {
-      console.warn('Failed to clear push token on logout:', error);
-    }
-
     await apiService.clearTokens();
   },
 
@@ -190,17 +182,12 @@ export const authService = {
       await apiClient.post('/users/push-token', { pushToken: token });
 
       if (Platform.OS === 'android') {
-        try {
-          await Notifications.setNotificationChannelAsync('default', {
-            name: 'default',
-            importance: Notifications.AndroidImportance.MAX,
-            vibrationPattern: [0, 250, 250, 250],
-            lightColor: '#FF231F7C',
-          });
-          console.log('Push Notification: Notification channel created successfully');
-        } catch (channelError) {
-          console.error('Push Notification: Failed to create notification channel:', channelError);
-        }
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FF231F7C',
+        });
       }
 
       return token;
