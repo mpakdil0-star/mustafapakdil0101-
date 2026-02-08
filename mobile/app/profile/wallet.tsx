@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 20,
-        paddingBottom: 60,
+        paddingBottom: 100,
     },
     cardContainer: {
         marginBottom: 24,
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     },
     creditCard: {
         borderRadius: 24,
-        height: 220,
+        height: 240,
         width: '100%',
         overflow: 'hidden',
         borderWidth: 1,

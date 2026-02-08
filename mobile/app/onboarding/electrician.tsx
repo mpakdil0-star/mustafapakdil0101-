@@ -52,8 +52,8 @@ const slides: OnboardingSlide[] = [
         id: '3',
         icon: 'gift',
         iconColor: '#10B981',
-        title: '5 Kredi Hediye!',
-        description: 'İlk kayıt bonusu olarak 5 kredi hesabınıza tanımlandı. 5 ilana ücretsiz teklif verebilirsiniz!',
+        title: '5 Kredi Tanımlandı!',
+        description: 'Hesabınıza 5 kredi yüklendi. Hemen ilk teklifinizi verebilirsiniz!',
     },
     {
         id: '4',

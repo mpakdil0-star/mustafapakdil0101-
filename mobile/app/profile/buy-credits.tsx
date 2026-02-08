@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         padding: 20,
-        paddingBottom: Platform.OS === 'ios' ? 40 : 20,
+        paddingBottom: Platform.OS === 'ios' ? 40 : 35,
         backgroundColor: staticColors.backgroundDark,
     },
     payButton: {

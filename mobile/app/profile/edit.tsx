@@ -264,7 +264,7 @@ export default function EditProfileScreen() {
         if (!forceSave && user?.userType === 'ELECTRICIAN' && !user?.isVerified && phoneNumber) {
             showAlert(
                 'Telefon Numarasını Onayla',
-                `Telefon numaranız [${phoneNumber}] olarak kaydedilecek ve bir daha değiştirilemeyecektir. İlk kayıt bonusu (5 Teklif) bu numaraya tanımlanacaktır. Emin misiniz?`,
+                `Telefon numaranız [${phoneNumber}] olarak kaydedilecek ve bir daha değiştirilemeyecektir. Başlangıç krediniz bu numaraya tanımlanacaktır. Emin misiniz?`,
                 'confirm',
                 [
                     { text: 'Düzenle', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },

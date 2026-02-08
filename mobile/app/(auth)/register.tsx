@@ -210,7 +210,7 @@ export default function RegisterScreen() {
                 <Ionicons name="information-circle-outline" size={20} color="#F87171" />
                 <Text style={[styles.infoBoxText, { color: '#F87171' }]}>
                   {userType === 'ELECTRICIAN'
-                    ? 'Bu numara daha sonra değiştirilemez ve "İlk Kayıt Bonusu" bu numaraya tanımlanacaktır.'
+                    ? 'Bu numara daha sonra değiştirilemez ve başlangıç krediniz (5 kredi) bu numaraya tanımlanacaktır.'
                     : 'Bu numara daha sonra değiştirilemez ve hesabınızın güvenliği bu numara üzerinden sağlanır.'}
                 </Text>
               </View>
