@@ -1397,6 +1397,55 @@ export const completeJobController = async (
         } catch (e) { console.error('Sync error:', e); }
       }
 
+      // 4. Send Push Notification & In-App Notification to Electrician
+      if (electricianId) {
+        const electricianData = mockStorage.get(electricianId);
+        const reviewerData = mockStorage.get(req.user.id);
+        const reviewerName = reviewerData?.fullName || (req.user as any).fullName || 'Müşteri';
+        const starText = rating ? '⭐'.repeat(Math.min(Number(rating), 5)) : '';
+        const notifTitle = 'Yeni Değerlendirme ⭐';
+        const notifBody = rating
+          ? `${reviewerName} işinizi ${rating} yıldız ile değerlendirdi.${comment ? ` "${comment.substring(0, 50)}${comment.length > 50 ? '...' : ''}"` : ''}`
+          : `${reviewerName} işi tamamlandı olarak işaretledi.`;
+
+        // In-app notification
+        const reviewNotification = {
+          id: `mock-notif-review-${Date.now()}`,
+          userId: electricianId,
+          type: 'new_review',
+          title: notifTitle,
+          message: notifBody,
+          isRead: false,
+          relatedId: id,
+          relatedType: 'JOB',
+          createdAt: new Date().toISOString()
+        };
+        addMockNotification(electricianId, reviewNotification);
+
+        // Push notification
+        if (electricianData?.pushToken) {
+          const pushNotificationService = require('../services/pushNotificationService').default;
+          pushNotificationService.sendNotification({
+            to: electricianData.pushToken,
+            title: notifTitle,
+            body: notifBody,
+            data: { jobId: id, type: 'new_review' }
+          }).catch((err: any) => console.error('Review Push Error:', err));
+          console.log(`📱 Sending review push notification to ${electricianId}`);
+        }
+
+        // Socket notification
+        try {
+          const { notifyUser } = require('../server');
+          notifyUser(electricianId, 'new_review', {
+            title: notifTitle,
+            message: notifBody,
+            jobId: id,
+            rating: Number(rating),
+          });
+        } catch (e) { console.error('Socket notify error:', e); }
+      }
+
       jobStoreById.set(id, mockJob);
       saveMockJobs();
 

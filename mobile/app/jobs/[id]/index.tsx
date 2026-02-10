@@ -52,6 +52,7 @@ export default function JobDetailScreen() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isReviewModalVisible, setIsReviewModalVisible] = useState(false);
   const [rating, setRating] = useState(0);
+  const ratingRef = useRef(0);
   const [reviewComment, setReviewComment] = useState('');
   const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
 
@@ -221,14 +222,15 @@ export default function JobDetailScreen() {
   };
 
   const handleCompleteJob = async () => {
-    if (!id || rating === 0) {
+    const currentRating = ratingRef.current;
+    if (!id || currentRating === 0) {
       showAlert('Hata', 'Lütfen bir puan seçin.', 'error');
       return;
     }
 
     setIsReviewSubmitting(true);
     try {
-      await jobService.completeJob(id, { rating, comment: reviewComment });
+      await jobService.completeJob(id, { rating: currentRating, comment: reviewComment });
       setIsReviewModalVisible(false);
       setRating(0);
       setReviewComment('');
@@ -625,7 +627,7 @@ export default function JobDetailScreen() {
               {[1, 2, 3, 4, 5].map((star) => (
                 <TouchableOpacity
                   key={star}
-                  onPress={() => setRating(star)}
+                  onPress={() => { setRating(star); ratingRef.current = star; }}
                   activeOpacity={0.7}
                   style={star <= rating ? styles.starSelected : styles.starUnselected}
                 >
