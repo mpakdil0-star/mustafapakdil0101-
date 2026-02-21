@@ -18,14 +18,8 @@ const { width } = Dimensions.get('window');
 
 // Map category ID to 3D image asset (same as home screen)
 const getCategoryImage = (id: string) => {
-    switch (id) {
-        case 'elektrik': return require('../../assets/images/categories/3d_electric.png');
-        case 'cilingir': return require('../../assets/images/categories/3d_locksmith.png');
-        case 'klima': return require('../../assets/images/categories/3d_aircon.png');
-        case 'beyaz-esya': return require('../../assets/images/categories/3d_appliances.png');
-        case 'tesisat': return require('../../assets/images/categories/3d_plumbing.png');
-        default: return null;
-    }
+    // 3D image files are currently missing, fallback to null
+    return null;
 };
 
 export default function RoleSelectScreen() {
