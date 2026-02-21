@@ -66,8 +66,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "f894540e-3b89-4157-a0e0-5ed3bfd1ad72"
+        "projectId": "e2f5c351-7357-4a1c-aea7-b75d047aa479"
       }
-    }
+    },
+    "owner": "tugce0101"
   }
 }
