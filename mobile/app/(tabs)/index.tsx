@@ -39,8 +39,8 @@ const ServiceCategoryItem = ({ cat, index, onPress, styles }: any) => {
 
   // Map category ID to 3D image asset
   const getCategoryImage = (id: string) => {
-    // 3D image files are currently missing, fallback to null
-    return null;
+    // 3D image files are currently missing, fallback to undefined
+    return undefined;
   };
 
   return (
