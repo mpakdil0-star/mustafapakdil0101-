@@ -115,32 +115,23 @@ export const createJobController = async (
     const { images = [], ...restBody } = req.body;
 
     // Process images: base64 to file
+    // Process images: base64 to Cloudinary
     const processedImages: string[] = [];
     if (images && images.length > 0) {
-      const uploadDir = path.join(process.cwd(), 'uploads', 'jobs');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
+      const cloudinary = require('../config/cloudinary').default;
 
-      for (let i = 0; i < images.length; i++) {
-        const img = images[i];
+      for (const img of images) {
         if (img.startsWith('data:image')) {
           try {
-            const matches = img.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
-            if (matches) {
-              const ext = matches[1];
-              const data = matches[2];
-              const buffer = Buffer.from(data, 'base64');
-              const filename = `job-${req.user.id}-${Date.now()}-${i}.${ext}`;
-              const filePath = path.join(uploadDir, filename);
-              fs.writeFileSync(filePath, buffer);
-              processedImages.push(`/uploads/jobs/${filename}`);
-            } else {
-              processedImages.push(img); // Fallback
-            }
+            const result = await cloudinary.uploader.upload(img, {
+              folder: 'jobs',
+              resource_type: 'image'
+            });
+            processedImages.push(result.secure_url);
           } catch (err) {
-            console.error('Error saving job image:', err);
-            processedImages.push(img);
+            console.error('Error uploading job image to Cloudinary:', err);
+            // Fallback or skip? For now, maybe skip or push original if it's not too huge (but it is huge)
+            // Better to skip or log error. pushing original might fail database constraints if too long.
           }
         } else {
           processedImages.push(img);
@@ -595,7 +586,7 @@ export const getJobsController = async (
 ) => {
   try {
     const {
-      status, category, city, district, districts, lat, lng, radius,
+      status, category, serviceCategory, city, district, districts, lat, lng, radius,
       page = '1', limit = '20',
     } = req.query;
 
@@ -620,6 +611,7 @@ export const getJobsController = async (
       lat: lat ? parseFloat(lat as string) : undefined,
       lng: lng ? parseFloat(lng as string) : undefined,
       radius: radius ? parseFloat(radius as string) : undefined,
+      serviceCategory: serviceCategory as string | undefined,
       page: parseInt(page as string, 10),
       limit: parseInt(limit as string, 10),
     };

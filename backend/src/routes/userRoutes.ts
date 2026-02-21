@@ -11,38 +11,7 @@ import { validate, updateProfileValidation, changePasswordValidation, updatePush
 
 const router = express.Router();
 
-// Configure Multer
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadPath = path.join(process.cwd(), 'uploads/avatars');
-        if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
-        }
-        cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = path.extname(file.originalname);
-        const userId = (req as any).user ? (req as any).user.id : 'unknown';
-        cb(null, `avatar-${userId}-${uniqueSuffix}${ext}`);
-    },
-});
-
-const fileFilter = (req: any, file: any, cb: any) => {
-    if (file.mimetype.startsWith('image/')) {
-        cb(null, true);
-    } else {
-        cb(new Error('Not an image! Please upload only images.'), false);
-    }
-};
-
-const upload = multer({
-    storage: storage,
-    fileFilter: fileFilter,
-    limits: {
-        fileSize: 5 * 1024 * 1024,
-    },
-});
+import { upload } from '../middleware/upload';
 
 // Routes
 router.get('/me', authenticate, meController);

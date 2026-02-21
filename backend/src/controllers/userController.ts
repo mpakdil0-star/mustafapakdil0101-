@@ -145,7 +145,7 @@ export const uploadAvatar = async (req: Request, res: Response, next: NextFuncti
         }
 
         const userId = (req as any).user.id;
-        const filePath = `/uploads/avatars/${req.file.filename}`;
+        const filePath = (req.file as any).path; // Cloudinary URL
 
         // Try database update, but don't fail if database is not available
         let updatedUser: any = null;
@@ -190,43 +190,15 @@ export const uploadAvatarBase64 = async (req: Request, res: Response, next: Next
 
         const userId = user.id;
 
-        // Extract base64 data - handle both with and without data URL prefix
-        let base64Data: string;
-        let ext = 'jpg';
+        // Upload to Cloudinary
+        const cloudinary = require('../config/cloudinary').default;
+        const result = await cloudinary.uploader.upload(image, {
+            folder: 'avatars',
+            public_id: `avatar-${userId}-${Date.now()}`,
+            resource_type: 'image'
+        });
 
-        if (image.startsWith('data:')) {
-            const matches = image.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
-            if (!matches) {
-                return next(new AppError('Invalid image format', 400));
-            }
-            ext = matches[1];
-            base64Data = matches[2];
-        } else {
-            base64Data = image;
-        }
-
-        const buffer = Buffer.from(base64Data, 'base64');
-        console.log('Buffer size:', buffer.length, 'bytes');
-
-        // Create uploads directory
-        const uploadDir = path.join(process.cwd(), 'uploads', 'avatars');
-        console.log('Upload directory:', uploadDir);
-
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-            console.log('Created upload directory');
-        }
-
-        // Generate unique filename
-        const filename = `avatar-${userId}-${Date.now()}.${ext}`;
-        const filePath = path.join(uploadDir, filename);
-        console.log('Saving to:', filePath);
-
-        // Write file
-        fs.writeFileSync(filePath, buffer);
-        console.log('File saved successfully');
-
-        const fileUrl = `/uploads/avatars/${filename}`;
+        const fileUrl = result.secure_url;
 
         // Persist in mock storage
         const mockData = mockStorage.updateProfile(userId, { profileImageUrl: fileUrl });
@@ -279,12 +251,22 @@ export const removeAvatar = async (req: Request, res: Response, next: NextFuncti
                 select: { profileImageUrl: true },
             });
 
-            // Delete old avatar file if exists
+            // Delete old avatar from Cloudinary if exists
             if (currentUser?.profileImageUrl) {
-                const oldFilePath = path.join(process.cwd(), currentUser.profileImageUrl);
-                if (fs.existsSync(oldFilePath)) {
-                    fs.unlinkSync(oldFilePath);
-                    console.log('Deleted old avatar:', oldFilePath);
+                const cloudinary = require('../config/cloudinary').default;
+                try {
+                    // Extract public_id from URL
+                    // Example: https://res.cloudinary.com/cloudname/image/upload/v12345/avatars/filename.jpg
+                    const parts = currentUser.profileImageUrl.split('/');
+                    const filename = parts.pop();
+                    const folder = parts.pop();
+                    if (filename && folder === 'avatars') {
+                        const publicId = `${folder}/${filename.split('.')[0]}`;
+                        await cloudinary.uploader.destroy(publicId);
+                        console.log('Deleted old avatar from Cloudinary:', publicId);
+                    }
+                } catch (err) {
+                    console.error('Error deleting from Cloudinary:', err);
                 }
             }
 

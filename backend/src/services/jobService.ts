@@ -332,6 +332,7 @@ export const jobService = {
     lat?: number;
     lng?: number;
     radius?: number; // km cinsinden
+    serviceCategory?: string;
     page?: number;
     limit?: number;
   }) {
@@ -350,6 +351,7 @@ export const jobService = {
         lat,
         lng,
         radius,
+        serviceCategory,
         page = 1,
         limit = 20,
       } = filters;
@@ -363,6 +365,10 @@ export const jobService = {
 
       if (category) {
         where.category = category;
+      }
+
+      if (serviceCategory) {
+        where.serviceCategory = serviceCategory;
       }
 
       // FIX: Handle 'ACTIVE' status to show both OPEN and BIDDING jobs
