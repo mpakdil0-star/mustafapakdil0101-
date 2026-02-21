@@ -2,7 +2,7 @@
   "expo": {
     "name": "işbitir",
     "slug": "elektrikciler-mobile",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
@@ -12,10 +12,7 @@
       "backgroundColor": "#1E1B4B"
     },
     "assetBundlePatterns": [
-      "**/*",
-      "!assets/images/header_bg.png",
-      "!assets/images/onboarding_trust_secure_neon.png",
-      "!assets/images/onboarding_get_offers_neon.png"
+      "**/*"
     ],
     "ios": {
       "supportsTablet": true,
@@ -27,7 +24,7 @@
       }
     },
     "android": {
-      "versionCode": 10,
+      "versionCode": 11,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1E1B4B"
