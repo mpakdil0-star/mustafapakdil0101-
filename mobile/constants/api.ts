@@ -31,8 +31,8 @@ const LOCALHOST = getLocalhostAddress();
 const PORT = '5000'; // Fixed: Backend runs on 5000, not 3001
 const API_VERSION = 'v1';
 
-// Tünel Adresi (Opsiyonel - Sadece dışarıdan erişim için)
-const TUNNEL_URL: string = ''; // Ngrok tünel adresi - Lokal test için boş bırakın
+// Production Backend URL (Render.com)
+const TUNNEL_URL: string = 'https://elektrikciler-backend.onrender.com'; // Production URL
 
 // Environment-based configuration
 const getApiUrl = () => {
