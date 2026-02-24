@@ -3,7 +3,7 @@ import prisma, { isDatabaseAvailable } from '../config/database';
 import { mockStorage } from '../utils/mockStorage';
 import { notifyUser } from '../server';
 import pushNotificationService from '../services/pushNotificationService';
-import { jobStoreById, deleteMockJob, getMockJobs, loadMockJobs } from './jobController';
+import { jobStoreById, deleteMockJob, getAllMockJobs, loadMockJobs } from './jobController';
 import { mockTransactionStorage } from '../utils/mockStorage';
 
 /**
@@ -26,7 +26,12 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
         if (!isDatabaseAvailable || user.id.startsWith('mock-')) {
             const allUsers = mockStorage.getAllUsers();
             const pendingMocks = allUsers
-                .filter(u => u.userType === 'ELECTRICIAN' && u.verificationStatus === 'PENDING')
+                .filter(u =>
+                    u.userType === 'ELECTRICIAN' &&
+                    u.verificationStatus === 'PENDING' &&
+                    u.electricianProfile?.verificationDocuments &&
+                    (u.electricianProfile.verificationDocuments as any).documentUrl // Only show if they uploaded a document
+                )
                 .map(u => ({
                     userId: u.id,
                     verificationStatus: 'PENDING',
@@ -40,31 +45,8 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
                     }
                 }));
 
-            // If no real pending mocks, AND the sample user is not already processed/verified in mockStorage
-            if (pendingMocks.length === 0) {
-                const sampleMockUser = mockStorage.get('mock-electrician-1');
-                // Only add if it doesn't exist (fresh start) or if it exists and is explicitly PENDING
-                const shouldAddSample = !sampleMockUser || (sampleMockUser.verificationStatus === 'PENDING');
-
-                if (shouldAddSample) {
-                    pendingMocks.push({
-                        userId: 'mock-electrician-1',
-                        verificationStatus: 'PENDING',
-                        verificationDocuments: {
-                            documentType: 'ELEKTRIK_USTASI',
-                            documentUrl: undefined,
-                            submittedAt: new Date().toISOString(),
-                        },
-                        serviceCategory: 'elektrik',
-                        user: {
-                            id: 'mock-electrician-1',
-                            fullName: 'Ahmet Yılmaz (Örnek)',
-                            email: 'ahmet@test.com',
-                            phone: '5551234455'
-                        }
-                    });
-                }
-            }
+            // NOTE: We don't auto-add the sample mock user anymore unless they'd have a document
+            // This satisfies the user request: "don't show every registered master"
 
             return res.json({
                 success: true,
@@ -76,6 +58,12 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
             const pendingProfiles = await prisma.electricianProfile.findMany({
                 where: {
                     verificationStatus: 'PENDING',
+                    NOT: {
+                        verificationDocuments: { equals: null }
+                    },
+                    // Ensure the JSON actually has at least one key (a bit trickier in Prisma, 
+                    // but NOT null + NOT {} is better)
+                    verificationDocuments: { not: {} }
                 },
                 include: {
                     user: {
@@ -98,27 +86,31 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
             });
         } catch (dbErr: any) {
             console.error('Database error in getAllVerifications:', dbErr.message);
-            // Fallback to same mock data if query fails
+            // Fallback to mock storage instead of hardcoded sample
+            const allUsers = mockStorage.getAllUsers();
+            const pendingMocks = allUsers
+                .filter(u =>
+                    u.userType === 'ELECTRICIAN' &&
+                    u.verificationStatus === 'PENDING' &&
+                    u.electricianProfile?.verificationDocuments &&
+                    (u.electricianProfile.verificationDocuments as any).documentUrl
+                )
+                .map(u => ({
+                    userId: u.id,
+                    verificationStatus: 'PENDING',
+                    verificationDocuments: u.electricianProfile?.verificationDocuments,
+                    serviceCategory: u.electricianProfile?.serviceCategory,
+                    user: {
+                        id: u.id,
+                        fullName: u.fullName,
+                        email: u.email,
+                        phone: u.phone
+                    }
+                }));
+
             res.json({
                 success: true,
-                data: [
-                    {
-                        userId: 'mock-electrician-1',
-                        verificationStatus: 'PENDING',
-                        verificationDocuments: {
-                            documentType: 'ELEKTRIK_USTASI',
-                            documentUrl: undefined,
-                            submittedAt: new Date().toISOString(),
-                        },
-                        serviceCategory: 'elektrik',
-                        user: {
-                            id: 'mock-electrician-1',
-                            fullName: 'Ahmet Yılmaz (Mock - Fallback)',
-                            email: 'ahmet@test.com',
-                            phone: '5551234455'
-                        }
-                    }
-                ]
+                data: pendingMocks
             });
         }
     } catch (error) {
@@ -345,27 +337,52 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
         const limit = parseInt(req.query.limit as string) || 20;
         const skip = (page - 1) * limit;
 
-        const jobs = await prisma.jobPost.findMany({
-            skip,
-            take: limit,
-            orderBy: { createdAt: 'desc' },
-            include: {
-                publisher: {
-                    select: {
-                        fullName: true,
-                        email: true,
-                        phone: true
+        if (isDatabaseAvailable) {
+            try {
+                const jobs = await prisma.jobPost.findMany({
+                    skip,
+                    take: limit,
+                    orderBy: { createdAt: 'desc' },
+                    include: {
+                        publisher: {
+                            select: {
+                                fullName: true,
+                                email: true,
+                                phone: true
+                            }
+                        }
                     }
-                }
-            }
-        });
+                });
 
-        const totalJobs = await prisma.jobPost.count();
+                const totalJobs = await prisma.jobPost.count();
+                const totalPages = Math.ceil(totalJobs / limit);
+
+                return res.json({
+                    success: true,
+                    data: jobs,
+                    pagination: {
+                        page,
+                        limit,
+                        totalJobs,
+                        totalPages,
+                        hasMore: page < totalPages
+                    }
+                });
+            } catch (dbError) {
+                console.warn('⚠️ [ADMIN] DB getAllJobs failed, falling back to mock');
+            }
+        }
+
+        // Mock Fallback
+        const mockJobsData = getAllMockJobs();
+        const allMockJobs = mockJobsData.jobs;
+        const totalJobs = allMockJobs.length;
         const totalPages = Math.ceil(totalJobs / limit);
+        const pagedJobs = allMockJobs.slice(skip, skip + limit);
 
         res.json({
             success: true,
-            data: jobs,
+            data: pagedJobs,
             pagination: {
                 page,
                 limit,
@@ -390,14 +407,27 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
 
         const { id } = req.params;
 
-        try {
-            await prisma.jobPost.delete({ where: { id } });
-            console.log(`🗑️ Database job deleted: ${id}`);
-            return res.json({ success: true, message: 'İlan veritabanından silindi' });
-        } catch (dbError) {
-            console.error('Database deletion error:', dbError);
-            return res.status(500).json({ success: false, message: 'İlan silinirken veritabanı hatası oluştu' });
+        if (isDatabaseAvailable && !id.startsWith('mock-')) {
+            try {
+                await prisma.jobPost.delete({ where: { id } });
+                console.log(`🗑️ Database job deleted: ${id}`);
+                return res.json({ success: true, message: 'İlan veritabanından silindi' });
+            } catch (dbError) {
+                console.error('Database deletion error:', dbError);
+                // Fallback to mock delete if ID looks mock or DB fails
+            }
         }
+
+        // Mock Fallback
+        const deleted = deleteMockJob(id);
+        if (deleted) {
+            return res.json({ success: true, message: 'İlan (MOCK) silindi' });
+        }
+
+        res.status(404).json({
+            success: false,
+            error: { message: 'İlan bulunamadı' }
+        });
     } catch (error) {
         next(error);
     }

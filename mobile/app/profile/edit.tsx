@@ -1082,4 +1082,26 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 4,
     },
+    categoryGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+        marginTop: 12,
+    },
+    categoryItem: {
+        flex: 1,
+        minWidth: '30%',
+        padding: 12,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        alignItems: 'center',
+        backgroundColor: '#F8FAFC',
+        gap: 6,
+    },
+    categoryText: {
+        fontFamily: fonts.medium,
+        fontSize: 11,
+        textAlign: 'center',
+    },
 });

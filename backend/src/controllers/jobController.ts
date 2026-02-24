@@ -617,7 +617,10 @@ export const getJobsController = async (
     };
 
     try {
-      let result = await jobService.getJobs(filters);
+      let result = await jobService.getJobs({
+        ...filters,
+        currentUserId: req.user?.id
+      });
 
       if (isGuest && result.jobs) {
         result.jobs = result.jobs.map((job: any) => maskJobData(job));
@@ -676,7 +679,7 @@ export const getJobsController = async (
 };
 
 // Get all mock jobs including dynamically created ones
-const getAllMockJobs = () => {
+export const getAllMockJobs = () => {
   const staticMockResult = getMockJobs();
 
   // Get all dynamically created jobs from the global store

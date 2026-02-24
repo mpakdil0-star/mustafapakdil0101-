@@ -77,6 +77,20 @@ export const bidService = {
         throw new ValidationError('Job post is not accepting bids');
       }
 
+      // Engelleme kontrolü
+      const block = await prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: electricianId, blockedId: jobPost.citizenId },
+            { blockerId: jobPost.citizenId, blockedId: electricianId },
+          ],
+        },
+      });
+
+      if (block) {
+        throw new ForbiddenError('Bu iş ilanı için teklif veremezsiniz (Engelleme durumu)');
+      }
+
       if (jobPost.citizenId === electricianId) {
         throw new ForbiddenError('You cannot bid on your own job post');
       }
@@ -311,11 +325,32 @@ export const bidService = {
       // Public endpoint: show all bids if no user, or user-specific logic if authenticated
       const isOwner = userId && jobPost.citizenId === userId;
 
+      // Engellenen kullanıcıları filtrele (Vatandaş usta engellediyse bids listesinde görmez)
+      let blockedUserIds: string[] = [];
+      if (userId) {
+        const blocks = await prisma.block.findMany({
+          where: {
+            OR: [
+              { blockerId: userId },
+              { blockedId: userId },
+            ],
+          },
+          select: { blockerId: true, blockedId: true },
+        });
+        blockedUserIds = blocks.map(b => b.blockerId === userId ? b.blockedId : b.blockerId);
+      }
+
+      const where: any = {
+        jobPostId,
+        ...(userId && !isOwner ? { electricianId: userId } : {}),
+      };
+
+      if (blockedUserIds.length > 0 && !where.electricianId) {
+        where.electricianId = { notIn: blockedUserIds };
+      }
+
       const bids = await prisma.bid.findMany({
-        where: {
-          jobPostId,
-          ...(userId && !isOwner ? { electricianId: userId } : {}), // Non-owners can only see their own bid, public sees all
-        },
+        where,
         include: {
           electrician: {
             select: {

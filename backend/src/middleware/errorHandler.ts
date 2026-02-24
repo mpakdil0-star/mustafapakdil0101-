@@ -12,6 +12,7 @@ export const errorHandler = (
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
       success: false,
+      message: err.message,
       error: {
         message: err.message,
         ...(config.nodeEnv === 'development' && { stack: err.stack }),
@@ -32,10 +33,11 @@ export const errorHandler = (
   const prismaError = err as any;
   if (prismaError.code) {
     logger.error('Prisma error code:', prismaError.code);
-    
+
     if (prismaError.code === 'P1001' || prismaError.code === 'P1017') {
       return res.status(503).json({
         success: false,
+        message: 'Database connection error. Please try again later.',
         error: {
           message: 'Database connection error. Please check your database configuration.',
           details: config.nodeEnv === 'development' ? err.message : undefined,
@@ -46,9 +48,10 @@ export const errorHandler = (
 
   return res.status(500).json({
     success: false,
+    message: 'Internal server error',
     error: {
       message: 'Internal server error',
-      ...(config.nodeEnv === 'development' && { 
+      ...(config.nodeEnv === 'development' && {
         stack: err.stack,
         details: err.message,
       }),

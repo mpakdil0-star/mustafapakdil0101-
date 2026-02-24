@@ -130,6 +130,34 @@ export default function JobDetailScreen() {
     };
   }, [id, dispatch]);
 
+  const handleCompleteJob = useCallback(async () => {
+    const jobId = displayJob?.id || id;
+
+    if (!jobId) {
+      showAlert('Hata', 'İlan bilgisi bulunamadı. Lütfen sayfayı yenileyip tekrar deneyin.', 'error');
+      return;
+    }
+
+    if (!rating || rating === 0) {
+      showAlert('Hata', 'Lütfen bir puan seçin.', 'error');
+      return;
+    }
+
+    setIsReviewSubmitting(true);
+    try {
+      await jobService.completeJob(jobId, { rating: rating, comment: reviewComment });
+      setIsReviewModalVisible(false);
+      setRating(0);
+      setReviewComment('');
+      dispatch(fetchJobById(jobId));
+      showAlert('Başarılı', 'İş tamamlandı olarak işaretlendi ve değerlendirmeniz kaydedildi.', 'success');
+    } catch (error: any) {
+      showAlert('Hata', error.message || 'Bir hata oluştu.', 'error');
+    } finally {
+      setIsReviewSubmitting(false);
+    }
+  }, [displayJob?.id, id, rating, reviewComment, dispatch]);
+
   // SHOW DATA IF WE HAVE IT - don't wait for loading
   if (displayJob) {
     // We have data, render the job detail (code continues after this block)
@@ -221,33 +249,7 @@ export default function JobDetailScreen() {
     }
   };
 
-  const handleCompleteJob = useCallback(async () => {
-    const jobId = jobData?.id || id;
 
-    if (!jobId) {
-      showAlert('Hata', 'İlan bilgisi bulunamadı. Lütfen sayfayı yenileyip tekrar deneyin.', 'error');
-      return;
-    }
-
-    if (!rating || rating === 0) {
-      showAlert('Hata', 'Lütfen bir puan seçin.', 'error');
-      return;
-    }
-
-    setIsReviewSubmitting(true);
-    try {
-      await jobService.completeJob(jobId, { rating: rating, comment: reviewComment });
-      setIsReviewModalVisible(false);
-      setRating(0);
-      setReviewComment('');
-      dispatch(fetchJobById(jobId));
-      showAlert('Başarılı', 'İş tamamlandı olarak işaretlendi ve değerlendirmeniz kaydedildi.', 'success');
-    } catch (error: any) {
-      showAlert('Hata', error.message || 'Bir hata oluştu.', 'error');
-    } finally {
-      setIsReviewSubmitting(false);
-    }
-  }, [jobData?.id, id, rating, reviewComment, dispatch]);
 
   // İlan İptal Fonksiyonu - Modalı Açar
   const handleCancelJob = () => {

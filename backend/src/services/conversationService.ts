@@ -14,6 +14,20 @@ export const conversationService = {
             throw new Error('DATABASE_NOT_CONNECTED');
         }
 
+        // Engelleme kontrolü
+        const block = await prisma.block.findFirst({
+            where: {
+                OR: [
+                    { blockerId: user1Id, blockedId: user2Id },
+                    { blockerId: user2Id, blockedId: user1Id },
+                ],
+            },
+        });
+
+        if (block) {
+            throw new AppError('Engellenen bir kullanıcıyla iletişim kuramazsınız', 403);
+        }
+
         // Mevcut konuşmayı ara
         let conversation = await prisma.conversation.findFirst({
             where: {
@@ -140,7 +154,28 @@ export const conversationService = {
             orderBy: { lastMessageAt: 'desc' },
         });
 
-        return conversations.map((conv) => {
+        // Engellenen kullanıcıları getir
+        const blocks = await prisma.block.findMany({
+            where: {
+                OR: [
+                    { blockerId: userId },
+                    { blockedId: userId },
+                ],
+            },
+            select: {
+                blockerId: true,
+                blockedId: true,
+            },
+        });
+
+        const blockedUserIds = blocks.map((b: any) => b.blockerId === userId ? b.blockedId : b.blockerId);
+
+        const filteredConversations = conversations.filter((conv: any) => {
+            const otherUserId = conv.participant1Id === userId ? conv.participant2Id : conv.participant1Id;
+            return !blockedUserIds.includes(otherUserId);
+        });
+
+        return filteredConversations.map((conv: any) => {
             const otherUser = conv.participant1Id === userId ? conv.participant2 : conv.participant1;
             const unreadCount = conv.participant1Id === userId
                 ? conv.unreadCountParticipant1

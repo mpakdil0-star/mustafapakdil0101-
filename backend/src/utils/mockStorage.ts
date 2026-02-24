@@ -358,7 +358,12 @@ export const mockStorage = {
                     documentUrl: store.documentUrl ?? undefined,
                     submittedAt: store.submittedAt || null,
                 },
-                serviceCategory: store.serviceCategory || 'elektrik'
+                serviceCategory: store.serviceCategory ||
+                    (store.specialties?.some(s => s.toLowerCase().includes('klima')) ? 'klima' :
+                        store.specialties?.some(s => s.toLowerCase().includes('beyaz')) ? 'beyaz-esya' :
+                            store.specialties?.some(s => s.toLowerCase().includes('çilingir')) ? 'cilingir' :
+                                store.specialties?.some(s => s.toLowerCase().includes('su') || s.toLowerCase().includes('tesisat')) ? 'tesisat' :
+                                    'elektrik')
             } : null
         };
     },
@@ -837,6 +842,63 @@ export const mockReportStorage = {
 
     getById: (id: string) => {
         return mockReportsData.find(r => r.id === id) || null;
+    }
+};
+
+// ============== MOCK BLOCKS STORAGE ==============
+
+interface MockBlock {
+    id: string;
+    blockerId: string;
+    blockedId: string;
+    createdAt: string;
+}
+
+const BLOCKS_FILE = path.join(DATA_DIR, 'mock_blocks.json');
+
+let mockBlocks: MockBlock[] = [];
+if (fs.existsSync(BLOCKS_FILE)) {
+    try {
+        mockBlocks = JSON.parse(fs.readFileSync(BLOCKS_FILE, 'utf8'));
+    } catch (e) {
+        mockBlocks = [];
+    }
+}
+
+const saveBlocksToDisk = () => {
+    try {
+        fs.writeFileSync(BLOCKS_FILE, JSON.stringify(mockBlocks, null, 2), 'utf8');
+    } catch (error) {
+        console.error('❌ Failed to save mock blocks:', error);
+    }
+};
+
+export const mockBlockStorage = {
+    toggle: (blockerId: string, blockedId: string) => {
+        const existingIndex = mockBlocks.findIndex(b => b.blockerId === blockerId && b.blockedId === blockedId);
+        if (existingIndex !== -1) {
+            mockBlocks.splice(existingIndex, 1);
+            saveBlocksToDisk();
+            return { isBlocked: false };
+        } else {
+            mockBlocks.push({
+                id: `block-${Date.now()}`,
+                blockerId,
+                blockedId,
+                createdAt: new Date().toISOString()
+            });
+            saveBlocksToDisk();
+            return { isBlocked: true };
+        }
+    },
+
+    isBlocked: (blockerId: string, blockedId: string) => {
+        return mockBlocks.some(b => b.blockerId === blockerId && b.blockedId === blockedId);
+    },
+
+    getByBlocker: (blockerId: string) => {
+        const blockedIds = mockBlocks.filter(b => b.blockerId === blockerId).map(b => b.blockedId);
+        return blockedIds.map(id => mockStorage.getFullUser(id)).filter(u => u !== null);
     }
 };
 

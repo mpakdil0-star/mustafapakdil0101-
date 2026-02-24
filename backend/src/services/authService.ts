@@ -230,10 +230,27 @@ export const register = async (data: RegisterData) => {
           experienceYears: 0,
           totalReviews: 0,
           ratingAverage: 0,
-          completedJobsCount: 0
+          completedJobsCount: 0,
+          serviceCategory: data.serviceCategory || 'elektrik' // Save profession
         },
       });
     }
+
+    // Refresh user object to include the newly created profile
+    const savedUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        userType: true,
+        profileImageUrl: true,
+        isVerified: true,
+        createdAt: true,
+        electricianProfile: true,
+      },
+    });
 
     // Generate tokens
     const tokens = generateTokens({
@@ -243,7 +260,7 @@ export const register = async (data: RegisterData) => {
     });
 
     return {
-      user,
+      user: savedUser || user,
       ...tokens,
     };
   } catch (error: any) {

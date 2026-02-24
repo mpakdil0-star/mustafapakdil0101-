@@ -14,6 +14,7 @@ import adminRoutes from './adminRoutes';
 import supportRoutes from './supportRoutes';
 import legalRoutes from './legalRoutes';
 import reportRoutes from './reportRoutes';
+import blockRoutes from './blockRoutes';
 
 const router = Router();
 
@@ -28,6 +29,8 @@ router.get('/', (req, res) => {
   res.json({
     success: true,
     message: 'API is running',
+    version: '1.2.0',
+    buildDate: '24 Şubat 2026 - 23:58',
     timestamp: new Date().toISOString()
   });
 });
@@ -47,5 +50,6 @@ router.use('/admin', adminRoutes);
 router.use('/legal', legalRoutes);
 router.use('/support', supportRoutes);
 router.use('/reports', reportRoutes);
+router.use('/blocks', blockRoutes);
 
 export default router;

@@ -335,6 +335,7 @@ export const jobService = {
     serviceCategory?: string;
     page?: number;
     limit?: number;
+    currentUserId?: string;
   }) {
     // Skip Prisma entirely if database is not available
     if (!isDatabaseAvailable) {
@@ -354,14 +355,38 @@ export const jobService = {
         serviceCategory,
         page = 1,
         limit = 20,
+        currentUserId,
       } = filters;
 
       const skip = (page - 1) * limit;
 
+      // Get blocked users to filter out
+      let blockedUserIds: string[] = [];
+      if (currentUserId && isDatabaseAvailable) {
+        const blocks = await prisma.block.findMany({
+          where: {
+            OR: [
+              { blockerId: currentUserId },
+              { blockedId: currentUserId },
+            ],
+          },
+          select: {
+            blockerId: true,
+            blockedId: true,
+          },
+        });
+        blockedUserIds = blocks.map(b => b.blockerId === currentUserId ? b.blockedId : b.blockerId);
+      }
+
       const where: any = {
-        status,
         deletedAt: null,
       };
+
+      if (blockedUserIds.length > 0) {
+        where.citizenId = {
+          notIn: blockedUserIds,
+        };
+      }
 
       if (category) {
         where.category = category;
