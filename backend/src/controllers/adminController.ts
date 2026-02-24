@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { Prisma } from '@prisma/client';
 import prisma, { isDatabaseAvailable } from '../config/database';
 import { mockStorage } from '../utils/mockStorage';
 import { notifyUser } from '../server';
@@ -58,12 +59,7 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
             const pendingProfiles = await prisma.electricianProfile.findMany({
                 where: {
                     verificationStatus: 'PENDING',
-                    NOT: {
-                        verificationDocuments: { equals: null }
-                    },
-                    // Ensure the JSON actually has at least one key (a bit trickier in Prisma, 
-                    // but NOT null + NOT {} is better)
-                    verificationDocuments: { not: {} }
+                    verificationDocuments: { not: null as any }
                 },
                 include: {
                     user: {
@@ -344,7 +340,7 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
                     take: limit,
                     orderBy: { createdAt: 'desc' },
                     include: {
-                        publisher: {
+                        citizen: {
                             select: {
                                 fullName: true,
                                 email: true,

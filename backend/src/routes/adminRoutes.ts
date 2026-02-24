@@ -148,7 +148,7 @@ router.put('/users/:id', authenticate, adminMiddleware, async (req: Request, res
                 if (updatedUser.userType === 'ELECTRICIAN' && isVerified !== undefined) {
                     await prisma.electricianProfile.update({
                         where: { userId: id },
-                        data: { isVerified, verificationStatus: isVerified ? 'VERIFIED' : 'PENDING' }
+                        data: { verificationStatus: isVerified ? 'VERIFIED' : 'PENDING' }
                     });
                 }
             } catch (dbError) {
