@@ -11,6 +11,7 @@ import {
     Platform,
     Alert,
     ImageBackground,
+    Modal,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -65,6 +66,7 @@ export default function ChatScreen() {
     const [isTyping, setIsTyping] = useState(false);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const lastTypingTimeRef = useRef<number>(0);
+    const [isActionMenuVisible, setIsActionMenuVisible] = useState(false);
 
     const [alertConfig, setAlertConfig] = useState<{
         visible: boolean;
@@ -250,6 +252,44 @@ export default function ChatScreen() {
         }
     };
 
+    const handleReport = () => {
+        setIsActionMenuVisible(false);
+        router.push({
+            pathname: '/profile/report',
+            params: {
+                userId: otherUser?.id,
+                userName: otherUser?.fullName
+            }
+        });
+    };
+
+    const handleBlock = () => {
+        setIsActionMenuVisible(false);
+        Alert.alert(
+            'Kullanıcıyı Engelle',
+            'Bu kullanıcıyı engellediğinizde birbirinizin ilanlarını ve mesajlarını görmezsiniz. Devam etmek istiyor musunuz?',
+            [
+                { text: 'Vazgeç', style: 'cancel' },
+                {
+                    text: 'Engelle',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const response = await api.post('/blocks/toggle', { blockedId: otherUser?.id });
+                            if (response.data.success) {
+                                Alert.alert('Başarılı', 'Kullanıcı engellendi.', [
+                                    { text: 'Tamam', onPress: () => router.back() }
+                                ]);
+                            }
+                        } catch (err) {
+                            Alert.alert('Hata', 'İşlem gerçekleştirilemedi.');
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     // Yazıyor bilgisi gönder
     const handleTyping = (text: string) => {
         setNewMessage(text);
@@ -345,6 +385,16 @@ export default function ChatScreen() {
                 subtitle={isTyping ? 'yazıyor...' : (otherUser?.userType === 'ELECTRICIAN' ? 'Profesyonel' : 'Müşteri')}
                 showBackButton
                 backgroundImage={require('../../assets/images/header_bg.png')}
+                rightElement={
+                    otherUser && (
+                        <TouchableOpacity
+                            onPress={() => setIsActionMenuVisible(true)}
+                            style={styles.headerActionBtn}
+                        >
+                            <Ionicons name="ellipsis-vertical" size={24} color={staticColors.white} />
+                        </TouchableOpacity>
+                    )
+                }
             />
 
             <KeyboardAvoidingView
@@ -428,6 +478,32 @@ export default function ChatScreen() {
                 buttons={alertConfig.buttons}
                 onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
             />
+
+            {/* Action Menu Modal */}
+            <Modal
+                visible={isActionMenuVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setIsActionMenuVisible(false)}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setIsActionMenuVisible(false)}
+                >
+                    <View style={styles.actionMenu}>
+                        <TouchableOpacity style={styles.actionMenuItem} onPress={handleReport}>
+                            <Ionicons name="flag-outline" size={20} color={colors.text} />
+                            <Text style={[styles.actionMenuText, { color: colors.text }]}>Şikayet Et</Text>
+                        </TouchableOpacity>
+                        <View style={styles.actionMenuSeparator} />
+                        <TouchableOpacity style={styles.actionMenuItem} onPress={handleBlock}>
+                            <Ionicons name="ban-outline" size={20} color={staticColors.error} />
+                            <Text style={[styles.actionMenuText, { color: staticColors.error }]}>Engelle</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </View>
     );
 }
@@ -613,5 +689,40 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: staticColors.textSecondary,
         marginTop: 6,
+    },
+    headerActionBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    actionMenu: {
+        backgroundColor: staticColors.white,
+        borderRadius: 16,
+        width: '100%',
+        maxWidth: 300,
+        overflow: 'hidden',
+    },
+    actionMenuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        gap: 12,
+    },
+    actionMenuText: {
+        fontFamily: fonts.bold,
+        fontSize: 15,
+    },
+    actionMenuSeparator: {
+        height: 1,
+        backgroundColor: '#F1F5F9',
     },
 });

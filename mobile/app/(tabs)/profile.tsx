@@ -49,6 +49,7 @@ export default function ProfileScreen() {
     { icon: 'shield-checkmark-outline', label: 'Güvenlik', route: '/profile/security', color: '#10B981' },
     { icon: 'document-text-outline', label: 'Kullanım Koşulları', route: '/legal/terms', color: '#6B7280' },
     { icon: 'shield-outline', label: 'KVKK Politikası', route: '/legal/kvkk', color: '#6B7280' },
+    { icon: 'ban-outline', label: 'Engellenen Kullanıcılar', route: '/profile/blocked', color: '#F43F5E' },
     { icon: 'help-circle-outline', label: 'Yardım & Destek', route: '/profile/help', color: '#374151' },
   ];
 

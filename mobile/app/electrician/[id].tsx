@@ -8,6 +8,8 @@ import {
     TouchableOpacity,
     Image,
     Linking,
+    Modal,
+    Alert as RNAlert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,6 +23,8 @@ import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
 import { getFileUrl, API_BASE_URL } from '../../constants/api';
+import { useAppSelector } from '../../hooks/redux';
+import api from '../../services/api';
 
 export default function ElectricianProfileScreen() {
     const router = useRouter();
@@ -30,6 +34,9 @@ export default function ElectricianProfileScreen() {
     const [electrician, setElectrician] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isActionMenuVisible, setIsActionMenuVisible] = useState(false);
+    const { user } = useAppSelector((state) => state.auth);
+    const isOwnProfile = user?.id === electrician?.id;
 
     useEffect(() => {
         fetchElectricianProfile();
@@ -60,6 +67,44 @@ export default function ElectricianProfileScreen() {
         }
     };
 
+    const handleReport = () => {
+        setIsActionMenuVisible(false);
+        router.push({
+            pathname: '/profile/report',
+            params: {
+                userId: id,
+                userName: electrician.fullName
+            }
+        });
+    };
+
+    const handleBlock = () => {
+        setIsActionMenuVisible(false);
+        RNAlert.alert(
+            'Kullanıcıyı Engelle',
+            'Bu kullanıcıyı engellediğinizde birbirinizin ilanlarını ve mesajlarını görmezsiniz. Devam etmek istiyor musunuz?',
+            [
+                { text: 'Vazgeç', style: 'cancel' },
+                {
+                    text: 'Engelle',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const response = await api.post('/blocks/toggle', { blockedId: id });
+                            if (response.data.success) {
+                                RNAlert.alert('Başarılı', 'Kullanıcı engellendi.', [
+                                    { text: 'Tamam', onPress: () => router.back() }
+                                ]);
+                            }
+                        } catch (err) {
+                            RNAlert.alert('Hata', 'İşlem gerçekleştirilemedi.');
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     if (isLoading) {
         return (
             <View style={styles.container}>
@@ -87,7 +132,20 @@ export default function ElectricianProfileScreen() {
 
     return (
         <View style={styles.container}>
-            <PremiumHeader title="Usta Profili" showBackButton />
+            <PremiumHeader
+                title="Usta Profili"
+                showBackButton
+                rightElement={
+                    !isOwnProfile && user && (
+                        <TouchableOpacity
+                            onPress={() => setIsActionMenuVisible(true)}
+                            style={styles.headerActionBtn}
+                        >
+                            <Ionicons name="ellipsis-vertical" size={24} color={staticColors.white} />
+                        </TouchableOpacity>
+                    )
+                }
+            />
 
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
                 {/* Profile Header Card */}
@@ -246,6 +304,32 @@ export default function ElectricianProfileScreen() {
                 )}
 
             </ScrollView>
+
+            {/* Action Menu Modal */}
+            <Modal
+                visible={isActionMenuVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setIsActionMenuVisible(false)}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setIsActionMenuVisible(false)}
+                >
+                    <View style={styles.actionMenu}>
+                        <TouchableOpacity style={styles.actionMenuItem} onPress={handleReport}>
+                            <Ionicons name="flag-outline" size={20} color={colors.text} />
+                            <Text style={[styles.actionMenuText, { color: colors.text }]}>Şikayet Et</Text>
+                        </TouchableOpacity>
+                        <View style={styles.actionMenuSeparator} />
+                        <TouchableOpacity style={styles.actionMenuItem} onPress={handleBlock}>
+                            <Ionicons name="ban-outline" size={20} color={staticColors.error} />
+                            <Text style={[styles.actionMenuText, { color: staticColors.error }]}>Engelle</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </View>
     );
 }
@@ -544,5 +628,40 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#94A3B8',
         marginTop: spacing.xs,
+    },
+    headerActionBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    actionMenu: {
+        backgroundColor: staticColors.white,
+        borderRadius: 16,
+        width: '100%',
+        maxWidth: 300,
+        overflow: 'hidden',
+    },
+    actionMenuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        gap: 12,
+    },
+    actionMenuText: {
+        fontFamily: fonts.bold,
+        fontSize: 15,
+    },
+    actionMenuSeparator: {
+        height: 1,
+        backgroundColor: '#F1F5F9',
     },
 });

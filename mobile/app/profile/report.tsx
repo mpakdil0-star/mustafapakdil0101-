@@ -47,6 +47,7 @@ export default function ReportScreen() {
     const [selectedReason, setSelectedReason] = useState<string | null>(null);
     const [description, setDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [blockUser, setBlockUser] = useState(false);
 
     const handleSubmit = async () => {
         if (!selectedReason) {
@@ -69,9 +70,21 @@ export default function ReportScreen() {
                 description: description.trim()
             });
 
+            // Eğer engelleme seçilmişse engelle
+            if (blockUser) {
+                try {
+                    await api.post('/blocks/toggle', { blockedId: userId });
+                } catch (blockErr) {
+                    console.error('⚠️ Block failed during report:', blockErr);
+                    // Ana rapor başarılı olduğu için blok hatası kritik değil, sadece logla
+                }
+            }
+
             Alert.alert(
                 'Başarılı',
-                'Şikayetiniz başarıyla gönderildi. En kısa sürede incelenecektir.',
+                blockUser
+                    ? 'Şikayetiniz gönderildi ve kullanıcı engellendi.'
+                    : 'Şikayetiniz başarıyla gönderildi. En kısa sürede incelenecektir.',
                 [{ text: 'Tamam', onPress: () => router.back() }]
             );
         } catch (error: any) {
@@ -157,6 +170,24 @@ export default function ReportScreen() {
                     textAlignVertical="top"
                 />
                 <Text style={styles.charCount}>{description.length}/500</Text>
+
+                {/* Block Option */}
+                <TouchableOpacity
+                    style={styles.blockOption}
+                    onPress={() => setBlockUser(!blockUser)}
+                    activeOpacity={0.7}
+                >
+                    <View style={[
+                        styles.checkbox,
+                        blockUser && { backgroundColor: appColors.primary, borderColor: appColors.primary }
+                    ]}>
+                        {blockUser && <Ionicons name="checkmark" size={16} color={colors.white} />}
+                    </View>
+                    <View style={styles.blockOptionTextContainer}>
+                        <Text style={styles.blockOptionTitle}>Bu kullanıcıyı engelle</Text>
+                        <Text style={styles.blockOptionSub}>Bu kullanıcıyı engellediğinizde birbirinizin ilanlarını ve mesajlarını görmezsiniz.</Text>
+                    </View>
+                </TouchableOpacity>
 
                 {/* Submit Button */}
                 <Button
@@ -272,6 +303,42 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: colors.textLight,
         textAlign: 'center',
+        lineHeight: 18
+    },
+    blockOption: {
+        flexDirection: 'row',
+        backgroundColor: colors.white,
+        padding: 16,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        marginBottom: 24,
+        gap: 12,
+        alignItems: 'flex-start'
+    },
+    checkbox: {
+        width: 24,
+        height: 24,
+        borderRadius: 6,
+        borderWidth: 2,
+        borderColor: '#CBD5E1',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 2
+    },
+    blockOptionTextContainer: {
+        flex: 1
+    },
+    blockOptionTitle: {
+        fontFamily: fonts.bold,
+        fontSize: 15,
+        color: colors.text,
+        marginBottom: 2
+    },
+    blockOptionSub: {
+        fontFamily: fonts.medium,
+        fontSize: 12,
+        color: colors.textSecondary,
         lineHeight: 18
     }
 });
