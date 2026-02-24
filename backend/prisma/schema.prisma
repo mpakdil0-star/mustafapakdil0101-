@@ -112,6 +112,7 @@ model User {
   paymentsAsPayee    Payment[]           @relation("PaymentPayee")
   credits            Credit[]
   supportTickets     SupportTicket[]
+  supportTicketMessages SupportTicketMessage[]
   favorites          Favorite[]          @relation("UserFavorites")
   favoritedBy        Favorite[]          @relation("FavoritedBy")
   reportsMade        Report[]            @relation("ReportsMade")
@@ -481,13 +482,32 @@ model SupportTicket {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
-  user User @relation(fields: [userId], references: [id])
+  user      User                   @relation(fields: [userId], references: [id])
+  messages  SupportTicketMessage[]
 
   @@index([userId])
   @@index([status])
   @@index([ticketType])
   @@index([createdAt])
   @@map("support_tickets")
+}
+
+// Support Ticket Message (For Communication in Tickets)
+model SupportTicketMessage {
+  id        String   @id @default(uuid())
+  ticketId  String   @map("ticket_id")
+  senderId  String   @map("sender_id")
+  text      String   @db.Text
+  isAdmin   Boolean  @default(false) @map("is_admin")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender User          @relation(fields: [senderId], references: [id])
+
+  @@index([ticketId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("support_ticket_messages")
 }
 
 // Favorite Model - Kullanıcıların favori elektrikçileri

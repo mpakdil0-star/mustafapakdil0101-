@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { mockReportStorage, mockStorage } from '../utils/mockStorage';
+import prisma from '../config/database';
 import { AuthRequest } from '../middleware/auth';
 
 // Report status and reason types (matching schema.prisma enums)
@@ -24,10 +24,12 @@ export const createReport = async (req: AuthRequest, res: Response, next: NextFu
         }
 
         // Check for duplicate report (same reporter, reported, and pending)
-        const existingReport = mockReportStorage.findFirst({
-            reporterId,
-            reportedId,
-            status: 'PENDING'
+        const existingReport = await prisma.report.findFirst({
+            where: {
+                reporterId,
+                reportedId,
+                status: 'PENDING'
+            }
         });
 
         if (existingReport) {
@@ -37,14 +39,16 @@ export const createReport = async (req: AuthRequest, res: Response, next: NextFu
             });
         }
 
-        const report = mockReportStorage.create({
-            reporterId,
-            reportedId,
-            jobId,
-            reason: reason as ReportReason,
-            description,
-            evidence: evidence || [],
-            status: 'PENDING'
+        const report = await prisma.report.create({
+            data: {
+                reporterId,
+                reportedId,
+                jobId,
+                reason: reason as ReportReason,
+                description,
+                evidence: evidence || [],
+                status: 'PENDING'
+            }
         });
 
         return res.status(201).json({
@@ -67,7 +71,15 @@ export const getMyReports = async (req: AuthRequest, res: Response, next: NextFu
         }
 
         console.log(`🚩 [REPORTS] getMyReports for user ${userId}`);
-        const reports = mockReportStorage.findMany({ reporterId: userId });
+        const reports = await prisma.report.findMany({
+            where: { reporterId: userId },
+            include: {
+                reported: {
+                    select: { fullName: true }
+                }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
 
         return res.json({ success: true, data: reports });
     } catch (error) {
@@ -94,8 +106,17 @@ export const getAllReports = async (req: Request, res: Response, next: NextFunct
 
         console.log(`🚩 [REPORTS] Fetching reports: page=${pageNum}, limit=${limitNum}, skip=${skip}`);
 
-        const reports = mockReportStorage.findMany(where, skip, limitNum);
-        const total = mockReportStorage.count(where);
+        const reports = await prisma.report.findMany({
+            where,
+            skip,
+            take: limitNum,
+            include: {
+                reporter: { select: { fullName: true } },
+                reported: { select: { fullName: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        const total = await prisma.report.count({ where });
 
         console.log(`🚩 [REPORTS] Found ${reports.length} reports out of ${total} total`);
 
@@ -124,11 +145,14 @@ export const updateReportStatus = async (req: AuthRequest, res: Response, next: 
 
         console.log(`🚩 [REPORTS] updateReportStatus: ${id} -> ${status}`);
 
-        const report = mockReportStorage.update(id, {
-            status: status as ReportStatus,
-            adminNotes,
-            resolvedAt: ['RESOLVED', 'DISMISSED'].includes(status) ? new Date().toISOString() : undefined,
-            resolvedBy: ['RESOLVED', 'DISMISSED'].includes(status) ? adminId : undefined
+        const report = await prisma.report.update({
+            where: { id },
+            data: {
+                status: status as ReportStatus,
+                adminNotes,
+                resolvedAt: ['RESOLVED', 'DISMISSED'].includes(status) ? new Date() : null,
+                resolvedBy: ['RESOLVED', 'DISMISSED'].includes(status) ? adminId : null
+            }
         });
 
         if (!report) {
@@ -137,8 +161,9 @@ export const updateReportStatus = async (req: AuthRequest, res: Response, next: 
 
         // If resolved against the reported user, optionally ban them
         if (status === 'RESOLVED' && banUser) {
-            mockStorage.updateProfile(report.reportedId, {
-                isActive: false
+            await prisma.user.update({
+                where: { id: report.reportedId },
+                data: { isActive: false }
             });
         }
 
