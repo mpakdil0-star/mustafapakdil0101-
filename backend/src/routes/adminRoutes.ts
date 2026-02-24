@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
 import { mockStorage, getAllMockUsers } from '../utils/mockStorage';
+import prisma from '../config/database';
 import * as adminController from '../controllers/adminController';
 
 const router = Router();
@@ -125,11 +126,6 @@ router.put('/users/:id', authenticate, adminMiddleware, async (req: Request, res
         const { id } = req.params;
         const { isActive, creditBalance, isVerified } = req.body;
 
-        const userData = mockStorage.get(id);
-        if (!userData) {
-            return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı' });
-        }
-
         const updates: any = {};
 
         if (isActive !== undefined) {
@@ -138,15 +134,29 @@ router.put('/users/:id', authenticate, adminMiddleware, async (req: Request, res
 
         if (creditBalance !== undefined) {
             updates.creditBalance = creditBalance;
-            mockStorage.updateBalance(id, creditBalance);
-        }
-
-        if (isVerified !== undefined) {
-            updates.isVerified = isVerified;
         }
 
         if (Object.keys(updates).length > 0) {
-            mockStorage.updateProfile(id, updates);
+            try {
+                // Try updating real database first
+                const updatedUser = await prisma.user.update({
+                    where: { id },
+                    data: updates
+                });
+
+                // Update isVerified in profile if necessary
+                if (updatedUser.userType === 'ELECTRICIAN' && isVerified !== undefined) {
+                    await prisma.electricianProfile.update({
+                        where: { userId: id },
+                        data: { isVerified, verificationStatus: isVerified ? 'VERIFIED' : 'PENDING' }
+                    });
+                }
+            } catch (dbError) {
+                console.error('Admin update user DB error, falling back to mock:', dbError);
+                // Fallback to mock storage if database update fails
+                if (creditBalance !== undefined) mockStorage.updateBalance(id, creditBalance);
+                mockStorage.updateProfile(id, updates);
+            }
         }
 
         res.json({
