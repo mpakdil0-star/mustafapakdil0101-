@@ -71,6 +71,18 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // Routes
 app.use('/api/v1', routes);
 
+app.get('/api/debug-ahmet', async (req, res) => {
+  try {
+    const ahmet = await prisma.user.findFirst({
+      where: { email: 'ahmet@gmail.com' },
+      include: { electricianProfile: true }
+    });
+    res.json(ahmet);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 404 handler
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
   logger.warn(`❌ [404] ${req.method} ${req.originalUrl}`);

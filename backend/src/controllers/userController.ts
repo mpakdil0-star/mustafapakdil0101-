@@ -991,6 +991,7 @@ export const getElectricians = async (req: Request, res: Response, next: NextFun
                     id: true,
                     fullName: true,
                     profileImageUrl: true,
+                    phone: true,
                     isVerified: true,
                     electricianProfile: {
                         select: {
@@ -1188,6 +1189,7 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
                 id: true,
                 fullName: true,
                 profileImageUrl: true,
+                phone: true,
                 isVerified: true,
                 electricianProfile: {
                     select: {
