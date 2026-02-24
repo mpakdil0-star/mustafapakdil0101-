@@ -17,6 +17,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@prisma/client": "^6.2.1",
     "aws-sdk": "^2.1692.0",
     "bcrypt": "^6.0.0",
     "cloudinary": "^1.41.3",
@@ -39,7 +40,6 @@
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
-    "@prisma/client": "^6.2.1",
     "@types/bcrypt": "^6.0.0",
     "@types/bcryptjs": "^3.0.0",
     "@types/cors": "^2.8.19",
