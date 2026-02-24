@@ -39,8 +39,14 @@ const ServiceCategoryItem = ({ cat, index, onPress, styles }: any) => {
 
   // Map category ID to 3D image asset
   const getCategoryImage = (id: string) => {
-    // 3D image files are currently missing, fallback to undefined
-    return undefined;
+    switch (id) {
+      case 'elektrik': return require('../../assets/images/categories/electric.png');
+      case 'cilingir': return require('../../assets/images/categories/locksmith_3d_clean.png');
+      case 'klima': return require('../../assets/images/categories/ac_3d_clean.png');
+      case 'beyaz-esya': return require('../../assets/images/categories/appliances_3d_clean.png');
+      case 'tesisat': return require('../../assets/images/categories/plumbing.png');
+      default: return undefined;
+    }
   };
 
   return (
@@ -51,6 +57,17 @@ const ServiceCategoryItem = ({ cat, index, onPress, styles }: any) => {
         activeOpacity={0.85}
       >
         <View style={styles.serviceCategoryIconBg}>
+          {/* Fallback Icon (Z-index 1) - Shows if 3D image is missing or transparent */}
+          <View style={StyleSheet.absoluteFill}>
+            <LinearGradient
+              colors={[`${cat.colors[0]}15`, `${cat.colors[1]}25`]}
+              style={[StyleSheet.absoluteFill, { borderRadius: 20, justifyContent: 'center', alignItems: 'center' }]}
+            >
+              <Ionicons name={cat.icon} size={28} color={cat.colors[0]} />
+            </LinearGradient>
+          </View>
+
+          {/* 3D Image Layer (Z-index 2) */}
           <Image
             source={getCategoryImage(cat.id)}
             style={styles.serviceCategoryImage}
@@ -62,6 +79,7 @@ const ServiceCategoryItem = ({ cat, index, onPress, styles }: any) => {
     </Animated.View>
   );
 };
+
 
 export default function HomeScreen() {
   const router = useRouter();

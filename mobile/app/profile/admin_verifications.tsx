@@ -148,19 +148,19 @@ export default function AdminVerificationsScreen() {
                 </View>
                 <View style={[styles.badge, { backgroundColor: colors.primary + '10' }]}>
                     <Text style={[styles.badgeText, { color: colors.primary }]}>
-                        {getDocumentDisplayLabel(item.verificationDocuments.documentType, item.serviceCategory)}
+                        {getDocumentDisplayLabel(item.verificationDocuments?.documentType || 'Belge Türü Yok', item.serviceCategory)}
                     </Text>
                 </View>
             </View>
 
-            {item.verificationDocuments.documentUrl ? (
+            {item.verificationDocuments?.documentUrl ? (
                 <TouchableOpacity
                     style={styles.imageContainer}
-                    onPress={() => setSelectedImage(getFileUrl(item.verificationDocuments.documentUrl))}
+                    onPress={() => setSelectedImage(getFileUrl(item.verificationDocuments?.documentUrl))}
                     activeOpacity={0.9}
                 >
                     <Image
-                        source={{ uri: getFileUrl(item.verificationDocuments.documentUrl) || '' }}
+                        source={{ uri: getFileUrl(item.verificationDocuments?.documentUrl) || '' }}
                         style={styles.docImage}
                         resizeMode="cover"
                     />

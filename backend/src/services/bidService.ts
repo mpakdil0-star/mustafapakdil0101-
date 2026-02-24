@@ -118,6 +118,7 @@ export const bidService = {
               id: true,
               fullName: true,
               profileImageUrl: true,
+              phone: true,
               electricianProfile: {
                 select: {
                   verificationStatus: true,
@@ -248,6 +249,7 @@ export const bidService = {
             id: true,
             fullName: true,
             profileImageUrl: true,
+            phone: true,
             electricianProfile: {
               select: {
                 verificationStatus: true,
@@ -320,6 +322,7 @@ export const bidService = {
               id: true,
               fullName: true,
               profileImageUrl: true,
+              phone: true,
               electricianProfile: {
                 select: {
                   verificationStatus: true,
@@ -457,6 +460,7 @@ export const bidService = {
             id: true,
             fullName: true,
             profileImageUrl: true,
+            phone: true,
             electricianProfile: {
               select: {
                 verificationStatus: true,

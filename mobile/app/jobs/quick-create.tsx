@@ -40,18 +40,25 @@ import LocationPicker from '../../components/common/LocationPicker';
 import { Picker } from '../../components/common/Picker';
 
 const EMERGENCY_TYPES = [
-    { id: 'elektrik', label: 'Elektrik', color: '#7C3AED' },
-    { id: 'tesisat', label: 'Su/Tesisat', color: '#0284C7' },
-    { id: 'cilingir', label: 'Çilingir', color: '#D97706' },
-    { id: 'beyaz-esya', label: 'Beyaz Eşya', color: '#16A34A' },
-    { id: 'klima', label: 'Klima', color: '#2563EB' },
+    { id: 'elektrik', label: 'Elektrik', color: '#7C3AED', icon: 'flash' },
+    { id: 'tesisat', label: 'Su/Tesisat', color: '#0284C7', icon: 'water' },
+    { id: 'cilingir', label: 'Çilingir', color: '#D97706', icon: 'key' },
+    { id: 'beyaz-esya', label: 'Beyaz Eşya', color: '#16A34A', icon: 'construct' },
+    { id: 'klima', label: 'Klima', color: '#2563EB', icon: 'snow' },
 ];
 
 // Map category ID to 3D image asset (same as home screen)
 const getCategoryImage = (id: string) => {
-    // 3D image files are currently missing, fallback to undefined
-    return undefined;
+    switch (id) {
+        case 'elektrik': return require('../../assets/images/categories/electric.png');
+        case 'cilingir': return require('../../assets/images/categories/locksmith_3d_clean.png');
+        case 'klima': return require('../../assets/images/categories/ac_3d_clean.png');
+        case 'beyaz-esya': return require('../../assets/images/categories/appliances_3d_clean.png');
+        case 'tesisat': return require('../../assets/images/categories/plumbing.png');
+        default: return undefined;
+    }
 };
+
 
 const MAX_IMAGES = 3;
 
@@ -440,12 +447,21 @@ export default function QuickCreateScreen() {
                                 >
                                     <View style={styles.typeBtnContent}>
                                         <View style={[styles.typeIconBox, { backgroundColor: type.color + '15' }]}>
+                                            <View style={StyleSheet.absoluteFill}>
+                                                <LinearGradient
+                                                    colors={[`${type.color}15`, `${type.color}25`]}
+                                                    style={[StyleSheet.absoluteFill, { borderRadius: 14, justifyContent: 'center', alignItems: 'center' }]}
+                                                >
+                                                    <Ionicons name={type.icon as any} size={24} color={type.color} />
+                                                </LinearGradient>
+                                            </View>
                                             <Image
                                                 source={getCategoryImage(type.id)}
                                                 style={styles.type3dImage}
                                                 resizeMode="contain"
                                             />
                                         </View>
+
                                         <Text style={[
                                             styles.typeLabel,
                                             selectedType === type.id && { color: type.color, fontFamily: fonts.bold }

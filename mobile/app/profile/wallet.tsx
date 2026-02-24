@@ -142,8 +142,8 @@ export default function WalletScreen() {
     };
 
     const balance = user?.electricianProfile?.creditBalance || 0;
-    const totalLoaded = history.filter(t => t.amount > 0).reduce((acc, t) => acc + t.amount, 0);
-    const totalSpent = Math.abs(history.filter(t => t.amount < 0).reduce((acc, t) => acc + t.amount, 0));
+    const totalLoaded = history.filter(t => Number(t.amount) > 0).reduce((acc, t) => acc + Number(t.amount), 0);
+    const totalSpent = Math.abs(history.filter(t => Number(t.amount) < 0).reduce((acc, t) => acc + Number(t.amount), 0));
 
     const groupedHistory = groupTransactions(history);
 

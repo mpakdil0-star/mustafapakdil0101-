@@ -52,7 +52,6 @@ export default function JobDetailScreen() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isReviewModalVisible, setIsReviewModalVisible] = useState(false);
   const [rating, setRating] = useState(0);
-  const ratingRef = useRef(0);
   const [reviewComment, setReviewComment] = useState('');
   const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
 
@@ -172,10 +171,11 @@ export default function JobDetailScreen() {
   const isUrgent = jobData?.urgencyLevel === 'HIGH';
 
   const handleCall = (phone?: string) => {
-    if (phone && phone.trim() !== '') {
+    console.log('handleCall triggered with phone:', phone, typeof phone);
+    if (phone && phone !== 'null' && phone.trim() !== '') {
       Linking.openURL(`tel:${phone}`);
     } else {
-      showAlert('Bilgi', 'Bu kullanıcının telefon numarası sistemde kayıtlı değil veya gizli.', 'info');
+      showAlert('Bilgi', `Bu kullanıcının telefon numarası sistemde kayıtlı değil veya gizli. (Debug: ${typeof phone === 'string' ? `"${phone}"` : String(phone)})`, 'info');
     }
   };
 
@@ -221,27 +221,33 @@ export default function JobDetailScreen() {
     }
   };
 
-  const handleCompleteJob = async () => {
-    const currentRating = ratingRef.current;
-    if (!id || currentRating === 0) {
+  const handleCompleteJob = useCallback(async () => {
+    const jobId = jobData?.id || id;
+
+    if (!jobId) {
+      showAlert('Hata', 'İlan bilgisi bulunamadı. Lütfen sayfayı yenileyip tekrar deneyin.', 'error');
+      return;
+    }
+
+    if (!rating || rating === 0) {
       showAlert('Hata', 'Lütfen bir puan seçin.', 'error');
       return;
     }
 
     setIsReviewSubmitting(true);
     try {
-      await jobService.completeJob(id, { rating: currentRating, comment: reviewComment });
+      await jobService.completeJob(jobId, { rating: rating, comment: reviewComment });
       setIsReviewModalVisible(false);
       setRating(0);
       setReviewComment('');
-      dispatch(fetchJobById(id));
+      dispatch(fetchJobById(jobId));
       showAlert('Başarılı', 'İş tamamlandı olarak işaretlendi ve değerlendirmeniz kaydedildi.', 'success');
     } catch (error: any) {
       showAlert('Hata', error.message || 'Bir hata oluştu.', 'error');
     } finally {
       setIsReviewSubmitting(false);
     }
-  };
+  }, [jobData?.id, id, rating, reviewComment, dispatch]);
 
   // İlan İptal Fonksiyonu - Modalı Açar
   const handleCancelJob = () => {
@@ -627,7 +633,7 @@ export default function JobDetailScreen() {
               {[1, 2, 3, 4, 5].map((star) => (
                 <TouchableOpacity
                   key={star}
-                  onPress={() => { setRating(star); ratingRef.current = star; }}
+                  onPress={() => setRating(star)}
                   activeOpacity={0.7}
                   style={star <= rating ? styles.starSelected : styles.starUnselected}
                 >

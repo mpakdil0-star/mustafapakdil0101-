@@ -212,7 +212,7 @@ export default function StatisticsScreen() {
                     <View style={[styles.iconContainer, { backgroundColor: colors.info + '20' }]}>
                         <Ionicons name="star" size={24} color={colors.info} />
                     </View>
-                    <Text style={styles.statValue}>{stats?.rating.toFixed(1)}</Text>
+                    <Text style={styles.statValue}>{Number(stats?.rating || 0).toFixed(1)}</Text>
                     <Text style={styles.statLabel}>{stats?.reviewCount} Değerlendirme</Text>
                 </Card>
             </View>

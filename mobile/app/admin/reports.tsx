@@ -60,13 +60,30 @@ export default function AdminReportsScreen() {
 
     const fetchReports = useCallback(async () => {
         try {
+            console.log('📡 [REPORTS] Fetching all reports...');
             const response = await api.get('/reports/admin/all');
+
             if (response.data.success) {
+                console.log(`✅ [REPORTS] Successfully fetched ${response.data.data?.length || 0} reports`);
                 setReports(response.data.data);
+            } else {
+                console.warn('⚠️ [REPORTS] Fetch success but data invalid:', response.data);
+                Alert.alert('Hata', response.data.message || 'Şikayetler yüklenirken bir sorun oluştu.');
             }
-        } catch (error) {
-            console.error('Failed to fetch reports:', error);
-            Alert.alert('Hata', 'Şikayetler yüklenirken bir sorun oluştu.');
+        } catch (error: any) {
+            const statusCode = error.response?.status;
+            const errorMsg = error.response?.data?.message || error.response?.data?.error?.message || error.message;
+
+            console.error(`❌ [REPORTS] Failed to fetch reports:`, {
+                status: statusCode,
+                message: errorMsg,
+                url: error.config?.url
+            });
+
+            Alert.alert(
+                'Hata',
+                `Şikayetler yüklenirken bir sorun oluştu.\n\nDurum: ${statusCode}\nHata: ${errorMsg}`
+            );
         } finally {
             setLoading(false);
             setRefreshing(false);

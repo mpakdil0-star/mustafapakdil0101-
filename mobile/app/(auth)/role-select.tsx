@@ -18,9 +18,16 @@ const { width } = Dimensions.get('window');
 
 // Map category ID to 3D image asset (same as home screen)
 const getCategoryImage = (id: string) => {
-    // 3D image files are currently missing, fallback to undefined
-    return undefined;
+    switch (id) {
+        case 'elektrik': return require('../../assets/images/categories/electric.png');
+        case 'cilingir': return require('../../assets/images/categories/locksmith_3d_clean.png');
+        case 'klima': return require('../../assets/images/categories/ac_3d_clean.png');
+        case 'beyaz-esya': return require('../../assets/images/categories/appliances_3d_clean.png');
+        case 'tesisat': return require('../../assets/images/categories/plumbing.png');
+        default: return undefined;
+    }
 };
+
 
 export default function RoleSelectScreen() {
     const router = useRouter();
@@ -144,12 +151,21 @@ export default function RoleSelectScreen() {
                                         styles.professionIconBg,
                                         serviceCategory === cat.id && { backgroundColor: cat.colors[0] + '30' }
                                     ]}>
+                                        <View style={StyleSheet.absoluteFill}>
+                                            <LinearGradient
+                                                colors={[`${cat.colors[0]}15`, `${cat.colors[1]}25`]}
+                                                style={[StyleSheet.absoluteFill, { borderRadius: 14, justifyContent: 'center', alignItems: 'center' }]}
+                                            >
+                                                <Ionicons name={cat.icon as any} size={24} color={cat.colors[0]} />
+                                            </LinearGradient>
+                                        </View>
                                         <Image
                                             source={getCategoryImage(cat.id)}
                                             style={styles.professionImage}
                                             resizeMode="contain"
                                         />
                                     </View>
+
                                     <Text style={[
                                         styles.professionName,
                                         serviceCategory === cat.id && { color: '#FFFFFF', fontFamily: fonts.bold }

@@ -10,11 +10,13 @@ type ReportReason = 'FRAUD' | 'HARASSMENT' | 'NO_SHOW' | 'UNPROFESSIONAL' | 'FAK
 export const createReport = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const reporterId = req.user?.id;
-        const { reportedId, jobId, reason, description, evidence } = req.body;
+        const { reportedId, jobId, reason, description, evidence } = (req as any).body;
 
         if (!reporterId) {
             return res.status(401).json({ success: false, message: 'Giriş yapmanız gerekiyor' });
         }
+
+        console.log(`🚩 [REPORTS] createReport: ${reporterId} reporting ${reportedId}`);
 
         // Can't report yourself
         if (reporterId === reportedId) {
@@ -64,10 +66,12 @@ export const getMyReports = async (req: AuthRequest, res: Response, next: NextFu
             return res.status(401).json({ success: false, message: 'Giriş yapmanız gerekiyor' });
         }
 
+        console.log(`🚩 [REPORTS] getMyReports for user ${userId}`);
         const reports = mockReportStorage.findMany({ reporterId: userId });
 
         return res.json({ success: true, data: reports });
     } catch (error) {
+        console.error('❌ [REPORTS] getMyReports failed:', error);
         next(error);
     }
 };
@@ -75,6 +79,7 @@ export const getMyReports = async (req: AuthRequest, res: Response, next: NextFu
 // ADMIN: Get all reports
 export const getAllReports = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        console.log('🚩 [REPORTS] getAllReports called', { query: req.query });
         const { status, page = 1, limit = 20 } = req.query;
 
         const where: any = {};
@@ -82,21 +87,30 @@ export const getAllReports = async (req: Request, res: Response, next: NextFunct
             where.status = status as ReportStatus;
         }
 
-        const skip = (Number(page) - 1) * Number(limit);
-        const reports = mockReportStorage.findMany(where, skip, Number(limit));
+        // Ensure page and limit are valid numbers
+        const pageNum = Math.max(1, parseInt(page as string) || 1);
+        const limitNum = Math.max(1, parseInt(limit as string) || 20);
+        const skip = (pageNum - 1) * limitNum;
+
+        console.log(`🚩 [REPORTS] Fetching reports: page=${pageNum}, limit=${limitNum}, skip=${skip}`);
+
+        const reports = mockReportStorage.findMany(where, skip, limitNum);
         const total = mockReportStorage.count(where);
+
+        console.log(`🚩 [REPORTS] Found ${reports.length} reports out of ${total} total`);
 
         return res.json({
             success: true,
-            data: reports,
+            data: reports || [],
             pagination: {
-                page: Number(page),
-                limit: Number(limit),
+                page: pageNum,
+                limit: limitNum,
                 total,
-                pages: Math.ceil(total / Number(limit))
+                pages: Math.ceil(total / limitNum)
             }
         });
-    } catch (error) {
+    } catch (error: any) {
+        console.error('❌ [REPORTS] getAllReports failed:', error);
         next(error);
     }
 };
@@ -104,9 +118,11 @@ export const getAllReports = async (req: Request, res: Response, next: NextFunct
 // ADMIN: Update report status
 export const updateReportStatus = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const { id } = req.params;
-        const { status, adminNotes, banUser, banUntil } = req.body;
+        const { id } = (req as any).params;
+        const { status, adminNotes, banUser, banUntil } = (req as any).body;
         const adminId = req.user?.id;
+
+        console.log(`🚩 [REPORTS] updateReportStatus: ${id} -> ${status}`);
 
         const report = mockReportStorage.update(id, {
             status: status as ReportStatus,

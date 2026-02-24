@@ -14,11 +14,10 @@ export default function ElectriciansLayout() {
           fontWeight: '600',
           fontSize: 18,
         },
-        headerBackTitleVisible: false,
         headerShadowVisible: false,
-        presentation: 'card',
         animation: 'slide_from_right',
-        headerBackButtonDisplayMode: 'minimal',
+
+
       }}
     >
       <Stack.Screen

@@ -29,6 +29,7 @@ export const FeaturedElectrician = ({
     isVerified,
     imageUrl,
     onPress,
+    onBook,
 }: FeaturedElectricianProps) => {
     const colors = useAppColors();
     const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -99,14 +100,14 @@ export const FeaturedElectrician = ({
                     <Text style={styles.name} numberOfLines={1}>{name}</Text>
 
                     <View style={styles.ratingRow}>
-                        <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
+                        <Text style={styles.ratingText}>{Number(rating || 0).toFixed(1)}</Text>
                         <View style={styles.starsContainer}>
-                            {renderStars(rating)}
+                            {renderStars(Number(rating || 0))}
                         </View>
                     </View>
 
                     <View style={styles.reviewRow}>
-                        <Text style={styles.reviewText}>{rating.toFixed(1)} ({reviewCount} yorum)</Text>
+                        <Text style={styles.reviewText}>{Number(rating || 0).toFixed(1)} ({reviewCount || 0} yorum)</Text>
                         <View style={styles.locationContainer}>
                             <Ionicons name="location" size={14} color="#10B981" />
                             <Text style={styles.locationText}>{location}</Text>
