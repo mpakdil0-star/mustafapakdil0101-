@@ -122,7 +122,7 @@ export default function CreateBidScreen() {
         jobPostId: jobId as string,
         amount: parseFloat(amount),
         estimatedDuration: parseFloat(estimatedDuration),
-        estimatedStartDate: estimatedStartDate || undefined,
+        estimatedStartDate: estimatedStartDate ? new Date(estimatedStartDate).toISOString() : undefined,
         message: message.trim(),
       })).unwrap();
 
