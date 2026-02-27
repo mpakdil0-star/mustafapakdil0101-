@@ -415,25 +415,37 @@ export const jobService = {
       // FOR TRUE PERFORMANCE: We would use a raw SQL query or move lat/lng to separate columns.
       // For this implementation, we will use the bbox to at least narrow down if we have city/district.
 
+      const andConditions: any[] = [];
+
       if (city) {
-        where.location = {
-          path: ['city'],
-          equals: city,
-        };
+        andConditions.push({
+          location: {
+            path: ['city'],
+            equals: city,
+          }
+        });
       }
 
       if (district) {
-        where.location = {
-          ...where.location,
-          path: ['district'],
-          equals: district,
-        };
+        andConditions.push({
+          location: {
+            path: ['district'],
+            equals: district,
+          }
+        });
       } else if (districts && districts.length > 0) {
-        where.location = {
-          ...where.location,
-          path: ['district'],
-          in: districts,
-        };
+        andConditions.push({
+          OR: districts.map((d: string) => ({
+            location: {
+              path: ['district'],
+              equals: d,
+            }
+          }))
+        });
+      }
+
+      if (andConditions.length > 0) {
+        where.AND = andConditions;
       }
 
       // If no city/district but has lat/lng, we'd ideally filter here.
