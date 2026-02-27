@@ -235,11 +235,11 @@ export const createJobController = async (
         const electricians = Object.entries(allUsers).filter(([id, data]: [string, any]) => data.userType === 'ELECTRICIAN');
 
         console.log(`📡 Sending notifications. Job: ${jobServiceCategory}, City: ${targetCity}, Creator: ${req.user.id}`);
+        console.log(`👥 Found ${electricians.length} total mock electricians`);
 
         electricians.forEach(([userId, userData]: [string, any]) => {
           // SKIP the current user (even if they have an electrician profile)
           if (req.user && userId === req.user.id) {
-            console.log(`   ⏭️ Skipping current user: ${userId}`);
             return;
           }
 
@@ -247,13 +247,16 @@ export const createJobController = async (
           const serviceCategoryMatch = ustaServiceCategory && jobServiceCategory && ustaServiceCategory === jobServiceCategory;
 
           if (!serviceCategoryMatch) {
-            if (userData.pushToken) {
-              console.log(`   ❌ Category Mismatch for ${userId}: Usta(${ustaServiceCategory}) != Job(${jobServiceCategory})`);
-            }
             return;
           }
 
-          const hasLocationMatch = userData.locations?.some((loc: any) =>
+          // RELAXED LOCATION MATCH:
+          // 1. If usta has no locations defined, assume they want to see all jobs in their main 'city'
+          // 2. If usta has locations, check for a match
+          const hasNoLocationsSet = !userData.locations || userData.locations.length === 0;
+          const simpleCityMatch = hasNoLocationsSet && userData.city?.toLowerCase() === targetCity?.toLowerCase();
+
+          const hasExplicitLocationMatch = userData.locations?.some((loc: any) =>
             loc.city?.toLowerCase() === targetCity?.toLowerCase() &&
             (
               !targetDistrict ||
@@ -264,8 +267,11 @@ export const createJobController = async (
             )
           );
 
-          if (hasLocationMatch) {
-            console.log(`   ✅ MATCH FOUND: ${userId} (${userData.email}). Token: ${userData.pushToken ? 'YES' : 'NO'}`);
+          const isMatch = simpleCityMatch || hasExplicitLocationMatch;
+
+          if (isMatch) {
+            console.log(`   ✅ MATCH FOUND for ${userId} (${userData.email}). SimpleCity: ${simpleCityMatch}, Explicit: ${hasExplicitLocationMatch}`);
+
             // Internal Mock Notification
             const notification = {
               id: `mock-notif-${Date.now()}-${userId}`,
@@ -280,18 +286,28 @@ export const createJobController = async (
             };
             addMockNotification(userId, notification);
 
-            // Push Notification
+            // REAL-TIME SOCKET (for badge update)
+            try {
+              console.log(`      📢 Emitting socket notification to ${userId}`);
+              notifyUser(userId, 'notification', notification);
+              notifyUser(userId, 'new_job_available', notification);
+            } catch (sockErr) {
+              console.error('      ❌ Socket emission failed:', sockErr);
+            }
+
+            // PUSH NOTIFICATION
             if (userData.pushToken) {
+              console.log(`      📲 Sending PUSH to ${userId}, Token: ${userData.pushToken}`);
               const pushNotificationService = require('../services/pushNotificationService').default;
               pushNotificationService.sendNotification({
                 to: userData.pushToken,
                 title: 'Yeni İş İlanı! ⚡',
                 body: `Bölgenizde yeni ilan verildi: ${jobData.title}`,
                 data: { jobId: mockJob.id, type: 'new_job_available' }
-              }).catch((err: any) => console.error('Push Notification Error:', err));
+              }).catch((err: any) => console.error('      ❌ Push Notification Error:', err));
+            } else {
+              console.log(`      ⚠️ No push token for ${userId}`);
             }
-          } else if (userData.pushToken) {
-            console.log(`   ❌ Location Mismatch for ${userId}`);
           }
         });
 

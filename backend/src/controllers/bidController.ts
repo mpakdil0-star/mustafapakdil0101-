@@ -91,26 +91,44 @@ export const createBidController = async (
     };
 
     try {
+      console.log('🚀 Attempting to create bid via bidService...');
       const bid = await bidService.createBid(bidData);
 
       // İş sahibine (vatandaşa) yeni teklif bildirimi gönder
       if (bid.jobPost?.citizenId) {
-        notifyUser(bid.jobPost.citizenId, 'bid_received', {
-          type: 'bid_received',
-          bidId: bid.id,
-          jobPostId: bid.jobPostId,
-          jobTitle: bid.jobPost?.title || 'İş İlanı',
-          amount: bid.amount,
-          electricianName: bid.electrician?.fullName || 'Elektrikçi',
-          message: `${bid.electrician?.fullName || 'Bir elektrikçi'} iş ilanınıza ${bid.amount} TL teklif verdi.`,
-        });
+        try {
+          console.log(`📢 Sending bid_received notification to citizen ${bid.jobPost.citizenId}`);
+          const notificationPayload = {
+            id: `bid-notif-${Date.now()}`,
+            type: 'bid_received',
+            bidId: bid.id,
+            jobPostId: bid.jobPostId,
+            jobTitle: bid.jobPost?.title || 'İş İlanı',
+            amount: bid.amount,
+            electricianName: bid.electrician?.fullName || 'Elektrikçi',
+            message: `${bid.electrician?.fullName || 'Bir elektrikçi'} iş ilanınıza ${bid.amount} TL teklif verdi.`,
+            isRead: false,
+            createdAt: new Date().toISOString(),
+            relatedId: bid.jobPostId,
+            relatedType: 'JOB'
+          };
+
+          // 1. Emit specific event
+          notifyUser(bid.jobPost.citizenId, 'bid_received', notificationPayload);
+          // 2. Emit general notification event for badge handling
+          notifyUser(bid.jobPost.citizenId, 'notification', notificationPayload);
+        } catch (notifErr) {
+          console.error('⚠️ Failed to send real-time notification for bid:', notifErr);
+        }
       }
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         data: { bid },
       });
     } catch (dbError: any) {
+      console.error('❌ Bid Creation Error:', dbError.message);
+
       const isConnectionError =
         dbError.message?.includes('connect') ||
         dbError.message?.includes('database') ||
@@ -121,157 +139,177 @@ export const createBidController = async (
         dbError.constructor.name === 'PrismaClientInitializationError';
 
       // If database error, return mock bid
-      if (isConnectionError || bidData.jobPostId?.startsWith('mock-') || req.user.id.startsWith('mock-')) {
-        console.warn('⚠️ Database connection failed, returning mock bid data');
+      if (isConnectionError || bidData.jobPostId?.startsWith('mock-') || (req.user.id && req.user.id.startsWith('mock-'))) {
+        console.warn('⚠️ Database connection failed or Mock ID detected, returning mock bid data');
 
-        // Import mockStorage
-        const { mockStorage } = await import('../utils/mockStorage');
+        try {
+          // Import mockStorage
+          const { mockStorage } = await import('../utils/mockStorage');
 
-        // Check if user has enough credits (same as database logic)
-        const userStore = mockStorage.get(req.user.id);
-        const currentBalance = Number(userStore.creditBalance || 0);
+          // Check if user has enough credits (same as database logic)
+          const userStore = mockStorage.get(req.user.id);
+          const currentBalance = Number(userStore?.creditBalance || 0);
 
-        console.log(`💰 [MOCK BID] User ${req.user.id} current balance: ${currentBalance}`);
+          console.log(`💰 [MOCK BID] User ${req.user.id} current balance: ${currentBalance}`);
 
-        if (currentBalance < 1) {
-          return res.status(400).json({
-            success: false,
-            error: {
-              message: 'Yetersiz kredi. Teklif verebilmek için en az 1 krediniz olmalıdır. Profilinizden telefonunuzu doğrulayarak hediye kredi kazanabilirsiniz.'
-            },
+          if (currentBalance < 1) {
+            return res.status(400).json({
+              success: false,
+              error: {
+                message: 'Yetersiz kredi. Teklif verebilmek için en az 1 krediniz olmalıdır. Profilinizden telefonunuzu doğrulayarak hediye kredi kazanabilirsiniz.'
+              },
+            });
+          }
+
+          // Deduct 1 credit from mockStorage
+          const newBalance = currentBalance - 1;
+          mockStorage.updateBalance(req.user.id, newBalance);
+
+          // Create transaction record in mock storage
+          mockTransactionStorage.addTransaction({
+            userId: req.user.id,
+            amount: -1,
+            transactionType: 'BID_SPENT',
+            description: `İlana teklif verildi`,
+            balanceAfter: newBalance
           });
-        }
 
-        // Deduct 1 credit from mockStorage
-        const newBalance = currentBalance - 1;
-        mockStorage.updateBalance(req.user.id, newBalance);
+          console.log(`✅ [MOCK BID] Credit deducted and transaction recorded. New balance: ${newBalance}`);
 
-        // Create transaction record in mock storage
-        mockTransactionStorage.addTransaction({
-          userId: req.user.id,
-          amount: -1,
-          transactionType: 'BID_SPENT',
-          description: `İlana teklif verildi`,
-          balanceAfter: newBalance
-        });
+          // Try to get job details from jobStoreById
+          const { jobStoreById } = require('./jobController');
+          let job: any = jobStoreById.get(bidData.jobPostId);
 
-        console.log(`✅ [MOCK BID] Credit deducted and transaction recorded. New balance: ${newBalance}`);
-
-        // Try to get job details from jobStoreById
-        const { jobStoreById } = require('./jobController');
-        let job: any = jobStoreById.get(bidData.jobPostId);
-
-        // If not found in store, try to get from mock jobs
-        if (!job) {
-          try {
-            const { getMockJobs } = await import('./jobController');
-            const mockJobsResult = getMockJobs();
-            job = mockJobsResult.jobs.find((j: any) => j.id === bidData.jobPostId);
-          } catch (e) {
-            // Ignore - will use fallback job object
-          }
-        }
-
-        const mockBid = {
-          id: `mock-bid-${Date.now()}`,
-          jobPostId: bidData.jobPostId,
-          electricianId: req.user.id,
-          amount: String(bidData.amount),
-          estimatedDuration: bidData.estimatedDuration,
-          estimatedStartDate: bidData.estimatedStartDate || new Date(),
-          message: bidData.message,
-          status: 'PENDING',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          electrician: {
-            id: req.user.id,
-            fullName: mockStorage.get(req.user.id)?.fullName || req.user.email?.split('@')[0] || 'Mock Electrician',
-            profileImageUrl: mockStorage.get(req.user.id)?.profileImageUrl || null,
-            phone: mockStorage.get(req.user.id)?.phone || '05555555555',
-            electricianProfile: {
-              verificationStatus: mockStorage.get(req.user.id)?.verificationStatus || 'APPROVED',
-              licenseVerified: true,
-              licenseNumber: 'MOCK-LIC-12345',
-            },
-          },
-          jobPost: job ? {
-            id: job.id,
-            title: job.title || 'Mock Job Post',
-            description: job.description || '',
-            status: job.status || 'BIDDING',
-            location: job.location || { city: '', district: '' },
-            citizen: job.citizen || null,
-          } : {
-            id: bidData.jobPostId,
-            title: 'Mock Job Post',
-            description: '',
-            status: 'BIDDING',
-            location: { city: '', district: '' },
-            citizen: null,
-          },
-        };
-
-        // Store bid in memory
-        if (!userBidsStore.has(req.user.id)) {
-          userBidsStore.set(req.user.id, []);
-        }
-        const userBids = userBidsStore.get(req.user.id) || [];
-        userBids.unshift(mockBid);
-        userBidsStore.set(req.user.id, userBids);
-
-        // Also store in global store and save to disk
-        bidStoreById.set(mockBid.id, mockBid);
-        saveMockBids();
-
-        // Create notification for job owner (citizen)
-        const { addMockNotification } = require('../routes/notificationRoutes');
-        if (job?.citizenId) {
-          const notification = {
-            id: `mock-notif-${Date.now()}-bid`,
-            userId: job.citizenId,
-            type: 'BID_RECEIVED',
-            title: 'Yeni Teklif',
-            message: `${mockBid.electrician?.fullName || 'Bir elektrikçi'} ilanınıza ${bidData.amount} ₺ teklif verdi.`,
-            isRead: false,
-            relatedId: bidData.jobPostId, // Use jobPostId not bid ID!
-            relatedType: 'JOB', // Changed from BID to JOB
-            createdAt: new Date().toISOString()
-          };
-          addMockNotification(job.citizenId, notification);
-
-          // CRITICAL: Send PUSH notification (for background/closed app)
-          const { mockStorage } = require('../utils/mockStorage');
-          const citizenData = mockStorage.get(job.citizenId);
-          if (citizenData?.pushToken) {
-            const pushNotificationService = require('../services/pushNotificationService').default;
-            pushNotificationService.sendNotification({
-              to: citizenData.pushToken,
-              title: 'Yeni Teklif Aldınız! 💰',
-              body: `${mockBid.electrician?.fullName || 'Bir usta'} ilanınıza ${bidData.amount} ₺ teklif verdi.`,
-              data: { jobId: bidData.jobPostId, type: 'bid_received' }
-            }).catch((err: any) => console.error('Push Notification Error:', err));
+          // If not found in store, try to get from mock jobs
+          if (!job) {
+            try {
+              const { getMockJobs } = await import('./jobController');
+              const mockJobsResult = getMockJobs();
+              job = mockJobsResult.jobs.find((j: any) => j.id === bidData.jobPostId);
+            } catch (e) {
+              console.warn('⚠️ Could not find job details for mock bid notification');
+            }
           }
 
-          // Also send socket notification for real-time update
-          console.log(`📢 [SOCKET] Sending bid_received notification to ${job.citizenId}`);
-          notifyUser(job.citizenId, 'bid_received', {
-            type: 'bid_received',
-            bidId: mockBid.id,
+          const mockBid = {
+            id: `mock-bid-${Date.now()}`,
             jobPostId: bidData.jobPostId,
-            jobTitle: job.title || 'İş İlanı',
-            amount: bidData.amount,
-            electricianName: mockBid.electrician?.fullName || 'Elektrikçi',
-            message: `${mockBid.electrician?.fullName || 'Bir elektrikçi'} iş ilanınıza ${bidData.amount} ₺ teklif verdi.`,
+            electricianId: req.user.id,
+            amount: String(bidData.amount),
+            estimatedDuration: bidData.estimatedDuration,
+            estimatedStartDate: bidData.estimatedStartDate || new Date(),
+            message: bidData.message,
+            status: 'PENDING',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            electrician: {
+              id: req.user.id,
+              fullName: userStore?.fullName || req.user.email?.split('@')[0] || 'Mock Electrician',
+              profileImageUrl: userStore?.profileImageUrl || null,
+              phone: userStore?.phone || '05555555555',
+              electricianProfile: {
+                verificationStatus: userStore?.verificationStatus || 'APPROVED',
+                licenseVerified: true,
+                licenseNumber: 'MOCK-LIC-12345',
+              },
+            },
+            jobPost: job ? {
+              id: job.id,
+              title: job.title || 'Mock İş İlanı',
+              description: job.description || '',
+              status: job.status || 'BIDDING',
+              location: job.location || { city: '', district: '' },
+              citizen: job.citizen || null,
+            } : {
+              id: bidData.jobPostId,
+              title: 'İş İlanı',
+              description: '',
+              status: 'BIDDING',
+              location: { city: '', district: '' },
+              citizen: null,
+            },
+          };
+
+          // Store bid in memory
+          if (!userBidsStore.has(req.user.id)) {
+            userBidsStore.set(req.user.id, []);
+          }
+          const userBids = userBidsStore.get(req.user.id) || [];
+          userBids.unshift(mockBid);
+          userBidsStore.set(req.user.id, userBids);
+
+          // Also store in global store and save to disk
+          bidStoreById.set(mockBid.id, mockBid);
+          saveMockBids();
+
+          // Create notification for job owner (citizen)
+          if (job?.citizenId) {
+            try {
+              const { addMockNotification } = require('../routes/notificationRoutes');
+              const notification = {
+                id: `mock-notif-${Date.now()}-bid`,
+                userId: job.citizenId,
+                type: 'BID_RECEIVED',
+                title: 'Yeni Teklif',
+                message: `${mockBid.electrician?.fullName || 'Bir elektrikçi'} ilanınıza ${bidData.amount} ₺ teklif verdi.`,
+                isRead: false,
+                relatedId: bidData.jobPostId,
+                relatedType: 'JOB',
+                createdAt: new Date().toISOString()
+              };
+              addMockNotification(job.citizenId, notification);
+
+              // CRITICAL: Send PUSH notification
+              const citizenData = mockStorage.get(job.citizenId);
+              if (citizenData?.pushToken) {
+                console.log(`📲 Sending PUSH to citizen: ${job.citizenId}, Token: ${citizenData.pushToken}`);
+                const pushNotificationService = require('../services/pushNotificationService').default;
+                pushNotificationService.sendNotification({
+                  to: citizenData.pushToken,
+                  title: 'Yeni Teklif Aldınız! 💰',
+                  body: `${mockBid.electrician?.fullName || 'Bir usta'} ilanınıza ${bidData.amount} ₺ teklif verdi.`,
+                  data: { jobId: bidData.jobPostId, type: 'bid_received' }
+                }).catch((err: any) => console.error('Push Notification Error (Mock):', err));
+              }
+
+              // Also send socket notification for real-time update
+              console.log(`📢 [SOCKET] Sending bid_received notification to ${job.citizenId}`);
+              const socketPayload = {
+                id: `sock-noti-${Date.now()}`,
+                type: 'bid_received',
+                bidId: mockBid.id,
+                jobPostId: bidData.jobPostId,
+                jobTitle: job.title || 'İş İlanı',
+                amount: bidData.amount,
+                electricianName: mockBid.electrician?.fullName || 'Elektrikçi',
+                message: `${mockBid.electrician?.fullName || 'Bir elektrikçi'} iş ilanınıza ${bidData.amount} ₺ teklif verdi.`,
+                isRead: false,
+                createdAt: new Date().toISOString(),
+                relatedId: bidData.jobPostId,
+                relatedType: 'JOB'
+              };
+              notifyUser(job.citizenId, 'bid_received', socketPayload);
+              // General notification event for badge
+              notifyUser(job.citizenId, 'notification', socketPayload);
+              console.log(`✅ [SOCKET] bid_received notification sent successfully`);
+            } catch (innerErr) {
+              console.error('⚠️ Failed to send mock bid notification:', innerErr);
+            }
+          }
+
+          console.log(`🎉 [MOCK BID] Bid created successfully. User ${req.user.id} new balance: ${newBalance}`);
+
+          return res.status(201).json({
+            success: true,
+            data: { bid: mockBid },
           });
-          console.log(`✅ [SOCKET] bid_received notification sent successfully`);
+        } catch (mockErr: any) {
+          console.error('🔥 Critical Mock Bid Error:', mockErr.message);
+          return res.status(500).json({
+            success: false,
+            error: { message: 'Mock teklif oluşturulurken hata oluştu: ' + mockErr.message }
+          });
         }
-
-        console.log(`🎉 [MOCK BID] Bid created successfully. User ${req.user.id} new balance: ${currentBalance - 1}`);
-
-        return res.status(201).json({
-          success: true,
-          data: { bid: mockBid },
-        });
       }
 
       // Re-throw other errors (validation, not found, etc.)
