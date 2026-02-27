@@ -195,9 +195,7 @@ export const jobService = {
               some: {
                 city: city,
                 OR: [
-                  { district: district },
-                  { district: null },
-                  { district: '' },
+                  ...(district ? [{ district: district }] : []),
                   { district: 'Tüm Şehir' },
                   { district: 'Merkez' }
                 ]

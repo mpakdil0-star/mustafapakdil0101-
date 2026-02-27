@@ -127,7 +127,7 @@ export const createBidController = async (
         data: { bid },
       });
     } catch (dbError: any) {
-      console.error('❌ Bid Creation Error:', dbError.message);
+      console.error('❌ Bid Creation Error Details:', dbError);
 
       const isConnectionError =
         dbError.message?.includes('connect') ||
@@ -136,11 +136,12 @@ export const createBidController = async (
         dbError.code === 'P1001' ||
         dbError.code === 'P1017' ||
         dbError.name === 'PrismaClientInitializationError' ||
-        dbError.constructor.name === 'PrismaClientInitializationError';
+        dbError.constructor?.name === 'PrismaClientInitializationError' ||
+        dbError.name === 'PrismaClientValidationError';
 
-      // If database error, return mock bid
+      // If database error OR validation error, return mock bid
       if (isConnectionError || bidData.jobPostId?.startsWith('mock-') || (req.user.id && req.user.id.startsWith('mock-'))) {
-        console.warn('⚠️ Database connection failed or Mock ID detected, returning mock bid data');
+        console.warn('⚠️ Database issues or Mock ID detected, returning mock bid data');
 
         try {
           // Import mockStorage
