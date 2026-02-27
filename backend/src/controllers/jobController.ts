@@ -232,7 +232,7 @@ export const createJobController = async (
         }
 
         // 2. Iterate users for Mock Notifications and Push Notifications
-        const electricians = Object.entries(allUsers).filter(([id]) => id.includes('ELECTRICIAN'));
+        const electricians = Object.entries(allUsers).filter(([id, data]: [string, any]) => data.userType === 'ELECTRICIAN');
 
         console.log(`📡 Sending notifications. Job: ${jobServiceCategory}, City: ${targetCity}, Creator: ${req.user.id}`);
 
@@ -299,13 +299,19 @@ export const createJobController = async (
         console.log(`📡 [Socket] Target rooms for new_job_available: ${targetRooms.length > 0 ? targetRooms.join(', ') : 'NONE'}`);
 
         if (targetRooms.length > 0) {
-          notifyUser(targetRooms, 'new_job_available', {
+          notifyUser(targetRooms, 'notification', {
+            id: `sock-noti-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            type: 'new_job_available',
             title: 'Yeni İş İlanı! ⚡',
             message: `Bölgenizde yeni ilan verildi: ${jobData.title}`,
             jobId: mockJob.id,
             locationPreview: targetDistrict || targetCity,
             category: jobData.category,
-            serviceCategory: jobServiceCategory
+            serviceCategory: jobServiceCategory,
+            isRead: false,
+            createdAt: new Date().toISOString(),
+            relatedId: mockJob.id,
+            relatedType: 'JOB'
           });
         } else {
           console.warn('⚠️ No target rooms for new job notification (Missing category or city)');

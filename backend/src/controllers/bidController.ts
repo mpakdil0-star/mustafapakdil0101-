@@ -176,7 +176,7 @@ export const createBidController = async (
           id: `mock-bid-${Date.now()}`,
           jobPostId: bidData.jobPostId,
           electricianId: req.user.id,
-          amount: bidData.amount.toString(),
+          amount: String(bidData.amount),
           estimatedDuration: bidData.estimatedDuration,
           estimatedStartDate: bidData.estimatedStartDate || new Date(),
           message: bidData.message,
@@ -185,7 +185,7 @@ export const createBidController = async (
           updatedAt: new Date().toISOString(),
           electrician: {
             id: req.user.id,
-            fullName: mockStorage.get(req.user.id)?.fullName || req.user.email.split('@')[0] || 'Mock Electrician',
+            fullName: mockStorage.get(req.user.id)?.fullName || req.user.email?.split('@')[0] || 'Mock Electrician',
             profileImageUrl: mockStorage.get(req.user.id)?.profileImageUrl || null,
             phone: mockStorage.get(req.user.id)?.phone || '05555555555',
             electricianProfile: {

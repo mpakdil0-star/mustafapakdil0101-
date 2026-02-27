@@ -173,7 +173,7 @@ export const authService = {
       }
 
       const token = (await Notifications.getExpoPushTokenAsync({
-        projectId: '0a664c35-3716-4aac-9e81-995c360ccdb1',
+        projectId: 'f894540e-3b89-4157-a0e0-5ed3bfd1ad72',
       })).data;
 
       console.log('Push Notification: Generated token:', token);

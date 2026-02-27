@@ -169,13 +169,18 @@ export const jobService = {
 
       // 'notification' event'i mobile app'te alert tetikler
       notifyUser(targetRooms, 'notification', {
+        id: `sock-noti-${Date.now()}-${Math.random().toString(36).substring(7)}`,
         type: 'new_job_available',
         jobId: job.id,
         title: job.title,
         category: job.category,
         urgencyLevel: job.urgencyLevel,
         locationPreview: `${district || ''}, ${city || ''}`,
-        message: `Bölgenizde yeni bir iş ilanı yayınlandı: ${job.title}`
+        message: `Bölgenizde yeni bir iş ilanı yayınlandı: ${job.title}`,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        relatedId: job.id,
+        relatedType: 'JOB'
       });
 
       // 2. PERSISTENT NOTIFICATIONS (Push & DB)
