@@ -740,7 +740,6 @@ export const getMyJobsController = async (
   res: Response,
   next: NextFunction
 ) => {
-  // Wrap everything in try-catch to prevent any error from reaching error handler
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -749,61 +748,75 @@ export const getMyJobsController = async (
       });
     }
 
-    // Always return mock data - no database calls to avoid timeout
+    const userId = req.user.id;
+    const userType = req.user.userType;
     let jobs: any[] = [];
 
-    if (req.user.userType === 'CITIZEN') {
-      const userId = req.user.id;
+    let isMockFallback = false;
 
-      // Get user's created jobs from memory store
-      const userCreatedJobs = userJobsStore.get(userId) || [];
-
-      // Get static mock jobs
-      const mockJobsResult = getMockJobs();
-      const staticMockJobs = (mockJobsResult.jobs || []).map((job: any) => {
-        const bidCount = job._count?.bids || job.bidCount || 0;
-        return {
-          id: job.id,
-          citizenId: job.citizenId || userId,
-          title: job.title,
-          description: job.description,
-          category: job.category,
-          subcategory: job.subcategory || null,
-          location: job.location,
-          urgencyLevel: job.urgencyLevel,
-          estimatedBudget: job.estimatedBudget || null,
-          status: job.status,
-          images: job.images || [],
-          viewCount: job.viewCount || 0,
-          bidCount: bidCount,
-          createdAt: job.createdAt,
-          updatedAt: job.updatedAt,
-          citizen: job.citizen || {
-            id: userId,
-            fullName: 'Mock User',
-            profileImageUrl: null,
-          },
-        };
-      });
-
-      // Only show user's own created jobs (not static mock jobs)
-      // If user has no jobs yet, show static mock jobs filtered by userId
-      if (userCreatedJobs.length > 0) {
-        jobs = userCreatedJobs;
+    // Try DB fetch first
+    try {
+      if (isDatabaseAvailable && !userId.startsWith('mock-')) {
+        jobs = await jobService.getMyJobs(userId, userType);
+        return res.json({
+          success: true,
+          data: { jobs },
+        });
       } else {
-        // Filter static mock jobs to only show user's (if citizenId matches)
-        jobs = staticMockJobs.filter((job: any) => job.citizenId === userId);
+        isMockFallback = true;
+      }
+    } catch (dbError: any) {
+      console.warn('⚠️ DB fetch for my jobs failed, falling back to mock jobs');
+      isMockFallback = true;
+    }
+
+    if (isMockFallback) {
+      if (userType === 'CITIZEN') {
+        const userCreatedJobs = userJobsStore.get(userId) || [];
+        const mockJobsResult = getMockJobs();
+        const staticMockJobs = (mockJobsResult.jobs || []).map((job: any) => {
+          const bidCount = job._count?.bids || job.bidCount || 0;
+          return {
+            id: job.id,
+            citizenId: job.citizenId || userId,
+            title: job.title,
+            description: job.description,
+            category: job.category,
+            subcategory: job.subcategory || null,
+            location: job.location,
+            urgencyLevel: job.urgencyLevel,
+            estimatedBudget: job.estimatedBudget || null,
+            status: job.status,
+            images: job.images || [],
+            viewCount: job.viewCount || 0,
+            bidCount: bidCount,
+            createdAt: job.createdAt,
+            updatedAt: job.updatedAt,
+            citizen: job.citizen || {
+              id: userId,
+              fullName: 'Mock User',
+              profileImageUrl: null,
+            },
+          };
+        });
+
+        if (userCreatedJobs.length > 0) {
+          jobs = userCreatedJobs;
+        } else {
+          jobs = staticMockJobs.filter((job: any) => job.citizenId === userId);
+        }
+      } else {
+        // Mock fallback for electricians (empty for now)
+        jobs = [];
       }
     }
 
-    // Always return success - never throw error
     return res.json({
       success: true,
       data: { jobs },
     });
   } catch (error: any) {
-    // Absolute fallback - return empty array on any error
-    console.error('Error in getMyJobsController (should not happen):', error);
+    console.error('Error in getMyJobsController:', error);
     return res.json({
       success: true,
       data: { jobs: [] },
