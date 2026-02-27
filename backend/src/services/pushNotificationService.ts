@@ -1,6 +1,11 @@
 import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 
-const expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
+const expo = new Expo({
+    accessToken: process.env.EXPO_ACCESS_TOKEN
+});
+
+// Note: Ensure your Render environment variables include FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL, and FIREBASE_PROJECT_ID
+// using the values from the Service Account JSON provided.
 
 export interface PushNotificationPayload {
     to: string | string[];
