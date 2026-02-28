@@ -753,11 +753,15 @@ export const getVerificationStatus = async (req: Request, res: Response, next: N
             }
 
             const documents = profile.verificationDocuments as any;
+            const hasUploadedDocument = !!(documents?.documentUrl);
+
+            // Eğer belge yüklenmemişse status null döndür (form gösterilsin)
+            const effectiveStatus = hasUploadedDocument ? profile.verificationStatus : null;
 
             res.json({
                 success: true,
                 data: {
-                    status: profile.verificationStatus,
+                    status: effectiveStatus,
                     licenseNumber: profile.licenseNumber,
                     licenseVerified: profile.licenseVerified,
                     documentType: documents?.documentType || null,
