@@ -142,7 +142,7 @@ export default function AdminReportsScreen() {
                 <View style={styles.userRow}>
                     <Ionicons name="person" size={14} color={colors.textLight} />
                     <Text style={styles.userInfo}>
-                        Şikayet edilen ID: {item.reportedId.substring(0, 8)}...
+                        Şikayet edilen: {item.reported?.fullName || item.reportedId.substring(0, 8) + '...'}
                     </Text>
                 </View>
             </TouchableOpacity>
@@ -201,12 +201,12 @@ export default function AdminReportsScreen() {
 
                             <View style={styles.detailRow}>
                                 <Text style={styles.detailLabel}>Şikayet Eden:</Text>
-                                <Text style={styles.detailValue}>{selectedReport.reporterId}</Text>
+                                <Text style={styles.detailValue}>{selectedReport.reporter?.fullName || selectedReport.reporterId.substring(0, 12) + '...'}</Text>
                             </View>
 
                             <View style={styles.detailRow}>
                                 <Text style={styles.detailLabel}>Şikayet Edilen:</Text>
-                                <Text style={styles.detailValue}>{selectedReport.reportedId}</Text>
+                                <Text style={styles.detailValue}>{selectedReport.reported?.fullName || selectedReport.reportedId.substring(0, 12) + '...'}</Text>
                             </View>
 
                             <Text style={styles.detailLabel}>Açıklama:</Text>
