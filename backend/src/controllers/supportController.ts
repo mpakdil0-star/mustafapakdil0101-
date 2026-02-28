@@ -3,6 +3,16 @@ import prisma, { isDatabaseAvailable } from '../config/database';
 import { AuthRequest } from '../middleware/auth';
 import { ValidationError } from '../utils/errors';
 import { mockTicketStorage, mockStorage } from '../utils/mockStorage';
+import { notifyUser } from '../server';
+import pushNotificationService from '../services/pushNotificationService';
+
+// Durum etiketleri
+const STATUS_LABELS: Record<string, string> = {
+    open: 'Açık',
+    in_progress: 'İnceleniyor',
+    resolved: 'Çözüldü',
+    closed: 'Kapatıldı'
+};
 
 export const createTicket = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
@@ -47,6 +57,41 @@ export const createTicket = async (req: AuthRequest, res: Response, next: NextFu
             });
         }
 
+        // 🔔 Admin'e bildirim gönder
+        try {
+            const userName = (req.user as any).fullName || 'Bir kullanıcı';
+            const notifTitle = '📩 Yeni Destek Talebi';
+            const notifMessage = `${userName} yeni bir destek talebi oluşturdu: "${subject}"`;
+
+            if (isDatabaseAvailable) {
+                const admins = await prisma.user.findMany({
+                    where: { userType: 'ADMIN' },
+                    select: { id: true, pushToken: true }
+                });
+
+                for (const admin of admins) {
+                    notifyUser(admin.id, 'notification', {
+                        type: 'new_support_ticket',
+                        title: notifTitle,
+                        message: notifMessage,
+                        ticketId: ticket.id
+                    });
+
+                    if (admin.pushToken) {
+                        await pushNotificationService.sendNotification({
+                            to: admin.pushToken,
+                            title: notifTitle,
+                            body: notifMessage,
+                            data: { type: 'new_support_ticket', ticketId: ticket.id }
+                        });
+                    }
+                }
+                console.log(`🔔 [SUPPORT] Admin(s) notified about new ticket: ${ticket.id}`);
+            }
+        } catch (notifErr) {
+            console.error('⚠️ [SUPPORT] Admin notification failed (non-critical):', notifErr);
+        }
+
         res.status(201).json({
             success: true,
             message: 'Destek talebiniz oluşturuldu',
@@ -77,10 +122,7 @@ export const getMyTickets = async (req: AuthRequest, res: Response, next: NextFu
         tickets = mockTicketStorage.getTicketsByUser(req.user.id);
         tickets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-        res.json({
-            success: true,
-            data: tickets
-        });
+        res.json({ success: true, data: tickets });
     } catch (error) {
         next(error);
     }
@@ -99,18 +141,12 @@ export const getTicketDetail = async (req: AuthRequest, res: Response, next: Nex
                     where: { id },
                     include: {
                         user: {
-                            select: {
-                                fullName: true,
-                                email: true,
-                                phone: true
-                            }
+                            select: { fullName: true, email: true, phone: true }
                         },
                         messages: {
                             orderBy: { createdAt: 'asc' },
                             include: {
-                                sender: {
-                                    select: { fullName: true }
-                                }
+                                sender: { select: { fullName: true } }
                             }
                         }
                     }
@@ -127,7 +163,6 @@ export const getTicketDetail = async (req: AuthRequest, res: Response, next: Nex
             }
         }
 
-        // Mock Fallback
         const rawTicket = mockTicketStorage.getTicket(id);
         if (!rawTicket) throw new ValidationError('Destek talebi bulunamadı');
 
@@ -146,10 +181,7 @@ export const getTicketDetail = async (req: AuthRequest, res: Response, next: Nex
             messages: rawTicket.messages || []
         };
 
-        res.json({
-            success: true,
-            data: ticket
-        });
+        res.json({ success: true, data: ticket });
     } catch (error) {
         next(error);
     }
@@ -166,13 +198,7 @@ export const getAllTickets = async (req: AuthRequest, res: Response, next: NextF
                 const tickets = await prisma.supportTicket.findMany({
                     orderBy: { createdAt: 'desc' },
                     include: {
-                        user: {
-                            select: {
-                                fullName: true,
-                                email: true,
-                                phone: true
-                            }
-                        }
+                        user: { select: { fullName: true, email: true, phone: true } }
                     }
                 });
                 return res.json({ success: true, data: tickets });
@@ -181,7 +207,6 @@ export const getAllTickets = async (req: AuthRequest, res: Response, next: NextF
             }
         }
 
-        // Mock Fallback
         const allTickets = mockTicketStorage.getAllTickets();
         const tickets = allTickets.map(t => {
             const user = mockStorage.get(t.userId);
@@ -196,10 +221,7 @@ export const getAllTickets = async (req: AuthRequest, res: Response, next: NextF
         });
         tickets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-        res.json({
-            success: true,
-            data: tickets
-        });
+        res.json({ success: true, data: tickets });
     } catch (error) {
         next(error);
     }
@@ -222,7 +244,10 @@ export const updateTicketStatus = async (req: AuthRequest, res: Response, next: 
             try {
                 const ticket = await prisma.supportTicket.update({
                     where: { id },
-                    data: { status }
+                    data: { status },
+                    include: {
+                        user: { select: { id: true, pushToken: true } }
+                    }
                 });
 
                 if (replyMessage) {
@@ -234,6 +259,48 @@ export const updateTicketStatus = async (req: AuthRequest, res: Response, next: 
                             isAdmin: true
                         }
                     });
+                }
+
+                // 🔔 Talebi açan kullanıcıya bildirim gönder
+                try {
+                    const statusLabel = STATUS_LABELS[status] || status;
+                    const notifTitle = '📋 Destek Talebiniz Güncellendi';
+                    const notifMessage = replyMessage
+                        ? `Talebiniz "${statusLabel}" durumuna alındı. Admin notu: ${replyMessage}`
+                        : `Talebiniz "${statusLabel}" durumuna alındı.`;
+
+                    notifyUser(ticket.userId, 'notification', {
+                        type: 'support_ticket_updated',
+                        title: notifTitle,
+                        message: notifMessage,
+                        ticketId: id,
+                        status
+                    });
+
+                    await prisma.notification.create({
+                        data: {
+                            userId: ticket.userId,
+                            type: 'SYSTEM',
+                            title: notifTitle,
+                            message: notifMessage,
+                            relatedType: 'SUPPORT_TICKET',
+                            relatedId: id
+                        }
+                    });
+
+                    const ticketUser = (ticket as any).user;
+                    if (ticketUser?.pushToken) {
+                        await pushNotificationService.sendNotification({
+                            to: ticketUser.pushToken,
+                            title: notifTitle,
+                            body: notifMessage,
+                            data: { type: 'support_ticket_updated', ticketId: id, status }
+                        });
+                    }
+
+                    console.log(`🔔 [SUPPORT] User ${ticket.userId} notified about ticket status: ${status}`);
+                } catch (notifErr) {
+                    console.error('⚠️ [SUPPORT] User notification failed (non-critical):', notifErr);
                 }
 
                 return res.json({ success: true, message: 'Talep durumu güncellendi', data: ticket });
@@ -254,11 +321,23 @@ export const updateTicketStatus = async (req: AuthRequest, res: Response, next: 
 
         if (!ticket) throw new ValidationError('Talep bulunamadı');
 
-        res.json({
-            success: true,
-            message: 'Talep durumu güncellendi',
-            data: ticket
-        });
+        // 🔔 Mock modda da socket bildirimi
+        try {
+            const statusLabel = STATUS_LABELS[status] || status;
+            notifyUser(ticket.userId, 'notification', {
+                type: 'support_ticket_updated',
+                title: '📋 Destek Talebiniz Güncellendi',
+                message: replyMessage
+                    ? `Talebiniz "${statusLabel}" durumuna alındı. Admin notu: ${replyMessage}`
+                    : `Talebiniz "${statusLabel}" durumuna alındı.`,
+                ticketId: id,
+                status
+            });
+        } catch (notifErr) {
+            console.error('⚠️ [SUPPORT] Mock notification failed:', notifErr);
+        }
+
+        res.json({ success: true, message: 'Talep durumu güncellendi', data: ticket });
     } catch (error) {
         next(error);
     }
@@ -285,6 +364,53 @@ export const addTicketMessage = async (req: AuthRequest, res: Response, next: Ne
                         isAdmin
                     }
                 });
+
+                // 🔔 Mesaja karşılıklı bildirim
+                try {
+                    const ticket = await prisma.supportTicket.findUnique({
+                        where: { id },
+                        include: { user: { select: { id: true, pushToken: true } } }
+                    });
+
+                    if (ticket) {
+                        if (isAdmin) {
+                            // Admin yanıtladı → kullanıcıya bildir
+                            const notifTitle = '💬 Destek Ekibinden Yanıt';
+                            const notifBody = `Destek talebinize yanıt geldi: "${text.substring(0, 80)}${text.length > 80 ? '...' : ''}"`;
+                            notifyUser(ticket.userId, 'notification', {
+                                type: 'support_ticket_reply', title: notifTitle, message: notifBody, ticketId: id
+                            });
+                            const ticketUser = (ticket as any).user;
+                            if (ticketUser?.pushToken) {
+                                await pushNotificationService.sendNotification({
+                                    to: ticketUser.pushToken, title: notifTitle, body: notifBody,
+                                    data: { type: 'support_ticket_reply', ticketId: id }
+                                });
+                            }
+                        } else {
+                            // Kullanıcı yanıtladı → admin'e bildir
+                            const admins = await prisma.user.findMany({
+                                where: { userType: 'ADMIN' }, select: { id: true, pushToken: true }
+                            });
+                            const notifTitle = '💬 Destek Talebine Kullanıcı Yanıtı';
+                            const notifBody = `Kullanıcı talebi yanıtladı: "${text.substring(0, 80)}${text.length > 80 ? '...' : ''}"`;
+                            for (const admin of admins) {
+                                notifyUser(admin.id, 'notification', {
+                                    type: 'support_ticket_user_reply', title: notifTitle, message: notifBody, ticketId: id
+                                });
+                                if (admin.pushToken) {
+                                    await pushNotificationService.sendNotification({
+                                        to: admin.pushToken, title: notifTitle, body: notifBody,
+                                        data: { type: 'support_ticket_user_reply', ticketId: id }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                } catch (notifErr) {
+                    console.error('⚠️ [SUPPORT] Message notification failed (non-critical):', notifErr);
+                }
+
                 return res.json({ success: true, message: 'Mesaj gönderildi', data: message });
             } catch (error) {
                 console.warn('⚠️ [SUPPORT] DB addTicketMessage failed, checking mock');
@@ -305,12 +431,7 @@ export const addTicketMessage = async (req: AuthRequest, res: Response, next: Ne
             isAdmin
         });
 
-        res.json({
-            success: true,
-            message: 'Mesaj gönderildi',
-            data: message
-        });
-
+        res.json({ success: true, message: 'Mesaj gönderildi', data: message });
     } catch (error) {
         next(error);
     }
