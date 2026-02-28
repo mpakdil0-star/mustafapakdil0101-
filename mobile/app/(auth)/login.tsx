@@ -126,24 +126,31 @@ export default function LoginScreen() {
       // Check if this is a "user not found" error
       const errorMessage = err?.message || err || 'Giriş yapılamadı';
       const isUserNotFound =
-        errorMessage.includes('kayıtlı kullanıcı bulunamadı') ||
+        errorMessage.toLowerCase().includes('bulunamadı') ||
         errorMessage.includes('USER_NOT_FOUND') ||
         err?.code === 'USER_NOT_FOUND';
 
       if (isUserNotFound) {
         showAlert(
-          'Kayıt Gerekli',
-          'Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı. Lütfen önce kayıt olun.',
+          'Hesap Bulunamadı',
+          'Bu e-posta adresi ile kayıtlı bir hesap bulunamadı. Yeni bir hesap oluşturmak ister misiniz?',
           'info',
           [
             {
-              text: 'İptal',
-              style: 'cancel',
+              text: 'Vazgeç',
+              variant: 'ghost',
               onPress: () => setAlertConfig(prev => ({ ...prev, visible: false }))
             },
             {
               text: 'Kayıt Ol',
-              onPress: () => router.push('/(auth)/role-select')
+              variant: 'primary',
+              onPress: () => {
+                setAlertConfig(prev => ({ ...prev, visible: false }));
+                router.push({
+                  pathname: '/(auth)/role-select',
+                  params: { redirectTo }
+                });
+              }
             }
           ]
         );
