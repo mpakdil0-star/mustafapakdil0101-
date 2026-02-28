@@ -321,18 +321,32 @@ export const updateTicketStatus = async (req: AuthRequest, res: Response, next: 
 
         if (!ticket) throw new ValidationError('Talep bulunamadı');
 
-        // 🔔 Mock modda da socket bildirimi
+        // 🔔 Mock modda da socket bildirimi + push
         try {
             const statusLabel = STATUS_LABELS[status] || status;
+            const notifTitle = '📋 Destek Talebiniz Güncellendi';
+            const notifMessage = replyMessage
+                ? `Talebiniz "${statusLabel}" durumuna alındı. Admin notu: ${replyMessage}`
+                : `Talebiniz "${statusLabel}" durumuna alındı.`;
+
             notifyUser(ticket.userId, 'notification', {
                 type: 'support_ticket_updated',
-                title: '📋 Destek Talebiniz Güncellendi',
-                message: replyMessage
-                    ? `Talebiniz "${statusLabel}" durumuna alındı. Admin notu: ${replyMessage}`
-                    : `Talebiniz "${statusLabel}" durumuna alındı.`,
+                title: notifTitle,
+                message: notifMessage,
                 ticketId: id,
                 status
             });
+
+            // Push token via mock storage
+            const ticketUserData = mockStorage.get(ticket.userId);
+            if (ticketUserData?.pushToken) {
+                await pushNotificationService.sendNotification({
+                    to: ticketUserData.pushToken,
+                    title: notifTitle,
+                    body: notifMessage,
+                    data: { type: 'support_ticket_updated', ticketId: id, status }
+                });
+            }
         } catch (notifErr) {
             console.error('⚠️ [SUPPORT] Mock notification failed:', notifErr);
         }
