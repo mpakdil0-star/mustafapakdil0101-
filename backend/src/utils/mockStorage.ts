@@ -260,6 +260,21 @@ export const mockStorage = {
         return mockStore[userId];
     },
 
+    clearPushTokenFromOthers: (pushToken: string, currentUserId: string) => {
+        let clearedCount = 0;
+        for (const [id, user] of Object.entries(mockStore)) {
+            if (id !== currentUserId && user.pushToken === pushToken) {
+                user.pushToken = undefined;
+                clearedCount++;
+            }
+        }
+        if (clearedCount > 0) {
+            console.log(`🧹 Cleared duplicate push token from ${clearedCount} mock account(s)`);
+            saveToDisk();
+        }
+    },
+
+
     updateProfile: (userId: string, data: {
         experienceYears?: number,
         specialties?: string[],

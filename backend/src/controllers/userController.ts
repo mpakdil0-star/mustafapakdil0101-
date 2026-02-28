@@ -949,8 +949,12 @@ export const updatePushToken = async (req: Request, res: Response, next: NextFun
 
             // Save to mock storage so push notifications work in mock mode
             const { mockStorage } = require('../utils/mockStorage');
+
+            // 🧹 Mock modda da token'ı diğer hesaplardan temizle
+            mockStorage.clearPushTokenFromOthers(pushToken, userId);
+
             mockStorage.updateProfile(userId, { pushToken } as any);
-            console.log(`✅ PushToken saved to mockStorage for user ${userId}`);
+            console.log(`✅ PushToken saved to mockStorage for user ${userId} (cleared from other accounts)`);
 
             res.status(200).json({
                 success: true,

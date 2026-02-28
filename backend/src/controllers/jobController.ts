@@ -321,6 +321,7 @@ export const createJobController = async (
             title: 'Yeni İş İlanı! ⚡',
             message: `Bölgenizde yeni ilan verildi: ${jobData.title}`,
             jobId: mockJob.id,
+            creatorId: req.user.id,
             locationPreview: targetDistrict || targetCity,
             category: jobData.category,
             serviceCategory: jobServiceCategory,
