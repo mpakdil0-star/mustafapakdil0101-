@@ -8,6 +8,7 @@ const router = Router();
 router.use(authenticate);
 
 router.post('/', toggleBlockUser);
+router.post('/toggle', toggleBlockUser); // alias kullanılan endpoint
 router.get('/', getBlockedUsers);
 
 export default router;
