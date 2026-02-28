@@ -917,6 +917,20 @@ export const updatePushToken = async (req: Request, res: Response, next: NextFun
         console.log(`   Token: ${pushToken}\n`);
 
         try {
+            // 1. Bu token'ı başka hesaplardan temizle (aynı telefon, farklı hesap senaryosu)
+            const cleared = await prisma.user.updateMany({
+                where: {
+                    pushToken: pushToken,
+                    id: { not: userId }
+                },
+                data: { pushToken: null }
+            });
+
+            if (cleared.count > 0) {
+                console.log(`🧹 Cleared duplicate push token from ${cleared.count} other account(s) - same device login detected`);
+            }
+
+            // 2. Şimdiki kullanıcıya token'ı ata
             await prisma.user.update({
                 where: { id: userId },
                 data: { pushToken },
