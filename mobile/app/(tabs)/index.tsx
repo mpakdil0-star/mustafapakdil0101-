@@ -842,7 +842,7 @@ export default function HomeScreen() {
                       rating={elec.electricianProfile?.ratingAverage || elec.electricianProfile?.rating || 0}
                       reviewCount={elec.electricianProfile?.totalReviews || elec.electricianProfile?.reviewCount || 0}
                       specialty={elec.electricianProfile?.specialties?.[0] || 'Genel Elektrik'}
-                      isVerified={elec.isVerified || elec.electricianProfile?.verificationStatus === 'VERIFIED'}
+                      isVerified={elec.isVerified === true && elec.electricianProfile?.verificationStatus === 'VERIFIED'}
                       imageUrl={elec.profileImageUrl ? getFileUrl(elec.profileImageUrl) || undefined : undefined}
                       location={elec.locations?.[0] ? `${elec.locations[0].district || ''}, ${elec.locations[0].city || ''}`.replace(/^, /, '').replace(/, $/, '') || 'Türkiye' : 'Türkiye'}
                       onPress={() => router.push(`/electricians/${elec.id}` as any)}
