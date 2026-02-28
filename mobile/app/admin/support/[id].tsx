@@ -20,6 +20,7 @@ export default function AdminTicketDetailScreen() {
 
     // Status Modal
     const [modalVisible, setModalVisible] = useState(false);
+    const [replyNote, setReplyNote] = useState('');
 
     const scrollViewRef = useRef<ScrollView>(null);
 
@@ -65,10 +66,14 @@ export default function AdminTicketDetailScreen() {
 
     const handleUpdateStatus = async (status: string) => {
         try {
-            const response = await api.put(`/support/${id}/status`, { status });
+            const response = await api.put(`/support/${id}/status`, {
+                status,
+                replyMessage: replyNote.trim() || undefined
+            });
             if (response.data.success) {
                 Alert.alert('Başarılı', 'Durum güncellendi');
                 setModalVisible(false);
+                setReplyNote('');
                 fetchTicket();
             }
         } catch (error) {
@@ -222,6 +227,14 @@ export default function AdminTicketDetailScreen() {
                         <Text style={styles.modalTitle}>Durumu Değiştir</Text>
 
                         <View style={styles.actionButtons}>
+                            <Text style={styles.label}>Admin Notu (isteğe bağlı)</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Kullanıcıya iletmek istediğiniz notu yazın..."
+                                value={replyNote}
+                                onChangeText={setReplyNote}
+                                multiline
+                            />
                             <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#3B82F6' }]} onPress={() => handleUpdateStatus('open')}>
                                 <Text style={styles.actionBtnText}>Açık</Text>
                             </TouchableOpacity>
@@ -411,6 +424,12 @@ const styles = StyleSheet.create({
     },
     actionButtons: {
         gap: 12,
+    },
+    label: {
+        fontFamily: fonts.bold,
+        fontSize: 13,
+        color: staticColors.text,
+        marginBottom: 4,
     },
     actionBtn: {
         paddingVertical: 12,

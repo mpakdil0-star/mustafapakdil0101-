@@ -47,6 +47,7 @@ export default function ProfileScreen() {
   const BOTTOM_MENU_ITEMS = [
     { icon: 'notifications-outline', label: 'Bildirim Ayarları', route: '/profile/notification_settings', color: '#6B7280' },
     { icon: 'shield-checkmark-outline', label: 'Güvenlik', route: '/profile/security', color: '#10B981' },
+    { icon: 'headset-outline', label: 'Canlı Destek', route: '/profile/support', color: '#6366F1' },
     { icon: 'document-text-outline', label: 'Kullanım Koşulları', route: '/legal/terms', color: '#6B7280' },
     { icon: 'shield-outline', label: 'KVKK Politikası', route: '/legal/kvkk', color: '#6B7280' },
     { icon: 'ban-outline', label: 'Engellenen Kullanıcılar', route: '/profile/blocked', color: '#F43F5E' },
@@ -294,7 +295,7 @@ export default function ProfileScreen() {
                     }
                   </Text>
                 </View>
-                {isElectrician && (
+                {isElectrician && user?.isVerified === true && (user as any)?.electricianProfile?.verificationStatus === 'VERIFIED' && (
                   <View style={styles.verifiedBadge}>
                     <Ionicons name="shield-checkmark" size={12} color={staticColors.white} />
                     <Text style={styles.verifiedText}>ONAYLI USTA</Text>
@@ -353,7 +354,7 @@ export default function ProfileScreen() {
           icon={<Ionicons name="log-out-outline" size={20} color={staticColors.white} />}
         />
 
-        <Text style={[styles.versionText, { color: staticColors.textLight }]}>Versiyon 1.0.4 - Premium</Text>
+        <Text style={[styles.versionText, { color: staticColors.textLight }]}>Versiyon 1.0.5 - Premium</Text>
       </ScrollView>
 
       {/* Logout Confirmation Modal - Glass Glow Theme */}
