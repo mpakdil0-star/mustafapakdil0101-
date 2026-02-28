@@ -324,7 +324,7 @@ export const login = async (data: LoginData) => {
     });
 
     if (!user) {
-      throw new UnauthorizedError('Invalid email or password');
+      throw new UnauthorizedError('Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı.');
     }
 
     // Block login for deleted accounts
@@ -347,7 +347,7 @@ export const login = async (data: LoginData) => {
     const isPasswordValid = await comparePassword(password, user.passwordHash);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedError('Invalid email or password');
+      throw new UnauthorizedError('Girdiğiniz şifre hatalı. Lütfen kontrol edip tekrar deneyin.');
     }
 
     // Update last login
