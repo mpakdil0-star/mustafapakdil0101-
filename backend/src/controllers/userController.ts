@@ -1152,7 +1152,7 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
                         totalReviews: reviewStats.totalReviews || (isKnownMockUser ? 0 : 124),
                         experienceYears: mockData.experienceYears || (isKnownMockUser ? 0 : 12),
                         bio: mockData.bio || null,
-                        verificationStatus: (mockData.isVerified ?? true) ? 'APPROVED' : 'PENDING',
+                        verificationStatus: (mockData.isVerified === true) ? 'VERIFIED' : 'PENDING',
                         completedJobsCount: mockData.completedJobsCount || 0,
                         responseTimeAvg: 2,
                         serviceCategory: mockData.serviceCategory || (mockData.specialties.some((s: string) => s.toLowerCase().includes('klima')) ? 'klima' : 'elektrik')
