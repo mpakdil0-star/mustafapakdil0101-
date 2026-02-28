@@ -236,6 +236,12 @@ function RootLayoutNav() {
     const unsubscribe = socketService.onNotification((notification) => {
       console.log('🔔 [_layout] Socket notification received:', JSON.stringify(notification));
 
+      // Ignore notifications triggered by the user themselves
+      if ((notification as any).creatorId === user?.id) {
+        console.log('🔔 [_layout] Ignored socket notification triggered by self');
+        return;
+      }
+
       // Add to Redux store
       dispatch(addNotification(notification));
       console.log('🔔 [_layout] addNotification dispatched');
