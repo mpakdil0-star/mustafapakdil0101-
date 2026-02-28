@@ -13,7 +13,7 @@ import { socketService } from '../services/socketService';
 import { authService } from '../services/authService';
 import { PremiumAlert } from '../components/common/PremiumAlert';
 import { useAppDispatch } from '../hooks/redux';
-import { addNotification, fetchNotifications } from '../store/slices/notificationSlice';
+import { addNotification, fetchNotifications, incrementUnreadCount } from '../store/slices/notificationSlice';
 import { getMe, setRequiredLegalVersion } from '../store/slices/authSlice';
 import LegalUpdateModal from '../components/legal/LegalUpdateModal';
 import { Alert } from 'react-native';
@@ -420,6 +420,9 @@ function RootLayoutNav() {
       if (data?.conversationId) {
         // Message notification
         router.push(`/messages/${data.conversationId}`);
+      } else if (data?.ticketId || data?.type === 'support_ticket_updated' || data?.type === 'support_reply' || data?.type === 'support_status') {
+        // Support ticket notification
+        router.push(`/profile/support`);
       } else if (data?.jobId) {
         // Job-related notification (new bid, bid accepted, job status, etc.)
         router.push(`/jobs/${data.jobId}`);
@@ -428,8 +431,14 @@ function RootLayoutNav() {
         router.push('/(tabs)/profile');
       } else {
         // Default: go to notifications
-        router.push('/(tabs)/profile');
+        router.push('/profile/notifications');
       }
+    });
+
+    // Increment badge when push notification received (foreground)
+    const receivedSubscription = Notifications.addNotificationReceivedListener(notification => {
+      console.log('🔔 [FOREGROUND] Push received, incrementing badge');
+      dispatch(incrementUnreadCount());
     });
 
     // Also check for initial notification (app was opened from killed state via notification)
@@ -459,8 +468,9 @@ function RootLayoutNav() {
 
     return () => {
       responseSubscription.remove();
+      receivedSubscription.remove();
     };
-  }, [router, isNavigationReady]);
+  }, [router, isNavigationReady, dispatch]);
 
   const [fontsLoaded] = useFonts(fontFiles);
 
