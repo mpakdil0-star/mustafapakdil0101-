@@ -158,18 +158,33 @@ router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Re
 router.get('/users/:id', authenticate, adminMiddleware, async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const userData = mockStorage.get(id);
 
+        // Try real database first
+        let dbAvailable = false;
+        try { await prisma.user.count(); dbAvailable = true; } catch (_) { }
+
+        if (dbAvailable && !id.startsWith('mock-')) {
+            try {
+                const dbUser = await prisma.user.findUnique({
+                    where: { id },
+                    include: {
+                        electricianProfile: true,
+                    }
+                });
+                if (dbUser) {
+                    return res.json({ success: true, data: dbUser });
+                }
+            } catch (dbErr) {
+                console.warn('Admin get user/:id DB error, falling back to mock');
+            }
+        }
+
+        // Fallback: mock storage
+        const userData = mockStorage.get(id);
         if (!userData) {
             return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı' });
         }
-
-        res.json({
-            success: true,
-            data: {
-                ...userData
-            }
-        });
+        res.json({ success: true, data: { ...userData } });
     } catch (error) {
         console.error('Admin get user error:', error);
         res.status(500).json({ success: false, message: 'Kullanıcı bilgileri yüklenirken hata oluştu' });
@@ -229,28 +244,83 @@ router.put('/users/:id', authenticate, adminMiddleware, async (req: Request, res
 // GET /admin/stats - Get comprehensive platform statistics
 router.get('/stats', authenticate, adminMiddleware, async (req: Request, res: Response) => {
     try {
-        const allUsers = getAllMockUsers();
+        // ── Try real database first ────────────────────────────────────────
+        let dbAvailable = false;
+        try { await prisma.user.count(); dbAvailable = true; } catch (_) { }
 
-        // Process users with derived userType from ID
+        if (dbAvailable) {
+            const [totalUsers, totalCitizens, totalElectricians, totalAdmins,
+                verifiedElectricians, pendingVerifications, suspendedUsers,
+                totalJobs, openJobs, completedJobs, cancelledJobs, totalBids, acceptedBids,
+                categoryGroups] = await Promise.all([
+                    prisma.user.count(),
+                    prisma.user.count({ where: { userType: 'CITIZEN' as any } }),
+                    prisma.user.count({ where: { userType: 'ELECTRICIAN' as any } }),
+                    prisma.user.count({ where: { userType: 'ADMIN' as any } }),
+                    prisma.electricianProfile.count({ where: { verificationStatus: 'VERIFIED' as any } }),
+                    prisma.electricianProfile.count({ where: { verificationStatus: 'PENDING' as any } }),
+                    prisma.user.count({ where: { isActive: false } }),
+                    prisma.jobPost.count(),
+                    prisma.jobPost.count({ where: { status: 'OPEN' as any } }),
+                    prisma.jobPost.count({ where: { status: 'COMPLETED' as any } }),
+                    prisma.jobPost.count({ where: { status: 'CANCELLED' as any } }),
+                    prisma.bid.count(),
+                    prisma.bid.count({ where: { status: 'ACCEPTED' as any } }),
+                    prisma.electricianProfile.groupBy({ by: ['serviceCategory' as any], _count: { _all: true } }),
+                ]);
+
+            // City distribution from DB users
+            const dbUsers = await prisma.user.findMany({
+                where: { userType: { not: 'ADMIN' as any } },
+                select: { userType: true, city: true }
+            });
+            const regionStats: { [city: string]: { electricians: number; citizens: number } } = {};
+            dbUsers.forEach((u: any) => {
+                const city = u.city || 'Belirtilmemiş';
+                if (!regionStats[city]) regionStats[city] = { electricians: 0, citizens: 0 };
+                if (u.userType === 'ELECTRICIAN') regionStats[city].electricians++;
+                else if (u.userType === 'CITIZEN') regionStats[city].citizens++;
+            });
+            const topRegions = Object.entries(regionStats)
+                .map(([city, c]) => ({ city, ...c, total: c.electricians + c.citizens }))
+                .sort((a, b) => b.total - a.total).slice(0, 10);
+
+            // Service categories from groupBy result
+            const serviceCategories: Record<string, number> = { elektrik: 0, cilingir: 0, klima: 0, 'beyaz-esya': 0, tesisat: 0 };
+            categoryGroups.forEach((g: any) => {
+                const cat = g.serviceCategory || 'elektrik';
+                if (cat in serviceCategories) serviceCategories[cat] = g._count._all;
+            });
+
+            return res.json({
+                success: true,
+                data: {
+                    users: { total: totalUsers, citizens: totalCitizens, electricians: totalElectricians, admins: totalAdmins },
+                    serviceCategories,
+                    status: { verified: verifiedElectricians, pending: pendingVerifications, suspended: suspendedUsers },
+                    activity: {
+                        jobs: { total: totalJobs, open: openJobs, completed: completedJobs, cancelled: cancelledJobs },
+                        bids: { total: totalBids, accepted: acceptedBids },
+                        totalCredits: 0
+                    },
+                    regions: topRegions
+                }
+            });
+        }
+
+        // ── Fallback: mock storage ─────────────────────────────────────────
+        const allUsers = getAllMockUsers();
         const usersWithType = Object.entries(allUsers).map(([id, data]: [string, any]) => {
             let userType = data.userType;
             if (!userType) {
-                if (id.endsWith('-ELECTRICIAN')) {
-                    userType = 'ELECTRICIAN';
-                } else if (id.endsWith('-ADMIN')) {
-                    userType = 'ADMIN';
-                } else {
-                    userType = 'CITIZEN';
-                }
+                if (id.endsWith('-ELECTRICIAN')) userType = 'ELECTRICIAN';
+                else if (id.endsWith('-ADMIN')) userType = 'ADMIN';
+                else userType = 'CITIZEN';
             }
             return { ...data, id, userType };
         });
-
-        // Filter by user types
         const citizens = usersWithType.filter((u: any) => u.userType === 'CITIZEN');
         const electricians = usersWithType.filter((u: any) => u.userType === 'ELECTRICIAN');
-
-        // Service category breakdown
         const serviceCategories = {
             elektrik: electricians.filter((u: any) => u.serviceCategory === 'elektrik' || !u.serviceCategory).length,
             cilingir: electricians.filter((u: any) => u.serviceCategory === 'cilingir').length,
@@ -258,117 +328,39 @@ router.get('/stats', authenticate, adminMiddleware, async (req: Request, res: Re
             'beyaz-esya': electricians.filter((u: any) => u.serviceCategory === 'beyaz-esya').length,
             tesisat: electricians.filter((u: any) => u.serviceCategory === 'tesisat').length
         };
-
-        // Regional distribution - count by city from locations
         const regionStats: { [city: string]: { electricians: number; citizens: number } } = {};
-
         usersWithType.forEach((user: any) => {
-            const locations = user.locations || [];
-            const city = locations[0]?.city || user.city || 'Belirtilmemiş';
-
-            if (!regionStats[city]) {
-                regionStats[city] = { electricians: 0, citizens: 0 };
-            }
-
-            if (user.userType === 'ELECTRICIAN') {
-                regionStats[city].electricians++;
-            } else if (user.userType === 'CITIZEN') {
-                regionStats[city].citizens++;
-            }
+            const city = user.locations?.[0]?.city || user.city || 'Belirtilmemiş';
+            if (!regionStats[city]) regionStats[city] = { electricians: 0, citizens: 0 };
+            if (user.userType === 'ELECTRICIAN') regionStats[city].electricians++;
+            else if (user.userType === 'CITIZEN') regionStats[city].citizens++;
         });
-
-        // Convert to sorted array (top cities first)
         const topRegions = Object.entries(regionStats)
-            .map(([city, counts]) => ({
-                city,
-                electricians: counts.electricians,
-                citizens: counts.citizens,
-                total: counts.electricians + counts.citizens
-            }))
-            .sort((a, b) => b.total - a.total)
-            .slice(0, 10); // Top 10 cities
+            .map(([city, c]) => ({ city, ...c, total: c.electricians + c.citizens }))
+            .sort((a, b) => b.total - a.total).slice(0, 10);
 
-        // Load job and bid stats from mock storage
         let jobStats = { total: 0, open: 0, completed: 0, cancelled: 0 };
         let bidStats = { total: 0, accepted: 0 };
         let totalCredits = 0;
-
-        try {
-            // Get bids from mock storage file
-            const fs = require('fs');
-            const path = require('path');
-            const bidsFile = path.join(process.cwd(), 'data', 'mock-bids.json');
-            if (fs.existsSync(bidsFile)) {
-                const bidsData = JSON.parse(fs.readFileSync(bidsFile, 'utf8'));
-                // Handle both array and object formats
-                const bids = Array.isArray(bidsData) ? bidsData : Object.values(bidsData);
-                bidStats.total = bids.length;
-                bidStats.accepted = bids.filter((b: any) => b.status === 'ACCEPTED').length;
-            }
-        } catch (e) {
-            // Bids file not available
-            console.error('Error reading bids file:', e);
-        }
-
-        try {
-            // Get jobs from mock storage file
-            const fs = require('fs');
-            const path = require('path');
-            const jobsFile = path.join(process.cwd(), 'data', 'mock-jobs.json');
-            if (fs.existsSync(jobsFile)) {
-                const jobsData = JSON.parse(fs.readFileSync(jobsFile, 'utf8'));
-                // Handle both array and object formats
-                const jobs = Array.isArray(jobsData) ? jobsData : Object.values(jobsData);
-                jobStats.total = jobs.length;
-                jobStats.open = jobs.filter((j: any) => j.status === 'OPEN' || j.status === 'BIDDING').length;
-                jobStats.completed = jobs.filter((j: any) => j.status === 'COMPLETED').length;
-                jobStats.cancelled = jobs.filter((j: any) => j.status === 'CANCELLED').length;
-            }
-        } catch (e) {
-            // Jobs file not available
-            console.error('Error reading jobs file:', e);
-        }
-
-        // Calculate total credits in platform
-        electricians.forEach((u: any) => {
-            totalCredits += Number(u.creditBalance) || 0;
-        });
-
-        const stats = {
-            // User Summary
-            users: {
-                total: usersWithType.length,
-                citizens: citizens.length,
-                electricians: electricians.length,
-                admins: usersWithType.filter((u: any) => u.userType === 'ADMIN').length
-            },
-            // Service Categories
-            serviceCategories,
-            // Status
-            status: {
-                verified: electricians.filter((u: any) => u.isVerified).length,
-                pending: usersWithType.filter((u: any) => u.verificationStatus === 'PENDING').length,
-                suspended: usersWithType.filter((u: any) => u.isActive === false).length
-            },
-            // Platform Activity
-            activity: {
-                jobs: jobStats,
-                bids: bidStats,
-                totalCredits: Math.round(totalCredits)
-            },
-            // Regional Distribution
-            regions: topRegions
-        };
+        electricians.forEach((u: any) => { totalCredits += Number(u.creditBalance) || 0; });
 
         res.json({
             success: true,
-            data: stats
+            data: {
+                users: { total: usersWithType.length, citizens: citizens.length, electricians: electricians.length, admins: usersWithType.filter((u: any) => u.userType === 'ADMIN').length },
+                serviceCategories,
+                status: { verified: electricians.filter((u: any) => u.isVerified).length, pending: usersWithType.filter((u: any) => u.verificationStatus === 'PENDING').length, suspended: usersWithType.filter((u: any) => u.isActive === false).length },
+                activity: { jobs: jobStats, bids: bidStats, totalCredits: Math.round(totalCredits) },
+                regions: topRegions
+            }
         });
     } catch (error) {
         console.error('Admin stats error:', error);
         res.status(500).json({ success: false, message: 'İstatistikler yüklenirken hata oluştu' });
     }
 });
+
+
 
 // GET /admin/verifications - Get all pending verifications
 router.get('/verifications', authenticate, adminMiddleware, adminController.getAllVerifications);

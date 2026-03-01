@@ -271,32 +271,45 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
         const user = (req as any).user;
         if (user.userType !== 'ADMIN') throw new Error('Unauthorized');
 
-        // 1. Total Users
+        // ── Try real database first ─────────────────────────────────────
+        if (isDatabaseAvailable) {
+            try {
+                const [totalUsers, totalElectricians, totalCitizens, activeJobs, pendingVerifications] = await Promise.all([
+                    prisma.user.count({ where: { userType: { not: 'ADMIN' as any } } }),
+                    prisma.user.count({ where: { userType: 'ELECTRICIAN' as any } }),
+                    prisma.user.count({ where: { userType: 'CITIZEN' as any } }),
+                    prisma.jobPost.count({ where: { status: 'OPEN' as any } }),
+                    prisma.electricianProfile.count({ where: { verificationStatus: 'PENDING' as any } }),
+                ]);
+
+                // Revenue: sum of credit purchase transactions (still from mock for now)
+                const transactions = mockTransactionStorage.getAllTransactions();
+                const totalRevenue = transactions
+                    .filter(t => t.transactionType === 'PURCHASE')
+                    .reduce((sum, t) => sum + t.amount, 0);
+
+                return res.json({
+                    success: true,
+                    data: { totalUsers, totalElectricians, totalCitizens, activeJobs, pendingVerifications, totalRevenue }
+                });
+            } catch (dbErr: any) {
+                console.warn('⚠️ getDashboardStats DB failed, falling back to mock:', dbErr.message);
+            }
+        }
+
+        // ── Fallback: mockStorage ────────────────────────────────────────
         const allUsers = mockStorage.getAllUsers();
-        // Since getAllUsers returns an array, we can filter
         const users = Object.values(allUsers);
         const totalUsers = users.length;
         const totalElectricians = users.filter((u: any) => u.userType === 'ELECTRICIAN').length;
         const totalCitizens = users.filter((u: any) => u.userType === 'CITIZEN').length;
 
-        // 2. Active Jobs
-        // Ensure jobs are loaded
         if (jobStoreById.size === 0) loadMockJobs();
-
-        // Count OPEN jobs
         let activeJobsCount = 0;
-        jobStoreById.forEach((job) => {
-            if (job.status === 'OPEN') activeJobsCount++;
-        });
+        jobStoreById.forEach((job) => { if (job.status === 'OPEN') activeJobsCount++; });
 
-        // Fallback removed per user request (only show dynamic jobs)
-        // if (activeJobsCount === 0) { ... }
-
-        // 3. Pending Verifications
         const pendingCount = users.filter((u: any) => u.verificationStatus === 'PENDING').length;
 
-        // 4. Total Revenue (Mock)
-        // Sum of all purchase transactions
         const transactions = mockTransactionStorage.getAllTransactions();
         const totalRevenue = transactions
             .filter(t => t.transactionType === 'PURCHASE')
@@ -317,6 +330,7 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
         next(error);
     }
 };
+
 
 /**
  * Get All Jobs for Administration
