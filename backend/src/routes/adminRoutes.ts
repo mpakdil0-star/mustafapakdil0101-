@@ -23,21 +23,84 @@ const adminMiddleware = (req: Request, res: Response, next: any) => {
 router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Response) => {
     try {
         const { search, userType: filterType, page = '1', limit = '20' } = req.query;
+        const pageNum = parseInt(page as string, 10);
+        const limitNum = parseInt(limit as string, 10);
+        const skip = (pageNum - 1) * limitNum;
 
-        // Get all users from mock storage
+        // ── Try real database first ──────────────────────────────────────
+        let dbAvailable = false;
+        try {
+            const count = await prisma.user.count();
+            dbAvailable = true;
+        } catch (_) { /* DB not reachable */ }
+
+        if (dbAvailable) {
+            const where: any = {
+                isActive: true,
+                userType: { not: 'ADMIN' as any },
+            };
+            if (filterType && filterType !== 'ALL') {
+                where.userType = filterType;
+            }
+            if (search) {
+                const s = (search as string).toLowerCase();
+                where.OR = [
+                    { fullName: { contains: s, mode: 'insensitive' } },
+                    { email: { contains: s, mode: 'insensitive' } },
+                    { phone: { contains: s } },
+                ];
+            }
+
+            const [dbUsers, total] = await Promise.all([
+                prisma.user.findMany({
+                    where,
+                    skip,
+                    take: limitNum,
+                    orderBy: { createdAt: 'desc' },
+                    include: { electricianProfile: { select: { creditBalance: true, completedJobsCount: true, serviceCategory: true, verificationStatus: true } } }
+                }),
+                prisma.user.count({ where })
+            ]);
+
+            const mapped = dbUsers.map((u: any) => ({
+                id: u.id,
+                fullName: u.fullName,
+                email: u.email,
+                phone: u.phone || '',
+                userType: u.userType,
+                profileImageUrl: u.profileImageUrl,
+                creditBalance: Number(u.electricianProfile?.creditBalance ?? 0),
+                isVerified: u.isVerified,
+                isActive: u.isActive,
+                verificationStatus: u.electricianProfile?.verificationStatus ?? null,
+                completedJobsCount: u.electricianProfile?.completedJobsCount ?? 0,
+                serviceCategory: u.electricianProfile?.serviceCategory ?? null,
+                createdAt: u.createdAt,
+            }));
+
+            return res.json({
+                success: true,
+                data: {
+                    users: mapped,
+                    pagination: {
+                        total,
+                        page: pageNum,
+                        limit: limitNum,
+                        totalPages: Math.ceil(total / limitNum),
+                    }
+                }
+            });
+        }
+
+        // ── Fallback: mock storage ───────────────────────────────────────
         const allUsers = getAllMockUsers();
 
         let users = Object.entries(allUsers).map(([id, data]: [string, any]) => {
-            // Determine userType from ID suffix if not explicitly set in data
             let derivedUserType = data.userType;
             if (!derivedUserType) {
-                if (id.endsWith('-ELECTRICIAN')) {
-                    derivedUserType = 'ELECTRICIAN';
-                } else if (id.endsWith('-ADMIN')) {
-                    derivedUserType = 'ADMIN';
-                } else {
-                    derivedUserType = 'CITIZEN';
-                }
+                if (id.endsWith('-ELECTRICIAN')) derivedUserType = 'ELECTRICIAN';
+                else if (id.endsWith('-ADMIN')) derivedUserType = 'ADMIN';
+                else derivedUserType = 'CITIZEN';
             }
             return {
                 id,
@@ -58,12 +121,9 @@ router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Re
             };
         });
 
-        // Filter by userType
         if (filterType && filterType !== 'ALL') {
             users = users.filter(u => u.userType === filterType);
         }
-
-        // Search filter
         if (search) {
             const searchLower = (search as string).toLowerCase();
             users = users.filter(u =>
@@ -73,12 +133,8 @@ router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Re
             );
         }
 
-        // Pagination
-        const pageNum = parseInt(page as string, 10);
-        const limitNum = parseInt(limit as string, 10);
         const startIndex = (pageNum - 1) * limitNum;
-        const endIndex = startIndex + limitNum;
-        const paginatedUsers = users.slice(startIndex, endIndex);
+        const paginatedUsers = users.slice(startIndex, startIndex + limitNum);
 
         res.json({
             success: true,
