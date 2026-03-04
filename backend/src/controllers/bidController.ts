@@ -98,6 +98,25 @@ export const createBidController = async (
       if (bid.jobPost?.citizenId) {
         try {
           console.log(`📢 Sending bid_received notification to citizen ${bid.jobPost.citizenId}`);
+
+          // Push bildirimi için vatandaşın pushToken'ını al
+          const prisma = require('../config/database').default;
+          const citizen = await prisma.user.findUnique({
+            where: { id: bid.jobPost.citizenId },
+            select: { pushToken: true }
+          });
+
+          // Push bildirimi gönder (uygulama arka planda veya kapalıyken)
+          if (citizen?.pushToken) {
+            console.log(`📲 [CONTROLLER] Sending PUSH to citizen ${bid.jobPost.citizenId}`);
+            const pushNotificationService = require('../services/pushNotificationService').default;
+            pushNotificationService.sendNotification({
+              to: citizen.pushToken,
+              title: 'Yeni Teklif Aldınız! 💰',
+              body: `${bid.electrician?.fullName || 'Bir usta'} "${bid.jobPost?.title || 'ilanınız'}" için ${bid.amount} ₺ teklif verdi.`,
+              data: { jobId: bid.jobPostId, type: 'bid_received' }
+            }).catch((err: any) => console.error('Push Notification Error (Controller):', err));
+          }
           const notificationPayload = {
             id: `bid-notif-${Date.now()}`,
             type: 'bid_received',
