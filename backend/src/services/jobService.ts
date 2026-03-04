@@ -99,11 +99,11 @@ export const jobService = {
     // Check if citizen exists - skip if database is not available or it's a mock user
     if (isDatabaseAvailable && !citizenId.startsWith('mock-')) {
       const citizen = await prisma.user.findUnique({
-        where: { id: citizenId, userType: 'CITIZEN' },
+        where: { id: citizenId },
       });
 
-      if (!citizen) {
-        throw new NotFoundError('Citizen not found');
+      if (!citizen || (citizen.userType !== 'CITIZEN' && citizen.userType !== 'ADMIN')) {
+        throw new NotFoundError('User not authorized to create jobs or not found');
       }
     }
 
