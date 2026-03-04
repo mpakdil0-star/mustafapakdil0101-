@@ -105,7 +105,7 @@ export const createJobController = async (
       });
     }
 
-    if (req.user.userType !== 'CITIZEN') {
+    if (req.user.userType !== 'CITIZEN' && req.user.userType !== 'ADMIN') {
       return res.status(403).json({
         success: false,
         error: { message: 'Only citizens can create job posts' },
