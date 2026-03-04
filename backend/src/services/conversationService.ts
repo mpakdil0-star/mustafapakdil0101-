@@ -203,7 +203,8 @@ export const conversationService = {
             throw new Error('DATABASE_NOT_CONNECTED');
         }
 
-        const conversation = await prisma.conversation.findFirst({
+        // First try strict participant check
+        let conversation = await prisma.conversation.findFirst({
             where: {
                 id: conversationId,
                 OR: [
@@ -237,8 +238,56 @@ export const conversationService = {
             },
         });
 
+        // Fallback: If not found via participant check, try by ID only
+        // This handles cases where conversation was created but participant IDs don't match
         if (!conversation) {
-            throw new AppError('Konuşma bulunamadı', 404);
+            console.warn(`⚠️ getConversation: User ${userId} not found as participant, trying by ID only...`);
+            conversation = await prisma.conversation.findUnique({
+                where: { id: conversationId },
+                include: {
+                    participant1: {
+                        select: { id: true, fullName: true, profileImageUrl: true, userType: true },
+                    },
+                    participant2: {
+                        select: { id: true, fullName: true, profileImageUrl: true, userType: true },
+                    },
+                    jobPost: {
+                        select: { id: true, title: true },
+                    },
+                },
+            });
+
+            if (!conversation) {
+                throw new AppError('Konuşma bulunamadı', 404);
+            }
+
+            // Verify user has messages in this conversation (loose access check)
+            const hasMessages = await prisma.message.findFirst({
+                where: {
+                    conversationId,
+                    OR: [
+                        { senderId: userId },
+                        { recipientId: userId },
+                    ],
+                },
+            });
+
+            // Also check if user is the citizen of the related job post
+            let isJobOwner = false;
+            if (conversation.jobPostId) {
+                const job = await prisma.jobPost.findUnique({
+                    where: { id: conversation.jobPostId },
+                    select: { citizenId: true },
+                });
+                isJobOwner = job?.citizenId === userId;
+            }
+
+            if (!hasMessages && !isJobOwner) {
+                console.warn(`⚠️ getConversation: User ${userId} has no messages and is not job owner. Denying access.`);
+                throw new AppError('Konuşma bulunamadı', 404);
+            }
+
+            console.log(`✅ getConversation: User ${userId} granted access via fallback (hasMessages: ${!!hasMessages}, isJobOwner: ${isJobOwner})`);
         }
 
         const otherUser = conversation.participant1Id === userId
@@ -309,8 +358,8 @@ export const conversationService = {
      * Konuşma mesajlarını getir
      */
     async getMessages(conversationId: string, userId: string, page = 1, limit = 50) {
-        // Erişim kontrolü
-        const conversation = await prisma.conversation.findFirst({
+        // Erişim kontrolü - önce participant kontrolü
+        let conversation = await prisma.conversation.findFirst({
             where: {
                 id: conversationId,
                 OR: [
@@ -320,8 +369,39 @@ export const conversationService = {
             },
         });
 
+        // Fallback: participant kontrolü başarısızsa, ID ile bul + mesaj/iş sahibi kontrolü yap
         if (!conversation) {
-            throw new AppError('Konuşma bulunamadı veya erişim reddedildi', 404);
+            console.warn(`⚠️ getMessages: User ${userId} not found as participant, trying fallback...`);
+            conversation = await prisma.conversation.findUnique({
+                where: { id: conversationId },
+            });
+
+            if (!conversation) {
+                throw new AppError('Konuşma bulunamadı veya erişim reddedildi', 404);
+            }
+
+            // Verify user has messages in this conversation or is job owner
+            const hasMessages = await prisma.message.findFirst({
+                where: {
+                    conversationId,
+                    OR: [{ senderId: userId }, { recipientId: userId }],
+                },
+            });
+
+            let isJobOwner = false;
+            if (conversation.jobPostId) {
+                const job = await prisma.jobPost.findUnique({
+                    where: { id: conversation.jobPostId },
+                    select: { citizenId: true },
+                });
+                isJobOwner = job?.citizenId === userId;
+            }
+
+            if (!hasMessages && !isJobOwner) {
+                throw new AppError('Konuşma bulunamadı veya erişim reddedildi', 404);
+            }
+
+            console.log(`✅ getMessages: User ${userId} granted access via fallback`);
         }
 
         const skip = (page - 1) * limit;
