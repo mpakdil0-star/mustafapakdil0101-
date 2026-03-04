@@ -115,6 +115,19 @@ export const bidService = {
         throw new ValidationError('Yetersiz kredi. Teklif verebilmek için en az 1 krediniz olmalıdır. Profilinizden telefonunuzu doğrulayarak hediye kredi kazanabilirsiniz.');
       }
 
+      // Convert estimatedStartDate to proper ISO-8601 DateTime if it's a date-only string
+      let parsedStartDate: Date | undefined = undefined;
+      if (estimatedStartDate) {
+        const dateStr = String(estimatedStartDate);
+        // If it's a date-only format like "2026-03-04", convert to full ISO DateTime
+        if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/) && !dateStr.includes('T')) {
+          parsedStartDate = new Date(dateStr + 'T00:00:00.000Z');
+          console.log(`📅 Converted estimatedStartDate: "${dateStr}" → "${parsedStartDate.toISOString()}"`);
+        } else {
+          parsedStartDate = new Date(dateStr);
+        }
+      }
+
       // Create bid
       const bid = await prisma.bid.create({
         data: {
@@ -122,7 +135,7 @@ export const bidService = {
           electricianId,
           amount: amount.toString(),
           estimatedDuration,
-          estimatedStartDate,
+          estimatedStartDate: parsedStartDate,
           message,
           status: BidStatus.PENDING,
         },
