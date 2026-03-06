@@ -175,7 +175,11 @@ export default function CreateJobScreen() {
     // Handle category param (legacy)
     if (params.category && typeof params.category === 'string') {
       const catName = params.category;
-      if (JOB_CATEGORIES.some(cat => cat.name === catName)) {
+      const foundCat = JOB_CATEGORIES.find(cat => cat.name === catName);
+      if (foundCat) {
+        setServiceCategory(foundCat.parentCategory);
+        setCategory(catName);
+      } else if (JOB_CATEGORIES.some(cat => cat.name === catName)) {
         setCategory(catName);
       }
     }
