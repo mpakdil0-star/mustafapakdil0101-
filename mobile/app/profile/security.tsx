@@ -221,15 +221,15 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        padding: spacing.lg,
+        padding: 16,
         paddingBottom: 40,
     },
     infoBox: {
         flexDirection: 'row',
-        padding: 16,
-        borderRadius: 20,
-        marginBottom: 24,
-        gap: 12,
+        padding: 14,
+        borderRadius: 16,
+        marginBottom: 20,
+        gap: 10,
         borderWidth: 1,
     },
     infoIconWrapper: {
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     },
     infoTitle: {
         fontFamily: fonts.bold,
-        fontSize: 16,
+        fontSize: 15,
         color: staticColors.text,
         marginBottom: 4,
     },
@@ -252,32 +252,32 @@ const styles = StyleSheet.create({
         lineHeight: 18,
     },
     formCard: {
-        padding: 20,
-        borderRadius: 24,
+        padding: 16,
+        borderRadius: 20,
         backgroundColor: staticColors.white,
-        marginBottom: 20,
+        marginBottom: 16,
     },
     sectionTitle: {
         fontFamily: fonts.bold,
-        fontSize: 16,
+        fontSize: 15,
         color: staticColors.text,
-        marginBottom: 20,
-    },
-    input: {
         marginBottom: 16,
     },
+    input: {
+        marginBottom: 12,
+    },
     saveButton: {
-        marginTop: 8,
+        marginTop: 4,
     },
     featureCard: {
-        padding: 16,
-        borderRadius: 20,
+        padding: 14,
+        borderRadius: 16,
         backgroundColor: staticColors.white,
     },
     featureRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
+        gap: 12,
     },
     featureIconWrapper: {
         width: 40,

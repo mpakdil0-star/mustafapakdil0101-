@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        padding: spacing.screenPadding,
+        padding: 16,
         paddingBottom: 40,
     },
     loadingContainer: {
@@ -334,11 +334,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     overviewContainer: {
-        marginBottom: spacing.lg,
+        marginBottom: 16,
     },
     earningsCard: {
         alignItems: 'center',
-        padding: spacing.xl,
+        padding: 20,
     },
     earningsLabel: {
         fontFamily: fonts.medium,
@@ -348,9 +348,9 @@ const styles = StyleSheet.create({
     },
     earningsValue: {
         fontFamily: fonts.bold,
-        fontSize: 32,
+        fontSize: 28,
         color: staticColors.white,
-        marginBottom: spacing.md,
+        marginBottom: 12,
     },
     periodBadge: {
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -366,25 +366,25 @@ const styles = StyleSheet.create({
     statsGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: spacing.md,
-        marginBottom: spacing.lg,
+        gap: 12,
+        marginBottom: 16,
     },
     statCard: {
-        width: '47%',
-        padding: spacing.md,
+        width: '48%',
+        padding: 12,
         alignItems: 'center',
     },
     iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: spacing.sm,
+        marginBottom: 8,
     },
     statValue: {
         fontFamily: fonts.bold,
-        fontSize: 20,
+        fontSize: 18,
         marginBottom: 2,
     },
     statLabel: {
@@ -393,14 +393,14 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     chartCard: {
-        padding: spacing.lg,
-        marginBottom: spacing.md,
+        padding: 16,
+        marginBottom: 12,
     },
     chartHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: spacing.lg,
+        marginBottom: 16,
     },
     chartTitle: {
         fontFamily: fonts.semiBold,

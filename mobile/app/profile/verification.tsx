@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        padding: spacing.lg,
+        padding: 16,
     },
     loadingContainer: {
         flex: 1,
@@ -402,31 +402,31 @@ const styles = StyleSheet.create({
     },
     // Header
     headerInfo: {
-        marginBottom: 24,
+        marginBottom: 20,
     },
     title: {
         fontFamily: fonts.bold,
-        fontSize: 24,
+        fontSize: 22,
         color: staticColors.text,
-        marginBottom: 8,
+        marginBottom: 6,
     },
     subtitle: {
         fontFamily: fonts.medium,
-        fontSize: 15,
+        fontSize: 14,
         color: staticColors.textSecondary,
-        lineHeight: 22,
+        lineHeight: 20,
     },
     // Form Card
     formCard: {
         backgroundColor: staticColors.white,
-        borderRadius: 20,
-        padding: 24,
+        borderRadius: 16,
+        padding: 20,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.05,
-        shadowRadius: 12,
+        shadowRadius: 10,
         elevation: 4,
-        marginBottom: 24,
+        marginBottom: 20,
     },
     inputLabel: {
         fontFamily: fonts.bold,
@@ -436,9 +436,9 @@ const styles = StyleSheet.create({
     },
     helperText: {
         fontFamily: fonts.regular,
-        fontSize: 13,
+        fontSize: 12,
         color: staticColors.textSecondary,
-        marginBottom: 16,
+        marginBottom: 12,
     },
     boldText: {
         fontFamily: fonts.bold,
@@ -451,12 +451,12 @@ const styles = StyleSheet.create({
     },
     // Type Selection
     typeGrid: {
-        marginBottom: 24,
+        marginBottom: 20,
     },
     typeItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
+        paddingVertical: 10,
         borderBottomWidth: 1,
         borderBottomColor: '#F1F5F9',
     },
@@ -491,11 +491,11 @@ const styles = StyleSheet.create({
     uploadRow: {
         flexDirection: 'row',
         gap: 12,
-        marginBottom: 24,
+        marginBottom: 20,
     },
     mainUploadBtn: {
         flex: 2,
-        height: 120,
+        height: 100,
         backgroundColor: staticColors.primary + '08',
         borderRadius: 16,
         justifyContent: 'center',
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     },
     subUploadBtn: {
         flex: 1,
-        height: 120,
+        height: 100,
         backgroundColor: '#F8FAFC',
         borderRadius: 16,
         justifyContent: 'center',
@@ -556,8 +556,8 @@ const styles = StyleSheet.create({
         marginBottom: 0,
     },
     submitBtn: {
-        height: 56,
-        borderRadius: 16,
+        height: 52,
+        borderRadius: 14,
         marginBottom: 16,
     },
     footerNote: {
