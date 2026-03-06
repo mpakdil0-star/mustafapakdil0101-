@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, Dimensions, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../../components/common/Card';
@@ -36,7 +36,7 @@ interface Stats {
 }
 
 // Basit çubuk grafik komponenti
-const BarChart = ({ data, maxHeight = 120 }: { data: WeeklyEarning[]; maxHeight?: number }) => {
+const BarChart = ({ data, maxHeight = 90 }: { data: WeeklyEarning[]; maxHeight?: number }) => {
     const colors = useAppColors();
     const maxAmount = Math.max(...data.map(d => d.amount), 1);
 
@@ -158,98 +158,102 @@ export default function StatisticsScreen() {
     const weeklyTotal = stats?.weeklyEarnings?.reduce((sum, item) => sum + item.amount, 0) || 0;
 
     return (
-        <ScrollView
-            style={[styles.container, { backgroundColor: colors.backgroundDark }]}
-            contentContainerStyle={styles.content}
-            refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-        >
+        <View style={[styles.container, { backgroundColor: colors.backgroundDark }]}>
+            <StatusBar barStyle="dark-content" />
             <PremiumHeader
                 title="İstatistiklerim"
                 subtitle="Performans ve Kazanç Özeti"
                 showBackButton
+                variant="transparent"
             />
-
-            <View style={styles.overviewContainer}>
-                <Card style={[styles.earningsCard, { backgroundColor: colors.primary, shadowColor: colors.primary }]} elevated>
-                    <Text style={styles.earningsLabel}>Toplam Kazanç</Text>
-                    <Text style={styles.earningsValue}>
-                        {stats?.totalEarnings.toLocaleString('tr-TR')} ₺
-                    </Text>
-                    <View style={styles.periodBadge}>
-                        <Text style={styles.periodText}>Tüm Zamanlar</Text>
-                    </View>
-                </Card>
-            </View>
-
-            <View style={styles.statsGrid}>
-                <Card style={styles.statCard}>
-                    <View style={[styles.iconContainer, { backgroundColor: colors.primaryLight + '20' }]}>
-                        <Ionicons name="briefcase" size={24} color={colors.primary} />
-                    </View>
-                    <Text style={styles.statValue}>{stats?.totalBids}</Text>
-                    <Text style={styles.statLabel}>Verilen Teklif</Text>
-                </Card>
-
-                <Card style={styles.statCard}>
-                    <View style={[styles.iconContainer, { backgroundColor: colors.warning + '20' }]}>
-                        <Ionicons name="hammer" size={24} color={colors.warning} />
-                    </View>
-                    <Text style={styles.statValue}>{stats?.activeJobs}</Text>
-                    <Text style={styles.statLabel}>Devam Eden</Text>
-                </Card>
-
-                <Card style={styles.statCard}>
-                    <View style={[styles.iconContainer, { backgroundColor: colors.success + '20' }]}>
-                        <Ionicons name="checkmark-circle" size={24} color={colors.success} />
-                    </View>
-                    <Text style={styles.statValue}>{stats?.completedJobs}</Text>
-                    <Text style={styles.statLabel}>Tamamlanan</Text>
-                </Card>
-
-                <Card style={styles.statCard}>
-                    <View style={[styles.iconContainer, { backgroundColor: colors.info + '20' }]}>
-                        <Ionicons name="star" size={24} color={colors.info} />
-                    </View>
-                    <Text style={styles.statValue}>{Number(stats?.rating || 0).toFixed(1)}</Text>
-                    <Text style={styles.statLabel}>{stats?.reviewCount} Değerlendirme</Text>
-                </Card>
-            </View>
-
-            {/* Haftalık Kazanç Grafiği */}
-            <Card style={[styles.chartCard, { shadowColor: colors.primary }]} elevated>
-                <View style={styles.chartHeader}>
-                    <View>
-                        <Text style={[styles.chartTitle, { color: colors.text }]}>Haftalık Kazanç</Text>
-                        <Text style={[styles.chartSubtitle, { color: colors.textSecondary }]}>Son 7 gün: {weeklyTotal.toLocaleString('tr-TR')} ₺</Text>
-                    </View>
-                    <Ionicons name="bar-chart-outline" size={20} color={colors.textSecondary} />
+            <ScrollView
+                style={styles.container}
+                contentContainerStyle={styles.content}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                }
+            >
+                <View style={styles.overviewContainer}>
+                    <Card style={[styles.earningsCard, { backgroundColor: colors.primary, shadowColor: colors.primary }]} elevated>
+                        <Text style={styles.earningsLabel}>Toplam Kazanç</Text>
+                        <Text style={styles.earningsValue}>
+                            {stats?.totalEarnings.toLocaleString('tr-TR')} ₺
+                        </Text>
+                        <View style={styles.periodBadge}>
+                            <Text style={styles.periodText}>Tüm Zamanlar</Text>
+                        </View>
+                    </Card>
                 </View>
-                {stats?.weeklyEarnings && stats.weeklyEarnings.length > 0 ? (
-                    <BarChart data={stats.weeklyEarnings} />
-                ) : (
-                    <View style={styles.noDataContainer}>
-                        <Text style={[styles.noDataText, { color: colors.textSecondary }]}>Henüz veri yok</Text>
-                    </View>
-                )}
-            </Card>
 
-            {/* Kategori Dağılımı */}
-            <Card style={[styles.chartCard, { shadowColor: colors.primary }]} elevated>
-                <View style={styles.chartHeader}>
-                    <Text style={[styles.chartTitle, { color: colors.text }]}>Kategori Dağılımı</Text>
-                    <Ionicons name="pie-chart-outline" size={20} color={colors.textSecondary} />
+                <View style={styles.statsGrid}>
+                    <Card style={styles.statCard}>
+                        <View style={[styles.iconContainer, { backgroundColor: colors.primaryLight + '20' }]}>
+                            <Ionicons name="briefcase" size={24} color={colors.primary} />
+                        </View>
+                        <Text style={styles.statValue}>{stats?.totalBids}</Text>
+                        <Text style={styles.statLabel}>Verilen Teklif</Text>
+                    </Card>
+
+                    <Card style={styles.statCard}>
+                        <View style={[styles.iconContainer, { backgroundColor: colors.warning + '20' }]}>
+                            <Ionicons name="hammer" size={24} color={colors.warning} />
+                        </View>
+                        <Text style={styles.statValue}>{stats?.activeJobs}</Text>
+                        <Text style={styles.statLabel}>Devam Eden</Text>
+                    </Card>
+
+                    <Card style={styles.statCard}>
+                        <View style={[styles.iconContainer, { backgroundColor: colors.success + '20' }]}>
+                            <Ionicons name="checkmark-circle" size={24} color={colors.success} />
+                        </View>
+                        <Text style={styles.statValue}>{stats?.completedJobs}</Text>
+                        <Text style={styles.statLabel}>Tamamlanan</Text>
+                    </Card>
+
+                    <Card style={styles.statCard}>
+                        <View style={[styles.iconContainer, { backgroundColor: colors.info + '20' }]}>
+                            <Ionicons name="star" size={24} color={colors.info} />
+                        </View>
+                        <Text style={styles.statValue}>{Number(stats?.rating || 0).toFixed(1)}</Text>
+                        <Text style={styles.statLabel}>{stats?.reviewCount} Değerlendirme</Text>
+                    </Card>
                 </View>
-                {stats?.categoryDistribution && stats.categoryDistribution.length > 0 ? (
-                    <HorizontalBarChart data={stats.categoryDistribution} />
-                ) : (
-                    <View style={styles.noDataContainer}>
-                        <Text style={[styles.noDataText, { color: colors.textSecondary }]}>Henüz veri yok</Text>
+
+                {/* Haftalık Kazanç Grafiği */}
+                <Card style={[styles.chartCard, { shadowColor: colors.primary }]} elevated>
+                    <View style={styles.chartHeader}>
+                        <View>
+                            <Text style={[styles.chartTitle, { color: colors.text }]}>Haftalık Kazanç</Text>
+                            <Text style={[styles.chartSubtitle, { color: colors.textSecondary }]}>Son 7 gün: {weeklyTotal.toLocaleString('tr-TR')} ₺</Text>
+                        </View>
+                        <Ionicons name="bar-chart-outline" size={20} color={colors.textSecondary} />
                     </View>
-                )}
-            </Card>
-        </ScrollView>
+                    {stats?.weeklyEarnings && stats.weeklyEarnings.length > 0 ? (
+                        <BarChart data={stats.weeklyEarnings} />
+                    ) : (
+                        <View style={styles.noDataContainer}>
+                            <Text style={[styles.noDataText, { color: colors.textSecondary }]}>Henüz veri yok</Text>
+                        </View>
+                    )}
+                </Card>
+
+                {/* Kategori Dağılımı */}
+                <Card style={[styles.chartCard, { shadowColor: colors.primary }]} elevated>
+                    <View style={styles.chartHeader}>
+                        <Text style={[styles.chartTitle, { color: colors.text }]}>Kategori Dağılımı</Text>
+                        <Ionicons name="pie-chart-outline" size={20} color={colors.textSecondary} />
+                    </View>
+                    {stats?.categoryDistribution && stats.categoryDistribution.length > 0 ? (
+                        <HorizontalBarChart data={stats.categoryDistribution} />
+                    ) : (
+                        <View style={styles.noDataContainer}>
+                            <Text style={[styles.noDataText, { color: colors.textSecondary }]}>Henüz veri yok</Text>
+                        </View>
+                    )}
+                </Card>
+            </ScrollView>
+        </View>
     );
 }
 
@@ -258,21 +262,21 @@ const barStyles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-end',
-        height: 160,
-        paddingTop: 20,
+        height: 120,
+        paddingTop: 16,
     },
     barContainer: {
         flex: 1,
         alignItems: 'center',
     },
     barWrapper: {
-        height: 120,
+        height: 90,
         justifyContent: 'flex-end',
         width: '100%',
         alignItems: 'center',
     },
     bar: {
-        width: 24,
+        width: 20,
         borderRadius: 4,
         minHeight: 4,
     },
