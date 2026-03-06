@@ -59,7 +59,7 @@ export const FeaturedElectrician = ({
                 <Ionicons
                     key={i}
                     name={i <= Math.floor(rating) ? "star" : (i - rating < 1 ? "star-half" : "star-outline")}
-                    size={14}
+                    size={12}
                     color="#FBBF24"
                 />
             );
@@ -123,14 +123,14 @@ const styles = StyleSheet.create({
     container: {
         width: '100%',
         backgroundColor: staticColors.white,
-        borderRadius: 20,
-        padding: 12,
-        marginBottom: 12,
+        borderRadius: 16,
+        padding: 10,
+        marginBottom: 8,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.06,
-        shadowRadius: 10,
-        elevation: 3,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 6,
+        elevation: 2,
         borderWidth: 1,
         borderColor: 'rgba(0, 0, 0, 0.03)',
     },
@@ -139,21 +139,21 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     avatarContainer: {
-        width: 70,
-        height: 70,
-        borderRadius: 35,
+        width: 50,
+        height: 50,
+        borderRadius: 25,
         position: 'relative',
-        marginRight: 16,
+        marginRight: 12,
     },
     avatar: {
         width: '100%',
         height: '100%',
-        borderRadius: 35,
+        borderRadius: 25,
     },
     avatarPlaceholder: {
         width: '100%',
         height: '100%',
-        borderRadius: 35,
+        borderRadius: 25,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -175,20 +175,20 @@ const styles = StyleSheet.create({
     },
     name: {
         fontFamily: fonts.bold,
-        fontSize: 17,
+        fontSize: 15,
         color: staticColors.black,
-        marginBottom: 4,
+        marginBottom: 2,
     },
     ratingRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 6,
+        marginBottom: 4,
     },
     ratingText: {
         fontFamily: fonts.bold,
-        fontSize: 15,
+        fontSize: 13,
         color: staticColors.black,
-        marginRight: 6,
+        marginRight: 4,
     },
     starsContainer: {
         flexDirection: 'row',
@@ -202,17 +202,17 @@ const styles = StyleSheet.create({
     },
     reviewText: {
         fontFamily: fonts.semiBold, // Increased weight for readability
-        fontSize: 12,
+        fontSize: 11,
         color: '#94A3B8',
     },
     locationContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: 2,
     },
     locationText: {
         fontFamily: fonts.semiBold, // Increased weight for readability
-        fontSize: 12,
+        fontSize: 11,
         color: '#94A3B8',
     },
 });
