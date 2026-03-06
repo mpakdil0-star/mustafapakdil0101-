@@ -174,11 +174,21 @@ export default function ChatScreen() {
             }
         });
 
+        // Okundu bilgisi dinle - tüm mesajları okundu olarak güncelle
+        const unsubRead = socketService.onMessagesRead((data) => {
+            if (data.conversationId === conversationId) {
+                setMessages(prev => prev.map(m =>
+                    m.senderId === user?.id ? { ...m, isRead: true } : m
+                ));
+            }
+        });
+
         return () => {
             socketService.leaveConversation(conversationId);
             unsubMessage();
             unsubTyping();
             unsubStopTyping();
+            unsubRead();
         };
     }, [conversationId, user?.id]);
 
@@ -323,6 +333,37 @@ export default function ChatScreen() {
         }
     };
 
+    // WhatsApp tarzı okundu tiki bileşeni
+    const ReadReceipt = ({ message, isMyMessage }: { message: Message, isMyMessage: boolean }) => {
+        if (!isMyMessage) return null;
+
+        const isTempMessage = message.id.startsWith('temp-');
+        const isRead = message.isRead;
+
+        if (isTempMessage) {
+            // Gönderiliyor: tek gri tik
+            return (
+                <Ionicons name="checkmark" size={12} color="rgba(255,255,255,0.6)" style={{ marginLeft: 3 }} />
+            );
+        } else if (isRead) {
+            // Okundu: çift mavi tik (beyaz + parlak)
+            return (
+                <View style={{ flexDirection: 'row', marginLeft: 3 }}>
+                    <Ionicons name="checkmark" size={12} color="rgba(255,255,255,1)" style={{ marginRight: -6 }} />
+                    <Ionicons name="checkmark" size={12} color="rgba(255,255,255,1)" />
+                </View>
+            );
+        } else {
+            // Gönderildi / iletildi: çift soluk tik
+            return (
+                <View style={{ flexDirection: 'row', marginLeft: 3 }}>
+                    <Ionicons name="checkmark" size={12} color="rgba(255,255,255,0.55)" style={{ marginRight: -6 }} />
+                    <Ionicons name="checkmark" size={12} color="rgba(255,255,255,0.55)" />
+                </View>
+            );
+        }
+    };
+
     const renderMessage = ({ item, index }: { item: Message, index: number }) => {
         const isMyMessage = item.senderId === user?.id;
         const showAvatar = !isMyMessage && (index === 0 || messages[index - 1].senderId !== item.senderId);
@@ -354,15 +395,19 @@ export default function ChatScreen() {
                     ]}>
                         {item.content}
                     </Text>
-                    <Text style={[
-                        styles.messageTime,
-                        isMyMessage ? styles.myMessageTime : styles.otherMessageTime
-                    ]}>
-                        {new Date(item.createdAt).toLocaleTimeString('tr-TR', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                        })}
-                    </Text>
+                    {/* Saat + okundu tiki satırı */}
+                    <View style={styles.messageFooter}>
+                        <Text style={[
+                            styles.messageTime,
+                            isMyMessage ? styles.myMessageTime : styles.otherMessageTime
+                        ]}>
+                            {new Date(item.createdAt).toLocaleTimeString('tr-TR', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                            })}
+                        </Text>
+                        <ReadReceipt message={item} isMyMessage={isMyMessage} />
+                    </View>
                 </View>
             </View>
         );
@@ -611,6 +656,12 @@ const styles = StyleSheet.create({
     otherMessageTime: {
         color: staticColors.textLight,
         textAlign: 'left',
+    },
+    messageFooter: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        marginTop: 4,
     },
     bottomSection: {
         backgroundColor: 'transparent',
