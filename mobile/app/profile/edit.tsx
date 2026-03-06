@@ -23,7 +23,7 @@ const SPECIALTIES_BY_CATEGORY: Record<string, { id: string; label: string; icon:
     elektrik: [
         { id: 'arizaOnarim', label: 'Arıza Onarım', icon: 'build-outline' },
         { id: 'tesisatYenileme', label: 'Tesisat Yenileme', icon: 'construct-outline' },
-        { id: 'prizAnahtar', label: 'Priz/Anahtar Montajı', icon: 'flash-outline' },
+        { id: 'prizAnahtar', label: 'Priz/Anahtar Montajı', icon: 'radio-outline' },
         { id: 'aydinlatma', label: 'Aydınlatma Sistemleri', icon: 'bulb-outline' },
         { id: 'sigortaPanosu', label: 'Sigorta Panosu', icon: 'grid-outline' },
         { id: 'topraklama', label: 'Topraklama', icon: 'earth-outline' },
@@ -638,8 +638,8 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        padding: spacing.md,
-        paddingBottom: 30,
+        padding: 12,
+        paddingBottom: 24,
     },
     mainCard: {
         borderRadius: 24,
@@ -651,7 +651,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     sectionPadding: {
-        padding: 18,
+        padding: 14,
     },
     divider: {
         height: 1,
@@ -687,7 +687,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     input: {
-        marginBottom: 12,
+        marginBottom: 8,
     },
     inputNoMargin: {
         marginBottom: 0,
@@ -701,9 +701,9 @@ const styles = StyleSheet.create({
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
-        marginTop: 16,
-        marginBottom: 10,
+        gap: 8,
+        marginTop: 12,
+        marginBottom: 8,
     },
     sectionHeaderNoMargin: {
         flexDirection: 'row',
@@ -739,7 +739,7 @@ const styles = StyleSheet.create({
     expertiseGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 8,
+        gap: 6,
         marginTop: 6,
     },
     expertiseItemWrapper: {
@@ -747,7 +747,7 @@ const styles = StyleSheet.create({
     },
     expertiseItem: {
         paddingHorizontal: 8,
-        paddingVertical: 8,
+        paddingVertical: 6,
         borderRadius: 12,
         borderWidth: 1,
         borderColor: '#E2E8F0',
@@ -861,8 +861,8 @@ const styles = StyleSheet.create({
     },
     serviceAreaCard: {
         backgroundColor: '#F8FAFC',
-        borderRadius: 18,
-        padding: 14,
+        borderRadius: 16,
+        padding: 12,
         borderWidth: 1,
         borderColor: '#E2E8F0',
     },
@@ -981,12 +981,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: staticColors.white,
-        borderRadius: 20,
-        padding: 16,
-        marginBottom: 16,
+        borderRadius: 18,
+        padding: 14,
+        marginBottom: 12,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.08,
-        shadowRadius: 12,
+        shadowRadius: 10,
         elevation: 3,
     },
     previewAvatarWrapper: {
@@ -1013,9 +1013,9 @@ const styles = StyleSheet.create({
     },
     previewName: {
         fontFamily: fonts.bold,
-        fontSize: 17,
+        fontSize: 16,
         color: staticColors.text,
-        marginBottom: 6,
+        marginBottom: 4,
     },
     previewMetaRow: {
         flexDirection: 'row',
@@ -1057,8 +1057,8 @@ const styles = StyleSheet.create({
     },
     // Save Button Container & Changes Indicator
     saveButtonContainer: {
-        marginTop: spacing.lg,
-        marginBottom: 30,
+        marginTop: 16,
+        marginBottom: 20,
     },
     changesIndicator: {
         flexDirection: 'row',
