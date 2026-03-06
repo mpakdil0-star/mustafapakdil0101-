@@ -328,8 +328,10 @@ export default function QuickCreateScreen() {
             validationErrors.push('• Detaylı adres en az 10 karakter olmalı');
         }
 
-        // 6. Check description character limit (max 500)
-        if (description.length > 500) {
+        // 6. Check description character limit (min 10, max 500)
+        if (!description || description.trim().length < 10) {
+            validationErrors.push('• Sorun açıklaması en az 10 karakter olmalı');
+        } else if (description.length > 500) {
             validationErrors.push('• Açıklama en fazla 500 karakter olabilir');
         }
 
@@ -598,7 +600,7 @@ export default function QuickCreateScreen() {
 
                         {/* Açıklama Alanı */}
                         <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Sorunu Açıklayın <Text style={styles.optionalLabel}>(Opsiyonel)</Text></Text>
+                            <Text style={styles.label}>Sorunu Açıklayın <Text style={[styles.optionalLabel, { color: staticColors.error }]}>* (En az 10 karakter)</Text></Text>
                             <TextInput
                                 style={styles.textArea}
                                 placeholder="Örnek: Mutfak prizleri çalışmıyor, sigorta attı. En kısa sürede bakılması gerekiyor..."
