@@ -16,28 +16,34 @@ import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { colors } from '../../constants/colors';
 import { fonts } from '../../constants/typography';
-
 const slides = [
     {
         id: '1',
-        title: 'İhtiyacın Olan Uzman',
-        description: 'Elektrikten tesisata, montajdan tamire... Evindeki tüm işler için aradığın usta yanında.',
-        icon: 'map',
+        title: 'Güvenilir Usta Bulma',
+        description: 'Elektrikten tesisata, montajdan boyaya... Evindeki tüm işler için aradığın güvenilir usta sadece bir tık uzağında.',
+        icon: 'search-outline',
         color: '#3B82F6', // Blue
     },
     {
         id: '2',
-        title: 'Konumuna En Yakın',
-        description: 'Sana en yakın ustaları haritada gör, profillerini incele ve saniyeler içinde ulaş.',
-        icon: 'location',
-        color: '#8B5CF6', // Violet
+        title: 'Yeni İş Fırsatları',
+        description: 'Hizmet veren usta mısın? Hemen profilini oluştur, çevrendeki güncel iş taleplerini görüntüle ve kazancını anında artır.',
+        icon: 'briefcase-outline',
+        color: '#10B981', // Green
     },
     {
         id: '3',
-        title: 'Güvenle Çalış',
-        description: 'Gerçek müşteri yorumlarını oku, teklifleri karşılaştır ve onaylı ustalarla işini güvenle çöz.',
-        icon: 'shield-checkmark',
-        color: '#EC4899', // Pink
+        title: 'Anında Teklif ve Mesaj',
+        description: 'Hızlı iletişim her şeydir! Bildirimlerini açık tutarak yeni işlerden, teklif ve mesajlardan anında haberdar ol.',
+        icon: 'notifications-outline',
+        color: '#F59E0B', // Amber
+    },
+    {
+        id: '4',
+        title: 'Birlikte Güvenle Çalış',
+        description: 'Gerçek müşteri yorumlarını oku, teklifleri karşılaştır ve onaylı ustalarla işini tamamen güvenle çöz.',
+        icon: 'shield-checkmark-outline',
+        color: '#8B5CF6', // Violet
     },
 ];
 
@@ -191,9 +197,8 @@ export default function OnboardingScreen() {
                         ]}
                     >
                         {currentIndex === slides.length - 1 ? (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                                 <Text style={styles.nextButtonText}>Hemen Başla</Text>
-                                <Ionicons name="rocket-outline" size={20} color="#FFF" />
                             </View>
                         ) : (
                             <Ionicons name="arrow-forward" size={24} color="#FFF" />
