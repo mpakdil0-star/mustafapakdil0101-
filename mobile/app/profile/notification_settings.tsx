@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Switch, ScrollView, Platform, ImageBackground, ActivityIndicator, TouchableOpacity, Linking, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, Switch, ScrollView, Platform, ImageBackground, ActivityIndicator, TouchableOpacity, Linking, Alert, AppState } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { Card } from '../../components/common/Card';
@@ -72,9 +72,11 @@ export default function NotificationsScreen() {
     const [savingKey, setSavingKey] = useState<string | null>(null);
     const [systemPermission, setSystemPermission] = useState<'granted' | 'denied' | 'unknown'>('unknown');
     const colors = useAppColors();
+    const appState = useRef(AppState.currentState);
+    const previousPermission = useRef<string>('unknown');
 
-    // Check system-level notification permission
-    const checkSystemPermission = useCallback(async () => {
+    // Check system-level notification permission and auto-register token if granted
+    const checkSystemPermission = useCallback(async (autoRegister = false) => {
         try {
             const { Platform: RNPlatform } = await import('react-native');
             const Constants = (await import('expo-constants')).default;
@@ -82,17 +84,48 @@ export default function NotificationsScreen() {
 
             const Notifications = await import('expo-notifications');
             const { status } = await Notifications.getPermissionsAsync();
-            setSystemPermission(status === 'granted' ? 'granted' : 'denied');
+            const newPermission = status === 'granted' ? 'granted' : 'denied';
+
+            // If permission just changed from denied to granted, auto-register push token
+            if (autoRegister && previousPermission.current === 'denied' && newPermission === 'granted') {
+                console.log('🔔 Permission changed to granted — auto-registering push token...');
+                const result = await authService.registerPushToken();
+                if (result === 'granted') {
+                    console.log('✅ Push token auto-registered after settings change!');
+                    // Also update local preference to pushEnabled = true
+                    const updatedPrefs = { ...preferences, pushEnabled: true };
+                    setPreferences(updatedPrefs);
+                    await SecureStore.setItemAsync(NOTIFICATION_PREFS_KEY, JSON.stringify(updatedPrefs));
+                    try { await api.put('/users/notification-preferences', updatedPrefs); } catch { }
+                }
+            }
+
+            previousPermission.current = newPermission;
+            setSystemPermission(newPermission);
         } catch {
             setSystemPermission('unknown');
         }
-    }, []);
+    }, [preferences]);
 
     // Load preferences on mount + check system permission
     useEffect(() => {
         loadPreferences();
         checkSystemPermission();
     }, []);
+
+    // Listen to AppState changes (user returns from system settings)
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', (nextAppState) => {
+            if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+                // User just returned to the app — re-check permission
+                console.log('📱 App returned to foreground — checking notification permission...');
+                checkSystemPermission(true);
+            }
+            appState.current = nextAppState;
+        });
+
+        return () => subscription.remove();
+    }, [checkSystemPermission]);
 
     const loadPreferences = async () => {
         try {
@@ -241,11 +274,7 @@ export default function NotificationsScreen() {
                     <TouchableOpacity
                         style={styles.permissionWarningBanner}
                         activeOpacity={0.85}
-                        onPress={async () => {
-                            await Linking.openSettings();
-                            // Re-check permission when user returns from settings
-                            setTimeout(() => checkSystemPermission(), 1000);
-                        }}
+                        onPress={() => Linking.openSettings()}
                     >
                         <Ionicons name="warning-outline" size={20} color="#fff" />
                         <View style={{ flex: 1, marginLeft: 12 }}>
