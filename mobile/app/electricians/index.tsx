@@ -361,7 +361,10 @@ export default function ElectriciansListScreen() {
                                         <Text style={styles.name} numberOfLines={1}>{electrician.name}</Text>
                                         <View style={styles.ratingBox}>
                                             <Ionicons name="star" size={12} color="#F59E0B" />
-                                            <Text style={styles.ratingVal}>{electrician.rating.toFixed(1)}</Text>
+                                            <Text style={styles.ratingVal}>
+                                                {electrician.rating.toFixed(1)}
+                                                <Text style={styles.reviewCountTxt}> ({electrician.reviewCount} Yorum)</Text>
+                                            </Text>
                                         </View>
                                     </View>
 
@@ -619,6 +622,12 @@ const styles = StyleSheet.create({
         fontFamily: fonts.bold,
         fontSize: 12,
         color: '#D97706',
+    },
+    reviewCountTxt: {
+        fontFamily: fonts.medium,
+        fontSize: 10,
+        color: '#D97706',
+        opacity: 0.8,
     },
     specialtyText: {
         fontFamily: fonts.medium,
