@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Switch, ScrollView, Platform, ImageBackground, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Switch, ScrollView, Platform, ImageBackground, ActivityIndicator, TouchableOpacity, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { Card } from '../../components/common/Card';
@@ -70,11 +70,28 @@ export default function NotificationsScreen() {
     const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
     const [isLoading, setIsLoading] = useState(true);
     const [savingKey, setSavingKey] = useState<string | null>(null);
+    const [systemPermission, setSystemPermission] = useState<'granted' | 'denied' | 'unknown'>('unknown');
     const colors = useAppColors();
 
-    // Load preferences on mount
+    // Check system-level notification permission
+    const checkSystemPermission = useCallback(async () => {
+        try {
+            const { Platform: RNPlatform } = await import('react-native');
+            const Constants = (await import('expo-constants')).default;
+            if (Constants.appOwnership === 'expo' && RNPlatform.OS === 'android') return;
+
+            const Notifications = await import('expo-notifications');
+            const { status } = await Notifications.getPermissionsAsync();
+            setSystemPermission(status === 'granted' ? 'granted' : 'denied');
+        } catch {
+            setSystemPermission('unknown');
+        }
+    }, []);
+
+    // Load preferences on mount + check system permission
     useEffect(() => {
         loadPreferences();
+        checkSystemPermission();
     }, []);
 
     const loadPreferences = async () => {
@@ -130,8 +147,31 @@ export default function NotificationsScreen() {
                     // Enable push: re-register push token
                     console.log('🔔 Push notifications enabled - re-registering push token');
                     try {
-                        await authService.registerPushToken();
-                        console.log('✅ Push token re-registered');
+                        const result = await authService.registerPushToken();
+                        if (result === 'needs_settings') {
+                            // Permission permanently denied – open system settings
+                            Alert.alert(
+                                'Bildirim İzni Gerekli',
+                                'Daha önce bildirim iznini reddettiniz. Açmak için telefon ayarlarını kullanmanız gerekiyor.',
+                                [
+                                    {
+                                        text: 'Vazgeç', style: 'cancel', onPress: () => {
+                                            // Revert toggle back to false
+                                            setPreferences(prev => ({ ...prev, pushEnabled: false }));
+                                            SecureStore.setItemAsync(NOTIFICATION_PREFS_KEY, JSON.stringify({ ...newPreferences, pushEnabled: false }));
+                                        }
+                                    },
+                                    { text: 'Ayarları Aç', onPress: () => Linking.openSettings() }
+                                ]
+                            );
+                            return;
+                        } else if (result === 'granted') {
+                            console.log('✅ Push token re-registered');
+                            setSystemPermission('granted');
+                        } else {
+                            console.warn('Push token registration failed:', result);
+                            setSystemPermission('denied');
+                        }
                     } catch (e) {
                         console.warn('Could not re-register push token:', e);
                     }
@@ -195,6 +235,31 @@ export default function NotificationsScreen() {
                         </Text>
                     </View>
                 </Card>
+
+                {/* System Permission Warning Banner */}
+                {systemPermission === 'denied' && (
+                    <TouchableOpacity
+                        style={styles.permissionWarningBanner}
+                        activeOpacity={0.85}
+                        onPress={async () => {
+                            await Linking.openSettings();
+                            // Re-check permission when user returns from settings
+                            setTimeout(() => checkSystemPermission(), 1000);
+                        }}
+                    >
+                        <Ionicons name="warning-outline" size={20} color="#fff" />
+                        <View style={{ flex: 1, marginLeft: 12 }}>
+                            <Text style={styles.permissionWarningTitle}>Sistem bildirimleri kapalı</Text>
+                            <Text style={styles.permissionWarningDesc}>
+                                Bildirimleri açmak için telefon ayarlarına gidin.
+                            </Text>
+                        </View>
+                        <View style={styles.permissionWarningBtn}>
+                            <Text style={styles.permissionWarningBtnText}>Ayarları Aç</Text>
+                            <Ionicons name="chevron-forward" size={14} color="#fff" />
+                        </View>
+                    </TouchableOpacity>
+                )}
 
                 <Text style={styles.sectionHeading}>Genel Bildirimler</Text>
                 <Card variant="default" style={[styles.menuGlassCard, { shadowColor: colors.primary }]}>
@@ -389,5 +454,43 @@ const styles = StyleSheet.create({
         fontFamily: fonts.medium,
         fontSize: 14,
         color: staticColors.textSecondary,
+    },
+    permissionWarningBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F59E0B',
+        borderRadius: 16,
+        padding: 14,
+        marginBottom: 20,
+        shadowColor: '#F59E0B',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    permissionWarningTitle: {
+        fontFamily: fonts.bold,
+        fontSize: 14,
+        color: '#fff',
+        marginBottom: 2,
+    },
+    permissionWarningDesc: {
+        fontFamily: fonts.medium,
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.85)',
+    },
+    permissionWarningBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        gap: 2,
+    },
+    permissionWarningBtnText: {
+        fontFamily: fonts.bold,
+        fontSize: 12,
+        color: '#fff',
     },
 });

@@ -137,10 +137,10 @@ export const authService = {
     await apiService.clearTokens();
   },
 
-  async registerPushToken() {
+  async registerPushToken(): Promise<'granted' | 'denied' | 'needs_settings' | undefined> {
     try {
       // check if running in Expo Go on Android
-      const { Platform } = await import('react-native');
+      const { Platform, Linking } = await import('react-native');
       const Constants = (await import('expo-constants')).default;
       const isExpoGo = Constants.appOwnership === 'expo';
 
@@ -157,19 +157,23 @@ export const authService = {
         return;
       }
 
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      const { status: existingStatus, canAskAgain } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
-      // Note: Premium themed modal is handled in the UI layer (_layout.tsx)
-      // before this service is called, to ensure consistent UX.
       if (existingStatus !== 'granted') {
+        if (!canAskAgain) {
+          // Permission permanently denied – user must go to system settings
+          console.warn('Push Notification: Permission permanently denied, must open system settings');
+          return 'needs_settings';
+        }
+        // Can still ask – show system dialog
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
 
       if (finalStatus !== 'granted') {
         console.warn('Push Notification: Failed to get push token for push notification!');
-        return;
+        return 'denied';
       }
 
       const token = (await Notifications.getExpoPushTokenAsync({
@@ -190,7 +194,7 @@ export const authService = {
         });
       }
 
-      return token;
+      return 'granted';
     } catch (error) {
       console.error('Push Notification Registration Error:', error);
     }
