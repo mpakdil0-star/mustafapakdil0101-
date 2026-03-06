@@ -889,9 +889,10 @@ export default function HomeScreen() {
 
               <View style={styles.hiwSteps}>
                 {(isElectrician ? [
-                  { id: 1, title: 'İşleri Gör', desc: 'Bölgende açılan uygun ilanları listele.', icon: 'search-outline', color: '#3B82F6' },
-                  { id: 2, title: 'Teklif Ver', desc: 'İlgilendiğin işe rekabetçi fiyatını sun.', icon: 'pricetag-outline', color: '#F59E0B' },
-                  { id: 3, title: 'İşi Al', desc: 'Müşteri seni seçsin, işi yapıp kazan.', icon: 'trophy-outline', color: '#10B981' },
+                  { id: 1, title: 'Bölgeni Seç', desc: 'Profilinden hizmet vermek istediğin ilçeleri seçerek yalnızca sana uygun yeni iş bildirimlerini al.', icon: 'map-outline', color: '#8B5CF6' },
+                  { id: 2, title: 'İşleri İncele', desc: 'Açılan ilanların tahmini bütçesini, arıza fotoğraflarını ve konumunu değerlendir.', icon: 'search-outline', color: '#3B82F6' },
+                  { id: 3, title: 'Teklif Ver', desc: 'Ne kadar sürede yapabileceğini ve rekabetçi fiyatını belirterek müşteriye teklifini sun.', icon: 'document-text-outline', color: '#F59E0B' },
+                  { id: 4, title: 'İletişim & Teslim', desc: 'Müşteri teklifini onayladığında, uygulama üzerinden yazış veya arayarak işi temizce teslim et.', icon: 'checkmark-circle-outline', color: '#10B981' },
                 ] : [
                   { id: 1, title: 'İlan Ver', desc: 'İhtiyacını anlat, ilanını ücretsiz oluştur.', icon: 'create-outline', color: '#3B82F6' },
                   { id: 2, title: 'Teklif Al', desc: 'Bölgenin ustalarından fiyat al.', icon: 'chatbubbles-outline', color: '#8B5CF6' },
