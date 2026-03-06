@@ -910,11 +910,26 @@ export const updatePushToken = async (req: Request, res: Response, next: NextFun
         const userId = (req as any).user.id;
         const { pushToken } = req.body;
 
-        if (!pushToken) {
-            return res.status(400).json({
-                success: false,
-                error: { message: 'Push token is required' },
-            });
+        // Allow null/empty to CLEAR the push token (user disabled notifications)
+        if (pushToken === null || pushToken === undefined || pushToken === '') {
+            console.log(`\n🔕 CLEARING PUSH TOKEN for user ${userId} (notifications disabled)\n`);
+            try {
+                await prisma.user.update({
+                    where: { id: userId },
+                    data: { pushToken: null },
+                });
+                return res.status(200).json({
+                    success: true,
+                    message: 'Push token cleared - notifications disabled',
+                });
+            } catch (dbError: any) {
+                const { mockStorage } = require('../utils/mockStorage');
+                mockStorage.updateProfile(userId, { pushToken: undefined } as any);
+                return res.status(200).json({
+                    success: true,
+                    message: 'Push token cleared (test mode)',
+                });
+            }
         }
 
         console.log(`\n🔔 PUSH TOKEN RECEIVED for user ${userId}:`);
