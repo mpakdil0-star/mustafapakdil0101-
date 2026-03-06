@@ -9,6 +9,7 @@ import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import api from '../../services/api';
+import { authService } from '../../services/authService';
 
 const NOTIFICATION_PREFS_KEY = 'notification_preferences';
 
@@ -114,7 +115,30 @@ export default function NotificationsScreen() {
             // Save to SecureStore first (instant persistence)
             await SecureStore.setItemAsync(NOTIFICATION_PREFS_KEY, JSON.stringify(newPreferences));
 
-            // Sync to backend
+            // If pushEnabled is toggled, actually register/unregister the push token
+            if (key === 'pushEnabled') {
+                if (value === false) {
+                    // Disable push: clear push token on backend
+                    console.log('🔕 Push notifications disabled - clearing push token');
+                    try {
+                        await api.post('/users/push-token', { pushToken: null });
+                        console.log('✅ Push token cleared on backend');
+                    } catch (e) {
+                        console.warn('Could not clear push token on backend:', e);
+                    }
+                } else {
+                    // Enable push: re-register push token
+                    console.log('🔔 Push notifications enabled - re-registering push token');
+                    try {
+                        await authService.registerPushToken();
+                        console.log('✅ Push token re-registered');
+                    } catch (e) {
+                        console.warn('Could not re-register push token:', e);
+                    }
+                }
+            }
+
+            // Sync preferences to backend
             try {
                 await api.put('/users/notification-preferences', newPreferences);
             } catch (apiError) {

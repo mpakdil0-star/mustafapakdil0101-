@@ -460,7 +460,7 @@ export default function CreateJobScreen() {
       return;
     }
 
-    if (user.userType !== 'CITIZEN') {
+    if (user.userType !== 'CITIZEN' && user.userType !== 'ADMIN') {
       showAlert('Yetki Hatası', 'Sadece vatandaşlar ilan oluşturabilir.', 'error');
       return;
     }
