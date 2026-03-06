@@ -110,8 +110,8 @@ export default function CreateJobScreen() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [isCategoryExpanded, setIsCategoryExpanded] = useState(false);
-  const [isUrgencyExpanded, setIsUrgencyExpanded] = useState(false);
+  const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
+  const [isUrgencyExpanded, setIsUrgencyExpanded] = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdJobId, setCreatedJobId] = useState<string | null>(null);
 
@@ -552,7 +552,7 @@ export default function CreateJobScreen() {
           {/* Main Form Section */}
           <Card variant="default" style={styles.sectionCard}>
             {/* İlan Detayı */}
-            <View style={styles.sectionHeader}>
+            <View style={[styles.sectionHeader, { marginTop: 0 }]}>
               <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '10' }]}>
                 <Ionicons name="document-text-outline" size={20} color={colors.primary} />
               </View>
@@ -1039,8 +1039,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 12,
-    paddingBottom: 40,
+    padding: 10,
+    paddingBottom: 30,
   },
   infoBox: {
     flexDirection: 'row',
@@ -1105,32 +1105,32 @@ const styles = StyleSheet.create({
     color: staticColors.textSecondary,
   },
   sectionCard: {
-    padding: 12,
-    marginBottom: 10,
-    borderRadius: 20,
+    padding: 10,
+    marginBottom: 8,
+    borderRadius: 18,
     backgroundColor: staticColors.white,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    marginTop: 24, // More spacing between sections
-    gap: 12,
+    marginBottom: 10,
+    marginTop: 12,
+    gap: 10,
   },
   sectionIconWrapper: {
-    width: 38, // Larger icons
-    height: 38,
-    borderRadius: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   sectionTitle: {
     fontFamily: fonts.extraBold,
-    fontSize: 16, // Slightly larger
+    fontSize: 15,
     color: staticColors.text,
   },
   inputContainer: {
-    marginBottom: 16, // More spacing between inputs
+    marginBottom: 10,
   },
   label: {
     fontFamily: fonts.semiBold, // Bolder font
@@ -1140,36 +1140,39 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   input: {
-    backgroundColor: '#F3F4F6', // Light gray background
+    backgroundColor: '#F3F4F6',
     borderRadius: 12,
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
     fontFamily: fonts.regular,
     fontSize: 14,
     color: staticColors.text,
-    borderWidth: 0, // No border
+    borderWidth: 0,
   },
   inputError: {
     borderColor: staticColors.error,
   },
   textArea: {
-    backgroundColor: '#F3F4F6', // Light gray background
+    backgroundColor: '#F3F4F6',
     borderRadius: 12,
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     fontFamily: fonts.regular,
     fontSize: 14,
     color: staticColors.text,
-    borderWidth: 0, // No border
-    height: 90,
+    borderWidth: 0,
+    height: 72,
   },
   textAreaSmall: {
-    backgroundColor: '#F3F4F6', // Light gray background
+    backgroundColor: '#F3F4F6',
     borderRadius: 12,
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     fontFamily: fonts.regular,
     fontSize: 14,
     color: staticColors.text,
-    borderWidth: 0, // No border
-    height: 56,
+    borderWidth: 0,
+    height: 48,
   },
   errorText: {
     color: staticColors.error,
@@ -1265,20 +1268,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F5F6FA', // Light gray background
+    backgroundColor: '#F5F6FA',
     borderWidth: 1.5,
     borderStyle: 'dashed',
-    borderRadius: 16, // More rounded
-    borderColor: 'rgba(139, 92, 246, 0.3)', // Purple tint
-    padding: 14,
-    gap: 8,
+    borderRadius: 14,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    padding: 10,
+    gap: 6,
   },
   imageActionText: {
     fontFamily: fonts.bold,
     fontSize: 14,
   },
   imagePreviewScroll: {
-    marginTop: 16,
+    marginTop: 10,
   },
   imagePreviewWrapper: {
     position: 'relative',
@@ -1299,55 +1302,55 @@ const styles = StyleSheet.create({
   budgetInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F6FA', // Light gray background
-    borderRadius: 16, // More rounded
+    backgroundColor: '#F5F6FA',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)', // Very subtle border
-    paddingHorizontal: 14,
+    borderColor: 'rgba(0,0,0,0.04)',
+    paddingHorizontal: 12,
   },
   budgetIcon: {
-    marginRight: 10,
+    marginRight: 8,
   },
   budgetInput: {
     flex: 1,
-    paddingVertical: 14,
-    paddingRight: 10, // Extra padding for placeholder text
+    paddingVertical: 11,
+    paddingRight: 10,
     fontFamily: fonts.bold,
-    fontSize: 14, // Slightly smaller to fit placeholder
+    fontSize: 14,
     color: staticColors.text,
   },
   submitBtn: {
-    marginTop: 20, // More spacing before button
-    height: 56,
-    borderRadius: 18,
+    marginTop: 14,
+    height: 52,
+    borderRadius: 16,
     shadowColor: staticColors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25, // Softer shadow
-    shadowRadius: 16, // More spread
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
   finalNote: {
     textAlign: 'center',
     fontFamily: fonts.medium,
-    fontSize: 12,
+    fontSize: 11,
     color: staticColors.textLight,
-    marginTop: 16,
-    lineHeight: 18,
+    marginTop: 10,
+    lineHeight: 16,
   },
   expandableHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   sectionHeaderNoMargin: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   expandableContent: {
-    marginTop: 4,
-    marginBottom: 12,
+    marginTop: 2,
+    marginBottom: 8,
   },
   divider: {
     height: 1,
