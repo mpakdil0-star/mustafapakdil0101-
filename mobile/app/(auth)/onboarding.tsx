@@ -27,7 +27,7 @@ const slides = [
     {
         id: '2',
         title: 'Yeni İş Fırsatları',
-        description: 'Hizmet veren usta mısın? Hemen profilini oluştur, çevrendeki güncel iş taleplerini görüntüle ve kazancını anında artır.',
+        description: 'Usta mısın? Çevrendeki işleri gör, teklif ver ve kazan. Müşteri misin? İhtiyacını anında tüm ustalara duyur ve en iyi teklifi seç.',
         icon: 'briefcase-outline',
         color: '#10B981', // Green
     },
