@@ -23,14 +23,14 @@ export const purchaseCredits = async (req: AuthRequest, res: Response, next: Nex
         const { packageId } = req.body;
         if (!packageId) throw new ValidationError('Paket seçimi yapılmadı');
 
-        const packages: any = {
+        const packageMap: Record<string, { credits: number; price: number }> = {
             'pkg-10': { credits: 10, price: 189 },
             'pkg-35': { credits: 35, price: 489 },
             'pkg-75': { credits: 75, price: 889 },
             'pkg-175': { credits: 175, price: 1489 },
         };
 
-        const selectedPackage = packages[packageId];
+        const selectedPackage = packageMap[packageId];
         if (!selectedPackage) throw new ValidationError('Geçersiz paket');
 
         // MOCK PAYMENT PROCESS: Her zaman başarılı sayıyoruz (Geliştirme aşaması)
@@ -42,13 +42,15 @@ export const purchaseCredits = async (req: AuthRequest, res: Response, next: Nex
                 where: { userId }
             });
 
-            if (!profile) throw new NotFoundError('Usta profili bulunamadı');
+            if (!profile) {
+                throw new ValidationError('Bu işlem sadece usta hesapları için geçerlidir. Lütfen usta hesabınızla giriş yapın.');
+            }
 
             const currentBalance = Number(profile.creditBalance || 0);
             const newBalance = currentBalance + selectedPackage.credits;
 
             // 2. Bakiyeyi güncelle
-            const updatedProfile = await prisma.electricianProfile.update({
+            await prisma.electricianProfile.update({
                 where: { userId },
                 data: { creditBalance: newBalance }
             });
@@ -64,22 +66,8 @@ export const purchaseCredits = async (req: AuthRequest, res: Response, next: Nex
                 }
             });
 
-            // 4. Ödeme kaydı oluştur (Payment tablosu)
-            // Not: Payment tablosu jobPostId bekliyor olabilir şemada, 
-            // ama bağımsız ödemeler için opsiyonel olmalı. Şemayı kontrol etmiştik.
-            await prisma.payment.create({
-                data: {
-                    jobPostId: '', // Opsiyonel veya dummy
-                    payerId: userId,
-                    payeeId: 'SYSTEM',
-                    amount: selectedPackage.price,
-                    platformFee: 0,
-                    netAmount: selectedPackage.price,
-                    paymentMethod: 'CREDIT_CARD_MOCK',
-                    paymentStatus: 'COMPLETED',
-                    completedAt: new Date()
-                }
-            }).catch(e => console.warn('Payment record failed (non-critical):', e.message));
+            // 4. Ödeme kaydı (non-critical, FK constraint olmadığı için skip)
+            // Payment tablosu iş akışı için tasarlandı, kredi yüklemeleri Credit tablosuna kaydediliyor.
 
             return res.json({
                 success: true,
@@ -94,7 +82,6 @@ export const purchaseCredits = async (req: AuthRequest, res: Response, next: Nex
             const userId = req.user.id;
             const mockData = mockStorage.addCredits(userId, selectedPackage.credits);
 
-            // Create transaction record in mock storage
             mockTransactionStorage.addTransaction({
                 userId,
                 amount: selectedPackage.credits,
@@ -130,7 +117,6 @@ export const getTransactionHistory = async (req: AuthRequest, res: Response, nex
 
             return res.json({ success: true, data: history });
         } else {
-            // Get real transaction history from mock storage
             const mockHistory = mockTransactionStorage.getTransactions(req.user.id, 50);
             return res.json({ success: true, data: mockHistory });
         }
