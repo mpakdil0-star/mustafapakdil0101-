@@ -255,8 +255,7 @@ export default function MessagesScreen() {
     <View style={styles.container}>
       <PremiumHeader
         title="Mesajlarım"
-        subtitle="Sohbetlerinize Göz Atın"
-        layout="tab"
+        layout="default"
         backgroundImage={require('../../assets/images/header_bg.png')}
       />
 
@@ -321,8 +320,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   listContent: {
-    padding: spacing.md,
-    paddingBottom: 100,
+    padding: spacing.sm,
+    paddingBottom: 40,
     flexGrow: 1,
   },
   guestCardWrapper: {
@@ -360,16 +359,16 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   messageGlassCard: {
-    borderRadius: 24,
-    padding: 14,
-    marginBottom: 12,
+    borderRadius: 20,
+    padding: 12,
+    marginBottom: 8,
     backgroundColor: staticColors.white,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.8)',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.03,
-    shadowRadius: 12,
-    elevation: 2,
+    shadowRadius: 8,
+    elevation: 1,
   },
   cardInner: {
     flexDirection: 'row',
@@ -420,16 +419,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   userName: {
-    fontFamily: fonts.extraBold,
-    fontSize: 16,
-    letterSpacing: -0.3,
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    letterSpacing: -0.2,
   },
   timeText: {
     fontFamily: fonts.medium,
-    fontSize: 11,
+    fontSize: 10,
   },
   lastMsgRow: {
     flexDirection: 'row',
