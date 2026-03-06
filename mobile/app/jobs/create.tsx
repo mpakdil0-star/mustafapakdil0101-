@@ -604,191 +604,112 @@ export default function CreateJobScreen() {
 
             <View style={styles.divider} />
 
-            {/* Hizmet Türü ve Kategori Seçimi - Expandable */}
-            <TouchableOpacity
-              style={styles.expandableHeader}
-              onPress={() => setIsCategoryExpanded(!isCategoryExpanded)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.sectionHeaderNoMargin}>
-                <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '10' }]}>
-                  <Ionicons name="list-outline" size={20} color={colors.primary} />
-                </View>
-                <Text style={styles.sectionTitle}>Hizmet Türü & Kategori</Text>
+            {/* Hizmet Türü ve Kategori Seçimi - Always visible */}
+            <View style={styles.sectionHeaderNoMargin}>
+              <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '10' }]}>
+                <Ionicons name="list-outline" size={18} color={colors.primary} />
               </View>
-              <Ionicons
-                name={isCategoryExpanded ? "chevron-up" : "chevron-down"}
-                size={20}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
+              <Text style={styles.sectionTitle}>Hizmet Türü & Kategori</Text>
+            </View>
 
-            {isCategoryExpanded && (
-              <View style={styles.expandableContent}>
-                {/* Hizmet Türü Seçimi (Ana Kategori) */}
-                <Text style={[styles.label, { marginBottom: 8 }]}>Hizmet Türü</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.categoryScroll}
-                  contentContainerStyle={{ paddingBottom: 10, paddingRight: 20 }}
+            {/* Hizmet Türü - Horizontal Pills */}
+            <View style={styles.pillContainer}>
+              {SERVICE_CATEGORIES.map((svc) => (
+                <TouchableOpacity
+                  key={svc.id}
+                  style={[
+                    styles.pill,
+                    serviceCategory === svc.id && { backgroundColor: svc.colors[0], borderColor: svc.colors[0] },
+                  ]}
+                  onPress={() => {
+                    setServiceCategory(svc.id);
+                    setCategory('');
+                    if (errors.category) setErrors({ ...errors, category: '' });
+                  }}
                 >
-                  {SERVICE_CATEGORIES.map((svc) => (
-                    <TouchableOpacity
-                      key={svc.id}
-                      style={[
-                        styles.categoryChip,
-                        serviceCategory === svc.id && [styles.categoryChipSelected, { backgroundColor: svc.colors[0], borderColor: svc.colors[0], shadowColor: svc.colors[0] }],
-                      ]}
-                      onPress={() => {
-                        setServiceCategory(svc.id);
-                        setCategory(''); // Alt kategoriyi sıfırla
-                        if (errors.category) setErrors({ ...errors, category: '' });
-                      }}
-                    >
-                      <LinearGradient
-                        colors={serviceCategory === svc.id ? svc.colors : ['transparent', 'transparent']}
-                        style={[
-                          styles.categoryIconCircle,
-                          serviceCategory !== svc.id && { backgroundColor: svc.colors[0] + '20' }
-                        ]}
-                      >
-                        <Ionicons
-                          name={svc.icon as any}
-                          size={18}
-                          color={serviceCategory === svc.id ? staticColors.white : svc.colors[0]}
-                        />
-                      </LinearGradient>
-                      <Text
-                        style={[
-                          styles.categoryChipText,
-                          serviceCategory === svc.id && [styles.categoryChipTextSelected, { color: staticColors.white }],
-                        ]}
-                        numberOfLines={2}
-                      >
-                        {svc.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                  <Ionicons
+                    name={svc.icon as any}
+                    size={14}
+                    color={serviceCategory === svc.id ? '#fff' : svc.colors[0]}
+                  />
+                  <Text style={[
+                    styles.pillText,
+                    serviceCategory === svc.id && { color: '#fff', fontFamily: fonts.bold },
+                  ]}>
+                    {svc.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
-                {/* Alt Kategori Seçimi */}
-                {serviceCategory && (
-                  <>
-                    <Text style={[styles.label, { marginTop: 16, marginBottom: 8 }]}>Alt Kategori</Text>
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      style={styles.categoryScroll}
-                      contentContainerStyle={{ paddingBottom: 10, paddingRight: 20 }}
-                    >
-                      {getSubCategoriesByParent(serviceCategory).map((cat) => (
-                        <TouchableOpacity
-                          key={cat.id}
-                          style={[
-                            styles.categoryChip,
-                            category === cat.name && [styles.categoryChipSelected, { backgroundColor: cat.colors[0], borderColor: cat.colors[0], shadowColor: cat.colors[0] }],
-                          ]}
-                          onPress={() => {
-                            setCategory(cat.name);
-                            if (errors.category) setErrors({ ...errors, category: '' });
-                          }}
-                        >
-                          <LinearGradient
-                            colors={category === cat.name ? (cat.colors as [string, string]) : ['transparent', 'transparent']}
-                            style={[
-                              styles.categoryIconCircle,
-                              category !== cat.name && { backgroundColor: cat.colors[0] + '20' }
-                            ]}
-                          >
-                            <Ionicons
-                              name={cat.icon as any}
-                              size={18}
-                              color={category === cat.name ? staticColors.white : cat.colors[0]}
-                            />
-                          </LinearGradient>
-                          <Text
-                            style={[
-                              styles.categoryChipText,
-                              category === cat.name && [styles.categoryChipTextSelected, { color: staticColors.white }],
-                            ]}
-                            numberOfLines={2}
-                          >
-                            {cat.name}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </>
-                )}
-
-                {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
+            {/* Alt Kategori - Wrap Pills */}
+            {serviceCategory && (
+              <View style={styles.pillContainer}>
+                {getSubCategoriesByParent(serviceCategory).map((cat) => (
+                  <TouchableOpacity
+                    key={cat.id}
+                    style={[
+                      styles.pill,
+                      category === cat.name && { backgroundColor: cat.colors[0], borderColor: cat.colors[0] },
+                    ]}
+                    onPress={() => {
+                      setCategory(cat.name);
+                      if (errors.category) setErrors({ ...errors, category: '' });
+                    }}
+                  >
+                    <Ionicons
+                      name={cat.icon as any}
+                      size={14}
+                      color={category === cat.name ? '#fff' : cat.colors[0]}
+                    />
+                    <Text style={[
+                      styles.pillText,
+                      category === cat.name && { color: '#fff', fontFamily: fonts.bold },
+                    ]}>
+                      {cat.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             )}
+            {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
 
             <View style={styles.divider} />
 
-            {/* Aciliyet Durumu - Expandable */}
-            <TouchableOpacity
-              style={styles.expandableHeader}
-              onPress={() => setIsUrgencyExpanded(!isUrgencyExpanded)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.sectionHeaderNoMargin}>
-                <View style={[styles.sectionIconWrapper, { backgroundColor: '#EF444410' }]}>
-                  <Ionicons name="flash-outline" size={20} color="#EF4444" />
-                </View>
-                <Text style={styles.sectionTitle}>Aciliyet Durumu</Text>
+            {/* Aciliyet Durumu - Inline Row */}
+            <View style={[styles.sectionHeaderNoMargin, { marginBottom: 6 }]}>
+              <View style={[styles.sectionIconWrapper, { backgroundColor: '#EF444410' }]}>
+                <Ionicons name="flash-outline" size={18} color="#EF4444" />
               </View>
-              <Ionicons
-                name={isUrgencyExpanded ? "chevron-up" : "chevron-down"}
-                size={20}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-
-            {isUrgencyExpanded && (
-              <View style={styles.expandableContent}>
-                <View style={styles.urgencyContainer}>
-                  {URGENCY_LEVELS.map((level) => (
-                    <TouchableOpacity
-                      key={level.value}
-                      style={[
-                        styles.urgencyButton,
-                        urgencyLevel === level.value && {
-                          backgroundColor: level.color,
-                          shadowColor: level.color,
-                          shadowOffset: { width: 0, height: 4 },
-                          shadowOpacity: 0.3,
-                          shadowRadius: 8,
-                          elevation: 6
-                        },
-                      ]}
-                      onPress={() => setUrgencyLevel(level.value as any)}
-                    >
-                      <View style={[
-                        styles.urgencyIconCircle,
-                        { backgroundColor: urgencyLevel === level.value ? 'rgba(255,255,255,0.25)' : level.color + '20' }
-                      ]}>
-                        <Ionicons
-                          name={level.icon as any}
-                          size={18}
-                          color={urgencyLevel === level.value ? staticColors.white : level.color}
-                        />
-                      </View>
-                      <Text
-                        style={[
-                          styles.urgencyText,
-                          urgencyLevel === level.value && { color: staticColors.white, fontFamily: fonts.bold },
-                        ]}
-                      >
-                        {level.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
+              <Text style={styles.sectionTitle}>Aciliyet</Text>
+            </View>
+            <View style={styles.urgencyRow}>
+              {URGENCY_LEVELS.map((level) => (
+                <TouchableOpacity
+                  key={level.value}
+                  style={[
+                    styles.urgencyPill,
+                    urgencyLevel === level.value && {
+                      backgroundColor: level.color,
+                      borderColor: level.color,
+                    },
+                  ]}
+                  onPress={() => setUrgencyLevel(level.value as any)}
+                >
+                  <Ionicons
+                    name={level.icon as any}
+                    size={14}
+                    color={urgencyLevel === level.value ? '#fff' : level.color}
+                  />
+                  <Text style={[
+                    styles.urgencyPillText,
+                    urgencyLevel === level.value && { color: '#fff', fontFamily: fonts.bold },
+                  ]}>
+                    {level.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
             <View style={styles.divider} />
 
@@ -1184,6 +1105,30 @@ const styles = StyleSheet.create({
   categoryScroll: {
     marginTop: 4,
   },
+  // Compact pill styles for categories
+  pillContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    gap: 5,
+  },
+  pillText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: staticColors.textSecondary,
+  },
   categoryChip: {
     paddingHorizontal: 8,
     paddingVertical: 8,
@@ -1192,8 +1137,8 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     marginRight: 8,
     alignItems: 'center',
-    minWidth: 70, // Smaller min width
-    maxWidth: 100, // Smaller max width
+    minWidth: 70,
+    maxWidth: 100,
     gap: 4,
   },
   categoryChipSelected: {
@@ -1202,7 +1147,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
-    borderWidth: 0, // Keep no border when selected
+    borderWidth: 0,
   },
   categoryIconCircle: {
     width: 28,
@@ -1216,13 +1161,36 @@ const styles = StyleSheet.create({
   },
   categoryChipText: {
     fontFamily: fonts.semiBold,
-    fontSize: 10, // Smaller
+    fontSize: 10,
     color: staticColors.textSecondary,
     textAlign: 'center',
   },
   categoryChipTextSelected: {
     color: staticColors.white,
     fontFamily: fonts.bold,
+  },
+  // Compact urgency row
+  urgencyRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 4,
+  },
+  urgencyPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    gap: 4,
+  },
+  urgencyPillText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: staticColors.textSecondary,
   },
   urgencyContainer: {
     flexDirection: 'row',
@@ -1251,7 +1219,7 @@ const styles = StyleSheet.create({
   },
   urgencyText: {
     fontFamily: fonts.semiBold,
-    fontSize: 10, // Smaller to match
+    fontSize: 10,
     color: staticColors.textSecondary,
     textAlign: 'center',
   },
