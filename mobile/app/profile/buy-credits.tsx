@@ -199,7 +199,7 @@ export default function BuyCreditsScreen() {
 
                                     <View style={styles.cardMain}>
                                         <View style={[styles.iconBox, { backgroundColor: pkg.color + '15' }]}>
-                                            <Ionicons name="flash" size={26} color={pkg.color} />
+                                            <Ionicons name="flash" size={24} color={pkg.color} />
                                         </View>
 
                                         <View style={styles.infoBox}>
@@ -289,27 +289,27 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        padding: 20,
-        paddingBottom: 120,
+        padding: 16,
+        paddingBottom: 100,
     },
     headerBox: {
-        marginBottom: 30,
+        marginBottom: 20,
     },
     title: {
         fontFamily: fonts.black,
-        fontSize: 28,
-        marginBottom: 8,
+        fontSize: 24,
+        marginBottom: 4,
     },
     subtitle: {
         fontFamily: fonts.medium,
-        fontSize: 15,
-        lineHeight: 22,
+        fontSize: 14,
+        lineHeight: 20,
     },
     packagesContainer: {
-        gap: 16,
+        gap: 12,
     },
     packageCard: {
-        borderRadius: 28,
+        borderRadius: 24,
         borderWidth: 1.5,
         overflow: 'hidden',
         position: 'relative',
@@ -326,13 +326,13 @@ const styles = StyleSheet.create({
     cardMain: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 20,
-        gap: 16,
+        padding: 16,
+        gap: 14,
     },
     iconBox: {
-        width: 60,
-        height: 60,
-        borderRadius: 20,
+        width: 52,
+        height: 52,
+        borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     },
     creditValue: {
         fontFamily: fonts.black,
-        fontSize: 24,
+        fontSize: 20,
     },
     creditLabel: {
         fontFamily: fonts.bold,
@@ -376,12 +376,12 @@ const styles = StyleSheet.create({
     },
     priceValue: {
         fontFamily: fonts.black,
-        fontSize: 18,
+        fontSize: 16,
     },
     selector: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
         borderWidth: 2,
         borderColor: staticColors.borderLight,
         justifyContent: 'center',
@@ -406,12 +406,12 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        padding: 20,
-        paddingBottom: Platform.OS === 'ios' ? 40 : 35,
+        padding: 16,
+        paddingBottom: Platform.OS === 'ios' ? 30 : 20,
         backgroundColor: staticColors.backgroundDark,
     },
     payButton: {
-        borderRadius: 20,
+        borderRadius: 16,
         overflow: 'hidden',
         elevation: 10,
         shadowColor: '#000',
@@ -423,12 +423,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 18,
+        paddingVertical: 14,
         gap: 10,
     },
     payText: {
         fontFamily: fonts.bold,
-        fontSize: 18,
+        fontSize: 16,
         color: '#fff',
     }
 });
