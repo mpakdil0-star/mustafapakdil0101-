@@ -426,19 +426,23 @@ export default function EditProfileScreen() {
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.serviceAreaCardTitle}>
-                                            {isElectrician ? 'Bölgelerimi Yönet' : 'Adreslerimi Yönet'}
+                                            {isElectrician ? 'Hizmet Bölgelerimi Seç' : 'Adreslerimi Yönet'}
                                         </Text>
                                         <Text style={styles.serviceAreaCardSubtitle}>
                                             {isElectrician
-                                                ? (locations.length > 0 ? `${locations.length} bölge kayıtlı` : 'Henüz bölge eklenmedi')
+                                                ? (locations.length > 0 ? `${locations.length} bölgede hizmet veriyorsunuz` : 'İş almak istediğiniz ilçeleri ekleyin')
                                                 : (locations.length > 0 ? `${locations.length} kayıtlı adres` : 'Henüz adres eklenmedi')}
                                         </Text>
                                     </View>
-                                    {locations.length > 0 && (
+                                    {locations.length > 0 ? (
                                         <View style={styles.locationCountBadge}>
                                             <Text style={styles.locationCountText}>{locations.length}</Text>
                                         </View>
-                                    )}
+                                    ) : isElectrician ? (
+                                        <View style={[styles.locationCountBadge, { backgroundColor: colors.primary, paddingHorizontal: 6 }]}>
+                                            <Ionicons name="add" size={16} color={staticColors.white} />
+                                        </View>
+                                    ) : null}
                                     <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
                                 </View>
                             </TouchableOpacity>
