@@ -587,17 +587,35 @@ export default function QuickCreateScreen() {
                         </View>
                     </Card>
 
-                    {/* Görsel ve Bütçe */}
+                    {/* Açıklama + Görsel + Bütçe */}
                     <Card variant="default" style={styles.sectionCard}>
                         <View style={styles.sectionHeader}>
                             <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '10' }]}>
-                                <Ionicons name="camera-outline" size={20} color={colors.primary} />
+                                <Ionicons name="create-outline" size={20} color={colors.primary} />
                             </View>
-                            <Text style={styles.sectionTitle}>Görsel ve Bütçe</Text>
+                            <Text style={styles.sectionTitle}>Sorun ve Detaylar</Text>
+                        </View>
+
+                        {/* Açıklama Alanı */}
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.label}>Sorunu Açıklayın <Text style={styles.optionalLabel}>(Opsiyonel)</Text></Text>
+                            <TextInput
+                                style={styles.textArea}
+                                placeholder="Örnek: Mutfak prizleri çalışmıyor, sigorta attı. En kısa sürede bakılması gerekiyor..."
+                                value={description}
+                                onChangeText={setDescription}
+                                multiline
+                                numberOfLines={3}
+                                maxLength={500}
+                                placeholderTextColor={colors.textLight}
+                            />
+                            <Text style={[styles.charCount, description.length > 450 && { color: staticColors.error }]}>
+                                {description.length}/500
+                            </Text>
                         </View>
 
                         {/* Fotoğraf Ekle */}
-                        <Text style={styles.optionalLabel}>Fotoğraf Ekle (Opsiyonel)</Text>
+                        <Text style={[styles.optionalLabel, { marginTop: 8 }]}>Fotoğraf Ekle (Opsiyonel)</Text>
                         <View style={styles.photoPillRow}>
                             <TouchableOpacity style={styles.photoPillBtn} onPress={handleTakePhoto}>
                                 <Ionicons name="camera-outline" size={18} color={colors.primary} />
@@ -1179,5 +1197,24 @@ const styles = StyleSheet.create({
         fontFamily: fonts.regular,
         fontSize: 14,
         color: staticColors.text,
+    },
+    textArea: {
+        backgroundColor: '#F8FAFC',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 12,
+        padding: 14,
+        fontFamily: fonts.medium,
+        fontSize: 14,
+        color: staticColors.text,
+        minHeight: 90,
+        textAlignVertical: 'top',
+    },
+    charCount: {
+        fontFamily: fonts.medium,
+        fontSize: 11,
+        color: staticColors.textLight,
+        textAlign: 'right',
+        marginTop: 4,
     },
 });
