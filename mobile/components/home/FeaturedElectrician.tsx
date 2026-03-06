@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     },
     name: {
         fontFamily: fonts.bold,
-        fontSize: 15,
+        fontSize: 16,
         color: staticColors.black,
         marginBottom: 2,
     },
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     },
     ratingText: {
         fontFamily: fonts.bold,
-        fontSize: 13,
+        fontSize: 14,
         color: staticColors.black,
         marginRight: 4,
     },
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     },
     reviewText: {
         fontFamily: fonts.semiBold, // Increased weight for readability
-        fontSize: 11,
+        fontSize: 12,
         color: '#94A3B8',
     },
     locationContainer: {
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     },
     locationText: {
         fontFamily: fonts.semiBold, // Increased weight for readability
-        fontSize: 11,
+        fontSize: 12,
         color: '#94A3B8',
     },
 });
