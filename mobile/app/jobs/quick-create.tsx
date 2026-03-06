@@ -47,6 +47,24 @@ const EMERGENCY_TYPES = [
     { id: 'klima', label: 'Klima', color: '#2563EB', icon: 'snow' },
 ];
 
+// Seçilen hizmet türüne göre dinamik placeholder metni
+const getDescriptionPlaceholder = (type: string | null): string => {
+    switch (type) {
+        case 'elektrik':
+            return 'Örnek: Mutfak prizleri çalışmıyor, sigorta attı. En kısa sürede bakılması gerekiyor...';
+        case 'tesisat':
+            return 'Örnek: Mutfak lavabosundan su akıyor, tezgah altı ıslanıyor. Acil müdahale gerekiyor...';
+        case 'cilingir':
+            return 'Örnek: Ev anahtarım içeride kaldı, kapı kilitli. Acil açılması gerekiyor...';
+        case 'beyaz-esya':
+            return 'Örnek: Bulaşık makinesi çalışırken durdu, hata kodu veriyor. Tamir edilmesi gerekiyor...';
+        case 'klima':
+            return 'Örnek: Klima soğutmuyor, çalışıyor ama sıcak hava üflüyor. Bakım gerekiyor...';
+        default:
+            return 'Sorununuzu detaylı açıklayın. Ne oldu? Ne zaman başladı? Acil mi?';
+    }
+};
+
 // Map category ID to 3D image asset (same as home screen)
 const getCategoryImage = (id: string) => {
     switch (id) {
@@ -603,7 +621,7 @@ export default function QuickCreateScreen() {
                             <Text style={styles.label}>Sorunu Açıklayın <Text style={[styles.optionalLabel, { color: staticColors.error }]}>* (En az 10 karakter)</Text></Text>
                             <TextInput
                                 style={styles.textArea}
-                                placeholder="Örnek: Mutfak prizleri çalışmıyor, sigorta attı. En kısa sürede bakılması gerekiyor..."
+                                placeholder={getDescriptionPlaceholder(selectedType)}
                                 value={description}
                                 onChangeText={setDescription}
                                 multiline

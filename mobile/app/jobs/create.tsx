@@ -613,6 +613,7 @@ export default function CreateJobScreen() {
             </View>
 
             {/* Hizmet Türü - Horizontal Pills */}
+            <Text style={[styles.label, { marginTop: 8, marginBottom: 4 }]}>Hizmet Türü</Text>
             <View style={styles.pillContainer}>
               {SERVICE_CATEGORIES.map((svc) => (
                 <TouchableOpacity
@@ -644,33 +645,37 @@ export default function CreateJobScreen() {
 
             {/* Alt Kategori - Wrap Pills */}
             {serviceCategory && (
-              <View style={styles.pillContainer}>
-                {getSubCategoriesByParent(serviceCategory).map((cat) => (
-                  <TouchableOpacity
-                    key={cat.id}
-                    style={[
-                      styles.pill,
-                      category === cat.name && { backgroundColor: cat.colors[0], borderColor: cat.colors[0] },
-                    ]}
-                    onPress={() => {
-                      setCategory(cat.name);
-                      if (errors.category) setErrors({ ...errors, category: '' });
-                    }}
-                  >
-                    <Ionicons
-                      name={cat.icon as any}
-                      size={14}
-                      color={category === cat.name ? '#fff' : cat.colors[0]}
-                    />
-                    <Text style={[
-                      styles.pillText,
-                      category === cat.name && { color: '#fff', fontFamily: fonts.bold },
-                    ]}>
-                      {cat.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <>
+                <View style={[styles.divider, { marginVertical: 8 }]} />
+                <Text style={[styles.label, { marginBottom: 4 }]}>Alt Kategori</Text>
+                <View style={styles.pillContainer}>
+                  {getSubCategoriesByParent(serviceCategory).map((cat) => (
+                    <TouchableOpacity
+                      key={cat.id}
+                      style={[
+                        styles.pill,
+                        category === cat.name && { backgroundColor: cat.colors[0], borderColor: cat.colors[0] },
+                      ]}
+                      onPress={() => {
+                        setCategory(cat.name);
+                        if (errors.category) setErrors({ ...errors, category: '' });
+                      }}
+                    >
+                      <Ionicons
+                        name={cat.icon as any}
+                        size={14}
+                        color={category === cat.name ? '#fff' : cat.colors[0]}
+                      />
+                      <Text style={[
+                        styles.pillText,
+                        category === cat.name && { color: '#fff', fontFamily: fonts.bold },
+                      ]}>
+                        {cat.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
             )}
             {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
 
