@@ -20,7 +20,7 @@ const slides = [
     {
         id: '1',
         title: 'Güvenilir Usta Bulma',
-        description: 'Elektrikten tesisata, montajdan boyaya... Evindeki tüm işler için aradığın güvenilir usta sadece bir tık uzağında.',
+        description: 'Elektrikten tesisata, çilingirden kombiye... Evindeki tüm işler için aradığın güvenilir usta sadece bir tık uzağında.',
         icon: 'search-outline',
         color: '#3B82F6', // Blue
     },
