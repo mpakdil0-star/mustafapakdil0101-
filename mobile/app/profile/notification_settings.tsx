@@ -274,17 +274,52 @@ export default function NotificationsScreen() {
                     <TouchableOpacity
                         style={styles.permissionWarningBanner}
                         activeOpacity={0.85}
-                        onPress={() => Linking.openSettings()}
+                        onPress={async () => {
+                            try {
+                                const Notifications = await import('expo-notifications');
+                                const { canAskAgain } = await Notifications.getPermissionsAsync();
+
+                                if (canAskAgain) {
+                                    // Can ask in-app — show native permission dialog
+                                    const { status } = await Notifications.requestPermissionsAsync();
+                                    if (status === 'granted') {
+                                        // Permission granted in-app! Register token immediately
+                                        console.log('🔔 Permission granted in-app — registering push token...');
+                                        setSystemPermission('granted');
+                                        const result = await authService.registerPushToken();
+                                        if (result === 'granted') {
+                                            const updatedPrefs = { ...preferences, pushEnabled: true };
+                                            setPreferences(updatedPrefs);
+                                            await SecureStore.setItemAsync(NOTIFICATION_PREFS_KEY, JSON.stringify(updatedPrefs));
+                                            try { await api.put('/users/notification-preferences', updatedPrefs); } catch { }
+                                        }
+                                    }
+                                } else {
+                                    // Cannot ask again — must go to system settings
+                                    Alert.alert(
+                                        'Sistem Ayarları Gerekli',
+                                        'Bildirim izni kalıcı olarak reddedilmiş. Açmak için telefon ayarlarınızı kullanmanız gerekiyor.',
+                                        [
+                                            { text: 'Vazgeç', style: 'cancel' },
+                                            { text: 'Ayarları Aç', onPress: () => Linking.openSettings() }
+                                        ]
+                                    );
+                                }
+                            } catch (e) {
+                                console.warn('Permission check error:', e);
+                                Linking.openSettings();
+                            }
+                        }}
                     >
                         <Ionicons name="warning-outline" size={20} color="#fff" />
                         <View style={{ flex: 1, marginLeft: 12 }}>
-                            <Text style={styles.permissionWarningTitle}>Sistem bildirimleri kapalı</Text>
+                            <Text style={styles.permissionWarningTitle}>Bildirimler kapalı</Text>
                             <Text style={styles.permissionWarningDesc}>
-                                Bildirimleri açmak için telefon ayarlarına gidin.
+                                Dokunarak bildirimleri aktif edin.
                             </Text>
                         </View>
                         <View style={styles.permissionWarningBtn}>
-                            <Text style={styles.permissionWarningBtnText}>Ayarları Aç</Text>
+                            <Text style={styles.permissionWarningBtnText}>Aktif Et</Text>
                             <Ionicons name="chevron-forward" size={14} color="#fff" />
                         </View>
                     </TouchableOpacity>
