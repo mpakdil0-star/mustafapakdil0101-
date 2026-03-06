@@ -2011,8 +2011,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   featuredVerticalList: {
-    gap: 16,
-    marginTop: 8,
+    gap: 4,
+    marginTop: 6,
   },
   healthProgressPercent: {
     fontFamily: fonts.bold,
