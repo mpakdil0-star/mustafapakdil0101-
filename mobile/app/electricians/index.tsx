@@ -384,10 +384,12 @@ export default function ElectriciansListScreen() {
 
                             {electrician.latestReview && (
                                 <View style={styles.reviewBox}>
-                                    <Ionicons name="chatbubble-outline" size={12} color={colors.primary + '50'} style={{ marginBottom: 4 }} />
-                                    <Text style={styles.reviewComment} numberOfLines={1}>
-                                        {electrician.latestReview.comment}
-                                    </Text>
+                                    <View style={styles.reviewContentRow}>
+                                        <Ionicons name="chatbubbles" size={16} color={colors.primary + '40'} style={styles.reviewIcon} />
+                                        <Text style={styles.reviewComment} numberOfLines={2}>
+                                            "{electrician.latestReview.comment}"
+                                        </Text>
+                                    </View>
                                     <Text style={styles.reviewUser}>— {electrician.latestReview.user}</Text>
                                 </View>
                             )}
@@ -640,21 +642,34 @@ const styles = StyleSheet.create({
         color: colors.textSecondary,
     },
     reviewBox: {
-        backgroundColor: colors.backgroundLight,
-        borderRadius: 12,
-        padding: 10,
-        marginBottom: 12,
+        backgroundColor: '#F8FAFC',
+        borderRadius: 16,
+        padding: 14,
+        marginBottom: 14,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+    },
+    reviewContentRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        marginBottom: 6,
+    },
+    reviewIcon: {
+        marginTop: 2,
+        marginRight: 8,
     },
     reviewComment: {
-        fontFamily: fonts.regular,
+        flex: 1,
+        fontFamily: fonts.medium,
+        fontStyle: 'italic',
         fontSize: 13,
-        color: colors.text,
-        marginBottom: 4,
+        color: '#475569',
+        lineHeight: 18,
     },
     reviewUser: {
-        fontFamily: fonts.medium,
+        fontFamily: fonts.bold,
         fontSize: 11,
-        color: colors.textSecondary,
+        color: '#94A3B8',
         textAlign: 'right',
     },
     actionBtn: {
