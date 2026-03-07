@@ -397,93 +397,93 @@ export default function CreateBidScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16, paddingBottom: 40 },
+  content: { padding: 12, paddingBottom: 20 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   // Info Card
   infoCard: {
-    padding: 16,
-    borderRadius: 20,
-    marginBottom: 20,
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3
   },
-  jobInfoContainer: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  iconBox: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  jobInfoContainer: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  iconBox: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   jobTextInfo: { flex: 1 },
-  jobTitle: { fontSize: 16, fontFamily: fonts.extraBold, marginBottom: 4 },
+  jobTitle: { fontSize: 14, fontFamily: fonts.extraBold, marginBottom: 2 },
   locationBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  locationText: { fontSize: 13, fontFamily: fonts.medium, color: staticColors.textSecondary },
-  infoDivider: { height: 1.5, backgroundColor: 'rgba(0,0,0,0.03)', marginVertical: 16 },
+  locationText: { fontSize: 11, fontFamily: fonts.medium, color: staticColors.textSecondary },
+  infoDivider: { height: 1.5, backgroundColor: 'rgba(0,0,0,0.03)', marginVertical: 10 },
   budgetOverview: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  infoLabel: { fontSize: 12, fontFamily: fonts.bold, color: staticColors.textLight, textTransform: 'uppercase', letterSpacing: 0.5 },
-  infoValue: { fontSize: 20, fontFamily: fonts.extraBold, marginTop: 2 },
-  urgencyBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.03)' },
-  urgencyText: { fontSize: 12, fontFamily: fonts.bold },
+  infoLabel: { fontSize: 10, fontFamily: fonts.bold, color: staticColors.textLight, textTransform: 'uppercase', letterSpacing: 0.5 },
+  infoValue: { fontSize: 16, fontFamily: fonts.extraBold, marginTop: 1 },
+  urgencyBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.03)' },
+  urgencyText: { fontSize: 11, fontFamily: fonts.bold },
 
   // Form Section
-  formSection: { gap: 16 },
-  sectionTitle: { fontSize: 15, fontFamily: fonts.extraBold, marginBottom: -4, marginLeft: 4 },
-  inputGroup: { gap: 6 },
-  label: { fontSize: 13, fontFamily: fonts.bold, marginLeft: 4 },
+  formSection: { gap: 10 },
+  sectionTitle: { fontSize: 14, fontFamily: fonts.extraBold, marginBottom: 0, marginLeft: 2 },
+  inputGroup: { gap: 4 },
+  label: { fontSize: 12, fontFamily: fonts.bold, marginLeft: 2 },
 
   // Custom Inputs
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 1.5,
-    paddingHorizontal: 16,
-    height: 52,
+    paddingHorizontal: 12,
+    height: 44,
   },
-  inputIcon: { marginRight: 10 },
-  input: { flex: 1, fontSize: 16, fontFamily: fonts.extraBold, height: '100%' },
+  inputIcon: { marginRight: 8 },
+  input: { flex: 1, fontSize: 15, fontFamily: fonts.extraBold, height: '100%' },
 
   pickerWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 1.5,
-    paddingHorizontal: 16,
-    height: 52,
+    paddingHorizontal: 12,
+    height: 44,
   },
   flex1: { flex: 1 },
 
-  pillContainer: { flexDirection: 'row', gap: 6 },
+  pillContainer: { flexDirection: 'row', gap: 4 },
   pill: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center'
   },
-  pillText: { fontSize: 14, fontFamily: fonts.bold },
+  pillText: { fontSize: 12, fontFamily: fonts.bold },
 
   textAreaWrapper: {
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 1.5,
-    padding: 14,
-    minHeight: 110,
+    padding: 10,
+    minHeight: 80,
   },
   textArea: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 13,
     fontFamily: fonts.medium,
     textAlignVertical: 'top'
   },
 
-  submitBtn: { height: 54, borderRadius: 16, marginTop: 4 },
+  submitBtn: { height: 48, borderRadius: 12, marginTop: 0 },
   disclaimer: {
     textAlign: 'center',
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: fonts.medium,
     color: staticColors.textLight,
-    paddingHorizontal: 20,
-    lineHeight: 18
+    paddingHorizontal: 10,
+    lineHeight: 14,
   },
 
   // Success Modal Styles
