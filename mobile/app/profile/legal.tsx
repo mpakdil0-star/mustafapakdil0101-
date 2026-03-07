@@ -102,26 +102,26 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        padding: spacing.lg,
-        paddingBottom: 40,
+        padding: 12,
+        paddingBottom: 20,
     },
     card: {
         backgroundColor: staticColors.white,
-        borderRadius: 24,
-        padding: 24,
+        borderRadius: 16,
+        padding: 16,
         borderWidth: 1,
         borderColor: '#E2E8F0',
-        marginBottom: 32,
+        marginBottom: 16,
     },
     text: {
         fontFamily: fonts.medium,
-        fontSize: 15,
+        fontSize: 13,
         color: staticColors.textSecondary,
-        lineHeight: 26,
+        lineHeight: 20,
     },
     closeButton: {
-        borderRadius: 16,
-        paddingVertical: 16,
+        borderRadius: 12,
+        paddingVertical: 12,
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row',
@@ -129,11 +129,11 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 5,
-        marginBottom: 20
+        marginBottom: 12
     },
     closeButtonText: {
         fontFamily: fonts.bold,
-        fontSize: 16,
+        fontSize: 14,
         color: staticColors.white,
     }
 });
