@@ -517,7 +517,7 @@ export default function JobsScreen() {
                 <View style={styles.cardFooter}>
                   <View style={styles.metaInfoRow}>
                     <Ionicons name="location-sharp" size={12} color={colors.primary} />
-                    <Text style={styles.metaInfoText}>{job.location?.district || 'Konum Yok'}</Text>
+                    <Text style={styles.metaInfoText}>{job.location ? [job.location.neighborhood, job.location.district].filter(Boolean).join(', ') || 'Konum Yok' : 'Konum Yok'}</Text>
                   </View>
                   <View style={styles.metaInfoRow}>
                     <Ionicons name="time-outline" size={12} color={staticColors.textLight} />
