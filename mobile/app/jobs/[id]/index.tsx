@@ -878,7 +878,7 @@ export default function JobDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  content: { padding: 12, paddingBottom: 24 },
+  content: { padding: 12, paddingBottom: 100 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: 12, fontSize: 14, fontFamily: fonts.medium },
   errorText: { fontFamily: fonts.bold, fontSize: 18, textAlign: 'center' },
