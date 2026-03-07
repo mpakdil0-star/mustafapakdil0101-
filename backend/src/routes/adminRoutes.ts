@@ -57,7 +57,9 @@ router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Re
                     skip,
                     take: limitNum,
                     orderBy: { createdAt: 'desc' },
-                    include: { electricianProfile: { select: { creditBalance: true, completedJobsCount: true, serviceCategory: true, verificationStatus: true } } }
+                    include: {
+                        electricianProfile: { select: { creditBalance: true, completedJobsCount: true, serviceCategory: true, verificationStatus: true } }
+                    }
                 }),
                 prisma.user.count({ where })
             ]);
@@ -75,6 +77,7 @@ router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Re
                 verificationStatus: u.electricianProfile?.verificationStatus ?? null,
                 completedJobsCount: u.electricianProfile?.completedJobsCount ?? 0,
                 serviceCategory: u.electricianProfile?.serviceCategory ?? null,
+                locations: u.locations || [],
                 createdAt: u.createdAt,
             }));
 
@@ -117,7 +120,8 @@ router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Re
                 experienceYears: data.experienceYears,
                 specialties: data.specialties || [],
                 completedJobsCount: data.completedJobsCount || 0,
-                serviceCategory: data.serviceCategory
+                serviceCategory: data.serviceCategory,
+                locations: data.locations || []
             };
         });
 
@@ -163,12 +167,12 @@ router.get('/users/:id', authenticate, adminMiddleware, async (req: Request, res
         let dbAvailable = false;
         try { await prisma.user.count(); dbAvailable = true; } catch (_) { }
 
-        if (dbAvailable && !id.startsWith('mock-')) {
+        if (dbAvailable && id && !id.startsWith('mock-')) {
             try {
                 const dbUser = await prisma.user.findUnique({
                     where: { id },
                     include: {
-                        electricianProfile: true,
+                        electricianProfile: true
                     }
                 });
                 if (dbUser) {

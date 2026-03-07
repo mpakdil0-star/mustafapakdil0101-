@@ -22,6 +22,7 @@ interface User {
     verificationStatus?: string;
     completedJobsCount?: number;
     serviceCategory?: string;
+    locations?: { city: string; district?: string }[];
 }
 
 type FilterType = 'ALL' | 'CITIZEN' | 'ELECTRICIAN';
@@ -193,6 +194,8 @@ export default function AdminUsersScreen() {
                     )}
                 </View>
             )}
+
+
 
             <View style={styles.actionRow}>
                 {item.userType === 'ELECTRICIAN' && (
@@ -474,6 +477,26 @@ const styles = StyleSheet.create({
         fontFamily: fonts.medium,
         fontSize: 12,
         color: staticColors.textSecondary,
+    },
+    locationsContainer: {
+        flexDirection: 'row',
+        marginTop: 10,
+        backgroundColor: '#F8FAFC',
+        padding: 8,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    locationsIconWrapper: {
+        marginRight: 6,
+    },
+    locationsListWrapper: {
+        flex: 1,
+    },
+    locationsText: {
+        fontFamily: fonts.medium,
+        fontSize: 12,
+        color: staticColors.textSecondary,
+        lineHeight: 18,
     },
     actionRow: {
         flexDirection: 'row',
