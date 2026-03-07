@@ -252,9 +252,25 @@ export default function ElectricianDetailScreen() {
     }
 
     const profile = electrician.electricianProfile || {};
-    const locationStr = electrician.locations?.length > 0
-        ? `${electrician.locations[0].district}, ${electrician.locations[0].city}`
-        : 'Konum belirtilmemiş';
+
+    let locationStr = 'Konum belirtilmemiş';
+    if (electrician.locations && electrician.locations.length > 0) {
+        const cityMap: Record<string, string[]> = {};
+        electrician.locations.forEach((loc: any) => {
+            const city = loc.city || 'Şehir Yok';
+            if (!cityMap[city]) cityMap[city] = [];
+            if (loc.district && !cityMap[city].includes(loc.district)) {
+                cityMap[city].push(loc.district);
+            }
+        });
+
+        locationStr = Object.entries(cityMap).map(([city, districts]) => {
+            if (districts.length > 0) {
+                return `${districts.join(', ')} (${city})`;
+            }
+            return city;
+        }).join(' • ');
+    }
 
     // Güven skoru hesaplama (demo mantığı)
     // Güven skoru hesaplama (demo mantığı)
@@ -692,6 +708,7 @@ const styles = StyleSheet.create({
         fontFamily: fonts.regular,
         fontSize: 13,
         color: colors.textSecondary,
+        flexShrink: 1,
     },
     statsRow: {
         flexDirection: 'row',
