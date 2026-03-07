@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F8FAFC',
     },
     list: {
-        padding: spacing.md,
+        padding: 12,
     },
     center: {
         flex: 1,
@@ -158,9 +158,9 @@ const styles = StyleSheet.create({
     },
     card: {
         backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 12,
+        borderRadius: 14,
+        padding: 12,
+        marginBottom: 10,
         borderWidth: 1,
         borderColor: '#E2E8F0',
     },
@@ -168,15 +168,15 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 8,
     },
     statusBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-        gap: 6,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 8,
+        gap: 4,
     },
     statusDot: {
         width: 6,
@@ -185,18 +185,18 @@ const styles = StyleSheet.create({
     },
     statusText: {
         fontFamily: fonts.semiBold,
-        fontSize: 12,
+        fontSize: 11,
     },
     date: {
         fontFamily: fonts.regular,
-        fontSize: 12,
+        fontSize: 11,
         color: staticColors.textLight,
     },
     subject: {
         fontFamily: fonts.bold,
-        fontSize: 15,
+        fontSize: 14,
         color: staticColors.text,
-        marginBottom: 12,
+        marginBottom: 8,
     },
     cardFooter: {
         flexDirection: 'row',
@@ -204,16 +204,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderTopWidth: 1,
         borderTopColor: '#F1F5F9',
-        paddingTop: 12,
+        paddingTop: 8,
     },
     type: {
         fontFamily: fonts.medium,
-        fontSize: 12,
+        fontSize: 11,
         color: staticColors.textSecondary,
     },
     empty: {
         alignItems: 'center',
-        marginTop: 60,
+        marginTop: 40,
     },
     emptyText: {
         fontFamily: fonts.medium,
