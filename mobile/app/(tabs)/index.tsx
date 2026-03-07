@@ -617,61 +617,74 @@ export default function HomeScreen() {
                 <Text style={styles.sectionTitle}>Hızlı İşlemler</Text>
                 <Text style={styles.sectionSubtitle}>İşlerini ve profilini buradan yönet</Text>
               </View>
-              {!hideHowItWorks && (
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            </View>
+
+            {/* Prominent How It Works Banner */}
+            {!hideHowItWorks && (
+              <TouchableOpacity
+                onPress={() => setIsHowItWorksVisible(true)}
+                activeOpacity={0.9}
+                style={{
+                  marginBottom: 16,
+                  borderRadius: 16,
+                  overflow: 'hidden',
+                  shadowColor: '#3B82F6',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}
+              >
+                <LinearGradient
+                  colors={['#3B82F6', '#1D4ED8']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{
+                    padding: 16,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                  }}
+                >
+                  <View style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 24,
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginRight: 16,
+                  }}>
+                    <Ionicons name="bulb" size={24} color="#FFFFFF" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: '#FFFFFF', marginBottom: 4 }}>Nasıl Çalışır?</Text>
+                    <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: 'rgba(255, 255, 255, 0.8)' }} numberOfLines={2}>
+                      Platformda nasıl iş alabileceğinizi ve kazancınızı artıracağınızı rehberle keşfedin.
+                    </Text>
+                  </View>
                   <TouchableOpacity
-                    onPress={() => router.push('/onboarding/electrician')}
-                    activeOpacity={0.8}
+                    onPress={async () => {
+                      try {
+                        await AsyncStorage.setItem('hide_how_it_works_button', 'true');
+                        setHideHowItWorks(true);
+                      } catch (e) { }
+                    }}
+                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                     style={{
-                      borderRadius: 20,
-                      overflow: 'hidden',
-                      shadowColor: '#3B82F6',
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.4,
-                      shadowRadius: 8,
-                      elevation: 6,
+                      width: 28,
+                      height: 28,
+                      borderRadius: 14,
+                      backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      marginLeft: 12,
                     }}
                   >
-                    <LinearGradient
-                      colors={['#3B82F6', '#1D4ED8']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        paddingVertical: 5,
-                        paddingLeft: 8,
-                        paddingRight: 4,
-                        gap: 4,
-                      }}
-                    >
-                      <Ionicons name="bulb" size={12} color="#FFFFFF" />
-                      <Text style={{ fontFamily: fonts.bold, fontSize: 10, color: '#FFFFFF' }}>Nasıl Çalışır?</Text>
-                      <TouchableOpacity
-                        onPress={async () => {
-                          try {
-                            await AsyncStorage.setItem('hide_how_it_works_button', 'true');
-                            setHideHowItWorks(true);
-                          } catch (e) { }
-                        }}
-                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
-                        style={{
-                          marginLeft: 2,
-                          width: 14,
-                          height: 14,
-                          borderRadius: 7,
-                          backgroundColor: 'rgba(255, 255, 255, 0.25)',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <Ionicons name="close" size={9} color="#FFFFFF" />
-                      </TouchableOpacity>
-                    </LinearGradient>
+                    <Ionicons name="close" size={16} color="#FFFFFF" />
                   </TouchableOpacity>
-                </View>
-              )}
-            </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
 
             <View style={styles.electricianQuickCards}>
               <TouchableOpacity
