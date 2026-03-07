@@ -1242,7 +1242,7 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
                     }
                 },
                 locations: {
-                    where: { isDefault: true },
+                    where: { isActive: true },
                     select: {
                         city: true,
                         district: true
