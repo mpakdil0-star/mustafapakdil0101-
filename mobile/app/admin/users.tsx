@@ -44,6 +44,19 @@ export default function AdminUsersScreen() {
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [creditAmount, setCreditAmount] = useState('');
     const [isSubmittingCredit, setIsSubmittingCredit] = useState(false);
+    const [expandedLocations, setExpandedLocations] = useState<Set<string>>(new Set());
+
+    const toggleLocation = (userId: string) => {
+        setExpandedLocations(prev => {
+            const next = new Set(prev);
+            if (next.has(userId)) {
+                next.delete(userId);
+            } else {
+                next.add(userId);
+            }
+            return next;
+        });
+    };
 
     const fetchUsers = useCallback(async (resetPage = false) => {
         try {
@@ -195,18 +208,23 @@ export default function AdminUsersScreen() {
                 </View>
             )}
             {item.locations && item.locations.length > 0 && (
-                <View style={styles.locationsContainer}>
+                <TouchableOpacity
+                    style={styles.locationsContainer}
+                    onPress={() => toggleLocation(item.id)}
+                    activeOpacity={0.7}
+                >
                     <View style={styles.locationsIconWrapper}>
                         <Ionicons name="location-outline" size={14} color={colors.primary} />
                     </View>
                     <View style={styles.locationsListWrapper}>
-                        <Text style={styles.locationsText} numberOfLines={2}>
-                            {item.locations.map(loc =>
-                                [loc.district, loc.city].filter(Boolean).join(', ')
-                            ).join(' • ')}
+                        <Text style={styles.locationsText} numberOfLines={expandedLocations.has(item.id) ? undefined : 1}>
+                            {expandedLocations.has(item.id)
+                                ? item.locations.map(loc => [loc.district, loc.city].filter(Boolean).join(', ')).join(' • ')
+                                : Array.from(new Set(item.locations.map(loc => loc.city))).join(' • ')
+                            }
                         </Text>
                     </View>
-                </View>
+                </TouchableOpacity>
             )}
             <View style={styles.actionRow}>
                 {item.userType === 'ELECTRICIAN' && (
