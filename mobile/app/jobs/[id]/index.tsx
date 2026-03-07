@@ -370,7 +370,7 @@ export default function JobDetailScreen() {
           <View style={styles.infoRow}>
             <View style={[styles.infoPill, { backgroundColor: staticColors.borderLight + '40' }]}>
               <Ionicons name="location" size={14} color={colors.primary} />
-              <Text style={[styles.infoText, { color: staticColors.textSecondary }]}>{jobData.location?.district || 'Konum Yok'}</Text>
+              <Text style={[styles.infoText, { color: staticColors.textSecondary }]}>{jobData.location ? [jobData.location.neighborhood, jobData.location.district].filter(Boolean).join(', ') || 'Konum Yok' : 'Konum Yok'}</Text>
             </View>
             <View style={[styles.infoPill, { backgroundColor: staticColors.borderLight + '40' }]}>
               <Ionicons name="calendar" size={14} color={staticColors.textLight} />
