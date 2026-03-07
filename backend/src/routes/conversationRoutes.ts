@@ -304,7 +304,7 @@ router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
     const { id } = req.params;
 
     try {
-      if (!isDatabaseAvailable || req.user.id.startsWith('mock-') || id.startsWith('mock-')) {
+      if (!isDatabaseAvailable || req.user.id.startsWith('mock-') || (id as string).startsWith('mock-')) {
         const { mockStore } = require('../utils/mockStore');
         const { mockStorage: userStorage } = require('../utils/mockStorage');
 
@@ -340,7 +340,7 @@ router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) =
         });
       }
 
-      const conversation = await conversationService.getConversation(id, req.user.id);
+      const conversation = await conversationService.getConversation(id as string, req.user.id);
       res.json({
         success: true,
         data: { conversation },
@@ -379,7 +379,7 @@ router.get('/:id/messages', async (req: AuthRequest, res: Response, next: NextFu
       });
     }
 
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { page = 1, limit = 50 } = req.query;
 
     try {
@@ -509,7 +509,7 @@ router.post('/:id/messages', async (req: AuthRequest, res: Response, next: NextF
       });
     }
 
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { content, messageType = 'TEXT' } = req.body;
 
     if (!content) {
@@ -561,7 +561,7 @@ router.post('/:id/messages', async (req: AuthRequest, res: Response, next: NextF
         });
       }
 
-      const message = await messageService.sendMessage(id, req.user.id, content, messageType);
+      const message = await messageService.sendMessage(id, req.user!.id, content, messageType);
 
       res.status(201).json({
         success: true,
@@ -573,13 +573,13 @@ router.post('/:id/messages', async (req: AuthRequest, res: Response, next: NextF
         const mockMsg = {
           id: `mock-sent-${Date.now()}`,
           conversationId: id,
-          senderId: req.user.id,
+          senderId: req.user!.id,
           recipientId: 'mock-recipient',
           content,
           messageType,
           isRead: false,
           createdAt: new Date().toISOString(),
-          sender: { id: req.user.id, fullName: 'Siz', profileImageUrl: null }
+          sender: { id: req.user!.id, fullName: 'Siz', profileImageUrl: null }
         };
         return res.status(201).json({
           success: true,
@@ -610,7 +610,7 @@ router.put('/:id/read', async (req: AuthRequest, res: Response, next: NextFuncti
     }
 
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       if (!isDatabaseAvailable || req.user.id.startsWith('mock-') || id.startsWith('mock-')) {
         mockStore.clearUnreadCount(id);
@@ -631,7 +631,7 @@ router.put('/:id/read', async (req: AuthRequest, res: Response, next: NextFuncti
       await prisma.notification.updateMany({
         where: {
           userId: req.user.id,
-          relatedId: id,
+          relatedId: id as string,
           type: 'new_message',
           isRead: false
         },
@@ -645,7 +645,7 @@ router.put('/:id/read', async (req: AuthRequest, res: Response, next: NextFuncti
     } catch (error: any) {
       const isConnectionError = error.message?.includes('connect') || error.code === 'P1001';
       if (isConnectionError) {
-        mockStore.clearUnreadCount(req.params.id);
+        mockStore.clearUnreadCount(req.params.id as string);
         return res.json({
           success: true,
           message: 'Mesajlar okundu olarak işaretlendi (Mock)',

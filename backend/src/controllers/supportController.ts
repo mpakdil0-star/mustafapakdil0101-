@@ -132,13 +132,13 @@ export const getTicketDetail = async (req: AuthRequest, res: Response, next: Nex
     try {
         if (!req.user) throw new ValidationError('Oturum açmanız gerekiyor');
 
-        const { id } = req.params;
+        const id = req.params.id as string;
         const isAdmin = req.user.userType === 'ADMIN';
 
         if (isDatabaseAvailable && !id.startsWith('mock-')) {
             try {
                 const ticket = await prisma.supportTicket.findUnique({
-                    where: { id },
+                    where: { id: id as string },
                     include: {
                         user: {
                             select: { fullName: true, email: true, phone: true }
@@ -233,7 +233,7 @@ export const updateTicketStatus = async (req: AuthRequest, res: Response, next: 
             throw new ValidationError('Bu işlem için yönetici yetkisi gereklidir');
         }
 
-        const { id } = req.params;
+        const id = req.params.id as string;
         const { status, replyMessage } = req.body;
 
         if (!['open', 'in_progress', 'resolved', 'closed'].includes(status)) {
@@ -243,7 +243,7 @@ export const updateTicketStatus = async (req: AuthRequest, res: Response, next: 
         if (isDatabaseAvailable && !id.startsWith('mock-')) {
             try {
                 const ticket = await prisma.supportTicket.update({
-                    where: { id },
+                    where: { id: id as string },
                     data: { status },
                     include: {
                         user: { select: { id: true, pushToken: true } }
@@ -361,7 +361,7 @@ export const addTicketMessage = async (req: AuthRequest, res: Response, next: Ne
     try {
         if (!req.user) throw new ValidationError('Oturum açmanız gerekiyor');
 
-        const { id } = req.params;
+        const id = req.params.id as string;
         const { text } = req.body;
 
         if (!text) throw new ValidationError('Mesaj boş olamaz');
@@ -372,7 +372,7 @@ export const addTicketMessage = async (req: AuthRequest, res: Response, next: Ne
             try {
                 const message = await prisma.supportTicketMessage.create({
                     data: {
-                        ticketId: id,
+                        ticketId: id as string,
                         senderId: req.user.id,
                         text,
                         isAdmin
@@ -382,7 +382,7 @@ export const addTicketMessage = async (req: AuthRequest, res: Response, next: Ne
                 // 🔔 Mesaja karşılıklı bildirim
                 try {
                     const ticket = await prisma.supportTicket.findUnique({
-                        where: { id },
+                        where: { id: id as string },
                         include: { user: { select: { id: true, pushToken: true } } }
                     });
 

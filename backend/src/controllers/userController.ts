@@ -1142,9 +1142,9 @@ export const getElectricians = async (req: Request, res: Response, next: NextFun
  */
 export const getElectricianById = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { id } = req.params;
+        const id = req.params.id as string;
 
-        if (!isDatabaseAvailable || id.startsWith('mock-')) {
+        if (!isDatabaseAvailable || (id as string).startsWith('mock-')) {
             // Check if this is a known mock user from our session storage
             const mockData = mockStorage.get(id);
             const isKnownMockUser = !!mockData.fullName || mockData.specialties.length > 0;
@@ -1171,6 +1171,7 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
 
             // Get real rating stats from mock reviews
             const reviewStats = mockReviewStorage.getRatingStats(id);
+            const rawMock = mockStorage.get(id);
             const mockReviews = mockReviewStorage.getReviewsForElectrician(id).slice(0, 5);
 
             // Mock data fallback or dynamic mock data
@@ -1219,7 +1220,7 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
 
         const electrician = await prisma.user.findUnique({
             where: {
-                id: id,
+                id: id as string,
                 userType: 'ELECTRICIAN'
             },
             select: {

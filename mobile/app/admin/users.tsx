@@ -194,9 +194,20 @@ export default function AdminUsersScreen() {
                     )}
                 </View>
             )}
-
-
-
+            {item.locations && item.locations.length > 0 && (
+                <View style={styles.locationsContainer}>
+                    <View style={styles.locationsIconWrapper}>
+                        <Ionicons name="location-outline" size={14} color={colors.primary} />
+                    </View>
+                    <View style={styles.locationsListWrapper}>
+                        <Text style={styles.locationsText} numberOfLines={2}>
+                            {item.locations.map(loc =>
+                                [loc.district, loc.city].filter(Boolean).join(', ')
+                            ).join(' • ')}
+                        </Text>
+                    </View>
+                </View>
+            )}
             <View style={styles.actionRow}>
                 {item.userType === 'ELECTRICIAN' && (
                     <TouchableOpacity
@@ -478,26 +489,6 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: staticColors.textSecondary,
     },
-    locationsContainer: {
-        flexDirection: 'row',
-        marginTop: 10,
-        backgroundColor: '#F8FAFC',
-        padding: 8,
-        borderRadius: 8,
-        alignItems: 'center',
-    },
-    locationsIconWrapper: {
-        marginRight: 6,
-    },
-    locationsListWrapper: {
-        flex: 1,
-    },
-    locationsText: {
-        fontFamily: fonts.medium,
-        fontSize: 12,
-        color: staticColors.textSecondary,
-        lineHeight: 18,
-    },
     actionRow: {
         flexDirection: 'row',
         marginTop: 12,
@@ -607,5 +598,25 @@ const styles = StyleSheet.create({
         fontFamily: fonts.bold,
         fontSize: 15,
         color: '#fff',
+    },
+    locationsContainer: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        paddingHorizontal: 16,
+        paddingBottom: 12,
+        marginTop: -4,
+    },
+    locationsIconWrapper: {
+        marginTop: 2,
+        marginRight: 6,
+    },
+    locationsListWrapper: {
+        flex: 1,
+    },
+    locationsText: {
+        fontFamily: fonts.medium,
+        fontSize: 12,
+        color: staticColors.textSecondary,
+        lineHeight: 18,
     },
 });

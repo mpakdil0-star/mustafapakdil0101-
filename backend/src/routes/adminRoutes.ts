@@ -58,7 +58,8 @@ router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Re
                     take: limitNum,
                     orderBy: { createdAt: 'desc' },
                     include: {
-                        electricianProfile: { select: { creditBalance: true, completedJobsCount: true, serviceCategory: true, verificationStatus: true } }
+                        electricianProfile: { select: { creditBalance: true, completedJobsCount: true, serviceCategory: true, verificationStatus: true } },
+                        locations: true
                     }
                 }),
                 prisma.user.count({ where })
@@ -167,12 +168,13 @@ router.get('/users/:id', authenticate, adminMiddleware, async (req: Request, res
         let dbAvailable = false;
         try { await prisma.user.count(); dbAvailable = true; } catch (_) { }
 
-        if (dbAvailable && id && !id.startsWith('mock-')) {
+        if (dbAvailable && id && !(id as string).startsWith('mock-')) {
             try {
                 const dbUser = await prisma.user.findUnique({
-                    where: { id },
+                    where: { id: id as string },
                     include: {
-                        electricianProfile: true
+                        electricianProfile: true,
+                        locations: true
                     }
                 });
                 if (dbUser) {
@@ -184,7 +186,7 @@ router.get('/users/:id', authenticate, adminMiddleware, async (req: Request, res
         }
 
         // Fallback: mock storage
-        const userData = mockStorage.get(id);
+        const userData = mockStorage.get(id as string);
         if (!userData) {
             return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı' });
         }
@@ -215,22 +217,22 @@ router.put('/users/:id', authenticate, adminMiddleware, async (req: Request, res
             try {
                 // Try updating real database first
                 const updatedUser = await prisma.user.update({
-                    where: { id },
+                    where: { id: id as string },
                     data: updates
                 });
 
                 // Update isVerified in profile if necessary
                 if (updatedUser.userType === 'ELECTRICIAN' && isVerified !== undefined) {
                     await prisma.electricianProfile.update({
-                        where: { userId: id },
+                        where: { userId: id as string },
                         data: { verificationStatus: isVerified ? 'VERIFIED' : 'PENDING' }
                     });
                 }
             } catch (dbError) {
                 console.error('Admin update user DB error, falling back to mock:', dbError);
                 // Fallback to mock storage if database update fails
-                if (creditBalance !== undefined) mockStorage.updateBalance(id, creditBalance);
-                mockStorage.updateProfile(id, updates);
+                if (creditBalance !== undefined) mockStorage.updateBalance(id as string, creditBalance);
+                mockStorage.updateProfile(id as string, updates);
             }
         }
 

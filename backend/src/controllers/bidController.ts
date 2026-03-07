@@ -371,12 +371,12 @@ export const getBidByIdController = async (
         console.warn('⚠️ Database connection failed, searching for bid in memory store');
 
         // Search in global store first (faster)
-        let foundBid: any = bidStoreById.get(id);
+        let foundBid: any = bidStoreById.get(id as string);
 
         // Fallback to userBidsStore if needed (legacy check)
         if (!foundBid) {
           for (const [, bids] of userBidsStore.entries()) {
-            const bid = bids.find((b: any) => b.id === id);
+            const bid = bids.find((b: any) => b.id === id as string);
             if (bid) {
               foundBid = bid;
               break;
@@ -415,7 +415,7 @@ export const getJobBidsController = async (
 
     // FAST PATH: If using mock data, return immediately without calling bidService
     // This avoids any potential Prisma initialization delays
-    if (jobId.startsWith('mock-') || req.user?.id?.startsWith('mock-')) {
+    if ((jobId as string).startsWith('mock-') || (req.user?.id as string)?.startsWith('mock-')) {
       console.log('⚡ Fast path: returning mock bids for job:', jobId);
       const bids = Array.from(bidStoreById.values())
         .filter(bid => bid.jobPostId === jobId)
@@ -797,7 +797,7 @@ export const rejectBidController = async (
     // FAST PATH: If this is a mock bid, handle it immediately
     if (id && id.startsWith('mock-')) {
       console.log('⚡ Fast path: rejecting mock bid:', id);
-      const foundBid: any = bidStoreById.get(id);
+      const foundBid: any = bidStoreById.get(id as string);
 
       if (!foundBid) {
         return res.status(404).json({
@@ -945,9 +945,9 @@ export const withdrawBidController = async (
     const { id } = req.params;
 
     // FAST PATH: If this is a mock bid, handle it immediately
-    if (id && id.startsWith('mock-')) {
+    if (id && (id as string).startsWith('mock-')) {
       console.log('⚡ Fast path: withdrawing mock bid:', id);
-      const foundBid: any = bidStoreById.get(id);
+      const foundBid: any = bidStoreById.get(id as string);
 
       if (!foundBid) {
         return res.status(404).json({
@@ -962,7 +962,7 @@ export const withdrawBidController = async (
         updatedAt: new Date().toISOString()
       };
 
-      bidStoreById.set(id, withdrawnBid);
+      bidStoreById.set(id as string, withdrawnBid);
       saveMockBids();
 
       return res.json({
@@ -989,7 +989,7 @@ export const withdrawBidController = async (
         dbError.constructor.name === 'PrismaClientInitializationError';
 
       // If database error, handle mock bid withdrawal
-      if (isConnectionError || id.startsWith('mock-')) {
+      if (isConnectionError || (id as string).startsWith('mock-')) {
         console.warn('⚠️ Database connection failed, handling mock bid withdrawal');
 
         // Find bid in global store

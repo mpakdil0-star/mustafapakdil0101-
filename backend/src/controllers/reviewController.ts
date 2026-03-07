@@ -70,8 +70,8 @@ export const getElectricianReviews = async (req: Request, res: Response, next: N
         const { electricianId } = req.params;
 
         // Mock mode - always use this for now
-        const reviews = mockReviewStorage.getReviewsForElectrician(electricianId);
-        const stats = mockReviewStorage.getRatingStats(electricianId);
+        const reviews = mockReviewStorage.getReviewsForElectrician(electricianId as string);
+        const stats = mockReviewStorage.getRatingStats(electricianId as string);
 
         return res.status(200).json({
             success: true,

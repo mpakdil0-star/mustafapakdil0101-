@@ -12,7 +12,7 @@ export const getLocations = async (req: Request, res: Response, next: NextFuncti
             return res.status(200).json({ success: true, data: [] });
         }
 
-        if (!isDatabaseAvailable || userId.startsWith('mock-')) {
+        if (!isDatabaseAvailable || (userId as string).startsWith('mock-')) {
             const { mockStorage } = require('../utils/mockStorage');
             const mockData = mockStorage.get(userId);
             const mockLocs = mockData.locations || [];
@@ -49,7 +49,7 @@ export const addLocation = async (req: Request, res: Response, next: NextFunctio
         const lat = latitude !== undefined ? Number(latitude) : fallbackCoords.lat;
         const lng = longitude !== undefined ? Number(longitude) : fallbackCoords.lng;
 
-        if (!isDatabaseAvailable || userId.startsWith('mock-')) {
+        if (!isDatabaseAvailable || (userId as string).startsWith('mock-')) {
             const newLocation = {
                 id: `mock-loc-${Date.now()}`,
                 userId,
@@ -132,7 +132,7 @@ export const updateLocation = async (req: Request, res: Response, next: NextFunc
         if (latitude !== undefined) updatePayload.latitude = Number(latitude);
         if (longitude !== undefined) updatePayload.longitude = Number(longitude);
 
-        if (!isDatabaseAvailable || id.startsWith('mock-') || userId.startsWith('mock-')) {
+        if (!isDatabaseAvailable || (id as string).startsWith('mock-') || (userId as string).startsWith('mock-')) {
             const { mockStorage } = require('../utils/mockStorage');
             const mockData = mockStorage.get(userId);
             const userLocations = mockData.locations || [];
@@ -167,8 +167,8 @@ export const updateLocation = async (req: Request, res: Response, next: NextFunc
 
         const location = await prisma.location.updateMany({
             where: {
-                id,
-                userId
+                id: id as string,
+                userId: userId as string
             },
             data: updatePayload
         });
@@ -191,7 +191,7 @@ export const deleteLocation = async (req: Request, res: Response, next: NextFunc
         const { id } = req.params;
         const userId = (req as any).user.id;
 
-        if (!isDatabaseAvailable || id.startsWith('mock-') || userId.startsWith('mock-')) {
+        if (!isDatabaseAvailable || (id as string).startsWith('mock-') || (userId as string).startsWith('mock-')) {
             const { mockStorage } = require('../utils/mockStorage');
             const mockData = mockStorage.get(userId);
             const userLocations = mockData.locations || [];
@@ -218,8 +218,8 @@ export const deleteLocation = async (req: Request, res: Response, next: NextFunc
 
         await prisma.location.updateMany({
             where: {
-                id,
-                userId
+                id: id as string,
+                userId: userId as string
             },
             data: {
                 isActive: false
