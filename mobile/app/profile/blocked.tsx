@@ -81,7 +81,7 @@ export default function BlockedUsersScreen() {
             <View style={styles.userInfo}>
                 {item.profileImageUrl ? (
                     <Image
-                        source={{ uri: getFileUrl(item.profileImageUrl) }}
+                        source={{ uri: getFileUrl(item.profileImageUrl) || '' }}
                         style={styles.avatar}
                     />
                 ) : (
@@ -163,8 +163,8 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     listContent: {
-        padding: spacing.md,
-        paddingBottom: 40,
+        padding: 12,
+        paddingBottom: 20,
         flexGrow: 1
     },
     userCard: {
@@ -172,9 +172,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         backgroundColor: colors.white,
-        padding: 12,
-        borderRadius: 16,
-        marginBottom: 12,
+        padding: 10,
+        borderRadius: 14,
+        marginBottom: 10,
         borderWidth: 1,
         borderColor: '#E2E8F0'
     },
@@ -182,67 +182,67 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         flex: 1,
-        gap: 12
+        gap: 10
     },
     avatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 24
+        width: 40,
+        height: 40,
+        borderRadius: 20
     },
     avatarPlaceholder: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center'
     },
     avatarText: {
         fontFamily: fonts.bold,
-        fontSize: 18
+        fontSize: 16
     },
     textContainer: {
         flex: 1
     },
     userName: {
         fontFamily: fonts.bold,
-        fontSize: 15,
+        fontSize: 14,
         color: colors.text
     },
     userType: {
         fontFamily: fonts.medium,
-        fontSize: 12,
+        fontSize: 11,
         color: colors.textSecondary
     },
     unblockButton: {
-        paddingHorizontal: 12,
+        paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: 8,
         borderWidth: 1
     },
     unblockButtonText: {
         fontFamily: fonts.bold,
-        fontSize: 12
+        fontSize: 11
     },
     emptyContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 100,
-        paddingHorizontal: 40
+        paddingVertical: 80,
+        paddingHorizontal: 24
     },
     emptyTitle: {
         fontFamily: fonts.bold,
-        fontSize: 18,
+        fontSize: 16,
         color: colors.text,
-        marginTop: 16,
+        marginTop: 12,
         textAlign: 'center'
     },
     emptySub: {
         fontFamily: fonts.medium,
-        fontSize: 14,
+        fontSize: 13,
         color: colors.textSecondary,
         textAlign: 'center',
         marginTop: 8,
-        lineHeight: 20
+        lineHeight: 18
     }
 });
