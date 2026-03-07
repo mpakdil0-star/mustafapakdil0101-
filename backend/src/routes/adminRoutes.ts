@@ -203,43 +203,68 @@ router.put('/users/:id', authenticate, adminMiddleware, async (req: Request, res
         const { id } = req.params;
         const { isActive, creditBalance, isVerified } = req.body;
 
-        const updates: any = {};
+        const userUpdates: any = {};
+        const profileUpdates: any = {};
 
-        if (isActive !== undefined) {
-            updates.isActive = isActive;
+        if (isActive !== undefined) userUpdates.isActive = isActive;
+        if (isVerified !== undefined) userUpdates.isVerified = isVerified;
+        if (creditBalance !== undefined) profileUpdates.creditBalance = creditBalance;
+        if (isVerified !== undefined && isVerified !== null) {
+            profileUpdates.verificationStatus = isVerified ? 'VERIFIED' : 'PENDING';
         }
 
-        if (creditBalance !== undefined) {
-            updates.creditBalance = creditBalance;
-        }
+        let databaseUpdated = false;
 
-        if (Object.keys(updates).length > 0) {
+        // Try real database first if not a mock ID
+        if (id && !(id as string).startsWith('mock-')) {
             try {
-                // Try updating real database first
-                const updatedUser = await prisma.user.update({
-                    where: { id: id as string },
-                    data: updates
-                });
+                // Check if database is reachable
+                await prisma.user.count({ take: 1 });
 
-                // Update isVerified in profile if necessary
-                if (updatedUser.userType === 'ELECTRICIAN' && isVerified !== undefined) {
-                    await prisma.electricianProfile.update({
-                        where: { userId: id as string },
-                        data: { verificationStatus: isVerified ? 'VERIFIED' : 'PENDING' }
+                // Update User table
+                if (Object.keys(userUpdates).length > 0) {
+                    await prisma.user.update({
+                        where: { id: id as string },
+                        data: userUpdates
                     });
                 }
+
+                // Update ElectricianProfile if it exists and we have profile updates
+                if (Object.keys(profileUpdates).length > 0) {
+                    const profile = await prisma.electricianProfile.findUnique({
+                        where: { userId: id as string }
+                    });
+
+                    if (profile) {
+                        await prisma.electricianProfile.update({
+                            where: { userId: id as string },
+                            data: profileUpdates
+                        });
+                    }
+                }
+                databaseUpdated = true;
+                console.log(`✅ Database updated for user ${id}`);
             } catch (dbError) {
-                console.error('Admin update user DB error, falling back to mock:', dbError);
-                // Fallback to mock storage if database update fails
-                if (creditBalance !== undefined) mockStorage.updateBalance(id as string, creditBalance);
-                mockStorage.updateProfile(id as string, updates);
+                console.error('Admin update user DB error:', dbError);
+                // Will fall back to mock storage below
             }
+        }
+
+        // Fallback or additional update: mock storage
+        // Essential for testing & demo accounts
+        if (creditBalance !== undefined) {
+            mockStorage.updateBalance(id as string, creditBalance);
+        }
+
+        const combinedUpdates = { ...userUpdates, ...profileUpdates };
+        if (Object.keys(combinedUpdates).length > 0) {
+            mockStorage.updateProfile(id as string, combinedUpdates);
         }
 
         res.json({
             success: true,
-            message: 'Kullanıcı güncellendi',
-            data: { id, ...updates }
+            message: databaseUpdated ? 'Kullanıcı güncellendi' : 'Kullanıcı güncellendi (Test Modu)',
+            data: { id, ...userUpdates, ...profileUpdates }
         });
     } catch (error) {
         console.error('Admin update user error:', error);
