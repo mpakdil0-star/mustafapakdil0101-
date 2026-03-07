@@ -397,14 +397,14 @@ export default function CreateBidScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16, paddingBottom: 60 },
+  content: { padding: 16, paddingBottom: 40 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   // Info Card
   infoCard: {
-    padding: 20,
-    borderRadius: 28,
-    marginBottom: 24,
+    padding: 16,
+    borderRadius: 20,
+    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -412,51 +412,51 @@ const styles = StyleSheet.create({
     elevation: 3
   },
   jobInfoContainer: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  iconBox: { width: 52, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  iconBox: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
   jobTextInfo: { flex: 1 },
-  jobTitle: { fontSize: 18, fontFamily: fonts.extraBold, marginBottom: 4 },
+  jobTitle: { fontSize: 16, fontFamily: fonts.extraBold, marginBottom: 4 },
   locationBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   locationText: { fontSize: 13, fontFamily: fonts.medium, color: staticColors.textSecondary },
   infoDivider: { height: 1.5, backgroundColor: 'rgba(0,0,0,0.03)', marginVertical: 16 },
   budgetOverview: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   infoLabel: { fontSize: 12, fontFamily: fonts.bold, color: staticColors.textLight, textTransform: 'uppercase', letterSpacing: 0.5 },
-  infoValue: { fontSize: 22, fontFamily: fonts.extraBold, marginTop: 2 },
+  infoValue: { fontSize: 20, fontFamily: fonts.extraBold, marginTop: 2 },
   urgencyBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.03)' },
   urgencyText: { fontSize: 12, fontFamily: fonts.bold },
 
   // Form Section
-  formSection: { gap: 24 },
-  sectionTitle: { fontSize: 16, fontFamily: fonts.extraBold, marginBottom: -8, marginLeft: 4 },
-  inputGroup: { gap: 8 },
-  label: { fontSize: 14, fontFamily: fonts.bold, marginLeft: 4 },
+  formSection: { gap: 16 },
+  sectionTitle: { fontSize: 15, fontFamily: fonts.extraBold, marginBottom: -4, marginLeft: 4 },
+  inputGroup: { gap: 6 },
+  label: { fontSize: 13, fontFamily: fonts.bold, marginLeft: 4 },
 
   // Custom Inputs
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1.5,
     paddingHorizontal: 16,
-    height: 60,
+    height: 52,
   },
-  inputIcon: { marginRight: 12 },
-  input: { flex: 1, fontSize: 18, fontFamily: fonts.extraBold, height: '100%' },
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, fontSize: 16, fontFamily: fonts.extraBold, height: '100%' },
 
   pickerWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1.5,
     paddingHorizontal: 16,
-    height: 60,
+    height: 52,
   },
   flex1: { flex: 1 },
 
-  pillContainer: { flexDirection: 'row', gap: 8 },
+  pillContainer: { flexDirection: 'row', gap: 6 },
   pill: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center'
@@ -464,10 +464,10 @@ const styles = StyleSheet.create({
   pillText: { fontSize: 14, fontFamily: fonts.bold },
 
   textAreaWrapper: {
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1.5,
-    padding: 16,
-    minHeight: 140,
+    padding: 14,
+    minHeight: 110,
   },
   textArea: {
     flex: 1,
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top'
   },
 
-  submitBtn: { height: 60, borderRadius: 18, marginTop: 8 },
+  submitBtn: { height: 54, borderRadius: 16, marginTop: 4 },
   disclaimer: {
     textAlign: 'center',
     fontSize: 12,
