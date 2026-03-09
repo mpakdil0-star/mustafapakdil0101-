@@ -542,7 +542,7 @@ export const jobService = {
         deletedAt: null,
       };
 
-      if (userType === 'CITIZEN') {
+      if (userType === 'CITIZEN' || userType === 'ADMIN') {
         where.citizenId = userId;
       } else if (userType === 'ELECTRICIAN') {
         // Jobs where electrician has placed a bid

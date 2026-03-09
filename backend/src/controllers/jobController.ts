@@ -779,7 +779,7 @@ export const getMyJobsController = async (
     }
 
     if (isMockFallback) {
-      if (userType === 'CITIZEN') {
+      if (userType === 'CITIZEN' || userType === 'ADMIN') {
         const userCreatedJobs = userJobsStore.get(userId) || [];
         const mockJobsResult = getMockJobs();
         const staticMockJobs = (mockJobsResult.jobs || []).map((job: any) => {
