@@ -237,6 +237,8 @@ export const createJobController = async (
         console.log(`📡 Sending notifications. Job: ${jobServiceCategory}, City: ${targetCity}, Creator: ${req.user.id}`);
         console.log(`👥 Found ${electricians.length} total mock electricians`);
 
+        const validPushTokens: string[] = [];
+
         electricians.forEach(([userId, userData]: [string, any]) => {
           // SKIP the current user (even if they have an electrician profile)
           if (req.user && userId === req.user.id) {
@@ -295,21 +297,26 @@ export const createJobController = async (
               console.error('      ❌ Socket emission failed:', sockErr);
             }
 
-            // PUSH NOTIFICATION
+            // PUSH NOTIFICATION COLLECT
             if (userData.pushToken) {
-              console.log(`      📲 Sending PUSH to ${userId}, Token: ${userData.pushToken}`);
-              const pushNotificationService = require('../services/pushNotificationService').default;
-              pushNotificationService.sendNotification({
-                to: userData.pushToken,
-                title: 'Yeni İş İlanı! ⚡',
-                body: `Bölgenizde yeni ilan verildi: ${jobData.title}`,
-                data: { jobId: mockJob.id, type: 'new_job_available' }
-              }).catch((err: any) => console.error('      ❌ Push Notification Error:', err));
+              validPushTokens.push(userData.pushToken);
             } else {
               console.log(`      ⚠️ No push token for ${userId}`);
             }
           }
         });
+
+        // BATCH PUSH NOTIFICATION (Queue/Rate limit'i önler)
+        if (validPushTokens.length > 0) {
+          console.log(`      📲 Sending PUSH to ${validPushTokens.length} valid tokens`);
+          const pushNotificationService = require('../services/pushNotificationService').default;
+          pushNotificationService.sendNotification({
+            to: validPushTokens,
+            title: 'Yeni İş İlanı! ⚡',
+            body: `Bölgenizde yeni ilan verildi: ${jobData.title}`,
+            data: { jobId: mockJob.id, type: 'new_job_available' }
+          }).catch((err: any) => console.error('      ❌ Push Notification Error:', err));
+        }
 
         // 3. Send Socket Notifications
         console.log(`📡 [Socket] Target rooms for new_job_available: ${targetRooms.length > 0 ? targetRooms.join(', ') : 'NONE'}`);

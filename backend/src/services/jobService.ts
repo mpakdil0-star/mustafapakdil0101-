@@ -208,6 +208,8 @@ export const jobService = {
           select: { id: true, pushToken: true }
         });
 
+        const validPushTokens: string[] = [];
+
         for (const elec of electricians) {
           if (elec.id === job.citizenId) continue;
 
@@ -223,15 +225,19 @@ export const jobService = {
             }
           }).catch(err => console.error('Failed to save notification to DB:', err));
 
-          // Push Bildirimi gönder
           if (elec.pushToken) {
-            pushNotificationService.sendNotification({
-              to: elec.pushToken,
-              title: 'Yeni İş İlanı!',
-              body: `${district || ''}, ${city || ''} bölgesinde yeni bir ${job.category} ilanı açıldı.`,
-              data: { jobId: job.id, type: 'new_job_available' }
-            }).catch(err => console.error('Push Notification Error:', err));
+            validPushTokens.push(elec.pushToken);
           }
+        }
+
+        // Toplu Push Bildirimi Gönderimi (Queue/Rate limit aşımını önler)
+        if (validPushTokens.length > 0) {
+          pushNotificationService.sendNotification({
+            to: validPushTokens,
+            title: 'Yeni İş İlanı!',
+            body: `${district || ''}, ${city || ''} bölgesinde yeni bir ${job.category} ilanı açıldı.`,
+            data: { jobId: job.id, type: 'new_job_available' }
+          }).catch(err => console.error('Push Notification Error:', err));
         }
       } else {
         // Mock modda notificationRoutes'taki listenin de güncellenmesi gerekiyorsa controller zaten bunu yapıyor.
