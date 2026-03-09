@@ -79,6 +79,7 @@ router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Re
                 completedJobsCount: u.electricianProfile?.completedJobsCount ?? 0,
                 serviceCategory: u.electricianProfile?.serviceCategory ?? null,
                 locations: u.locations || [],
+                hasPushNotification: !!u.pushToken,
                 createdAt: u.createdAt,
             }));
 
@@ -122,7 +123,8 @@ router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Re
                 specialties: data.specialties || [],
                 completedJobsCount: data.completedJobsCount || 0,
                 serviceCategory: data.serviceCategory,
-                locations: data.locations || []
+                locations: data.locations || [],
+                hasPushNotification: !!data.pushToken
             };
         });
 

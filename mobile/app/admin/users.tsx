@@ -23,6 +23,7 @@ interface User {
     completedJobsCount?: number;
     serviceCategory?: string;
     locations?: { city: string; district?: string }[];
+    hasPushNotification?: boolean;
 }
 
 type FilterType = 'ALL' | 'CITIZEN' | 'ELECTRICIAN';
@@ -171,6 +172,14 @@ export default function AdminUsersScreen() {
                         <Text style={styles.userName} numberOfLines={1}>{item.fullName}</Text>
                         {item.isVerified && (
                             <Ionicons name="checkmark-circle" size={16} color="#10B981" style={{ marginLeft: 4 }} />
+                        )}
+                        {item.hasPushNotification !== undefined && (
+                            <Ionicons
+                                name={item.hasPushNotification ? "notifications" : "notifications-off"}
+                                size={14}
+                                color={item.hasPushNotification ? colors.primary : staticColors.textLight}
+                                style={{ marginLeft: 6 }}
+                            />
                         )}
                         {!item.isActive && (
                             <View style={styles.suspendedBadge}>
