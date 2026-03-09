@@ -404,10 +404,7 @@ export default function HomeScreen() {
           const Notifications = await import('expo-notifications');
           const { status } = await Notifications.getPermissionsAsync();
           if (status !== 'granted') {
-            const dismissed = await AsyncStorage.getItem('has_dismissed_push_popup');
-            if (dismissed === 'true') {
-              setShowPushBanner(true);
-            }
+            setShowPushBanner(true);
           } else {
             setShowPushBanner(false);
           }
@@ -593,9 +590,9 @@ export default function HomeScreen() {
                   <Ionicons name="notifications" size={24} color="#FFF" />
                 </View>
                 <View style={[styles.healthTextContainer, { flex: 1 }]}>
-                  <Text style={[styles.healthTitle, { color: '#B45309', fontSize: 14 }]}>Bildirimler Kapalı</Text>
-                  <Text style={[styles.healthSubtitle, { color: '#D97706', fontSize: 12 }]} numberOfLines={2}>
-                    Yeni fırsatlar ve acil işleri kaçırmamak için bildirimleri aktif edin.
+                  <Text style={[styles.healthTitle, { color: '#B45309', fontSize: 14 }]}>Bildirimleriniz Kapalı 🔕</Text>
+                  <Text style={[styles.healthSubtitle, { color: '#D97706', fontSize: 13, fontFamily: fonts.semiBold }]} numberOfLines={2}>
+                    İş ilanlarını kaçırmamak için bildirimleri açın!
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#F59E0B" />
