@@ -14,6 +14,7 @@ import {
     Modal,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { fetchUnreadCount, markTypeAsRead, markRelatedNotificationsAsRead } from '../../store/slices/notificationSlice';
@@ -56,6 +57,7 @@ export default function ChatScreen() {
     const dispatch = useAppDispatch();
     const { user } = useAppSelector((state) => state.auth);
     const colors = useAppColors();
+    const insets = useSafeAreaInsets();
     const flatListRef = useRef<FlatList>(null);
 
     const [messages, setMessages] = useState<Message[]>([]);
@@ -472,7 +474,7 @@ export default function ChatScreen() {
                     }
                 />
 
-                <View style={styles.bottomSection}>
+                <View style={[styles.bottomSection, { paddingBottom: Math.max(insets.bottom + 8, Platform.OS === 'ios' ? 34 : 20) }]}>
                     {isTyping && (
                         <View style={styles.typingContainer}>
                             <Text style={styles.typingText}>{otherUser?.fullName} yazıyor...</Text>
