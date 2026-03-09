@@ -211,10 +211,18 @@ export default function CreateBidScreen() {
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.container, { backgroundColor: colors.backgroundDark }]}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 80}
+      style={[styles.container, { backgroundColor: colors.backgroundDark }]}
+    >
       <PremiumHeader title="Teklif Ver" subtitle={currentJob.category} showBackButton />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: 120 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Job Info Summary Card */}
         <Card style={[styles.infoCard, { backgroundColor: colors.surface }]}>
           <View style={styles.jobInfoContainer}>
@@ -296,21 +304,18 @@ export default function CreateBidScreen() {
           {/* Date Picker */}
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.textSecondary }]}>Başlangıç Tarihi</Text>
-            <View style={[styles.pickerWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Ionicons name="calendar-outline" size={20} color={colors.primary} style={styles.inputIcon} />
-              <View style={styles.flex1}>
-                <Picker
-                  label=""
-                  value={selectedDateLabel}
-                  options={detailedDateOptions.map(o => o.label)}
-                  onValueChange={(val) => {
-                    setSelectedDateLabel(val);
-                    const opt = detailedDateOptions.find(o => o.label === val);
-                    if (opt) setEstimatedStartDate(opt.value);
-                  }}
-                />
-              </View>
-            </View>
+            <Picker
+              value={selectedDateLabel}
+              options={detailedDateOptions.map(o => o.label)}
+              onValueChange={(val) => {
+                setSelectedDateLabel(val);
+                const opt = detailedDateOptions.find(o => o.label === val);
+                if (opt) setEstimatedStartDate(opt.value);
+              }}
+              icon={<Ionicons name="calendar-outline" size={20} color={colors.primary} style={styles.inputIcon} />}
+              containerStyle={{ marginBottom: 0 }}
+              pickerStyle={[styles.pickerWrapper, { backgroundColor: colors.surface, borderColor: colors.border, height: 44, minHeight: 44 }]}
+            />
           </View>
 
           {/* Message Textarea */}

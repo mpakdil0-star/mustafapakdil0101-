@@ -164,7 +164,7 @@ export default function ReportScreen() {
                     placeholder="Şikayetinizi detaylı olarak açıklayın... (en az 20 karakter)"
                     placeholderTextColor={colors.textLight}
                     multiline
-                    numberOfLines={5}
+                    numberOfLines={4}
                     value={description}
                     onChangeText={setDescription}
                     textAlignVertical="top"
@@ -173,34 +173,40 @@ export default function ReportScreen() {
 
                 {/* Block Option */}
                 <TouchableOpacity
-                    style={styles.blockOption}
+                    style={[
+                        styles.blockOption,
+                        blockUser && { backgroundColor: '#EF444408', borderColor: '#EF444440' }
+                    ]}
                     onPress={() => setBlockUser(!blockUser)}
                     activeOpacity={0.7}
                 >
                     <View style={[
                         styles.checkbox,
-                        blockUser && { backgroundColor: appColors.primary, borderColor: appColors.primary }
+                        blockUser && { backgroundColor: '#EF4444', borderColor: '#EF4444' }
                     ]}>
-                        {blockUser && <Ionicons name="checkmark" size={16} color={colors.white} />}
+                        {blockUser && <Ionicons name="checkmark" size={14} color={colors.white} />}
                     </View>
                     <View style={styles.blockOptionTextContainer}>
-                        <Text style={styles.blockOptionTitle}>Bu kullanıcıyı engelle</Text>
+                        <Text style={[styles.blockOptionTitle, blockUser && { color: '#EF4444' }]}>Bu kullanıcıyı engelle</Text>
                         <Text style={styles.blockOptionSub}>Bu kullanıcıyı engellediğinizde birbirinizin ilanlarını ve mesajlarını görmezsiniz.</Text>
                     </View>
                 </TouchableOpacity>
 
                 {/* Submit Button */}
-                <Button
-                    title={isSubmitting ? 'Gönderiliyor...' : 'Şikayeti Gönder'}
-                    onPress={handleSubmit}
-                    disabled={isSubmitting || !selectedReason || description.length < 20}
-                    style={styles.submitButton}
-                />
+                <View style={styles.actionContainer}>
+                    <Button
+                        title={isSubmitting ? 'Gönderiliyor...' : 'Şikayeti Gönder'}
+                        onPress={handleSubmit}
+                        disabled={isSubmitting || !selectedReason || description.length < 20}
+                        style={styles.submitButton}
+                        variant="primary"
+                    />
 
-                {/* Disclaimer */}
-                <Text style={styles.disclaimer}>
-                    Yanlış veya kötü niyetli şikayetler hesap askıya alınmasına neden olabilir.
-                </Text>
+                    {/* Disclaimer */}
+                    <Text style={styles.disclaimer}>
+                        Yanlış veya kötü niyetli şikayetler hesaba işlem yapılmasına neden olabilir.
+                    </Text>
+                </View>
             </ScrollView>
         </View>
     );
@@ -215,113 +221,105 @@ const styles = StyleSheet.create({
         flex: 1
     },
     content: {
-        padding: spacing.lg,
+        padding: 16,
         paddingBottom: 40
     },
     infoCard: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: colors.white,
-        padding: 16,
-        borderRadius: 16,
-        gap: 12,
-        marginBottom: 24,
+        padding: 12,
+        borderRadius: 12,
+        gap: 10,
+        marginBottom: 16,
         borderWidth: 1,
         borderColor: '#E2E8F0'
     },
     infoText: {
         flex: 1,
         fontFamily: fonts.medium,
-        fontSize: 14,
+        fontSize: 13,
         color: colors.textSecondary,
-        lineHeight: 20
+        lineHeight: 18
     },
     sectionTitle: {
         fontFamily: fonts.bold,
-        fontSize: 16,
+        fontSize: 14,
         color: colors.text,
-        marginBottom: 12
+        marginBottom: 8
     },
     reasonContainer: {
-        gap: 8,
-        marginBottom: 24
+        gap: 6,
+        marginBottom: 16
     },
     reasonItem: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: colors.white,
-        padding: 16,
-        borderRadius: 12,
-        borderWidth: 1.5,
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        borderWidth: 1,
         borderColor: '#E2E8F0',
-        gap: 12
+        gap: 10
     },
     radioOuter: {
-        width: 22,
-        height: 22,
-        borderRadius: 11,
-        borderWidth: 2,
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        borderWidth: 1.5,
         borderColor: '#CBD5E1',
         alignItems: 'center',
         justifyContent: 'center'
     },
     radioInner: {
-        width: 12,
-        height: 12,
-        borderRadius: 6
+        width: 10,
+        height: 10,
+        borderRadius: 5
     },
     reasonText: {
         fontFamily: fonts.medium,
-        fontSize: 15,
+        fontSize: 14,
         color: colors.text,
         flex: 1
     },
     textArea: {
         backgroundColor: colors.white,
-        borderRadius: 16,
-        padding: 16,
+        borderRadius: 12,
+        padding: 12,
         fontFamily: fonts.regular,
-        fontSize: 15,
+        fontSize: 14,
         color: colors.text,
-        minHeight: 120,
+        height: 80,
         borderWidth: 1,
         borderColor: '#E2E8F0',
-        marginBottom: 8
+        marginBottom: 4
     },
     charCount: {
         fontFamily: fonts.medium,
-        fontSize: 12,
+        fontSize: 11,
         color: colors.textLight,
         textAlign: 'right',
-        marginBottom: 24
-    },
-    submitButton: {
         marginBottom: 16
-    },
-    disclaimer: {
-        fontFamily: fonts.medium,
-        fontSize: 12,
-        color: colors.textLight,
-        textAlign: 'center',
-        lineHeight: 18
     },
     blockOption: {
         flexDirection: 'row',
         backgroundColor: colors.white,
-        padding: 16,
-        borderRadius: 16,
+        padding: 12,
+        borderRadius: 12,
         borderWidth: 1,
         borderColor: '#E2E8F0',
-        marginBottom: 24,
-        gap: 12,
+        marginBottom: 16,
+        gap: 10,
         alignItems: 'flex-start'
     },
     checkbox: {
-        width: 24,
-        height: 24,
+        width: 20,
+        height: 20,
         borderRadius: 6,
-        borderWidth: 2,
+        borderWidth: 1.5,
         borderColor: '#CBD5E1',
+        backgroundColor: colors.white,
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 2
@@ -331,14 +329,27 @@ const styles = StyleSheet.create({
     },
     blockOptionTitle: {
         fontFamily: fonts.bold,
-        fontSize: 15,
+        fontSize: 14,
         color: colors.text,
         marginBottom: 2
     },
     blockOptionSub: {
         fontFamily: fonts.medium,
-        fontSize: 12,
+        fontSize: 11,
         color: colors.textSecondary,
-        lineHeight: 18
+        lineHeight: 16
+    },
+    actionContainer: {
+        marginTop: 4
+    },
+    submitButton: {
+        marginBottom: 12
+    },
+    disclaimer: {
+        fontFamily: fonts.medium,
+        fontSize: 11,
+        color: colors.textLight,
+        textAlign: 'center',
+        lineHeight: 16
     }
 });

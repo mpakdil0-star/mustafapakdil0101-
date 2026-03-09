@@ -444,7 +444,7 @@ export default function ChatScreen() {
 
             <KeyboardAvoidingView
                 style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
                 <View style={[styles.securityBanner, { backgroundColor: staticColors.secondary + '10', borderBottomColor: staticColors.secondary + '20' }]}>
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
     bottomSection: {
         backgroundColor: 'transparent',
         paddingHorizontal: spacing.md,
-        paddingBottom: Platform.OS === 'ios' ? 34 : 80, // Tab bar yüksekliğini hesaba kat
+        paddingBottom: Platform.OS === 'ios' ? 34 : 20,
     },
     typingContainer: {
         paddingVertical: 8,

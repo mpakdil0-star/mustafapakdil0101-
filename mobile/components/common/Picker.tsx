@@ -14,7 +14,7 @@ import { spacing } from '../../constants/spacing';
 import { typography, fonts } from '../../constants/typography';
 
 interface PickerProps {
-  label: string;
+  label?: string;
   placeholder?: string;
   value: string;
   options: string[];
@@ -22,6 +22,9 @@ interface PickerProps {
   error?: string;
   required?: boolean;
   disabled?: boolean;
+  containerStyle?: any;
+  pickerStyle?: any;
+  icon?: React.ReactNode;
 }
 
 export const Picker: React.FC<PickerProps> = ({
@@ -33,6 +36,9 @@ export const Picker: React.FC<PickerProps> = ({
   error,
   required = false,
   disabled = false,
+  containerStyle,
+  pickerStyle,
+  icon,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,7 +48,7 @@ export const Picker: React.FC<PickerProps> = ({
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, containerStyle]}>
       {label && (
         <Text style={styles.label}>
           {label} {required && <Text style={styles.required}>*</Text>}
@@ -54,6 +60,7 @@ export const Picker: React.FC<PickerProps> = ({
           styles.picker,
           error && styles.pickerError,
           disabled && styles.pickerDisabled,
+          pickerStyle,
         ]}
         onPress={() => {
           if (!disabled) {
@@ -64,12 +71,15 @@ export const Picker: React.FC<PickerProps> = ({
         activeOpacity={disabled ? 1 : 0.7}
         disabled={disabled}
       >
+        {icon && <View style={styles.iconContainer}>{icon}</View>}
         <Text
           style={[
             styles.pickerText,
             (!value || disabled) && styles.placeholder,
             disabled && styles.disabledText,
           ]}
+          numberOfLines={1}
+          ellipsizeMode="tail"
         >
           {value || placeholder}
         </Text>
@@ -195,6 +205,9 @@ const styles = StyleSheet.create({
   },
   disabledText: {
     color: colors.textSecondary,
+  },
+  iconContainer: {
+    marginRight: spacing.xs,
   },
   arrow: {
     fontSize: 12,
