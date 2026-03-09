@@ -131,22 +131,38 @@ export default function NotificationsScreen() {
         try {
             // First, try to load from SecureStore (instant)
             const stored = await SecureStore.getItemAsync(NOTIFICATION_PREFS_KEY);
-            if (stored) {
-                setPreferences(JSON.parse(stored));
-            }
+            let prefs = stored ? JSON.parse(stored) : defaultPreferences;
 
             // Then, try to sync from API
             try {
                 const response = await api.get('/users/notification-preferences');
                 if (response.data.success && response.data.data) {
-                    const apiPrefs = response.data.data;
-                    setPreferences(apiPrefs);
+                    prefs = response.data.data;
                     // Update local storage with server data
-                    await SecureStore.setItemAsync(NOTIFICATION_PREFS_KEY, JSON.stringify(apiPrefs));
+                    await SecureStore.setItemAsync(NOTIFICATION_PREFS_KEY, JSON.stringify(prefs));
                 }
             } catch (apiError) {
                 console.log('Could not sync from API, using local preferences');
             }
+
+            // FORCE UI synchronization: if system permission is denied, pushEnabled MUST be false
+            try {
+                const { Platform: RNPlatform } = await import('react-native');
+                const Constants = (await import('expo-constants')).default;
+                if (!(Constants.appOwnership === 'expo' && RNPlatform.OS === 'android')) {
+                    const Notifications = await import('expo-notifications');
+                    const { status } = await Notifications.getPermissionsAsync();
+                    if (status !== 'granted' && prefs.pushEnabled) {
+                        console.log('🔕 System permission is denied -> Forcing pushEnabled to false in state');
+                        prefs = { ...prefs, pushEnabled: false };
+                        await SecureStore.setItemAsync(NOTIFICATION_PREFS_KEY, JSON.stringify(prefs));
+                    }
+                }
+            } catch (e) {
+                console.warn('Sync permission error:', e);
+            }
+
+            setPreferences(prefs);
         } catch (error) {
             console.error('Error loading preferences:', error);
         } finally {
