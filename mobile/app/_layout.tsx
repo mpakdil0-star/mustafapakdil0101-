@@ -209,7 +209,15 @@ function RootLayoutNav() {
               {
                 text: 'Daha Sonra',
                 variant: 'ghost',
-                onPress: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+                onPress: async () => {
+                  setAlertConfig(prev => ({ ...prev, visible: false }));
+                  try {
+                    const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+                    await AsyncStorage.setItem('has_dismissed_push_popup', 'true');
+                  } catch (e) {
+                    console.log('AsyncStorage error:', e);
+                  }
+                }
               },
               {
                 text: 'Bildirimleri Aç',

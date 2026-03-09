@@ -341,9 +341,9 @@ export default function JobDetailScreen() {
                     color = '#F59E0B';
                     icon = 'alert-circle';
                   } else if (isAssigned) {
-                    label = isAssignedToMe ? 'İş Size Atandı' : 'Usta Seçildi';
+                    label = isAssignedToMe ? 'İş Size Atandı' : 'Tekliflere Kapalı';
                     color = staticColors.success;
-                    icon = 'people';
+                    icon = 'lock-closed';
                   } else if (bidCount > 0) {
                     label = isElectrician ? `${bidCount} Teklif` : 'Teklifleri İnceleyin';
                     color = colors.primary;
@@ -582,7 +582,7 @@ export default function JobDetailScreen() {
           </View>
         )}
 
-        {!isOwner && !hasBidOnJob && jobData.status === 'OPEN' && (
+        {!isOwner && !hasBidOnJob && (jobData.status === 'OPEN' || jobData.status === 'BIDDING') && !jobData.assignedElectricianId && (
           <Button
             title={isGuest ? "Giriş Yap & Teklif Ver" : "Teklif Ver"}
             onPress={() => isGuest ? setShowAuthModal(true) : router.push(`/jobs/${id}/bid`)}

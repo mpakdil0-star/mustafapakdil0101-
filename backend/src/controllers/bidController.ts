@@ -211,6 +211,14 @@ export const createBidController = async (
             }
           }
 
+          // Check if job is closed for bids
+          if (job && job.status !== 'OPEN' && job.status !== 'BIDDING') {
+            return res.status(400).json({
+              success: false,
+              error: { message: 'Bu ilan usta seçildiği için yeni tekliflere kapatılmıştır.' }
+            });
+          }
+
           const mockBid = {
             id: `mock-bid-${Date.now()}`,
             jobPostId: bidData.jobPostId,

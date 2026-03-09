@@ -126,6 +126,7 @@ export default function HomeScreen() {
   const [featuredElectricians, setFeaturedElectricians] = useState<any[]>([]);
   const [isLoadingElectricians, setIsLoadingElectricians] = useState(false);
   const [hideHowItWorks, setHideHowItWorks] = useState(false);
+  const [showPushBanner, setShowPushBanner] = useState(false);
 
   // Pulse animation for health action buttons
   const healthPulseAnim = useRef(new Animated.Value(1)).current;
@@ -393,8 +394,29 @@ export default function HomeScreen() {
         setIsInitialized(true);
       };
 
+      const checkPushStatus = async () => {
+        try {
+          const { Platform } = await import('react-native');
+          const Constants = (await import('expo-constants')).default;
+          if (Platform.OS === 'android' && Constants.appOwnership === 'expo') {
+            return;
+          }
+          const Notifications = await import('expo-notifications');
+          const { status } = await Notifications.getPermissionsAsync();
+          if (status !== 'granted') {
+            const dismissed = await AsyncStorage.getItem('has_dismissed_push_popup');
+            if (dismissed === 'true') {
+              setShowPushBanner(true);
+            }
+          } else {
+            setShowPushBanner(false);
+          }
+        } catch (e) { }
+      };
+
       fetchUserLocations();
       fetchNewJobsCount();
+      if (isAuthenticated) checkPushStatus();
     }, [isAuthenticated, isElectrician, fetchNewJobsCount])
   );
 
@@ -557,6 +579,30 @@ export default function HomeScreen() {
             </View>
           </ImageBackground>
         </View>
+
+        {/* Push Notification Banner */}
+        {showPushBanner && isAuthenticated && (
+          <View style={[styles.bannerWrapper, { marginTop: 16, marginBottom: -4 }]}>
+            <TouchableOpacity
+              style={[styles.profileHealthCard, { backgroundColor: '#FFFBEB', borderColor: '#F59E0B', borderWidth: 1 }]}
+              activeOpacity={0.9}
+              onPress={() => router.push('/profile/notification_settings')}
+            >
+              <View style={styles.healthCardContent}>
+                <View style={[styles.healthIconContainer, { backgroundColor: '#F59E0B' }]}>
+                  <Ionicons name="notifications" size={24} color="#FFF" />
+                </View>
+                <View style={[styles.healthTextContainer, { flex: 1 }]}>
+                  <Text style={[styles.healthTitle, { color: '#B45309', fontSize: 14 }]}>Bildirimler Kapalı</Text>
+                  <Text style={[styles.healthSubtitle, { color: '#D97706', fontSize: 12 }]} numberOfLines={2}>
+                    Yeni fırsatlar ve acil işleri kaçırmamak için bildirimleri aktif edin.
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#F59E0B" />
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Unified Profile Health Banner - with RGB Border Animation */}
         {

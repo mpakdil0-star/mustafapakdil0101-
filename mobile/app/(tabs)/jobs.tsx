@@ -464,9 +464,9 @@ export default function JobsScreen() {
 
             if (isAssigned) {
               if (isElectrician) {
-                return isAssignedToMe ? 'İş Size Atandı' : 'Usta Seçildi';
+                return isAssignedToMe ? 'İş Size Atandı' : 'Tekliflere Kapalı';
               }
-              return 'Usta Seçildi';
+              return 'Tekliflere Kapalı';
             }
 
             if (bidCount > 0) {

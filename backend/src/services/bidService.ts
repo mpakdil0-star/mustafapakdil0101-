@@ -74,7 +74,7 @@ export const bidService = {
       }
 
       if (jobPost.status !== JobStatus.OPEN && jobPost.status !== JobStatus.BIDDING) {
-        throw new ValidationError('Job post is not accepting bids');
+        throw new ValidationError('Bu ilan usta seçildiği için yeni tekliflere kapatılmıştır.');
       }
 
       // Engelleme kontrolü
