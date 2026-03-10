@@ -361,6 +361,7 @@ export const mockStorage = {
             acceptedLegalVersion: store.acceptedLegalVersion || null,
             marketingAllowed: store.marketingAllowed || false,
             serviceCategory: store.serviceCategory || null,
+            pushToken: store.pushToken || null,
             electricianProfile: finalUserType === 'ELECTRICIAN' ? {
                 completedJobsCount: store.completedJobsCount || 0,
                 experienceYears: store.experienceYears,

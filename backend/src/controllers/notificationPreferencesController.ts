@@ -1,4 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 interface AuthRequest extends Request {
     user?: {
@@ -40,7 +43,22 @@ export const getNotificationPreferences = async (req: AuthRequest, res: Response
         const userId = req.user.id;
 
         // Get from cache or return defaults
-        const preferences = notificationPreferencesCache.get(userId) || defaultPreferences;
+        const preferences = { ...(notificationPreferencesCache.get(userId) || defaultPreferences) };
+
+        // Determine real push token status from database
+        try {
+            const dbUser = await prisma.user.findUnique({
+                where: { id: userId },
+                select: { pushToken: true }
+            });
+            // ONLY true if there's actually a token in the DB
+            preferences.pushEnabled = !!dbUser?.pushToken;
+        } catch (dbError) {
+            // Fallback to mockStorage if DB fails
+            const { mockStorage } = require('../utils/mockStorage');
+            const mockUser = mockStorage.get(userId);
+            preferences.pushEnabled = !!mockUser?.pushToken;
+        }
 
         res.json({
             success: true,

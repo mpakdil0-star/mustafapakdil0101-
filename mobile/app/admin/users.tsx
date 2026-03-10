@@ -39,6 +39,7 @@ export default function AdminUsersScreen() {
     const [filter, setFilter] = useState<FilterType>('ALL');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
 
     // Modal State
     const [creditModalVisible, setCreditModalVisible] = useState(false);
@@ -82,6 +83,7 @@ export default function AdminUsersScreen() {
             // Don't show alert on initial load if it fails quietly
         } finally {
             setLoading(false);
+            setIsLoadingMore(false);
             setRefreshing(false);
         }
     }, [searchQuery, filter, page]);
@@ -90,6 +92,12 @@ export default function AdminUsersScreen() {
         setLoading(true);
         fetchUsers(true);
     }, [filter]);
+
+    useEffect(() => {
+        if (page > 1) {
+            fetchUsers(false);
+        }
+    }, [page]);
 
     useEffect(() => {
         const debounce = setTimeout(() => {
@@ -319,12 +327,19 @@ export default function AdminUsersScreen() {
                         </View>
                     }
                     onEndReached={() => {
-                        if (page < totalPages && !loading) {
-                            setPage(page + 1);
-                            fetchUsers();
+                        if (page < totalPages && !loading && !isLoadingMore) {
+                            setIsLoadingMore(true);
+                            setPage(prev => prev + 1);
                         }
                     }}
                     onEndReachedThreshold={0.5}
+                    ListFooterComponent={
+                        isLoadingMore ? (
+                            <View style={{ padding: spacing.md, alignItems: 'center' }}>
+                                <ActivityIndicator size="small" color={colors.primary} />
+                            </View>
+                        ) : null
+                    }
                 />
             )}
 
