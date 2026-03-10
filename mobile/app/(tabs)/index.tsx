@@ -406,24 +406,35 @@ export default function HomeScreen() {
           const Notifications = await import('expo-notifications');
           const { status } = await Notifications.getPermissionsAsync();
           if (status !== 'granted') {
+            // System permission revoked - clear local flag and show banner
+            await AsyncStorage.removeItem('push_activated');
             setShowPushBanner(true);
             return;
           }
-          // System permission granted, check if backend has token
+          // System permission granted - check local activation flag first (fast path)
+          const localFlag = await AsyncStorage.getItem('push_activated');
+          if (localFlag === 'true') {
+            setShowPushBanner(false);
+            return;
+          }
+          // No local flag - check backend as fallback
           try {
             const prefRes = await api.get('/users/notification-preferences');
             const prefData = prefRes.data?.data;
             if (prefRes.data?.success && prefData) {
-              // If user deliberately disabled push (pushEnabled === false), respect their choice
               if (prefData.pushEnabled === false) {
                 setShowPushBanner(false);
                 return;
               }
-              // User wants notifications but no token registered yet
-              if (!prefData.hasPushToken) {
-                setShowPushBanner(true);
+              if (prefData.hasPushToken) {
+                // Backend confirms token exists - save locally for next time
+                await AsyncStorage.setItem('push_activated', 'true');
+                setShowPushBanner(false);
                 return;
               }
+              // User wants notifications but no token yet
+              setShowPushBanner(true);
+              return;
             }
           } catch (e) { }
           setShowPushBanner(false);
@@ -621,6 +632,8 @@ export default function HomeScreen() {
                     try {
                       const result = await authService.registerPushToken();
                       if (result === 'granted') {
+                        // Save activation locally so banner never reappears
+                        await AsyncStorage.setItem('push_activated', 'true');
                         setShowPushBanner(false);
                         // Also sync preferences to backend
                         try {
