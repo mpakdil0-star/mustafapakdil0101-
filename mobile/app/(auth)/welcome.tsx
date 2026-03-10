@@ -16,7 +16,7 @@ import { colors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppDispatch } from '../../hooks/redux';
-import { setGuestRole } from '../../store/slices/authSlice';
+import { setGuestRole, logout } from '../../store/slices/authSlice';
 
 const { width, height } = Dimensions.get('window');
 
@@ -155,7 +155,17 @@ export default function WelcomeScreen() {
                         <TouchableOpacity
                             onPress={async () => {
                                 const SecureStore = await import('expo-secure-store');
+                                const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+
+                                // 1. Tümüyle Storage Temizliği
                                 await SecureStore.deleteItemAsync('has_seen_onboarding');
+                                await AsyncStorage.clear(); // Push notification vb. izin banner checklerini de sıfırlar
+
+                                // 2. Redux State Temizliği
+                                dispatch(logout() as any);
+                                dispatch(setGuestRole(null));
+
+                                // 3. Uygulamayı en başa (onboarding) yönlendir
                                 router.replace('/onboarding');
                             }}
                             style={{ marginTop: 20, alignSelf: 'center', opacity: 0.5 }}
