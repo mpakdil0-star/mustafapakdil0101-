@@ -12,6 +12,7 @@ import { FeaturedElectrician } from '../../components/home/FeaturedElectrician';
 import { getFeaturedElectricians } from '../../data/mockElectricians';
 import { LinearGradient } from 'expo-linear-gradient';
 import api from '../../services/api';
+import { authService } from '../../services/authService';
 import { API_ENDPOINTS, getFileUrl } from '../../constants/api';
 import { jobService } from '../../services/jobService';
 import { userService } from '../../services/userService';
@@ -127,6 +128,7 @@ export default function HomeScreen() {
   const [isLoadingElectricians, setIsLoadingElectricians] = useState(false);
   const [hideHowItWorks, setHideHowItWorks] = useState(false);
   const [showPushBanner, setShowPushBanner] = useState(false);
+  const [pushBannerLoading, setPushBannerLoading] = useState(false);
 
   // Pulse animation for health action buttons
   const healthPulseAnim = useRef(new Animated.Value(1)).current;
@@ -405,9 +407,26 @@ export default function HomeScreen() {
           const { status } = await Notifications.getPermissionsAsync();
           if (status !== 'granted') {
             setShowPushBanner(true);
-          } else {
-            setShowPushBanner(false);
+            return;
           }
+          // System permission granted, check if backend has token
+          try {
+            const prefRes = await api.get('/users/notification-preferences');
+            const prefData = prefRes.data?.data;
+            if (prefRes.data?.success && prefData) {
+              // If user deliberately disabled push (pushEnabled === false), respect their choice
+              if (prefData.pushEnabled === false) {
+                setShowPushBanner(false);
+                return;
+              }
+              // User wants notifications but no token registered yet
+              if (!prefData.hasPushToken) {
+                setShowPushBanner(true);
+                return;
+              }
+            }
+          } catch (e) { }
+          setShowPushBanner(false);
         } catch (e) { }
       };
 
@@ -580,24 +599,62 @@ export default function HomeScreen() {
         {/* Push Notification Banner */}
         {showPushBanner && isAuthenticated && (
           <View style={[styles.bannerWrapper, { marginTop: 16, marginBottom: -4 }]}>
-            <TouchableOpacity
-              style={[styles.profileHealthCard, { backgroundColor: '#FFFBEB', borderColor: '#F59E0B', borderWidth: 1 }]}
-              activeOpacity={0.9}
-              onPress={() => router.push('/profile/notification_settings')}
+            <View
+              style={[styles.profileHealthCard, { backgroundColor: '#FFFBEB', borderColor: '#F59E0B', borderWidth: 1.5 }]}
             >
               <View style={styles.healthCardContent}>
                 <View style={[styles.healthIconContainer, { backgroundColor: '#F59E0B' }]}>
-                  <Ionicons name="notifications" size={24} color="#FFF" />
+                  <Ionicons name="notifications-off" size={24} color="#FFF" />
                 </View>
                 <View style={[styles.healthTextContainer, { flex: 1 }]}>
-                  <Text style={[styles.healthTitle, { color: '#B45309', fontSize: 14 }]}>Bildirimleriniz Kapalı 🔕</Text>
-                  <Text style={[styles.healthSubtitle, { color: '#D97706', fontSize: 13, fontFamily: fonts.semiBold }]} numberOfLines={2}>
-                    İş ilanlarını kaçırmamak için bildirimleri açın!
+                  <Text style={[styles.healthTitle, { color: '#B45309', fontSize: 14 }]}>Bildirimler Kapalı 🔕</Text>
+                  <Text style={[styles.healthSubtitle, { color: '#D97706', fontSize: 12 }]} numberOfLines={2}>
+                    İş fırsatlarını ve mesajları kaçırmayın!
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#F59E0B" />
+                <TouchableOpacity
+                  style={{ backgroundColor: '#F59E0B', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                  activeOpacity={0.8}
+                  disabled={pushBannerLoading}
+                  onPress={async () => {
+                    setPushBannerLoading(true);
+                    try {
+                      const result = await authService.registerPushToken();
+                      if (result === 'granted') {
+                        setShowPushBanner(false);
+                        // Also sync preferences to backend
+                        try {
+                          await api.put('/users/notification-preferences', { pushEnabled: true });
+                        } catch (e) { }
+                      } else if (result === 'needs_settings' || result === 'denied') {
+                        const { Linking } = await import('react-native');
+                        Alert.alert(
+                          'Sistem İzni Gerekli',
+                          'Bildirim almak için lütfen telefon ayarlarından uygulama bildirimlerini açın.',
+                          [
+                            { text: 'İptal', style: 'cancel' },
+                            { text: 'Ayarlara Git', onPress: () => Linking.openSettings() }
+                          ]
+                        );
+                      }
+                    } catch (e) {
+                      console.error('Push activation error:', e);
+                    } finally {
+                      setPushBannerLoading(false);
+                    }
+                  }}
+                >
+                  {pushBannerLoading ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <>
+                      <Text style={{ color: '#FFF', fontFamily: fonts.bold, fontSize: 13 }}>Aktif Et</Text>
+                      <Ionicons name="chevron-forward" size={14} color="#FFF" />
+                    </>
+                  )}
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
+            </View>
           </View>
         )}
 

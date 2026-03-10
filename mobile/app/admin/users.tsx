@@ -23,7 +23,7 @@ interface User {
     completedJobsCount?: number;
     serviceCategory?: string;
     locations?: { city: string; district?: string }[];
-    hasPushNotification?: boolean;
+    pushStatus?: 'ACTIVE' | 'PENDING' | 'DISABLED';
 }
 
 type FilterType = 'ALL' | 'CITIZEN' | 'ELECTRICIAN';
@@ -181,13 +181,26 @@ export default function AdminUsersScreen() {
                         {item.isVerified && (
                             <Ionicons name="checkmark-circle" size={16} color="#10B981" style={{ marginLeft: 4 }} />
                         )}
-                        {item.hasPushNotification !== undefined && (
-                            <Ionicons
-                                name={item.hasPushNotification ? "notifications" : "notifications-off"}
-                                size={14}
-                                color={item.hasPushNotification ? colors.primary : staticColors.textLight}
-                                style={{ marginLeft: 6 }}
-                            />
+                        {item.pushStatus && (
+                            <TouchableOpacity
+                                onPress={() => {
+                                    if (item.pushStatus === 'ACTIVE') {
+                                        Alert.alert('Bildirim Durumu: Aktif', 'Kullanıcı bildirim alabilir durumda ve cihazı aktif (En son bu hesaptan giriş yapılmış).');
+                                    } else if (item.pushStatus === 'PENDING') {
+                                        Alert.alert('Bildirim Durumu: Beklemede', 'Kullanıcı bildirimleri kapatmamış ancak şu an aktif bir cihaza bağlı değil (Başka bir hesaba geçmiş olabilir).');
+                                    } else {
+                                        Alert.alert('Bildirim Durumu: Kapalı', 'Kullanıcı kendi isteğiyle bildirim almayı tamamen kapatmış.');
+                                    }
+                                }}
+                                style={{ marginLeft: 6, justifyContent: 'center', alignItems: 'center' }}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Ionicons
+                                    name={item.pushStatus === 'ACTIVE' ? "notifications" : item.pushStatus === 'PENDING' ? "notifications-outline" : "notifications-off"}
+                                    size={16}
+                                    color={item.pushStatus === 'ACTIVE' ? '#10B981' : item.pushStatus === 'PENDING' ? '#F59E0B' : staticColors.textLight}
+                                />
+                            </TouchableOpacity>
                         )}
                         {!item.isActive && (
                             <View style={styles.suspendedBadge}>

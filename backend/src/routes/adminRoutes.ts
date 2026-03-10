@@ -65,23 +65,36 @@ router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Re
                 prisma.user.count({ where })
             ]);
 
-            const mapped = dbUsers.map((u: any) => ({
-                id: u.id,
-                fullName: u.fullName,
-                email: u.email,
-                phone: u.phone || '',
-                userType: u.userType,
-                profileImageUrl: u.profileImageUrl,
-                creditBalance: Number(u.electricianProfile?.creditBalance ?? 0),
-                isVerified: u.isVerified,
-                isActive: u.isActive,
-                verificationStatus: u.electricianProfile?.verificationStatus ?? null,
-                completedJobsCount: u.electricianProfile?.completedJobsCount ?? 0,
-                serviceCategory: u.electricianProfile?.serviceCategory ?? null,
-                locations: u.locations || [],
-                hasPushNotification: !!u.pushToken,
-                createdAt: u.createdAt,
-            }));
+            const mapped = dbUsers.map((u: any) => {
+                const ns = typeof u.notificationSettings === 'object' && u.notificationSettings !== null
+                    ? u.notificationSettings
+                    : { pushEnabled: true };
+
+                const pushEnabled = ns?.pushEnabled !== undefined ? ns.pushEnabled : true;
+
+                let pushStatus = 'DISABLED';
+                if (pushEnabled) {
+                    pushStatus = u.pushToken ? 'ACTIVE' : 'PENDING';
+                }
+
+                return {
+                    id: u.id,
+                    fullName: u.fullName,
+                    email: u.email,
+                    phone: u.phone || '',
+                    userType: u.userType,
+                    profileImageUrl: u.profileImageUrl,
+                    creditBalance: Number(u.electricianProfile?.creditBalance ?? 0),
+                    isVerified: u.isVerified,
+                    isActive: u.isActive,
+                    verificationStatus: u.electricianProfile?.verificationStatus ?? null,
+                    completedJobsCount: u.electricianProfile?.completedJobsCount ?? 0,
+                    serviceCategory: u.electricianProfile?.serviceCategory ?? null,
+                    locations: u.locations || [],
+                    pushStatus,
+                    createdAt: u.createdAt,
+                };
+            });
 
             return res.json({
                 success: true,
@@ -107,6 +120,14 @@ router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Re
                 else if (id.endsWith('-ADMIN')) derivedUserType = 'ADMIN';
                 else derivedUserType = 'CITIZEN';
             }
+            let pushStatus = 'DISABLED';
+            const ns = data.notificationSettings || { pushEnabled: true };
+            const pushEnabled = ns?.pushEnabled !== undefined ? ns.pushEnabled : true;
+
+            if (pushEnabled) {
+                pushStatus = data.pushToken ? 'ACTIVE' : 'PENDING';
+            }
+
             return {
                 id,
                 fullName: data.fullName || 'İsimsiz Kullanıcı',
@@ -124,7 +145,7 @@ router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Re
                 completedJobsCount: data.completedJobsCount || 0,
                 serviceCategory: data.serviceCategory,
                 locations: data.locations || [],
-                hasPushNotification: !!data.pushToken
+                pushStatus
             };
         });
 

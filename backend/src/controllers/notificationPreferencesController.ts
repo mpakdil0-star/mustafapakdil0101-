@@ -11,14 +11,6 @@ interface AuthRequest extends Request {
     };
 }
 
-// In-memory storage for notification preferences
-const notificationPreferencesCache = new Map<string, {
-    pushEnabled: boolean;
-    emailEnabled: boolean;
-    promoEnabled: boolean;
-    securityEnabled: boolean;
-}>();
-
 // Default preferences
 const defaultPreferences = {
     pushEnabled: true,
@@ -41,34 +33,41 @@ export const getNotificationPreferences = async (req: AuthRequest, res: Response
         }
 
         const userId = req.user.id;
+        let preferences: any = { ...defaultPreferences };
+        let hasPushToken = false;
 
-        // Get from cache or return defaults
-        const preferences = { ...(notificationPreferencesCache.get(userId) || defaultPreferences) };
-
-        // Determine real push token status from database
         try {
             const dbUser = await prisma.user.findUnique({
                 where: { id: userId },
-                select: { pushToken: true }
+                select: { notificationSettings: true, pushToken: true }
             });
-            // ONLY true if there's actually a token in the DB
-            preferences.pushEnabled = !!dbUser?.pushToken;
+
+            if (dbUser?.notificationSettings && typeof dbUser.notificationSettings === 'object') {
+                preferences = { ...defaultPreferences, ...(dbUser.notificationSettings as any) };
+            }
+            hasPushToken = !!dbUser?.pushToken;
         } catch (dbError) {
             // Fallback to mockStorage if DB fails
             const { mockStorage } = require('../utils/mockStorage');
             const mockUser = mockStorage.get(userId);
-            preferences.pushEnabled = !!mockUser?.pushToken;
+            if (mockUser?.notificationSettings) {
+                preferences = { ...defaultPreferences, ...mockUser.notificationSettings };
+            }
+            hasPushToken = !!mockUser?.pushToken;
         }
 
         res.json({
             success: true,
-            data: preferences,
+            data: {
+                ...preferences,
+                hasPushToken
+            },
         });
     } catch (error: any) {
         console.error('Error getting notification preferences:', error);
         res.json({
             success: true,
-            data: defaultPreferences,
+            data: { ...defaultPreferences, hasPushToken: false },
         });
     }
 };
@@ -96,8 +95,17 @@ export const updateNotificationPreferences = async (req: AuthRequest, res: Respo
             securityEnabled: securityEnabled ?? true,
         };
 
-        // Update cache
-        notificationPreferencesCache.set(userId, updatedPreferences);
+        try {
+            await prisma.user.update({
+                where: { id: userId },
+                data: {
+                    notificationSettings: updatedPreferences as any
+                }
+            });
+        } catch (dbError) {
+            const { mockStorage } = require('../utils/mockStorage');
+            mockStorage.updateProfile(userId, { notificationSettings: updatedPreferences } as any);
+        }
 
         res.json({
             success: true,
