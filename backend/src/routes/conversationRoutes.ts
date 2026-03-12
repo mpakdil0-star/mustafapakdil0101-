@@ -613,7 +613,7 @@ router.put('/:id/read', async (req: AuthRequest, res: Response, next: NextFuncti
 
         // Bildirimleri de temizle
         const { clearMockNotificationsByRelatedId } = require('./notificationRoutes');
-        clearMockNotificationsByRelatedId(req.user.id, 'new_message', id);
+        clearMockNotificationsByRelatedId(req.user.id, ['new_message', 'MESSAGE_RECEIVED'], id);
 
         return res.json({
           success: true,
@@ -628,7 +628,7 @@ router.put('/:id/read', async (req: AuthRequest, res: Response, next: NextFuncti
         where: {
           userId: req.user.id,
           relatedId: id as string,
-          type: 'new_message',
+          type: { in: ['new_message', 'MESSAGE_RECEIVED'] },
           isRead: false
         },
         data: { isRead: true }

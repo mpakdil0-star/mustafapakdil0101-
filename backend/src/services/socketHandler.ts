@@ -331,7 +331,7 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
 
                     // Bildirimleri de temizle (Örn: rozet için)
                     const { clearMockNotificationsByRelatedId } = require('../routes/notificationRoutes');
-                    clearMockNotificationsByRelatedId(userId, 'new_message', conversationId);
+                    clearMockNotificationsByRelatedId(userId, ['new_message', 'MESSAGE_RECEIVED'], conversationId);
                     return;
                 }
 
@@ -378,7 +378,7 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                     where: {
                         userId,
                         relatedId: conversationId,
-                        type: 'new_message',
+                        type: { in: ['new_message', 'MESSAGE_RECEIVED'] },
                         isRead: false
                     },
                     data: { isRead: true }

@@ -16,14 +16,15 @@ export const addMockNotification = (userId: string, notification: any) => {
   console.log(`✅ Mock notification added for user ${userId}:`, notification.title);
 };
 
-export const clearMockNotificationsByRelatedId = (userId: string, type: string, relatedId: string) => {
+export const clearMockNotificationsByRelatedId = (userId: string, type: string | string[], relatedId: string) => {
   const userNotifications = mockNotifications.get(userId) || [];
+  const types = Array.isArray(type) ? type : [type];
   userNotifications.forEach(n => {
-    if (n.type === type && n.relatedId === relatedId) {
+    if (types.includes(n.type) && n.relatedId === relatedId) {
       n.isRead = true;
     }
   });
-  console.log(`🧹 Mock notifications cleared for user ${userId} (type: ${type}, relatedId: ${relatedId})`);
+  console.log(`🧹 Mock notifications cleared for user ${userId} (types: ${types.join(', ')}, relatedId: ${relatedId})`);
 };
 
 // Mock bildirim verileri üreten yardımcı fonksiyon

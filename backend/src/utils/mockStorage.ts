@@ -28,7 +28,7 @@ interface MockUserStore {
         completedJobsCount?: number;
         locations?: any[];
         serviceCategory?: string;
-        pushToken?: string;
+        pushToken?: string | null;
         acceptedLegalVersion?: string; // Last accepted version (e.g. 'v1.0')
         marketingAllowed?: boolean;    // Marketing opt-in status
     }
@@ -295,7 +295,7 @@ export const mockStorage = {
         completedJobsCount?: number,
         serviceCategory?: string,
         userType?: string,  // Added: Store userType directly
-        pushToken?: string, // Added: Push notification token
+        pushToken?: string | null, // Added: Push notification token
         acceptedLegalVersion?: string,
         marketingAllowed?: boolean
     }) => {

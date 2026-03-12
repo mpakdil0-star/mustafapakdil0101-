@@ -5,6 +5,35 @@ import prisma, { isDatabaseAvailable } from '../config/database';
 import { AuthRequest } from '../middleware/auth';
 import { mockStorage } from '../utils/mockStorage';
 
+export const logoutController = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.user?.id;
+
+    if (userId) {
+      if (!isDatabaseAvailable || userId.startsWith('mock-')) {
+        mockStorage.updateProfile(userId, { pushToken: null });
+      } else {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { pushToken: null },
+        });
+      }
+      console.log(`📡 User ${userId} logged out, pushToken cleared.`);
+    }
+
+    res.json({
+      success: true,
+      message: 'Logged out successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const registerController = async (
   req: Request,
   res: Response,

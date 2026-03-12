@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   registerController,
   loginController,
+  logoutController,
   refreshTokenController,
   meController,
   forgotPasswordController,
@@ -23,6 +24,7 @@ const router = Router();
 
 router.post('/register', registerLimiter, validate(registerValidation), registerController);
 router.post('/login', authLimiter, validate(loginValidation), loginController);
+router.post('/logout', authenticate, logoutController);
 router.post('/refresh-token', validate(refreshTokenValidation), refreshTokenController);
 router.get('/me', authenticate, meController);
 router.post('/forgot-password', authLimiter, validate(forgotPasswordValidation), forgotPasswordController);

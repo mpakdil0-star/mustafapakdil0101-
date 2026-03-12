@@ -134,6 +134,11 @@ export const authService = {
   },
 
   async logout() {
+    try {
+      await apiClient.post('/auth/logout');
+    } catch (error) {
+      console.warn('Backend logout failed, clearing local tokens anyway:', error);
+    }
     await apiService.clearTokens();
   },
 
