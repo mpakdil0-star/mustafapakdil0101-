@@ -7,7 +7,7 @@ import { colors as staticColors } from '../../constants/colors';
 import { useAppColors } from '../../hooks/useAppColors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
-import { useAppSelector } from '../../hooks/redux';
+import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import api from '../../services/api';
 
 export default function TabsLayout() {
@@ -19,34 +19,13 @@ export default function TabsLayout() {
 
   const { notifications, unreadCount } = useAppSelector((state) => state.notifications);
 
-  // Separate state for unread messages (from conversations, not notifications)
-  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
-
-  // Initial fetch for unread messages (to sync with server on mount)
-  const dispatch = require('../../hooks/redux').useAppDispatch();
-  const { fetchNotifications } = require('../../store/slices/notificationSlice');
-  const { messageService } = require('../../services/messageService');
-
-  // Fetch unread messages count from conversations
-  useEffect(() => {
-    const fetchUnreadMessages = async () => {
-      if (!isAuthenticated) return;
-      try {
-        const conversations = await messageService.getConversations();
-        // Sum up unreadCount from all conversations
-        const totalUnread = conversations.reduce((sum: number, conv: any) => sum + (conv.unreadCount || 0), 0);
-        setUnreadMessagesCount(totalUnread);
-      } catch (error) {
-        console.log('Could not fetch unread messages count:', error);
-      }
-    };
-
-    fetchUnreadMessages();
-  }, [isAuthenticated]);
+  const dispatch = useAppDispatch();
+  const { fetchNotifications, fetchUnreadCount } = require('../../store/slices/notificationSlice');
 
   useEffect(() => {
     if (isAuthenticated) {
       dispatch(fetchNotifications());
+      dispatch(fetchUnreadCount());
     }
   }, [isAuthenticated, dispatch]);
 
@@ -73,10 +52,10 @@ export default function TabsLayout() {
         size={22}
         color={focused ? colors.primary : colors.textLight}
       />
-      {unreadMessagesCount > 0 && (
+      {unreadCount > 0 && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>
-            {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+            {unreadCount > 9 ? '9+' : unreadCount}
           </Text>
         </View>
       )}

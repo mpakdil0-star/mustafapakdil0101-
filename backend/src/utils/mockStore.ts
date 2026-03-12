@@ -2,33 +2,15 @@ const mockUnreadCounts = new Map<string, number>();
 const mockConversations = new Map<string, any>();
 const mockMessages = new Map<string, any[]>();
 
-// Initialize with some default data
-const CITIZEN_DEMO_ID = 'mock-user-demo-vatandas-com-CITIZEN';
-const ELECTRICIAN_DEMO_ID = 'mock-user-demo-usta-com-ELECTRICIAN';
-const DEMO_CONV_ID = `mock-conv-demo-${CITIZEN_DEMO_ID}-${ELECTRICIAN_DEMO_ID}`;
-
-mockUnreadCounts.set(DEMO_CONV_ID, 1);
-mockConversations.set(DEMO_CONV_ID, {
-    id: DEMO_CONV_ID,
-    participant1Id: CITIZEN_DEMO_ID,
-    participant2Id: ELECTRICIAN_DEMO_ID,
-    jobPostId: 'mock-job-1',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    lastMessage: {
-        id: 'mock-msg-init',
-        conversationId: DEMO_CONV_ID,
-        senderId: ELECTRICIAN_DEMO_ID,
-        content: 'Merhaba, iş detaylarını konuşabilir miyiz?',
-        createdAt: new Date().toISOString()
-    }
-});
-
 export const mockStore = {
     // Unread count management
-    getUnreadCount: (convId: string) => mockUnreadCounts.get(convId) ?? 0,
-    setUnreadCount: (convId: string, count: number) => mockUnreadCounts.set(convId, count),
-    clearUnreadCount: (convId: string) => mockUnreadCounts.set(convId, 0),
+    getUnreadCount: (convId: string, userId: string) => mockUnreadCounts.get(`${userId}:${convId}`) ?? 0,
+    setUnreadCount: (convId: string, userId: string, count: number) => mockUnreadCounts.set(`${userId}:${convId}`, count),
+    clearUnreadCount: (convId: string, userId: string) => mockUnreadCounts.set(`${userId}:${convId}`, 0),
+    incrementUnreadCount: (convId: string, userId: string) => {
+        const key = `${userId}:${convId}`;
+        mockUnreadCounts.set(key, (mockUnreadCounts.get(key) ?? 0) + 1);
+    },
 
     // Conversation management
     saveConversation: (conversation: any) => {
@@ -138,9 +120,11 @@ export const mockStore = {
             conversation.lastMessageAt = message.createdAt;
             conversation.updatedAt = message.createdAt;
 
-            // Increment unread count for receiver
-            const currentUnread = mockUnreadCounts.get(convId) ?? 0;
-            mockUnreadCounts.set(convId, currentUnread + 1);
+            // Increment unread count for receiver only
+            const receiverId = message.receiverId || message.recipientId;
+            if (receiverId) {
+                mockStore.incrementUnreadCount(convId, receiverId);
+            }
         }
 
         return message;
@@ -162,3 +146,25 @@ export const mockStore = {
         return all;
     }
 };
+
+// Initialize with some default data
+const CITIZEN_DEMO_ID = 'mock-user-demo-vatandas-com-CITIZEN';
+const ELECTRICIAN_DEMO_ID = 'mock-user-demo-usta-com-ELECTRICIAN';
+const DEMO_CONV_ID = `mock-conv-demo-${CITIZEN_DEMO_ID}-${ELECTRICIAN_DEMO_ID}`;
+
+mockStore.saveConversation({
+    id: DEMO_CONV_ID,
+    participant1Id: CITIZEN_DEMO_ID,
+    participant2Id: ELECTRICIAN_DEMO_ID,
+    jobPostId: 'mock-job-1',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    lastMessage: {
+        id: 'mock-msg-init',
+        conversationId: DEMO_CONV_ID,
+        senderId: ELECTRICIAN_DEMO_ID,
+        content: 'Merhaba, iş detaylarını konuşabilir miyiz?',
+        createdAt: new Date().toISOString()
+    }
+});
+mockStore.setUnreadCount(DEMO_CONV_ID, CITIZEN_DEMO_ID, 1);

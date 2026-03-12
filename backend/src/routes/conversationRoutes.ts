@@ -66,11 +66,7 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
             const otherUserData = userStorage.getFullUser(otherUserId, otherUserType);
 
             // Get unread count
-            // Not: Mock store conversation bazlı tutuyor, gerçekçi olması için lastMessage gonderen ben isem 0 dönmeli
-            let unreadCount = store.getUnreadCount(conv.id);
-            if (conv.lastMessage?.senderId === req.user!.id) {
-              unreadCount = 0;
-            }
+            const unreadCount = store.getUnreadCount(conv.id, req.user!.id);
 
             return {
               ...conv,
@@ -613,7 +609,7 @@ router.put('/:id/read', async (req: AuthRequest, res: Response, next: NextFuncti
       const id = req.params.id as string;
 
       if (!isDatabaseAvailable || req.user.id.startsWith('mock-') || id.startsWith('mock-')) {
-        mockStore.clearUnreadCount(id);
+        mockStore.clearUnreadCount(id, req.user.id);
 
         // Bildirimleri de temizle
         const { clearMockNotificationsByRelatedId } = require('./notificationRoutes');
@@ -645,7 +641,7 @@ router.put('/:id/read', async (req: AuthRequest, res: Response, next: NextFuncti
     } catch (error: any) {
       const isConnectionError = error.message?.includes('connect') || error.code === 'P1001';
       if (isConnectionError) {
-        mockStore.clearUnreadCount(req.params.id as string);
+        mockStore.clearUnreadCount(req.params.id as string, req.user.id);
         return res.json({
           success: true,
           message: 'Mesajlar okundu olarak işaretlendi (Mock)',

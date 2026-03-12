@@ -17,7 +17,7 @@ import { Button } from '../../components/common/Button';
 import { AuthGuardModal } from '../../components/common/AuthGuardModal';
 import { formatRelativeTime } from '../../utils/date';
 import { useAppDispatch } from '../../hooks/redux';
-import { fetchNotifications, markTypeAsRead, markRelatedNotificationsAsRead } from '../../store/slices/notificationSlice';
+import { fetchNotifications, markTypeAsRead, markRelatedNotificationsAsRead, fetchUnreadCount } from '../../store/slices/notificationSlice';
 
 export default function MessagesScreen() {
   const router = useRouter();
@@ -147,6 +147,7 @@ export default function MessagesScreen() {
             dispatch(markTypeAsRead({ type: messageTypes, relatedId: conversation.id }));
             dispatch(markRelatedNotificationsAsRead({ type: 'new_message', relatedId: conversation.id }));
             dispatch(markRelatedNotificationsAsRead({ type: 'MESSAGE_RECEIVED', relatedId: conversation.id }));
+            dispatch(fetchUnreadCount());
           }
           router.push({ pathname: '/messages/[id]', params: { id: conversation.id } });
         }}

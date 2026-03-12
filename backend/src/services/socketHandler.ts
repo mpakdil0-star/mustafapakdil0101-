@@ -327,7 +327,7 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
             try {
                 // Mock veya veritabanı yoksa direkt başarılı dön
                 if (!isDatabaseAvailable || userId.startsWith('mock-') || conversationId.startsWith('mock-')) {
-                    mockStore.clearUnreadCount(conversationId);
+                    mockStore.clearUnreadCount(conversationId, userId);
 
                     // Bildirimleri de temizle (Örn: rozet için)
                     const { clearMockNotificationsByRelatedId } = require('../routes/notificationRoutes');

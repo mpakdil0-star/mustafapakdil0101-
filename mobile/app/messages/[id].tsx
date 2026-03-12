@@ -108,6 +108,7 @@ export default function ChatScreen() {
             dispatch(markTypeAsRead({ type: messageTypes, relatedId: conversationId }));
             dispatch(markRelatedNotificationsAsRead({ type: 'new_message', relatedId: conversationId }));
             dispatch(markRelatedNotificationsAsRead({ type: 'MESSAGE_RECEIVED', relatedId: conversationId }));
+            dispatch(fetchUnreadCount());
         } catch (error: any) {
             console.error('Error loading conversation:', error);
         } finally {
@@ -159,6 +160,7 @@ export default function ChatScreen() {
                 dispatch(markTypeAsRead({ type: messageTypes, relatedId: conversationId }));
                 dispatch(markRelatedNotificationsAsRead({ type: 'new_message', relatedId: conversationId }));
                 dispatch(markRelatedNotificationsAsRead({ type: 'MESSAGE_RECEIVED', relatedId: conversationId }));
+                dispatch(fetchUnreadCount());
             }
         });
 
