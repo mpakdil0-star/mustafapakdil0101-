@@ -70,7 +70,9 @@ router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Re
                         notificationSettings: true,
                         pushToken: true,
                         electricianProfile: { select: { creditBalance: true, completedJobsCount: true, serviceCategory: true, verificationStatus: true } },
-                        locations: true,
+                        locations: {
+                            where: { isActive: true }
+                        },
                     }
                 }),
                 prisma.user.count({ where })
@@ -161,7 +163,7 @@ router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Re
                 specialties: data.specialties || [],
                 completedJobsCount: data.completedJobsCount || 0,
                 serviceCategory: data.serviceCategory,
-                locations: data.locations || [],
+                locations: (data.locations || []).filter((l: any) => l.isActive !== false),
                 pushStatus
             };
         });

@@ -516,16 +516,16 @@ async function joinUserLocationRooms(socket: AuthenticatedSocket) {
 
             serviceCategory = mockData.serviceCategory || mockData.electricianProfile?.serviceCategory || 'elektrik';
 
-            console.log(`📍 [joinUserLocationRooms] User ${userId}: serviceCategory=${serviceCategory}, locations count=${mockData.locations?.length || 0}`);
-
-            // 1. Eklediği tüm hizmet bölgelerinden odaya katıl
+            // 1. Eklediği tüm etkin (isActive) hizmet bölgelerinden odaya katıl
             if (mockData.locations && Array.isArray(mockData.locations) && mockData.locations.length > 0) {
-                mockData.locations.forEach((loc: any) => {
-                    userLocations.push({
-                        city: loc.city,
-                        district: loc.district || 'Merkez'
+                mockData.locations
+                    .filter((loc: any) => loc.isActive !== false) // Sadece aktif olanlar
+                    .forEach((loc: any) => {
+                        userLocations.push({
+                            city: loc.city,
+                            district: loc.district || 'Merkez'
+                        });
                     });
-                });
             } else {
                 // Fallback: Kullanıcının şehri varsa o şehrin genel odasına katıl
                 if (mockData.city) {
@@ -539,7 +539,12 @@ async function joinUserLocationRooms(socket: AuthenticatedSocket) {
         } else {
             const userWithLocations = await prisma.user.findUnique({
                 where: { id: userId },
-                include: { locations: true, electricianProfile: true }
+                include: {
+                    locations: {
+                        where: { isActive: true } // Sadece aktif kayıtları getir
+                    },
+                    electricianProfile: true
+                }
             });
             userLocations = userWithLocations?.locations || [];
             serviceCategory = (userWithLocations?.electricianProfile as any)?.serviceCategory || 'elektrik';

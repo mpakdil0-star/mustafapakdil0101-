@@ -259,6 +259,7 @@ export const createJobController = async (
           const simpleCityMatch = hasNoLocationsSet && userData.city?.toLowerCase() === targetCity?.toLowerCase();
 
           const hasExplicitLocationMatch = userData.locations?.some((loc: any) =>
+            loc.isActive !== false && // Only match active addresses
             loc.city?.toLowerCase() === targetCity?.toLowerCase() &&
             (
               !targetDistrict ||

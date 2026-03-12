@@ -193,6 +193,7 @@ export const jobService = {
             isActive: true,
             locations: {
               some: {
+                isActive: true, // Only notify for active addresses
                 city: city,
                 OR: [
                   ...(district ? [{ district: district }] : []),
