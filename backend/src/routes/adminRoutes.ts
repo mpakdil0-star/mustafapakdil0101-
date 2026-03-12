@@ -57,25 +57,42 @@ router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Re
                     skip,
                     take: limitNum,
                     orderBy: { createdAt: 'desc' },
-                    include: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                        email: true,
+                        phone: true,
+                        userType: true,
+                        profileImageUrl: true,
+                        isVerified: true,
+                        isActive: true,
+                        createdAt: true,
+                        notificationSettings: true,
+                        pushToken: true,
                         electricianProfile: { select: { creditBalance: true, completedJobsCount: true, serviceCategory: true, verificationStatus: true } },
-                        locations: true
+                        locations: true,
                     }
                 }),
                 prisma.user.count({ where })
             ]);
 
             const mapped = dbUsers.map((u: any) => {
-                const ns = typeof u.notificationSettings === 'object' && u.notificationSettings !== null
-                    ? u.notificationSettings
-                    : { pushEnabled: true };
-
-                const pushEnabled = ns?.pushEnabled !== undefined ? ns.pushEnabled : true;
-
-                let pushStatus = 'DISABLED';
-                if (pushEnabled) {
-                    pushStatus = u.pushToken ? 'ACTIVE' : 'PENDING';
+                // Determine pushEnabled - more robust check
+                let isPushEnabled = true; // default
+                if (u.notificationSettings && typeof u.notificationSettings === 'object') {
+                    const settings = u.notificationSettings as any;
+                    if (settings.pushEnabled === false) {
+                        isPushEnabled = false;
+                    }
                 }
+
+                // Determine final status
+                let calculatedPushStatus = 'DISABLED';
+                if (isPushEnabled) {
+                    calculatedPushStatus = u.pushToken ? 'ACTIVE' : 'PENDING';
+                }
+
+                console.log(`User: ${u.fullName}, Token: ${!!u.pushToken}, Enabled: ${isPushEnabled}, Result: ${calculatedPushStatus}`);
 
                 return {
                     id: u.id,
@@ -91,7 +108,7 @@ router.get('/users', authenticate, adminMiddleware, async (req: Request, res: Re
                     completedJobsCount: u.electricianProfile?.completedJobsCount ?? 0,
                     serviceCategory: u.electricianProfile?.serviceCategory ?? null,
                     locations: u.locations || [],
-                    pushStatus,
+                    pushStatus: calculatedPushStatus,
                     createdAt: u.createdAt,
                 };
             });
