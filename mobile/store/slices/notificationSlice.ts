@@ -73,8 +73,13 @@ const notificationSlice = createSlice({
       state.error = null;
     },
     addNotification: (state, action) => {
-      state.notifications.unshift(action.payload);
-      if (!action.payload.isRead) {
+      const notification = { ...action.payload };
+      // Map conversationId to relatedId for consistency in clearing
+      if (!notification.relatedId && notification.conversationId) {
+        notification.relatedId = notification.conversationId;
+      }
+      state.notifications.unshift(notification);
+      if (!notification.isRead) {
         state.unreadCount += 1;
       }
     },
@@ -86,7 +91,9 @@ const notificationSlice = createSlice({
       const types = Array.isArray(type) ? type : [type];
 
       state.notifications.forEach(n => {
-        if (types.includes(n.type) && (!relatedId || n.relatedId === relatedId) && !n.isRead) {
+        // Check both relatedId and conversationId (legacy or specific socket payload)
+        const matchesRelatedId = !relatedId || n.relatedId === relatedId || (n as any).conversationId === relatedId;
+        if (types.includes(n.type) && matchesRelatedId && !n.isRead) {
           n.isRead = true;
           state.unreadCount = Math.max(0, state.unreadCount - 1);
         }

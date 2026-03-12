@@ -106,8 +106,13 @@ export default function ChatScreen() {
             socketService.markAsRead(conversationId);
             const messageTypes = ['new_message', 'MESSAGE_RECEIVED'];
             dispatch(markTypeAsRead({ type: messageTypes, relatedId: conversationId }));
-            dispatch(markRelatedNotificationsAsRead({ type: 'new_message', relatedId: conversationId }));
-            dispatch(markRelatedNotificationsAsRead({ type: 'MESSAGE_RECEIVED', relatedId: conversationId }));
+
+            // Wait for API calls to finish before fetching final count
+            await Promise.all([
+                dispatch(markRelatedNotificationsAsRead({ type: 'new_message', relatedId: conversationId })),
+                dispatch(markRelatedNotificationsAsRead({ type: 'MESSAGE_RECEIVED', relatedId: conversationId }))
+            ]);
+
             dispatch(fetchUnreadCount());
         } catch (error: any) {
             console.error('Error loading conversation:', error);

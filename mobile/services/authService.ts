@@ -135,10 +135,21 @@ export const authService = {
 
   async logout() {
     try {
+      // 1. Notify backend to clear push token
       await apiClient.post('/auth/logout');
     } catch (error) {
       console.warn('Backend logout failed, clearing local tokens anyway:', error);
     }
+
+    // 2. Disconnect socket to stop receiving events for this user
+    try {
+      const { socketService } = require('./socketService');
+      socketService.disconnect();
+    } catch (e) {
+      console.warn('Socket disconnect failed during logout:', e);
+    }
+
+    // 3. Clear local tokens
     await apiService.clearTokens();
   },
 
