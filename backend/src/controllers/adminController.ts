@@ -612,14 +612,25 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
         const user = (req as any).user;
         if (user.userType !== 'ADMIN') throw new Error('Unauthorized');
 
-        const city = req.query.city as string | undefined;
+        const city = req.query.city === 'ALL' ? undefined : req.query.city as string | undefined;
         const serviceCategory = req.query.serviceCategory as string | undefined;
 
         let districtStats: Record<string, number> = {};
+        let availableCities: string[] = ['Adana', 'Ankara', 'İstanbul', 'İzmir', 'Bursa']; // Defaults
 
         // ── Try real database first ─────────────────────────────────────
         if (isDatabaseAvailable) {
             try {
+                // Fetch dynamic city list from users
+                const uniqueCities = await prisma.user.findMany({
+                    where: { city: { not: null } },
+                    select: { city: true },
+                    distinct: ['city']
+                });
+                if (uniqueCities.length > 0) {
+                    availableCities = uniqueCities.map(c => c.city!).filter(Boolean).sort();
+                }
+
                 // Better city filter: check both user.city and user.locations
                 const cityFilter = city ? {
                     OR: [
@@ -712,7 +723,8 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                         serviceDistribution: categoryCounts.map((c: any) => ({ name: c.serviceCategory, count: c._count?._all || 0 })),
                         districtDistribution: Object.entries(districtStats).map(([name, count]) => ({ name, count })),
                         liveData: { activeUstalar, activeCitizens },
-                        heatmap: heatmap.slice(0, 15) // Show top 15 districts
+                        heatmap: heatmap.slice(0, 15), // Show top 15 districts
+                        availableCities
                     }
                 });
             } catch (dbErr: any) {
@@ -735,7 +747,8 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                 serviceDistribution: [],
                 districtDistribution: [],
                 liveData: { activeUstalar: 0, activeCitizens: 0 },
-                heatmap: []
+                heatmap: [],
+                availableCities
             }
         });
     } catch (error) {

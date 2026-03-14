@@ -37,15 +37,17 @@ interface StatsData {
     activeCitizens: number;
   };
   heatmap: HeatmapItem[];
+  availableCities: string[];
 }
 
 export default function AdminStatsScreen() {
   const colors = useAppColors();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<StatsData | null>(null);
-  const [selectedCity, setSelectedCity] = useState('Adana'); // Default for demo
+  const [selectedCity, setSelectedCity] = useState('ALL'); // ALL = Tüm Türkiye
   const [showAllServices, setShowAllServices] = useState(false);
   const [showAllDistricts, setShowAllDistricts] = useState(false);
+  const [showCityPicker, setShowCityPicker] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -142,14 +144,59 @@ export default function AdminStatsScreen() {
       <PremiumHeader title="Stratejik İstatistikler" showBackButton />
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* City Filter Placeholder */}
+        {/* City Filter Selection */}
         <View style={styles.filterSection}>
           <Text style={styles.filterLabel}>Bölge Seçimi:</Text>
-          <View style={styles.cityBadge}>
-            <Text style={styles.cityName}>{selectedCity}</Text>
-            <Ionicons name="location" size={14} color="#7C3AED" />
-          </View>
+          <TouchableOpacity 
+            style={styles.cityBadge}
+            onPress={() => setShowCityPicker(true)}
+          >
+            <Text style={styles.cityName}>
+              {selectedCity === 'ALL' ? 'Tüm Türkiye' : selectedCity}
+            </Text>
+            <Ionicons name="chevron-down" size={14} color="#7C3AED" />
+          </TouchableOpacity>
         </View>
+
+        {/* City Picker Modal */}
+        {showCityPicker && (
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>İl Seçiniz</Text>
+                <TouchableOpacity onPress={() => setShowCityPicker(false)}>
+                  <Ionicons name="close" size={24} color="#64748B" />
+                </TouchableOpacity>
+              </View>
+              <ScrollView style={styles.cityList}>
+                <TouchableOpacity 
+                  style={[styles.cityItem, selectedCity === 'ALL' && styles.selectedCityItem]}
+                  onPress={() => {
+                    setSelectedCity('ALL');
+                    setShowCityPicker(false);
+                  }}
+                >
+                  <Text style={[styles.cityItemText, selectedCity === 'ALL' && styles.selectedCityText]}>Tüm Türkiye</Text>
+                  {selectedCity === 'ALL' && <Ionicons name="checkmark" size={20} color="#7C3AED" />}
+                </TouchableOpacity>
+
+                {data?.availableCities.map((city) => (
+                  <TouchableOpacity 
+                    key={city}
+                    style={[styles.cityItem, selectedCity === city && styles.selectedCityItem]}
+                    onPress={() => {
+                      setSelectedCity(city);
+                      setShowCityPicker(false);
+                    }}
+                  >
+                    <Text style={[styles.cityItemText, selectedCity === city && styles.selectedCityText]}>{city}</Text>
+                    {selectedCity === city && <Ionicons name="checkmark" size={20} color="#7C3AED" />}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        )}
 
         {/* Global KPI Cards */}
         <View style={styles.kpiContainer}>
@@ -261,6 +308,61 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+    padding: 20
+  },
+  modalContent: {
+    width: '100%',
+    maxHeight: '70%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  modalTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 18,
+    color: '#1E1B4B',
+  },
+  cityList: {
+    padding: 10,
+  },
+  cityItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 4,
+  },
+  selectedCityItem: {
+    backgroundColor: '#F5F3FF',
+  },
+  cityItemText: {
+    fontFamily: fonts.medium,
+    fontSize: 16,
+    color: '#64748B',
+  },
+  selectedCityText: {
+    color: '#7C3AED',
+    fontFamily: fonts.bold,
   },
   loadingContainer: {
     flex: 1,
