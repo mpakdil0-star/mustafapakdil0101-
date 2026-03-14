@@ -76,9 +76,18 @@ export default function AdminStatsScreen() {
     initialDistrict?: string,
     initialCategory?: string 
   }) => {
+    // Clean undefined params
+    const cleanFilters: any = {};
+    Object.keys(filters).forEach(key => {
+      const val = (filters as any)[key];
+      if (val !== undefined && val !== null && val !== '') {
+        cleanFilters[key] = val;
+      }
+    });
+
     router.push({
       pathname: '/admin/users',
-      params: filters
+      params: cleanFilters
     });
   };
 

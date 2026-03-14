@@ -22,6 +22,11 @@ export default function AdminLayout() {
     return (
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F8FAFC' } }}>
             <Stack.Screen name="index" />
+            <Stack.Screen name="users" />
+            <Stack.Screen name="stats" />
+            <Stack.Screen name="jobs" />
+            <Stack.Screen name="reports" />
+            <Stack.Screen name="support" />
         </Stack>
     );
 }
