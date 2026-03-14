@@ -620,7 +620,7 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
         const user = (req as any).user;
         if (user.userType !== 'ADMIN') throw new Error('Unauthorized');
 
-        const city = req.query.city === 'ALL' ? undefined : req.query.city as string | undefined;
+        const city = req.query.city === 'ALL' ? undefined : (req.query.city as string)?.trim();
         const serviceCategory = req.query.serviceCategory as string | undefined;
 
         let districtStats: Record<string, number> = {};
@@ -707,14 +707,20 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
 
                 // 5. Heatmap: Jobs vs Masters per District
                 let heatmap: any[] = [];
-                // We fetch all open jobs first
+                // We fetch all open jobs first (strictly not deleted)
                 const allOpenJobs = await prisma.jobPost.findMany({
-                    where: { status: 'OPEN' as any, ...(serviceCategory ? { serviceCategory } : {}) }
+                    where: { 
+                        status: 'OPEN' as any, 
+                        deletedAt: null,
+                        ...(serviceCategory ? { serviceCategory } : {}) 
+                    }
                 });
 
                 // Filter jobs by city in-memory since location is Json
                 const jobsInCity = city 
-                    ? allOpenJobs.filter((j: any) => (j.location as any).city?.toLowerCase() === city.toLowerCase())
+                    ? allOpenJobs.filter((j: any) => 
+                        (j.location as any).city?.trim().toLowerCase() === city.toLowerCase()
+                    )
                     : allOpenJobs;
 
                 // Fetch all masters (verified or not, to show capacity)
@@ -731,20 +737,22 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
 
                 // Get unique districts from both jobs and masters, STRICTLY filtered by city
                 const allDistricts = [...new Set([
-                    ...jobsInCity.map((j: any) => (j.location as any).district),
+                    ...jobsInCity.map((j: any) => (j.location as any).district?.trim()),
                     ...mastersInCity.flatMap((m: any) => 
                         m.user.locations
-                            .filter((l: any) => !city || l.city.toLowerCase() === city.toLowerCase())
-                            .map((l: any) => l.district)
+                            .filter((l: any) => !city || l.city.trim().toLowerCase() === city.toLowerCase())
+                            .map((l: any) => l.district?.trim())
                     )
                 ])].filter(Boolean);
 
+                const normalizedCity = city?.toLowerCase();
+
                 heatmap = allDistricts.map(d => {
-                    const jobCount = jobsInCity.filter((j: any) => (j.location as any).district === d).length;
+                    const jobCount = jobsInCity.filter((j: any) => (j.location as any).district?.trim() === d).length;
                     const masterCount = mastersInCity.filter((m: any) => 
                         (m.user.locations.some((l: any) => 
-                            l.district === d && 
-                            (!city || l.city.toLowerCase() === city.toLowerCase())
+                            l.district?.trim() === d && 
+                            (!normalizedCity || l.city.trim().toLowerCase() === normalizedCity)
                         ))
                     ).length;
 
@@ -753,7 +761,12 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                     else if (jobCount > masterCount) status = 'YELLOW';
 
                     return { district: d, jobCount, masterCount, status };
-                }).sort((a, b) => (b.jobCount + b.masterCount) - (a.jobCount + a.masterCount));
+                });
+
+                // ONLY show districts with actual data for this city
+                heatmap = heatmap.filter(h => h.jobCount > 0 || h.masterCount > 0)
+                    .sort((a, b) => (b.jobCount + b.masterCount) - (a.jobCount + a.masterCount))
+                    .slice(0, 15);
 
                 return res.json({
                     success: true,
