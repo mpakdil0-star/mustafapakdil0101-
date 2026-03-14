@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import { useRouter } from 'expo-router';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { Ionicons } from '@expo/vector-icons';
 import { colors as staticColors } from '../../constants/colors';
@@ -41,6 +42,7 @@ interface StatsData {
 }
 
 export default function AdminStatsScreen() {
+  const router = useRouter();
   const colors = useAppColors();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<StatsData | null>(null);
@@ -67,6 +69,19 @@ export default function AdminStatsScreen() {
     }
   };
 
+  const navigateToUsers = (filters: { 
+    initialFilter?: string, 
+    initialSearch?: string, 
+    initialCity?: string, 
+    initialDistrict?: string,
+    initialCategory?: string 
+  }) => {
+    router.push({
+      pathname: '/admin/users',
+      params: filters
+    });
+  };
+
   if (loading && !data) {
     return (
       <View style={styles.loadingContainer}>
@@ -76,30 +91,42 @@ export default function AdminStatsScreen() {
     );
   }
 
-  const renderDistributionList = (items: DistributionItem[], showAll: boolean, setShowAll: (v: boolean) => void, color: string) => {
+  const renderDistributionList = (items: DistributionItem[], showAll: boolean, setShowAll: (v: boolean) => void, color: string, type: 'CATEGORY' | 'DISTRICT') => {
     const sorted = [...items].sort((a, b) => b.count - a.count);
     const top5 = sorted.slice(0, 5);
     const rest = sorted.slice(5);
     const total = sorted.reduce((acc, curr) => acc + curr.count, 0);
 
+    const renderItem = (item: DistributionItem, index: number) => (
+      <TouchableOpacity 
+        key={index} 
+        style={styles.listItem}
+        onPress={() => {
+          if (type === 'CATEGORY') {
+            navigateToUsers({ initialFilter: 'ELECTRICIAN', initialCategory: item.name, initialCity: selectedCity !== 'ALL' ? selectedCity : undefined });
+          } else {
+            navigateToUsers({ initialFilter: 'CITIZEN', initialDistrict: item.name, initialCity: selectedCity !== 'ALL' ? selectedCity : undefined });
+          }
+        }}
+      >
+        <View style={styles.listTextRow}>
+          <Text style={styles.itemName}>{item.name}</Text>
+          <Text style={styles.itemCount}>{item.count}</Text>
+        </View>
+        <View style={styles.progressBarBg}>
+          <View 
+            style={[
+              styles.progressBarFill, 
+              { backgroundColor: color, width: `${(item.count / total) * 100}%` }
+            ]} 
+          />
+        </View>
+      </TouchableOpacity>
+    );
+
     return (
       <View style={styles.listContainer}>
-        {top5.map((item, index) => (
-          <View key={index} style={styles.listItem}>
-            <View style={styles.listTextRow}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemCount}>{item.count}</Text>
-            </View>
-            <View style={styles.progressBarBg}>
-              <View 
-                style={[
-                  styles.progressBarFill, 
-                  { backgroundColor: color, width: `${(item.count / total) * 100}%` }
-                ]} 
-              />
-            </View>
-          </View>
-        ))}
+        {top5.map((item, index) => renderItem(item, index))}
 
         {rest.length > 0 && (
           <>
@@ -117,22 +144,7 @@ export default function AdminStatsScreen() {
               />
             </TouchableOpacity>
 
-            {showAll && rest.map((item, index) => (
-              <View key={`rest-${index}`} style={styles.listItem}>
-                <View style={styles.listTextRow}>
-                  <Text style={styles.itemName}>{item.name}</Text>
-                  <Text style={styles.itemCount}>{item.count}</Text>
-                </View>
-                <View style={styles.progressBarBg}>
-                  <View 
-                    style={[
-                      styles.progressBarFill, 
-                      { backgroundColor: color, width: `${(item.count / total) * 100}%` }
-                    ]} 
-                  />
-                </View>
-              </View>
-            ))}
+            {showAll && rest.map((item, index) => renderItem(item, index))}
           </>
         )}
       </View>
@@ -242,7 +254,7 @@ export default function AdminStatsScreen() {
             </View>
             <View style={styles.columnContent}>
               <Text style={styles.subLabel}>Meslek Branşları</Text>
-              {data && renderDistributionList(data.serviceDistribution, showAllServices, setShowAllServices, '#7C3AED')}
+              {data && renderDistributionList(data.serviceDistribution, showAllServices, setShowAllServices, '#7C3AED', 'CATEGORY')}
             </View>
           </View>
 
@@ -254,7 +266,7 @@ export default function AdminStatsScreen() {
             </View>
             <View style={styles.columnContent}>
               <Text style={styles.subLabel}>İlçe Dağılımı</Text>
-              {data && renderDistributionList(data.districtDistribution, showAllDistricts, setShowAllDistricts, '#3B82F6')}
+              {data && renderDistributionList(data.districtDistribution, showAllDistricts, setShowAllDistricts, '#3B82F6', 'DISTRICT')}
             </View>
           </View>
         </View>
@@ -275,7 +287,11 @@ export default function AdminStatsScreen() {
             </View>
             
             {data?.heatmap.map((item, index) => (
-              <View key={index} style={styles.tableRow}>
+              <TouchableOpacity 
+                key={index} 
+                style={styles.tableRow}
+                onPress={() => navigateToUsers({ initialCity: selectedCity !== 'ALL' ? selectedCity : undefined, initialDistrict: item.district })}
+              >
                 <Text style={[styles.tableCell, { flex: 2, fontFamily: fonts.bold }]}>{item.district}</Text>
                 <Text style={styles.tableCell}>{item.jobCount}</Text>
                 <Text style={styles.tableCell}>{item.masterCount}</Text>
@@ -293,7 +309,7 @@ export default function AdminStatsScreen() {
                     {item.status === 'GREEN' ? 'Dengeli' : item.status === 'RED' ? 'Eksik' : 'Kritik'}
                   </Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         </View>

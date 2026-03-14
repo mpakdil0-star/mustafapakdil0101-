@@ -439,7 +439,15 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
         const user = (req as any).user;
         if (user.userType !== 'ADMIN') throw new Error('Unauthorized');
 
-        const { search, userType: filterType, page = '1', limit = '20' } = req.query;
+        const { 
+            search, 
+            userType: filterType, 
+            city, 
+            district, 
+            serviceCategory,
+            page = '1', 
+            limit = '20' 
+        } = req.query;
         const pageNum = parseInt(page as string, 10);
         const limitNum = parseInt(limit as string, 10);
         const skip = (pageNum - 1) * limitNum;
@@ -458,6 +466,29 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
                     { email: { contains: search as string, mode: 'insensitive' } },
                     { phone: { contains: search as string } }
                 ];
+            }
+
+            // Advanced filtering
+            if (city) {
+                whereClause.OR = whereClause.OR || [];
+                whereClause.OR.push(
+                    { city: { equals: city as string, mode: 'insensitive' } },
+                    { locations: { some: { city: { equals: city as string, mode: 'insensitive' } } } }
+                );
+            }
+
+            if (district) {
+                whereClause.locations = {
+                    some: {
+                        district: { equals: district as string, mode: 'insensitive' }
+                    }
+                };
+            }
+
+            if (serviceCategory) {
+                whereClause.electricianProfile = {
+                    serviceCategory: { equals: serviceCategory as string, mode: 'insensitive' }
+                };
             }
 
             const [users, totalUsers] = await Promise.all([

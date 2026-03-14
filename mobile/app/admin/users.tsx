@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, RefreshControl, Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { colors as staticColors } from '../../constants/colors';
@@ -30,13 +30,18 @@ type FilterType = 'ALL' | 'CITIZEN' | 'ELECTRICIAN';
 
 export default function AdminUsersScreen() {
     const router = useRouter();
+    const params = useLocalSearchParams();
     const colors = useAppColors();
 
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filter, setFilter] = useState<FilterType>('ALL');
+    const [searchQuery, setSearchQuery] = useState((params.initialSearch as string) || '');
+    const [filter, setFilter] = useState<FilterType>((params.initialFilter as FilterType) || 'ALL');
+    const [city, setCity] = useState((params.initialCity as string) || '');
+    const [district, setDistrict] = useState((params.initialDistrict as string) || '');
+    const [category, setCategory] = useState((params.initialCategory as string) || '');
+    
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -67,6 +72,9 @@ export default function AdminUsersScreen() {
                 params: {
                     search: searchQuery,
                     userType: filter,
+                    city: city,
+                    district: district,
+                    serviceCategory: category,
                     page: currentPage,
                     limit: 20
                 }
@@ -80,18 +88,17 @@ export default function AdminUsersScreen() {
             }
         } catch (error: any) {
             console.error('Failed to fetch users:', error);
-            // Don't show alert on initial load if it fails quietly
         } finally {
             setLoading(false);
             setIsLoadingMore(false);
             setRefreshing(false);
         }
-    }, [searchQuery, filter, page]);
+    }, [searchQuery, filter, city, district, category, page]);
 
     useEffect(() => {
         setLoading(true);
         fetchUsers(true);
-    }, [filter]);
+    }, [filter, city, district, category]);
 
     useEffect(() => {
         if (page > 1) {
