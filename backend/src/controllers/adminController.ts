@@ -461,7 +461,6 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
                     take: limitNum,
                     include: {
                         electricianProfile: true,
-                        _count: { select: { jobPosts: true } } // Approximate completed jobs
                     },
                     orderBy: { createdAt: 'desc' }
                 }),
@@ -469,22 +468,29 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
             ]);
 
             // Transform to match frontend expectations
-            const transformedUsers = users.map(u => ({
-                id: u.id,
-                fullName: u.fullName,
-                email: u.email,
-                phone: u.phone,
-                userType: u.userType,
-                profileImageUrl: u.profileImageUrl,
-                creditBalance: u.electricianProfile?.creditBalance || 0,
-                isVerified: u.isVerified,
-                isActive: u.isActive,
-                verificationStatus: u.electricianProfile?.verificationStatus || null,
-                createdAt: u.createdAt,
-                experienceYears: u.electricianProfile?.experienceYears || 0,
-                serviceCategory: u.electricianProfile?.serviceCategory || null,
-                completedJobsCount: u.electricianProfile?.completedJobsCount || 0
-            }));
+            const transformedUsers = users.map(u => {
+                const ns = u.notificationSettings as any;
+                const pushEnabled = ns?.push !== false;
+                const pushStatus = !pushEnabled ? 'DISABLED' : (u.pushToken ? 'ACTIVE' : 'PENDING');
+
+                return {
+                    id: u.id,
+                    fullName: u.fullName,
+                    email: u.email,
+                    phone: u.phone,
+                    userType: u.userType,
+                    profileImageUrl: u.profileImageUrl,
+                    creditBalance: Number(u.electricianProfile?.creditBalance || 0),
+                    isVerified: u.isVerified,
+                    isActive: u.isActive,
+                    pushStatus: pushStatus,
+                    verificationStatus: u.electricianProfile?.verificationStatus || null,
+                    createdAt: u.createdAt,
+                    experienceYears: u.electricianProfile?.experienceYears || 0,
+                    serviceCategory: u.electricianProfile?.serviceCategory || null,
+                    completedJobsCount: Number(u.electricianProfile?.completedJobsCount || 0)
+                };
+            });
 
             return res.json({
                 success: true,
