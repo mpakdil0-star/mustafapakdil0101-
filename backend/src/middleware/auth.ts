@@ -98,6 +98,12 @@ export const authenticate = async (
         userType: user.userType,
       };
 
+      // Non-blocking update of lastSeenAt
+      prisma.user.update({
+        where: { id: user.id },
+        data: { lastSeenAt: new Date() }
+      }).catch(err => console.error('Failed to update lastSeenAt:', err));
+
       next();
     } catch (dbError: any) {
       const dbMsg = dbError.message || '';

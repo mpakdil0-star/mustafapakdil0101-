@@ -682,27 +682,40 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                 // 3. District Distribution (Citizens only)
                 const citizens = await prisma.user.findMany({
                     where: { userType: 'CITIZEN' as any, ...cityFilter, deletedAt: null },
-                    include: { locations: { where: { isDefault: true } } }
+                    include: { locations: true }
                 });
                 
                 citizens.forEach((u: any) => {
-                    const defaultLoc = u.locations?.[0];
-                    if (!defaultLoc) {
-                        if (!city) districtStats['Belirtilmemiş'] = (districtStats['Belirtilmemiş'] || 0) + 1;
-                        return;
-                    }
-                    // Filter district by city
-                    if (!city || defaultLoc.city.toLowerCase() === city.toLowerCase()) {
-                        const d = defaultLoc.district || 'Belirtilmemiş';
-                        districtStats[d] = (districtStats[d] || 0) + 1;
+                    const locations = u.locations || [];
+                    const defaultLoc = locations.find((l: any) => l.isDefault) || locations[0];
+                    
+                    let targetCity = defaultLoc?.city || u.city;
+                    let targetDistrict = defaultLoc?.district || 'Belirtilmemiş';
+
+                    if (!city || (targetCity && targetCity.toLowerCase().trim() === city.toLowerCase().trim())) {
+                        districtStats[targetDistrict] = (districtStats[targetDistrict] || 0) + 1;
                     }
                 });
 
                 // 4. Live Data (Last 24h)
                 const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
                 const [activeUstalar, activeCitizens] = await Promise.all([
-                    prisma.user.count({ where: { userType: 'ELECTRICIAN' as any, ...cityFilter, lastSeenAt: { gte: last24h } } }),
-                    prisma.user.count({ where: { userType: 'CITIZEN' as any, ...cityFilter, lastSeenAt: { gte: last24h } } }),
+                    prisma.user.count({ 
+                        where: { 
+                            userType: 'ELECTRICIAN' as any, 
+                            ...cityFilter, 
+                            deletedAt: null,
+                            lastSeenAt: { gte: last24h } 
+                        } 
+                    }),
+                    prisma.user.count({ 
+                        where: { 
+                            userType: 'CITIZEN' as any, 
+                            ...cityFilter, 
+                            deletedAt: null,
+                            lastSeenAt: { gte: last24h } 
+                        } 
+                    }),
                 ]);
 
                 // 5. Heatmap: Jobs vs Masters per District
