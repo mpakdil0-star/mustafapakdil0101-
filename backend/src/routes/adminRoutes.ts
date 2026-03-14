@@ -444,6 +444,10 @@ router.post('/verifications/process', authenticate, adminMiddleware, adminContro
 // GET /admin/dashboard-stats - Fast lookup for dashboard cards
 router.get('/dashboard-stats', authenticate, adminMiddleware, adminController.getDashboardStats);
 
+// GET /admin/detailed-stats - Comprehensive strategic statistics
+router.get('/detailed-stats', authenticate, adminMiddleware, adminController.getDetailedStats);
+
+
 // GET /admin/jobs - Get all jobs for management
 router.get('/jobs', authenticate, adminMiddleware, adminController.getAllJobs);
 

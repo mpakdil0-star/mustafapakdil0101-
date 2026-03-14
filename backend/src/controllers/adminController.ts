@@ -417,9 +417,9 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
 
         const { id } = req.params;
 
-        if (isDatabaseAvailable && !id.startsWith('mock-')) {
+        if (isDatabaseAvailable && !((id as string).startsWith('mock-'))) {
             try {
-                await prisma.jobPost.delete({ where: { id } });
+                await prisma.jobPost.delete({ where: { id: id as string } });
                 console.log(`🗑️ Database job deleted: ${id}`);
                 return res.json({ success: true, message: 'İlan veritabanından silindi' });
             } catch (dbError) {
@@ -429,7 +429,7 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
         }
 
         // Mock Fallback
-        const deleted = deleteMockJob(id);
+        const deleted = deleteMockJob(id as string);
         if (deleted) {
             return res.json({ success: true, message: 'İlan (MOCK) silindi' });
         }
@@ -442,3 +442,159 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
         next(error);
     }
 };
+
+/**
+ * Detailed statistics for the strategic dashboard
+ * Admin ONLY
+ */
+export const getDetailedStats = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const user = (req as any).user;
+        if (user.userType !== 'ADMIN') throw new Error('Unauthorized');
+
+        const city = req.query.city as string | undefined;
+        const district = req.query.district as string | undefined;
+        const serviceCategory = req.query.serviceCategory as string | undefined;
+
+        // ── Try real database first ─────────────────────────────────────
+        if (isDatabaseAvailable) {
+            try {
+                // Filters
+                const ustaWhere: any = { verificationStatus: 'VERIFIED' as any };
+                if (serviceCategory) ustaWhere.serviceCategory = serviceCategory;
+
+                const jobWhere: any = { status: 'OPEN' as any };
+                if (serviceCategory) jobWhere.serviceCategory = serviceCategory;
+
+                // 1. KPI Cards
+                const [totalCitizens, totalElectricians, pendingVerifications] = await Promise.all([
+                    prisma.user.count({ where: { userType: 'CITIZEN' as any, ...(city ? { city } : {}) } }),
+                    prisma.user.count({ where: { userType: 'ELECTRICIAN' as any, ...(city ? { city } : {}) } }),
+                    prisma.electricianProfile.count({ where: { verificationStatus: 'PENDING' as any } }),
+                ]);
+
+                // 2. Service Distribution (Top 5 + Other)
+                const categoryCounts = await prisma.electricianProfile.groupBy({
+                    by: ['serviceCategory' as any],
+                    _count: { _all: true },
+                    where: city ? { user: { city } } : {}
+                });
+
+                // 3. District Distribution (Citizens)
+                let districtStats: Record<string, number> = {};
+                const usersWithLocations = await prisma.user.findMany({
+                    where: { userType: 'CITIZEN' as any, ...(city ? { city } : {}) },
+                    include: { locations: { where: { isDefault: true } } }
+                });
+                
+                usersWithLocations.forEach((u: any) => {
+                    const d = u.locations?.[0]?.district || 'Diğer';
+                    if (district && d !== district) return;
+                    districtStats[d] = (districtStats[d] || 0) + 1;
+                });
+
+                // 4. Live Data (Last 24h)
+                const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+                const [activeUstalar, activeCitizens] = await Promise.all([
+                    prisma.user.count({ where: { userType: 'ELECTRICIAN' as any, lastSeenAt: { gte: last24h } } }),
+                    prisma.user.count({ where: { userType: 'CITIZEN' as any, lastSeenAt: { gte: last24h } } }),
+                ]);
+
+                // 5. Heatmap: Jobs vs Masters per District
+                let heatmap: any[] = [];
+                if (city) {
+                    const jobs = await prisma.jobPost.findMany({
+                        where: { ...jobWhere }
+                    });
+                    const masters = await prisma.electricianProfile.findMany({
+                        where: { ...ustaWhere, user: { city: city } },
+                        include: { user: { include: { locations: true } } }
+                    });
+
+                    const allDistricts = [...new Set([
+                        ...jobs.map((j: any) => (j.location as any).district),
+                        ...masters.flatMap((m: any) => m.user.locations.map((l: any) => l.district))
+                    ])].filter(Boolean);
+
+                    heatmap = allDistricts.map(d => {
+                        const jobCount = jobs.filter((j: any) => (j.location as any).district === d).length;
+                        const masterCount = masters.filter((m: any) => 
+                            m.user.locations.some((l: any) => l.district === d)
+                        ).length;
+                        return { 
+                            district: d, 
+                            jobCount, 
+                            masterCount, 
+                            status: masterCount >= jobCount ? 'GREEN' : (masterCount === 0 && jobCount > 0 ? 'RED' : 'YELLOW')
+                        };
+                    }).sort((a, b) => b.jobCount - a.jobCount);
+                }
+
+                return res.json({
+                    success: true,
+                    data: {
+                        kpis: { totalCitizens, totalElectricians, pendingVerifications },
+                        serviceDistribution: categoryCounts.map((c: any) => ({ name: c.serviceCategory, count: c._count?._all || 0 })),
+                        districtDistribution: Object.entries(districtStats).map(([name, count]) => ({ name, count })),
+                        liveData: { activeUstalar, activeCitizens },
+                        heatmap: heatmap.slice(0, 10)
+                    }
+                });
+            } catch (dbErr: any) {
+                console.warn('⚠️ getDetailedStats DB failed, falling back to mock:', dbErr.message);
+            }
+        }
+
+        // ── Fallback: mockStorage ────────────────────────────────────────
+        const allUsers = Object.values(mockStorage.getAllUsers());
+        const last24hTime = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        
+        const kpis = {
+            totalCitizens: allUsers.filter((u: any) => u.userType === 'CITIZEN' && (!city || u.city === city)).length,
+            totalElectricians: allUsers.filter((u: any) => u.userType === 'ELECTRICIAN' && (!city || u.city === city)).length,
+            pendingVerifications: allUsers.filter((u: any) => u.verificationStatus === 'PENDING').length
+        };
+
+        const serviceDistribution: Record<string, number> = {};
+        allUsers.filter((u: any) => u.userType === 'ELECTRICIAN' && (!city || u.city === city)).forEach((u: any) => {
+            const cat = u.serviceCategory || u.electricianProfile?.serviceCategory || 'Diğer';
+            serviceDistribution[cat] = (serviceDistribution[cat] || 0) + 1;
+        });
+
+        const districtDistribution: Record<string, number> = {};
+        allUsers.filter((u: any) => u.userType === 'CITIZEN' && (!city || u.city === city)).forEach((u: any) => {
+            const d = u.locations?.[0]?.district || 'Diğer';
+            districtDistribution[d] = (districtDistribution[d] || 0) + 1;
+        });
+
+        const liveData = {
+            activeUstalar: allUsers.filter((u: any) => u.userType === 'ELECTRICIAN' && (u.lastSeenAt || u.updatedAt) >= last24hTime).length,
+            activeCitizens: allUsers.filter((u: any) => u.userType === 'CITIZEN' && (u.lastSeenAt || u.updatedAt) >= last24hTime).length
+        };
+
+        let heatmap: any[] = [];
+        if (city === 'Adana' || !city) {
+            heatmap = [
+                { district: 'Çukurova', jobCount: 12, masterCount: 15, status: 'GREEN' },
+                { district: 'Sarıçam', jobCount: 8, masterCount: 2, status: 'RED' },
+                { district: 'Seyhan', jobCount: 20, masterCount: 18, status: 'YELLOW' },
+                { district: 'Yüreğir', jobCount: 15, masterCount: 5, status: 'RED' },
+                { district: 'Karaisalı', jobCount: 3, masterCount: 4, status: 'GREEN' }
+            ];
+        }
+
+        res.json({
+            success: true,
+            data: {
+                kpis,
+                serviceDistribution: Object.entries(serviceDistribution).map(([name, count]) => ({ name, count })),
+                districtDistribution: Object.entries(districtDistribution).map(([name, count]) => ({ name, count })),
+                liveData,
+                heatmap
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+

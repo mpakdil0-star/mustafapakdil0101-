@@ -32,6 +32,13 @@ export default function AdminDashboardScreen() {
 
     const menuItems = [
         {
+            title: 'İstatistik',
+            subtitle: 'Stratejik verileri analiz et',
+            icon: 'bar-chart',
+            color: '#1E1B4B',
+            route: '/admin/stats'
+        },
+        {
             title: 'Şikayet Yönetimi',
             subtitle: 'Kullanıcı şikayetlerini incele',
             icon: 'warning',
