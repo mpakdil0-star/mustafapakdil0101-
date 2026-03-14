@@ -720,47 +720,22 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
             }
         }
 
-        // ── Fallback: mockStorage (If DB is down or error occurred) ──────
-        const allUsers = Object.values(mockStorage.getAllUsers());
-        const last24hTime = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        
+        // ── Fallback: Dynamic Mock (If DB is empty or down) ──────
+        // If we reach here, it means DB might have 0 data or failed
         const kpis = {
-            totalCitizens: allUsers.filter((u: any) => u.userType === 'CITIZEN' && (!city || u.city === city)).length,
-            totalElectricians: allUsers.filter((u: any) => u.userType === 'ELECTRICIAN' && (!city || u.city === city)).length,
-            pendingVerifications: allUsers.filter((u: any) => u.verificationStatus === 'PENDING').length
+            totalCitizens: 0,
+            totalElectricians: 0,
+            pendingVerifications: 0
         };
-
-        const serviceDistribution: Record<string, number> = {};
-        allUsers.filter((u: any) => u.userType === 'ELECTRICIAN' && (!city || u.city === city)).forEach((u: any) => {
-            const cat = u.serviceCategory || u.electricianProfile?.serviceCategory || 'Diğer';
-            serviceDistribution[cat] = (serviceDistribution[cat] || 0) + 1;
-        });
-
-        const districtDistribution: Record<string, number> = {};
-        allUsers.filter((u: any) => u.userType === 'CITIZEN' && (!city || u.city === city)).forEach((u: any) => {
-            const d = u.locations?.[0]?.district || 'Diğer';
-            districtDistribution[d] = (districtDistribution[d] || 0) + 1;
-        });
-
-        const liveData = {
-            activeUstalar: allUsers.filter((u: any) => u.userType === 'ELECTRICIAN' && (u.lastSeenAt || u.updatedAt) >= last24hTime).length,
-            activeCitizens: allUsers.filter((u: any) => u.userType === 'CITIZEN' && (u.lastSeenAt || u.updatedAt) >= last24hTime).length
-        };
-
-        let heatmap = [
-            { district: 'Çukurova', jobCount: 45, masterCount: 12, status: 'YELLOW' },
-            { district: 'Seyhan', jobCount: 32, masterCount: 28, status: 'GREEN' },
-            { district: 'Sarıçam', jobCount: 15, masterCount: 3, status: 'RED' }
-        ];
 
         res.json({
             success: true,
             data: {
                 kpis,
-                serviceDistribution: Object.entries(serviceDistribution).map(([name, count]) => ({ name, count })),
-                districtDistribution: Object.entries(districtDistribution).map(([name, count]) => ({ name, count })),
-                liveData,
-                heatmap
+                serviceDistribution: [],
+                districtDistribution: [],
+                liveData: { activeUstalar: 0, activeCitizens: 0 },
+                heatmap: []
             }
         });
     } catch (error) {
