@@ -96,6 +96,14 @@ export default function AdminUsersScreen() {
     }, [searchQuery, filter, city, district, category, page]);
 
     useEffect(() => {
+        if (params.initialSearch !== undefined) setSearchQuery(params.initialSearch as string);
+        if (params.initialFilter !== undefined) setFilter(params.initialFilter as FilterType);
+        if (params.initialCity !== undefined) setCity(params.initialCity as string);
+        if (params.initialDistrict !== undefined) setDistrict(params.initialDistrict as string);
+        if (params.initialCategory !== undefined) setCategory(params.initialCategory as string);
+    }, [params]);
+
+    useEffect(() => {
         setLoading(true);
         fetchUsers(true);
     }, [filter, city, district, category]);

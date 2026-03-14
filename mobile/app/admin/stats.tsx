@@ -110,6 +110,8 @@ export default function AdminStatsScreen() {
       <TouchableOpacity 
         key={index} 
         style={styles.listItem}
+        activeOpacity={0.7}
+        hitSlop={{ top: 5, bottom: 5, left: 10, right: 10 }}
         onPress={() => {
           if (type === 'CATEGORY') {
             navigateToUsers({ initialFilter: 'ELECTRICIAN', initialCategory: item.name, initialCity: selectedCity !== 'ALL' ? selectedCity : undefined });
@@ -299,6 +301,7 @@ export default function AdminStatsScreen() {
               <TouchableOpacity 
                 key={index} 
                 style={styles.tableRow}
+                activeOpacity={0.7}
                 onPress={() => navigateToUsers({ initialCity: selectedCity !== 'ALL' ? selectedCity : undefined, initialDistrict: item.district })}
               >
                 <Text style={[styles.tableCell, { flex: 2, fontFamily: fonts.bold }]}>{item.district}</Text>
