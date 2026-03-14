@@ -1,10 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { Prisma } from '@prisma/client';
 import prisma, { isDatabaseAvailable } from '../config/database';
 import { mockStorage } from '../utils/mockStorage';
 import { notifyUser } from '../server';
 import pushNotificationService from '../services/pushNotificationService';
-import { jobStoreById, deleteMockJob, getAllMockJobs, loadMockJobs } from './jobController';
+import { jobStoreById, deleteMockJob, getMockJobs, loadMockJobs } from './jobController';
 import { mockTransactionStorage } from '../utils/mockStorage';
 
 /**
@@ -27,12 +26,7 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
         if (!isDatabaseAvailable || user.id.startsWith('mock-')) {
             const allUsers = mockStorage.getAllUsers();
             const pendingMocks = allUsers
-                .filter(u =>
-                    u.userType === 'ELECTRICIAN' &&
-                    u.verificationStatus === 'PENDING' &&
-                    u.electricianProfile?.verificationDocuments &&
-                    (u.electricianProfile.verificationDocuments as any).documentUrl // Only show if they uploaded a document
-                )
+                .filter(u => u.userType === 'ELECTRICIAN' && u.verificationStatus === 'PENDING')
                 .map(u => ({
                     userId: u.id,
                     verificationStatus: 'PENDING',
@@ -46,8 +40,31 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
                     }
                 }));
 
-            // NOTE: We don't auto-add the sample mock user anymore unless they'd have a document
-            // This satisfies the user request: "don't show every registered master"
+            // If no real pending mocks, AND the sample user is not already processed/verified in mockStorage
+            if (pendingMocks.length === 0) {
+                const sampleMockUser = mockStorage.get('mock-electrician-1');
+                // Only add if it doesn't exist (fresh start) or if it exists and is explicitly PENDING
+                const shouldAddSample = !sampleMockUser || (sampleMockUser.verificationStatus === 'PENDING');
+
+                if (shouldAddSample) {
+                    pendingMocks.push({
+                        userId: 'mock-electrician-1',
+                        verificationStatus: 'PENDING',
+                        verificationDocuments: {
+                            documentType: 'ELEKTRIK_USTASI',
+                            documentUrl: undefined,
+                            submittedAt: new Date().toISOString(),
+                        },
+                        serviceCategory: 'elektrik',
+                        user: {
+                            id: 'mock-electrician-1',
+                            fullName: 'Ahmet Yılmaz (Örnek)',
+                            email: 'ahmet@test.com',
+                            phone: '5551234455'
+                        }
+                    });
+                }
+            }
 
             return res.json({
                 success: true,
@@ -59,7 +76,6 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
             const pendingProfiles = await prisma.electricianProfile.findMany({
                 where: {
                     verificationStatus: 'PENDING',
-                    verificationDocuments: { not: null as any }
                 },
                 include: {
                     user: {
@@ -82,31 +98,27 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
             });
         } catch (dbErr: any) {
             console.error('Database error in getAllVerifications:', dbErr.message);
-            // Fallback to mock storage instead of hardcoded sample
-            const allUsers = mockStorage.getAllUsers();
-            const pendingMocks = allUsers
-                .filter(u =>
-                    u.userType === 'ELECTRICIAN' &&
-                    u.verificationStatus === 'PENDING' &&
-                    u.electricianProfile?.verificationDocuments &&
-                    (u.electricianProfile.verificationDocuments as any).documentUrl
-                )
-                .map(u => ({
-                    userId: u.id,
-                    verificationStatus: 'PENDING',
-                    verificationDocuments: u.electricianProfile?.verificationDocuments,
-                    serviceCategory: u.electricianProfile?.serviceCategory,
-                    user: {
-                        id: u.id,
-                        fullName: u.fullName,
-                        email: u.email,
-                        phone: u.phone
-                    }
-                }));
-
+            // Fallback to same mock data if query fails
             res.json({
                 success: true,
-                data: pendingMocks
+                data: [
+                    {
+                        userId: 'mock-electrician-1',
+                        verificationStatus: 'PENDING',
+                        verificationDocuments: {
+                            documentType: 'ELEKTRIK_USTASI',
+                            documentUrl: undefined,
+                            submittedAt: new Date().toISOString(),
+                        },
+                        serviceCategory: 'elektrik',
+                        user: {
+                            id: 'mock-electrician-1',
+                            fullName: 'Ahmet Yılmaz (Mock - Fallback)',
+                            email: 'ahmet@test.com',
+                            phone: '5551234455'
+                        }
+                    }
+                ]
             });
         }
     } catch (error) {
@@ -271,49 +283,54 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
         const user = (req as any).user;
         if (user.userType !== 'ADMIN') throw new Error('Unauthorized');
 
-        // ── Try real database first ─────────────────────────────────────
-        if (isDatabaseAvailable) {
-            try {
-                const [totalUsers, totalElectricians, totalCitizens, activeJobs, pendingVerifications] = await Promise.all([
-                    prisma.user.count({ where: { userType: { not: 'ADMIN' as any } } }),
-                    prisma.user.count({ where: { userType: 'ELECTRICIAN' as any } }),
-                    prisma.user.count({ where: { userType: 'CITIZEN' as any } }),
-                    prisma.jobPost.count({ where: { status: 'OPEN' as any } }),
-                    prisma.electricianProfile.count({ where: { verificationStatus: 'PENDING' as any } }),
-                ]);
+        // FAST PATH: Mock results if DB down
+        if (!isDatabaseAvailable) {
+            // ... Existing Mock Logic ...
+            const allUsers = mockStorage.getAllUsers();
+            const users = Object.values(allUsers);
+            const totalUsers = users.length;
+            const totalElectricians = users.filter((u: any) => u.userType === 'ELECTRICIAN').length;
+            const totalCitizens = users.filter((u: any) => u.userType === 'CITIZEN').length;
 
-                // Revenue: sum of credit purchase transactions (still from mock for now)
-                const transactions = mockTransactionStorage.getAllTransactions();
-                const totalRevenue = transactions
-                    .filter(t => t.transactionType === 'PURCHASE')
-                    .reduce((sum, t) => sum + t.amount, 0);
+            if (jobStoreById.size === 0) loadMockJobs();
+            let activeJobsCount = 0;
+            jobStoreById.forEach((job) => { if (job.status === 'OPEN') activeJobsCount++; });
+            const pendingCount = users.filter((u: any) => u.verificationStatus === 'PENDING').length;
 
-                return res.json({
-                    success: true,
-                    data: { totalUsers, totalElectricians, totalCitizens, activeJobs, pendingVerifications, totalRevenue }
-                });
-            } catch (dbErr: any) {
-                console.warn('⚠️ getDashboardStats DB failed, falling back to mock:', dbErr.message);
-            }
+            const transactions = mockTransactionStorage.getAllTransactions();
+            const totalRevenue = transactions.filter(t => t.transactionType === 'PURCHASE').reduce((sum, t) => sum + t.amount, 0);
+
+            return res.json({
+                success: true,
+                data: {
+                    totalUsers,
+                    totalElectricians,
+                    totalCitizens,
+                    activeJobs: activeJobsCount,
+                    pendingVerifications: pendingCount,
+                    totalRevenue
+                }
+            });
         }
 
-        // ── Fallback: mockStorage ────────────────────────────────────────
-        const allUsers = mockStorage.getAllUsers();
-        const users = Object.values(allUsers);
-        const totalUsers = users.length;
-        const totalElectricians = users.filter((u: any) => u.userType === 'ELECTRICIAN').length;
-        const totalCitizens = users.filter((u: any) => u.userType === 'CITIZEN').length;
+        // REAL DB STATS
+        const [
+            totalUsers,
+            totalElectricians,
+            totalCitizens,
+            activeJobs,
+            pendingVerifications,
+        ] = await Promise.all([
+            prisma.user.count(),
+            prisma.user.count({ where: { userType: 'ELECTRICIAN' } }),
+            prisma.user.count({ where: { userType: 'CITIZEN' } }),
+            prisma.jobPost.count({ where: { status: 'OPEN' } }),
+            prisma.electricianProfile.count({ where: { verificationStatus: 'PENDING' } }),
+        ]);
 
-        if (jobStoreById.size === 0) loadMockJobs();
-        let activeJobsCount = 0;
-        jobStoreById.forEach((job) => { if (job.status === 'OPEN') activeJobsCount++; });
-
-        const pendingCount = users.filter((u: any) => u.verificationStatus === 'PENDING').length;
-
-        const transactions = mockTransactionStorage.getAllTransactions();
-        const totalRevenue = transactions
-            .filter(t => t.transactionType === 'PURCHASE')
-            .reduce((sum, t) => sum + t.amount, 0);
+        // Revenue calculation (if you have a Transaction table, otherwise 0 or mock)
+        // const totalRevenue = await prisma.transaction.aggregate({ _sum: { amount: true } });
+        const totalRevenue = 0; // Placeholder until real transaction table matches
 
         res.json({
             success: true,
@@ -321,21 +338,20 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
                 totalUsers,
                 totalElectricians,
                 totalCitizens,
-                activeJobs: activeJobsCount,
-                pendingVerifications: pendingCount,
+                activeJobs,
+                pendingVerifications,
                 totalRevenue
             }
         });
+
     } catch (error) {
         next(error);
     }
 };
 
-
 /**
  * Get All Jobs for Administration
  * Admin ONLY
- * Supports Pagination: ?page=1&limit=20
  */
 export const getAllJobs = async (req: Request, res: Response, next: NextFunction) => {
     console.log('📋 getAllJobs called');
@@ -348,51 +364,53 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
         const skip = (page - 1) * limit;
 
         if (isDatabaseAvailable) {
-            try {
-                const jobs = await prisma.jobPost.findMany({
+            const [jobs, totalJobs] = await Promise.all([
+                prisma.jobPost.findMany({
                     skip,
                     take: limit,
-                    orderBy: { createdAt: 'desc' },
                     include: {
                         citizen: {
-                            select: {
-                                fullName: true,
-                                email: true,
-                                phone: true
-                            }
-                        }
-                    }
-                });
+                            select: { fullName: true, email: true, phone: true }
+                        },
+                        _count: { select: { bids: true } }
+                    },
+                    orderBy: { createdAt: 'desc' }
+                }),
+                prisma.jobPost.count()
+            ]);
 
-                const totalJobs = await prisma.jobPost.count();
-                const totalPages = Math.ceil(totalJobs / limit);
+            const totalPages = Math.ceil(totalJobs / limit);
 
-                return res.json({
-                    success: true,
-                    data: jobs,
-                    pagination: {
-                        page,
-                        limit,
-                        totalJobs,
-                        totalPages,
-                        hasMore: page < totalPages
-                    }
-                });
-            } catch (dbError) {
-                console.warn('⚠️ [ADMIN] DB getAllJobs failed, falling back to mock');
-            }
+            // Remap citizen to user for frontend compatibility
+            const mappedJobs = jobs.map(j => ({
+                ...j,
+                user: j.citizen
+            }));
+
+            return res.json({
+                success: true,
+                data: mappedJobs,
+                pagination: {
+                    page,
+                    limit,
+                    totalJobs,
+                    totalPages,
+                    hasMore: page < totalPages
+                }
+            });
         }
 
-        // Mock Fallback
-        const mockJobsData = getAllMockJobs();
-        const allMockJobs = mockJobsData.jobs;
-        const totalJobs = allMockJobs.length;
+        // Mock Implementation
+        if (jobStoreById.size === 0) loadMockJobs();
+        const jobs = Array.from(jobStoreById.values());
+        jobs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        const paginatedJobs = jobs.slice(skip, skip + limit);
+        const totalJobs = jobs.length;
         const totalPages = Math.ceil(totalJobs / limit);
-        const pagedJobs = allMockJobs.slice(skip, skip + limit);
 
         res.json({
             success: true,
-            data: pagedJobs,
+            data: paginatedJobs,
             pagination: {
                 page,
                 limit,
@@ -401,6 +419,136 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
                 hasMore: page < totalPages
             }
         });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Get All Users for Administration
+ * Admin ONLY
+ */
+export const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const user = (req as any).user;
+        if (user.userType !== 'ADMIN') throw new Error('Unauthorized');
+
+        const { search, userType: filterType, page = '1', limit = '20' } = req.query;
+        const pageNum = parseInt(page as string, 10);
+        const limitNum = parseInt(limit as string, 10);
+        const skip = (pageNum - 1) * limitNum;
+
+        // DB Implementation
+        if (isDatabaseAvailable) {
+            const whereClause: any = {};
+
+            if (filterType && filterType !== 'ALL') {
+                whereClause.userType = filterType;
+            }
+
+            if (search) {
+                whereClause.OR = [
+                    { fullName: { contains: search as string, mode: 'insensitive' } },
+                    { email: { contains: search as string, mode: 'insensitive' } },
+                    { phone: { contains: search as string } }
+                ];
+            }
+
+            const [users, totalUsers] = await Promise.all([
+                prisma.user.findMany({
+                    where: whereClause,
+                    skip,
+                    take: limitNum,
+                    include: {
+                        electricianProfile: true,
+                        _count: { select: { jobPosts: true } } // Approximate completed jobs
+                    },
+                    orderBy: { createdAt: 'desc' }
+                }),
+                prisma.user.count({ where: whereClause })
+            ]);
+
+            // Transform to match frontend expectations
+            const transformedUsers = users.map(u => ({
+                id: u.id,
+                fullName: u.fullName,
+                email: u.email,
+                phone: u.phone,
+                userType: u.userType,
+                profileImageUrl: u.profileImageUrl,
+                creditBalance: u.electricianProfile?.creditBalance || 0,
+                isVerified: u.isVerified,
+                isActive: u.isActive,
+                verificationStatus: u.electricianProfile?.verificationStatus || null,
+                createdAt: u.createdAt,
+                experienceYears: u.electricianProfile?.experienceYears || 0,
+                serviceCategory: u.electricianProfile?.serviceCategory || null,
+                completedJobsCount: u.electricianProfile?.completedJobsCount || 0
+            }));
+
+            return res.json({
+                success: true,
+                data: {
+                    users: transformedUsers,
+                    pagination: {
+                        total: totalUsers,
+                        page: pageNum,
+                        limit: limitNum,
+                        totalPages: Math.ceil(totalUsers / limitNum)
+                    }
+                }
+            });
+        }
+
+        // Mock Implementation (Moved from routes)
+        const allUsers = mockStorage.getAllUsers();
+        let users = Object.entries(allUsers).map(([id, data]: [string, any]) => {
+            // ... existing mock transformation ...
+            let derivedUserType = data.userType;
+            if (!derivedUserType) {
+                if (id.endsWith('-ELECTRICIAN')) derivedUserType = 'ELECTRICIAN';
+                else if (id.endsWith('-ADMIN')) derivedUserType = 'ADMIN';
+                else derivedUserType = 'CITIZEN';
+            }
+            return {
+                id,
+                fullName: data.fullName || 'İsimsiz Kullanıcı',
+                email: data.email || '',
+                phone: data.phone || '',
+                userType: derivedUserType,
+                // ... other fields
+                ...data
+            };
+        });
+
+        if (filterType && filterType !== 'ALL') {
+            users = users.filter(u => u.userType === filterType);
+        }
+
+        if (search) {
+            const searchLower = (search as string).toLowerCase();
+            users = users.filter(u =>
+                u.fullName.toLowerCase().includes(searchLower) ||
+                u.phone.includes(searchLower) ||
+                u.email.toLowerCase().includes(searchLower)
+            );
+        }
+
+        const paginatedUsers = users.slice(skip, skip + limitNum);
+
+        res.json({
+            success: true,
+            data: {
+                users: paginatedUsers,
+                pagination: {
+                    total: users.length,
+                    page: pageNum,
+                    limit: limitNum,
+                    totalPages: Math.ceil(users.length / limitNum)
+                }
+            }
+        });
+
     } catch (error) {
         next(error);
     }
@@ -417,27 +565,33 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
 
         const { id } = req.params;
 
-        if (isDatabaseAvailable && !((id as string).startsWith('mock-'))) {
+        if (isDatabaseAvailable && !id.startsWith('mock-')) {
+            // DB Implementation
             try {
-                await prisma.jobPost.delete({ where: { id: id as string } });
+                await prisma.jobPost.delete({ where: { id } });
                 console.log(`🗑️ Database job deleted: ${id}`);
+
+                // Also remove from mock store if it exists there to keep sync
+                if (jobStoreById.has(id)) {
+                    deleteMockJob(id);
+                }
+
                 return res.json({ success: true, message: 'İlan veritabanından silindi' });
             } catch (dbError) {
                 console.error('Database deletion error:', dbError);
-                // Fallback to mock delete if ID looks mock or DB fails
+                // Fallthrough to mock deletion or return error if confirmed DB ID
+                return res.status(500).json({ success: false, message: 'İlan silinirken veritabanı hatası oluştu' });
             }
         }
 
-        // Mock Fallback
-        const deleted = deleteMockJob(id as string);
-        if (deleted) {
-            return res.json({ success: true, message: 'İlan (MOCK) silindi' });
-        }
+        // Mock Implementation
+        const success = deleteMockJob(id);
 
-        res.status(404).json({
-            success: false,
-            error: { message: 'İlan bulunamadı' }
-        });
+        if (success) {
+            res.json({ success: true, message: 'İlan silindi' });
+        } else {
+            res.status(404).json({ success: false, message: 'İlan bulunamadı' });
+        }
     } catch (error) {
         next(error);
     }
@@ -453,82 +607,97 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
         if (user.userType !== 'ADMIN') throw new Error('Unauthorized');
 
         const city = req.query.city as string | undefined;
-        const district = req.query.district as string | undefined;
         const serviceCategory = req.query.serviceCategory as string | undefined;
+
+        let districtStats: Record<string, number> = {};
 
         // ── Try real database first ─────────────────────────────────────
         if (isDatabaseAvailable) {
             try {
-                // Filters
-                const ustaWhere: any = { verificationStatus: 'VERIFIED' as any };
-                if (serviceCategory) ustaWhere.serviceCategory = serviceCategory;
-
-                const jobWhere: any = { status: 'OPEN' as any };
-                if (serviceCategory) jobWhere.serviceCategory = serviceCategory;
+                // Better city filter: check both user.city and user.locations
+                const cityFilter = city ? {
+                    OR: [
+                        { city: { equals: city, mode: 'insensitive' } as any },
+                        { locations: { some: { city: { equals: city, mode: 'insensitive' } as any } } }
+                    ]
+                } : {};
 
                 // 1. KPI Cards
                 const [totalCitizens, totalElectricians, pendingVerifications] = await Promise.all([
-                    prisma.user.count({ where: { userType: 'CITIZEN' as any, ...(city ? { city } : {}) } }),
-                    prisma.user.count({ where: { userType: 'ELECTRICIAN' as any, ...(city ? { city } : {}) } }),
-                    prisma.electricianProfile.count({ where: { verificationStatus: 'PENDING' as any } }),
+                    prisma.user.count({ where: { userType: 'CITIZEN' as any, ...cityFilter } }),
+                    prisma.user.count({ where: { userType: 'ELECTRICIAN' as any, ...cityFilter } }),
+                    prisma.electricianProfile.count({ 
+                        where: { 
+                            verificationStatus: 'PENDING' as any,
+                            ...(city ? { user: { ...cityFilter } } : {})
+                        } 
+                    }),
                 ]);
 
-                // 2. Service Distribution (Top 5 + Other)
+                // 2. Service Distribution
                 const categoryCounts = await prisma.electricianProfile.groupBy({
                     by: ['serviceCategory' as any],
                     _count: { _all: true },
-                    where: city ? { user: { city } } : {}
+                    where: city ? { user: { ...cityFilter } } : {}
                 });
 
                 // 3. District Distribution (Citizens)
-                let districtStats: Record<string, number> = {};
-                const usersWithLocations = await prisma.user.findMany({
-                    where: { userType: 'CITIZEN' as any, ...(city ? { city } : {}) },
-                    include: { locations: { where: { isDefault: true } } }
+                const citizens = await prisma.user.findMany({
+                    where: { userType: 'CITIZEN' as any, ...cityFilter },
+                    include: { locations: { where: { isDefault: true } } } as any
                 });
                 
-                usersWithLocations.forEach((u: any) => {
-                    const d = u.locations?.[0]?.district || 'Diğer';
-                    if (district && d !== district) return;
+                citizens.forEach((u: any) => {
+                    const d = u.locations?.[0]?.district || 'Belirtilmemiş';
                     districtStats[d] = (districtStats[d] || 0) + 1;
                 });
 
                 // 4. Live Data (Last 24h)
                 const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
                 const [activeUstalar, activeCitizens] = await Promise.all([
-                    prisma.user.count({ where: { userType: 'ELECTRICIAN' as any, lastSeenAt: { gte: last24h } } }),
-                    prisma.user.count({ where: { userType: 'CITIZEN' as any, lastSeenAt: { gte: last24h } } }),
+                    prisma.user.count({ where: { userType: 'ELECTRICIAN' as any, ...cityFilter, lastSeenAt: { gte: last24h } } }),
+                    prisma.user.count({ where: { userType: 'CITIZEN' as any, ...cityFilter, lastSeenAt: { gte: last24h } } }),
                 ]);
 
                 // 5. Heatmap: Jobs vs Masters per District
                 let heatmap: any[] = [];
-                if (city) {
-                    const jobs = await prisma.jobPost.findMany({
-                        where: { ...jobWhere }
-                    });
-                    const masters = await prisma.electricianProfile.findMany({
-                        where: { ...ustaWhere, user: { city: city } },
-                        include: { user: { include: { locations: true } } }
-                    });
+                // We fetch all open jobs first
+                const allOpenJobs = await prisma.jobPost.findMany({
+                    where: { status: 'OPEN' as any, ...(serviceCategory ? { serviceCategory } : {}) }
+                });
 
-                    const allDistricts = [...new Set([
-                        ...jobs.map((j: any) => (j.location as any).district),
-                        ...masters.flatMap((m: any) => m.user.locations.map((l: any) => l.district))
-                    ])].filter(Boolean);
+                // Filter jobs by city in-memory since location is Json
+                const jobsInCity = city 
+                    ? allOpenJobs.filter((j: any) => (j.location as any).city?.toLowerCase() === city.toLowerCase())
+                    : allOpenJobs;
 
-                    heatmap = allDistricts.map(d => {
-                        const jobCount = jobs.filter((j: any) => (j.location as any).district === d).length;
-                        const masterCount = masters.filter((m: any) => 
-                            m.user.locations.some((l: any) => l.district === d)
-                        ).length;
-                        return { 
-                            district: d, 
-                            jobCount, 
-                            masterCount, 
-                            status: masterCount >= jobCount ? 'GREEN' : (masterCount === 0 && jobCount > 0 ? 'RED' : 'YELLOW')
-                        };
-                    }).sort((a, b) => b.jobCount - a.jobCount);
-                }
+                // Fetch all masters (verified or not, to show capacity)
+                const mastersInCity = await prisma.electricianProfile.findMany({
+                    where: { 
+                        ...(city ? { user: { ...cityFilter } } : {}),
+                        ...(serviceCategory ? { serviceCategory } : {})
+                    },
+                    include: { user: { include: { locations: true } } }
+                });
+
+                // Get unique districts from both jobs and masters
+                const allDistricts = [...new Set([
+                    ...jobsInCity.map((j: any) => (j.location as any).district),
+                    ...mastersInCity.flatMap((m: any) => m.user.locations.map((l: any) => l.district))
+                ])].filter(Boolean);
+
+                heatmap = allDistricts.map(d => {
+                    const jobCount = jobsInCity.filter((j: any) => (j.location as any).district === d).length;
+                    const masterCount = mastersInCity.filter((m: any) => 
+                        (m.user.locations.some((l: any) => l.district === d))
+                    ).length;
+
+                    let status = 'GREEN';
+                    if (jobCount > 0 && masterCount === 0) status = 'RED';
+                    else if (jobCount > masterCount) status = 'YELLOW';
+
+                    return { district: d, jobCount, masterCount, status };
+                }).sort((a, b) => b.jobCount - a.jobCount);
 
                 return res.json({
                     success: true,
@@ -537,7 +706,7 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                         serviceDistribution: categoryCounts.map((c: any) => ({ name: c.serviceCategory, count: c._count?._all || 0 })),
                         districtDistribution: Object.entries(districtStats).map(([name, count]) => ({ name, count })),
                         liveData: { activeUstalar, activeCitizens },
-                        heatmap: heatmap.slice(0, 10)
+                        heatmap: heatmap.slice(0, 15) // Show top 15 districts
                     }
                 });
             } catch (dbErr: any) {
@@ -545,7 +714,7 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
             }
         }
 
-        // ── Fallback: mockStorage ────────────────────────────────────────
+        // ── Fallback: mockStorage (If DB is down or error occurred) ──────
         const allUsers = Object.values(mockStorage.getAllUsers());
         const last24hTime = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
         
@@ -572,23 +741,18 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
             activeCitizens: allUsers.filter((u: any) => u.userType === 'CITIZEN' && (u.lastSeenAt || u.updatedAt) >= last24hTime).length
         };
 
-        let heatmap: any[] = [];
-        if (city === 'Adana' || !city) {
-            heatmap = [
-                { district: 'Çukurova', jobCount: 12, masterCount: 15, status: 'GREEN' },
-                { district: 'Sarıçam', jobCount: 8, masterCount: 2, status: 'RED' },
-                { district: 'Seyhan', jobCount: 20, masterCount: 18, status: 'YELLOW' },
-                { district: 'Yüreğir', jobCount: 15, masterCount: 5, status: 'RED' },
-                { district: 'Karaisalı', jobCount: 3, masterCount: 4, status: 'GREEN' }
-            ];
-        }
+        let heatmap = [
+            { district: 'Çukurova', jobCount: 45, masterCount: 12, status: 'YELLOW' },
+            { district: 'Seyhan', jobCount: 32, masterCount: 28, status: 'GREEN' },
+            { district: 'Sarıçam', jobCount: 15, masterCount: 3, status: 'RED' }
+        ];
 
         res.json({
             success: true,
             data: {
                 kpis,
                 serviceDistribution: Object.entries(serviceDistribution).map(([name, count]) => ({ name, count })),
-                districtDistribution: Object.entries(districtDistribution).map(([name, count]) => ({ name, count })),
+                districtDistribution: Object.entries(districtStats).map(([name, count]) => ({ name, count })),
                 liveData,
                 heatmap
             }
@@ -597,4 +761,5 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
         next(error);
     }
 };
+
 
