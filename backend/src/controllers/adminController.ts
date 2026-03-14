@@ -189,7 +189,7 @@ export const processVerification = async (req: Request, res: Response, next: Nex
             const updatedProfile = await prisma.electricianProfile.update({
                 where: { userId: targetUserId },
                 data: {
-                    verificationStatus: status,
+                    verificationStatus: status as any,
                     licenseVerified: status === 'VERIFIED',
                     verificationDocuments: {
                         ...verificationDocuments,
@@ -227,7 +227,7 @@ export const processVerification = async (req: Request, res: Response, next: Nex
                     await prisma.notification.create({
                         data: {
                             userId: targetUserId,
-                            type: status === 'VERIFIED' ? 'VERIFICATION_SUCCESS' : 'VERIFICATION_FAILED',
+                            type: (status === 'VERIFIED' ? 'VERIFICATION_SUCCESS' : 'VERIFICATION_FAILED') as any,
                             title: notificationTitle,
                             message: notificationMessage,
                             relatedType: 'USER_PROFILE',
