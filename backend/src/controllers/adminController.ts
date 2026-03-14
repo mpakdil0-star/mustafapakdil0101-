@@ -3,7 +3,7 @@ import prisma, { isDatabaseAvailable } from '../config/database';
 import { mockStorage } from '../utils/mockStorage';
 import { notifyUser } from '../server';
 import pushNotificationService from '../services/pushNotificationService';
-import { jobStoreById, deleteMockJob, getMockJobs, loadMockJobs } from './jobController';
+import { jobStoreById, deleteMockJob, loadMockJobs } from './jobController';
 import { mockTransactionStorage } from '../utils/mockStorage';
 
 /**
@@ -75,7 +75,7 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
         try {
             const pendingProfiles = await prisma.electricianProfile.findMany({
                 where: {
-                    verificationStatus: 'PENDING',
+                    verificationStatus: 'PENDING' as any,
                 },
                 include: {
                     user: {
@@ -322,10 +322,10 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
             pendingVerifications,
         ] = await Promise.all([
             prisma.user.count(),
-            prisma.user.count({ where: { userType: 'ELECTRICIAN' } }),
-            prisma.user.count({ where: { userType: 'CITIZEN' } }),
-            prisma.jobPost.count({ where: { status: 'OPEN' } }),
-            prisma.electricianProfile.count({ where: { verificationStatus: 'PENDING' } }),
+            prisma.user.count({ where: { userType: 'ELECTRICIAN' as any } }),
+            prisma.user.count({ where: { userType: 'CITIZEN' as any } }),
+            prisma.jobPost.count({ where: { status: 'OPEN' as any } }),
+            prisma.electricianProfile.count({ where: { verificationStatus: 'PENDING' as any } }),
         ]);
 
         // Revenue calculation (if you have a Transaction table, otherwise 0 or mock)
