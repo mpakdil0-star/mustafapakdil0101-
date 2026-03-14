@@ -629,14 +629,27 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
         // ── Try real database first ─────────────────────────────────────
         if (isDatabaseAvailable) {
             try {
-                // Fetch dynamic city list from users
-                const uniqueCities = await prisma.user.findMany({
-                    where: { city: { not: null } },
-                    select: { city: true },
-                    distinct: ['city']
-                });
-                if (uniqueCities.length > 0) {
-                    availableCities = uniqueCities.map(c => c.city!).filter(Boolean).sort();
+                // Fetch dynamic city list from both users and locations
+                const [userCities, locationCities] = await Promise.all([
+                    prisma.user.findMany({
+                        where: { city: { not: null }, NOT: { city: 'ALL' }, deletedAt: null },
+                        select: { city: true },
+                        distinct: ['city']
+                    }),
+                    prisma.location.findMany({
+                        where: {},
+                        select: { city: true },
+                        distinct: ['city']
+                    })
+                ]);
+                
+                const allCityNames = new Set([
+                    ...userCities.map((c: any) => c.city!),
+                    ...locationCities.map((l: any) => l.city!)
+                ]);
+
+                if (allCityNames.size > 0) {
+                    availableCities = Array.from(allCityNames).filter(Boolean).sort();
                 }
 
                 // Better city filter: check both user.city and user.locations
@@ -673,8 +686,16 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                 });
                 
                 citizens.forEach((u: any) => {
-                    const d = u.locations?.[0]?.district || 'Belirtilmemiş';
-                    districtStats[d] = (districtStats[d] || 0) + 1;
+                    const defaultLoc = u.locations?.[0];
+                    if (!defaultLoc) {
+                        if (!city) districtStats['Belirtilmemiş'] = (districtStats['Belirtilmemiş'] || 0) + 1;
+                        return;
+                    }
+                    // Filter district by city
+                    if (!city || defaultLoc.city.toLowerCase() === city.toLowerCase()) {
+                        const d = defaultLoc.district || 'Belirtilmemiş';
+                        districtStats[d] = (districtStats[d] || 0) + 1;
+                    }
                 });
 
                 // 4. Live Data (Last 24h)
@@ -708,16 +729,23 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                     include: { user: { include: { locations: true } } }
                 });
 
-                // Get unique districts from both jobs and masters
+                // Get unique districts from both jobs and masters, STRICTLY filtered by city
                 const allDistricts = [...new Set([
                     ...jobsInCity.map((j: any) => (j.location as any).district),
-                    ...mastersInCity.flatMap((m: any) => m.user.locations.map((l: any) => l.district))
+                    ...mastersInCity.flatMap((m: any) => 
+                        m.user.locations
+                            .filter((l: any) => !city || l.city.toLowerCase() === city.toLowerCase())
+                            .map((l: any) => l.district)
+                    )
                 ])].filter(Boolean);
 
                 heatmap = allDistricts.map(d => {
                     const jobCount = jobsInCity.filter((j: any) => (j.location as any).district === d).length;
                     const masterCount = mastersInCity.filter((m: any) => 
-                        (m.user.locations.some((l: any) => l.district === d))
+                        (m.user.locations.some((l: any) => 
+                            l.district === d && 
+                            (!city || l.city.toLowerCase() === city.toLowerCase())
+                        ))
                     ).length;
 
                     let status = 'GREEN';
@@ -725,7 +753,7 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                     else if (jobCount > masterCount) status = 'YELLOW';
 
                     return { district: d, jobCount, masterCount, status };
-                }).sort((a, b) => b.jobCount - a.jobCount);
+                }).sort((a, b) => (b.jobCount + b.masterCount) - (a.jobCount + a.masterCount));
 
                 return res.json({
                     success: true,
