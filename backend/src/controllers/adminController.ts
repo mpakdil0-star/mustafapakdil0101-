@@ -752,11 +752,59 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
             data: {
                 kpis,
                 serviceDistribution: Object.entries(serviceDistribution).map(([name, count]) => ({ name, count })),
-                districtDistribution: Object.entries(districtStats).map(([name, count]) => ({ name, count })),
+                districtDistribution: Object.entries(districtDistribution).map(([name, count]) => ({ name, count })),
                 liveData,
                 heatmap
             }
         });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Get single user details
+ * Admin ONLY
+ */
+export const getUserDetails = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        if (isDatabaseAvailable && !id.startsWith('mock-')) {
+            const user = await prisma.user.findUnique({
+                where: { id },
+                include: { electricianProfile: true }
+            });
+            if (user) return res.json({ success: true, data: user });
+        }
+        
+        const mockUser = mockStorage.getFullUser(id);
+        if (mockUser) return res.json({ success: true, data: mockUser });
+        
+        res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı' });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Update user details (Admin edit)
+ * Admin ONLY
+ */
+export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+        
+        if (isDatabaseAvailable && !id.startsWith('mock-')) {
+            const updated = await prisma.user.update({
+                where: { id },
+                data: updates
+            });
+            return res.json({ success: true, data: updated });
+        }
+        
+        const updatedMock = mockStorage.updateProfile(id, updates);
+        res.json({ success: true, data: updatedMock });
     } catch (error) {
         next(error);
     }
