@@ -639,14 +639,14 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                     ]
                 } : {};
 
-                // 1. KPI Cards
+                // 1. KPI Cards (Matches User Management logic)
                 const [totalCitizens, totalElectricians, pendingVerifications] = await Promise.all([
-                    prisma.user.count({ where: { userType: 'CITIZEN' as any, ...cityFilter } }),
-                    prisma.user.count({ where: { userType: 'ELECTRICIAN' as any, ...cityFilter } }),
+                    prisma.user.count({ where: { userType: 'CITIZEN' as any, ...cityFilter, deletedAt: null } }),
+                    prisma.user.count({ where: { userType: 'ELECTRICIAN' as any, ...cityFilter, deletedAt: null } }),
                     prisma.electricianProfile.count({ 
                         where: { 
                             verificationStatus: 'PENDING' as any,
-                            ...(city ? { user: { ...cityFilter } } : {})
+                            user: { deletedAt: null, ...cityFilter }
                         } 
                     }),
                 ]);
@@ -658,10 +658,10 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                     where: city ? { user: { ...cityFilter } } : {}
                 });
 
-                // 3. District Distribution (Citizens)
+                // 3. District Distribution (Citizens only)
                 const citizens = await prisma.user.findMany({
-                    where: { userType: 'CITIZEN' as any, ...cityFilter },
-                    include: { locations: { where: { isDefault: true } } } as any
+                    where: { userType: 'CITIZEN' as any, ...cityFilter, deletedAt: null },
+                    include: { locations: { where: { isDefault: true } } }
                 });
                 
                 citizens.forEach((u: any) => {
