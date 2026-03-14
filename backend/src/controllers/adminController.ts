@@ -76,6 +76,7 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
             const pendingProfiles = await prisma.electricianProfile.findMany({
                 where: {
                     verificationStatus: 'PENDING' as any,
+                    user: { deletedAt: null }
                 },
                 include: {
                     user: {
@@ -321,11 +322,16 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
             activeJobs,
             pendingVerifications,
         ] = await Promise.all([
-            prisma.user.count(),
-            prisma.user.count({ where: { userType: 'ELECTRICIAN' as any } }),
-            prisma.user.count({ where: { userType: 'CITIZEN' as any } }),
+            prisma.user.count({ where: { deletedAt: null } }),
+            prisma.user.count({ where: { userType: 'ELECTRICIAN' as any, deletedAt: null } }),
+            prisma.user.count({ where: { userType: 'CITIZEN' as any, deletedAt: null } }),
             prisma.jobPost.count({ where: { status: 'OPEN' as any } }),
-            prisma.electricianProfile.count({ where: { verificationStatus: 'PENDING' as any } }),
+            prisma.electricianProfile.count({ 
+                where: { 
+                    verificationStatus: 'PENDING' as any,
+                    user: { deletedAt: null }
+                } 
+            }),
         ]);
 
         // Revenue calculation (if you have a Transaction table, otherwise 0 or mock)
@@ -440,7 +446,7 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
 
         // DB Implementation
         if (isDatabaseAvailable) {
-            const whereClause: any = {};
+            const whereClause: any = { deletedAt: null };
 
             if (filterType && filterType !== 'ALL') {
                 whereClause.userType = filterType;
@@ -461,6 +467,7 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
                     take: limitNum,
                     include: {
                         electricianProfile: true,
+                        locations: true
                     },
                     orderBy: { createdAt: 'desc' }
                 }),
@@ -488,7 +495,8 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
                     createdAt: u.createdAt,
                     experienceYears: u.electricianProfile?.experienceYears || 0,
                     serviceCategory: u.electricianProfile?.serviceCategory || null,
-                    completedJobsCount: Number(u.electricianProfile?.completedJobsCount || 0)
+                    completedJobsCount: Number(u.electricianProfile?.completedJobsCount || 0),
+                    locations: u.locations || []
                 };
             });
 
@@ -691,7 +699,10 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                 // Fetch all masters (verified or not, to show capacity)
                 const mastersInCity = await prisma.electricianProfile.findMany({
                     where: { 
-                        ...(city ? { user: { ...cityFilter } } : {}),
+                        user: { 
+                            deletedAt: null,
+                            ...(city ? cityFilter : {})
+                        },
                         ...(serviceCategory ? { serviceCategory } : {})
                     },
                     include: { user: { include: { locations: true } } }
