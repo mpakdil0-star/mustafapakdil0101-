@@ -20,10 +20,12 @@ export const getFavorites = async (req: AuthRequest, res: Response, next: NextFu
             });
         }
 
+        const userId = String(req.user.id);
+
         if (isDatabaseAvailable) {
             try {
                 const favoriteService = (await import('../services/favoriteService')).default;
-                const favorites = await favoriteService.getFavorites(req.user.id);
+                const favorites = await favoriteService.getFavorites(userId);
                 return res.json({
                     success: true,
                     data: { favorites },
@@ -34,7 +36,7 @@ export const getFavorites = async (req: AuthRequest, res: Response, next: NextFu
         }
 
         // MOCK MODE: Handle favorites via mockStorage
-        const mockFavs = mockFavoriteStorage.getFavorites(req.user.id);
+        const mockFavs = mockFavoriteStorage.getFavorites(userId);
         const enrichedFavorites = mockFavs.map(fav => {
             const electrician = mockStorage.get(fav.electricianId);
             return {
@@ -80,12 +82,13 @@ export const addFavorite = async (req: AuthRequest, res: Response, next: NextFun
             });
         }
 
-        const { electricianId } = req.params;
+        const userId = String(req.user.id);
+        const electricianId = String(req.params.electricianId);
 
         if (isDatabaseAvailable) {
             try {
                 const favoriteService = (await import('../services/favoriteService')).default;
-                const favorite = await favoriteService.addFavorite(req.user.id, electricianId);
+                const favorite = await favoriteService.addFavorite(userId, electricianId);
 
                 return res.status(201).json({
                     success: true,
@@ -98,7 +101,7 @@ export const addFavorite = async (req: AuthRequest, res: Response, next: NextFun
         }
 
         // MOCK MODE
-        const favorite = mockFavoriteStorage.addFavorite(req.user.id, electricianId);
+        const favorite = mockFavoriteStorage.addFavorite(userId, electricianId);
         res.status(201).json({
             success: true,
             data: { favorite },
@@ -126,12 +129,13 @@ export const removeFavorite = async (req: AuthRequest, res: Response, next: Next
             });
         }
 
-        const { electricianId } = req.params;
+        const userId = String(req.user.id);
+        const electricianId = String(req.params.electricianId);
 
         if (isDatabaseAvailable) {
             try {
                 const favoriteService = (await import('../services/favoriteService')).default;
-                await favoriteService.removeFavorite(req.user.id, electricianId);
+                await favoriteService.removeFavorite(userId, electricianId);
 
                 return res.json({
                     success: true,
@@ -143,7 +147,7 @@ export const removeFavorite = async (req: AuthRequest, res: Response, next: Next
         }
 
         // MOCK MODE
-        mockFavoriteStorage.removeFavorite(req.user.id, electricianId);
+        mockFavoriteStorage.removeFavorite(userId, electricianId);
         res.json({
             success: true,
             message: 'Favorilerden çıkarıldı (Mock)',
@@ -170,12 +174,13 @@ export const checkFavorite = async (req: AuthRequest, res: Response, next: NextF
             });
         }
 
-        const { electricianId } = req.params;
+        const userId = String(req.user.id);
+        const electricianId = String(req.params.electricianId);
 
         if (isDatabaseAvailable) {
             try {
                 const favoriteService = (await import('../services/favoriteService')).default;
-                const result = await favoriteService.checkFavorite(req.user.id, electricianId);
+                const result = await favoriteService.checkFavorite(userId, electricianId);
 
                 return res.json({
                     success: true,
@@ -187,7 +192,7 @@ export const checkFavorite = async (req: AuthRequest, res: Response, next: NextF
         }
 
         // MOCK MODE
-        const isFav = mockFavoriteStorage.isFavorite(req.user.id, electricianId);
+        const isFav = mockFavoriteStorage.isFavorite(userId, electricianId);
         res.json({
             success: true,
             data: { isFavorite: isFav },
@@ -197,4 +202,3 @@ export const checkFavorite = async (req: AuthRequest, res: Response, next: NextF
         next(error);
     }
 };
-

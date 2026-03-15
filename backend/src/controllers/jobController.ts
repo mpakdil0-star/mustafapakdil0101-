@@ -367,20 +367,22 @@ export const getJobByIdController = async (
 
     // FAST PATH: If using mock data, return immediately without calling jobService
     // This avoids any potential Prisma initialization delays
-    if (id.startsWith('mock-') || (userId && userId.startsWith('mock-'))) {
+    const idStr = String(id);
+    const userIdStr = userId ? String(userId) : '';
+    if (idStr.startsWith('mock-') || userIdStr.startsWith('mock-')) {
       console.log('⚡ Fast path: returning mock job for id:', id);
 
       // First, search in global job store by ID (fastest)
-      let job = jobStoreById.get(id);
+      let job = jobStoreById.get(idStr);
 
       // If not found, check static mock jobs
       if (!job) {
         const mockJobs = getMockJobs();
-        job = mockJobs.jobs.find(j => j.id === id);
+        job = mockJobs.jobs.find(j => j.id === idStr);
 
         // EXTRA ROBUSTNESS: If id is something like "mock-job-1", try finding as "mock-1"
-        if (!job && id.includes('mock-')) {
-          const numericId = id.match(/\d+/)?.[0];
+        if (!job && idStr.includes('mock-')) {
+          const numericId = idStr.match(/\d+/)?.[0];
           if (numericId) {
             const fallbackId = `mock-${numericId}`;
             job = mockJobs.jobs.find(j => j.id === fallbackId);
@@ -422,7 +424,8 @@ export const getJobByIdController = async (
     }
 
     try {
-      let job = await jobService.getJobById(id, userId);
+      const idStr = String(id);
+      let job = await jobService.getJobById(idStr, userIdStr);
 
       if (isGuest) {
         job = maskJobData(job);
@@ -433,6 +436,7 @@ export const getJobByIdController = async (
         data: { job },
       });
     } catch (dbError: any) {
+      const idStr = String(id);
       // Check if it's a database/mock error
       const isConnectionError =
         !isDatabaseAvailable ||
@@ -447,13 +451,13 @@ export const getJobByIdController = async (
         dbError.name === 'PrismaClientInitializationError' ||
         dbError.constructor?.name === 'PrismaClientInitializationError';
 
-      if (isConnectionError || id.startsWith('mock-')) {
+      if (isConnectionError || idStr.startsWith('mock-')) {
         // Try to find in mock storage
-        let job = jobStoreById.get(id) || getMockJobs().jobs.find(j => j.id === id);
+        let job = jobStoreById.get(idStr) || getMockJobs().jobs.find(j => j.id === idStr);
 
         if (!job) {
           // Try fallback ID formats
-          const numericId = id.match(/\d+/)?.[0];
+          const numericId = idStr.match(/\d+/)?.[0];
           if (numericId) {
             const fallbackId = `mock-${numericId}`;
             job = jobStoreById.get(fallbackId) || getMockJobs().jobs.find(j => j.id === fallbackId);
@@ -846,18 +850,18 @@ export const updateJobController = async (
       });
     }
 
-    const { id } = req.params;
+    const idStr = String(req.params.id);
 
     // Mock job kontrolü
-    if (id.startsWith('mock-')) {
-      const mockJob = jobStoreById.get(id);
+    if (idStr.startsWith('mock-')) {
+      const mockJob = jobStoreById.get(idStr);
       if (!mockJob) {
         return res.status(404).json({
           success: false,
           error: { message: 'İlan bulunamadı' },
         });
       }
-      if (mockJob.citizenId !== req.user.id) {
+      if (mockJob.citizenId !== String(req.user.id)) {
         return res.status(403).json({
           success: false,
           error: { message: 'Bu ilanı düzenleme yetkiniz yok' },
@@ -881,16 +885,16 @@ export const updateJobController = async (
         },
       };
 
-      jobStoreById.set(id, updatedJob);
+      jobStoreById.set(idStr, updatedJob);
 
       // Ana listedeki referansı da güncelle (mock jobs için gerekli olabilir)
       // Ancak UserJobsStore sadece referans tutuyorsa burada yapmaya gerek olmayabilir
       // Yine de tutarlılık için userJobsStore'u güncellemek iyi olur
-      const userJobs = userJobsStore.get(req.user.id) || [];
-      const jobIndex = userJobs.findIndex(j => j.id === id);
+      const userJobs = userJobsStore.get(String(req.user.id)) || [];
+      const jobIndex = userJobs.findIndex(j => j.id === idStr);
       if (jobIndex !== -1) {
         userJobs[jobIndex] = updatedJob;
-        userJobsStore.set(req.user.id, userJobs);
+        userJobsStore.set(String(req.user.id), userJobs);
       }
 
       // Save to disk
@@ -903,7 +907,7 @@ export const updateJobController = async (
       });
     }
 
-    const job = await jobService.updateJob(id, req.user.id, req.body);
+    const job = await jobService.updateJob(idStr, String(req.user.id), req.body);
 
     res.json({
       success: true,
@@ -927,8 +931,8 @@ export const deleteJobController = async (
       });
     }
 
-    const { id } = req.params;
-    const result = await jobService.deleteJob(id, req.user.id);
+    const idStr = String(req.params.id);
+    const result = await jobService.deleteJob(idStr, String(req.user.id));
 
     res.json({
       success: true,
@@ -953,19 +957,19 @@ export const cancelJobController = async (
       });
     }
 
-    const { id } = req.params;
+    const idStr = String(req.params.id);
     const { reason } = req.body;
 
     // Mock job kontrolü
-    if (id.startsWith('mock-')) {
-      const mockJob = jobStoreById.get(id);
+    if (idStr.startsWith('mock-')) {
+      const mockJob = jobStoreById.get(idStr);
       if (!mockJob) {
         return res.status(404).json({
           success: false,
           error: { message: 'İlan bulunamadı' },
         });
       }
-      if (mockJob.citizenId !== req.user.id) {
+      if (mockJob.citizenId !== String(req.user.id)) {
         return res.status(403).json({
           success: false,
           error: { message: 'Bu ilanı iptal etme yetkiniz yok' },
@@ -987,18 +991,17 @@ export const cancelJobController = async (
       mockJob.status = 'CANCELLED';
       mockJob.cancellationReason = reason || null;
       mockJob.cancelledAt = new Date().toISOString();
-      mockJob.cancelledAt = new Date().toISOString();
-      jobStoreById.set(id, mockJob);
+      jobStoreById.set(idStr, mockJob);
 
       // Save to disk
       saveMockJobs();
 
       // 📢 Socket ve Kalıcı Bildirim: Teklif veren tüm ustalara ilan iptal edildi bildir
-      console.log(`🔍 [DEBUG] Processing notifications for cancelled job ${id}`);
+      console.log(`🔍 [DEBUG] Processing notifications for cancelled job ${idStr}`);
 
       // Bu ilana ait tüm teklifleri bul
       bidStoreById.forEach((bid: any) => {
-        if (bid.jobPostId === id && bid.electricianId) {
+        if (bid.jobPostId === idStr && bid.electricianId) {
           // 💰 KREDİ İADESİ: Teklif veren tüm ustalara 1 kredi iade et
           try {
             const { mockStorage } = require('../utils/mockStorage');
@@ -1015,8 +1018,8 @@ export const cancelJobController = async (
             title: '🚫 İlan İptal Edildi (Kredi İade)',
             message: cancelMsg,
             body: cancelMsg,
-            jobId: id,
-            relatedId: id,
+            jobId: idStr,
+            relatedId: idStr,
             isRead: false,
             createdAt: new Date().toISOString()
           };
@@ -1031,7 +1034,7 @@ export const cancelJobController = async (
             console.log(`📢 Socket notification emitted to user:${bid.electricianId}`);
           }
 
-          console.log(`📢 Notification processed for electrician ${bid.electricianId} for cancelled job ${id}`);
+          console.log(`📢 Notification processed for electrician ${bid.electricianId} for cancelled job ${idStr}`);
         }
       });
 
@@ -1043,7 +1046,7 @@ export const cancelJobController = async (
     }
 
     // Gerçek veritabanı işlemi
-    const job = await jobService.cancelJob(id, req.user.id, reason);
+    const job = await jobService.cancelJob(idStr, String(req.user.id), reason);
     res.json({
       success: true,
       data: { job },
@@ -1081,11 +1084,11 @@ export const markJobCompleteController = async (
       });
     }
 
-    const { id } = req.params;
+    const idStr = String(req.params.id);
 
     // Mock job kontrolü
-    if (id.startsWith('mock-')) {
-      const mockJob = jobStoreById.get(id);
+    if (idStr.startsWith('mock-')) {
+      const mockJob = jobStoreById.get(idStr);
       if (!mockJob) {
         return res.status(404).json({
           success: false,
@@ -1101,8 +1104,7 @@ export const markJobCompleteController = async (
 
       mockJob.status = 'PENDING_CONFIRMATION';
       mockJob.electricianCompletedAt = new Date().toISOString();
-      mockJob.electricianCompletedAt = new Date().toISOString();
-      jobStoreById.set(id, mockJob);
+      jobStoreById.set(idStr, mockJob);
 
       // Save to disk
       saveMockJobs();
@@ -1114,7 +1116,7 @@ export const markJobCompleteController = async (
       });
     }
 
-    const job = await jobService.markJobComplete(id, req.user.id);
+    const job = await jobService.markJobComplete(idStr, String(req.user.id));
     res.json({
       success: true,
       data: { job },
@@ -1145,18 +1147,18 @@ export const confirmJobCompleteController = async (
       });
     }
 
-    const { id } = req.params;
+    const idStr = String(req.params.id);
 
     // Mock job kontrolü
-    if (id.startsWith('mock-')) {
-      const mockJob = jobStoreById.get(id);
+    if (idStr.startsWith('mock-')) {
+      const mockJob = jobStoreById.get(idStr);
       if (!mockJob) {
         return res.status(404).json({
           success: false,
           error: { message: 'İş bulunamadı' },
         });
       }
-      if (mockJob.citizenId !== req.user.id) {
+      if (mockJob.citizenId !== String(req.user.id)) {
         return res.status(403).json({
           success: false,
           error: { message: 'Bu işi onaylama yetkiniz yok' },
@@ -1171,8 +1173,7 @@ export const confirmJobCompleteController = async (
 
       mockJob.status = 'COMPLETED';
       mockJob.completedAt = new Date().toISOString();
-      mockJob.completedAt = new Date().toISOString();
-      jobStoreById.set(id, mockJob);
+      jobStoreById.set(idStr, mockJob);
 
       // Save to disk
       saveMockJobs();
@@ -1185,8 +1186,8 @@ export const confirmJobCompleteController = async (
           title: 'Tebrikler! 🎉',
           message: `İş tarafınızdan onaylandı: ${mockJob.title}`,
           body: `İş onaylandı: ${mockJob.title}`,
-          jobId: id,
-          relatedId: id,
+          jobId: idStr,
+          relatedId: idStr,
           isRead: false,
           createdAt: new Date().toISOString()
         };
@@ -1211,7 +1212,7 @@ export const confirmJobCompleteController = async (
       });
     }
 
-    const job = await jobService.confirmJobComplete(id, req.user.id);
+    const job = await jobService.confirmJobComplete(idStr, String(req.user.id));
     res.json({
       success: true,
       data: { job },
@@ -1242,7 +1243,7 @@ export const createReviewController = async (
       });
     }
 
-    const { id } = req.params; // job id
+    const idStr = String(req.params.id); // job id
     const { rating, comment, electricianId } = req.body;
 
     if (!rating || rating < 1 || rating > 5) {
@@ -1253,15 +1254,15 @@ export const createReviewController = async (
     }
 
     // Mock job kontrolü
-    if (id.startsWith('mock-')) {
-      const mockJob = jobStoreById.get(id);
+    if (idStr.startsWith('mock-')) {
+      const mockJob = jobStoreById.get(idStr);
       if (!mockJob) {
         return res.status(404).json({
           success: false,
           error: { message: 'İş bulunamadı' },
         });
       }
-      if (mockJob.citizenId !== req.user.id) {
+      if (mockJob.citizenId !== String(req.user.id)) {
         return res.status(403).json({
           success: false,
           error: { message: 'Bu işi değerlendirme yetkiniz yok' },
@@ -1276,8 +1277,8 @@ export const createReviewController = async (
 
       const mockReview = {
         id: `review-${Date.now()}`,
-        jobPostId: id,
-        citizenId: req.user.id,
+        jobPostId: idStr,
+        citizenId: String(req.user.id),
         electricianId: electricianId || mockJob.acceptedElectricianId,
         rating,
         comment: comment || null,
@@ -1286,7 +1287,7 @@ export const createReviewController = async (
 
       mockJob.hasReview = true;
       mockJob.review = mockReview;
-      jobStoreById.set(id, mockJob);
+      jobStoreById.set(idStr, mockJob);
 
       return res.status(201).json({
         success: true,
@@ -1295,10 +1296,10 @@ export const createReviewController = async (
       });
     }
 
-    const review = await jobService.createReview(id, req.user.id, {
-      rating,
-      comment,
-      electricianId,
+    const review = await jobService.createReview(idStr, String(req.user.id), {
+      rating: Number(rating),
+      comment: comment ? String(comment) : undefined,
+      electricianId: electricianId ? String(electricianId) : undefined,
     });
 
     res.status(201).json({
@@ -1331,12 +1332,12 @@ export const completeJobController = async (
       });
     }
 
-    const { id } = req.params;
+    const idStr = String(req.params.id);
     const { rating, comment } = req.body;
 
     // 1. Confirm Job Complete
-    if (id.startsWith('mock-')) {
-      const mockJob = jobStoreById.get(id);
+    if (idStr.startsWith('mock-')) {
+      const mockJob = jobStoreById.get(idStr);
       if (!mockJob) {
         return res.status(404).json({
           success: false,
@@ -1350,12 +1351,12 @@ export const completeJobController = async (
       // Get electrician ID
       const electricianId = mockJob.assignedElectricianId || mockJob.acceptedElectricianId;
       try {
-        const logMsg = `[${new Date().toISOString()}] Job Completion: JobId=${id}, ElectricianId=${electricianId}, Assigned=${mockJob.assignedElectricianId}, Accepted=${mockJob.acceptedElectricianId}\n`;
+        const logMsg = `[${new Date().toISOString()}] Job Completion: JobId=${idStr}, ElectricianId=${electricianId}, Assigned=${mockJob.assignedElectricianId}, Accepted=${mockJob.acceptedElectricianId}\n`;
         const logPath = path.join(process.cwd(), 'debug_output.txt');
         fs.appendFileSync(logPath, logMsg);
       } catch (e) { console.error('Log error', e); }
 
-      console.log(`👷 Job Completion Debug: JobId=${id}, ElectricianId=${electricianId}`);
+      console.log(`👷 Job Completion Debug: JobId=${idStr}, ElectricianId=${electricianId}`);
       console.log('👷 Assigned:', mockJob.assignedElectricianId, 'Accepted:', mockJob.acceptedElectricianId);
 
       // 2. Add Review if provided using mockReviewStorage
@@ -1380,7 +1381,7 @@ export const completeJobController = async (
           reviewerImageUrl: reviewerImageUrl,
           rating: Number(rating),
           comment: comment || '',
-          jobId: id
+          jobId: idStr
         });
 
         mockJob.hasReview = true;
@@ -1419,7 +1420,7 @@ export const completeJobController = async (
         try {
           const { userBidsStore } = require('./bidController');
           const bids = userBidsStore.get(electricianId) || [];
-          const bidIndex = bids.findIndex((b: any) => b.jobPostId === id);
+          const bidIndex = bids.findIndex((b: any) => b.jobPostId === idStr);
 
           if (bidIndex !== -1) {
             if (bids[bidIndex].jobPost) {
@@ -1455,7 +1456,7 @@ export const completeJobController = async (
           title: notifTitle,
           message: notifBody,
           isRead: false,
-          relatedId: id,
+          relatedId: idStr,
           relatedType: 'JOB',
           createdAt: new Date().toISOString()
         };
@@ -1468,7 +1469,7 @@ export const completeJobController = async (
             to: electricianData.pushToken,
             title: notifTitle,
             body: notifBody,
-            data: { jobId: id, type: 'new_review' }
+            data: { jobId: idStr, type: 'new_review' }
           }).catch((err: any) => console.error('Review Push Error:', err));
           console.log(`📱 Sending review push notification to ${electricianId}`);
         }
@@ -1479,13 +1480,13 @@ export const completeJobController = async (
           notifyUser(electricianId, 'new_review', {
             title: notifTitle,
             message: notifBody,
-            jobId: id,
+            jobId: idStr,
             rating: Number(rating),
           });
         } catch (e) { console.error('Socket notify error:', e); }
       }
 
-      jobStoreById.set(id, mockJob);
+      jobStoreById.set(idStr, mockJob);
       saveMockJobs();
 
       return res.json({
@@ -1496,10 +1497,15 @@ export const completeJobController = async (
     }
 
     // Database path
-    await jobService.confirmJobComplete(id, req.user.id);
+    const jobId = idStr;
+    const citizenId = String(req.user.id);
+    await jobService.confirmJobComplete(jobId, citizenId);
 
     if (rating) {
-      await jobService.createReview(id, req.user.id, { rating, comment });
+      await jobService.createReview(jobId, citizenId, { 
+        rating: Number(rating), 
+        comment: comment ? String(comment) : undefined 
+      });
     }
 
     res.json({

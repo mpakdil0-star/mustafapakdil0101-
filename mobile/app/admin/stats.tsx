@@ -24,6 +24,7 @@ interface DistributionItem {
 
 interface HeatmapItem {
   district: string;
+  city?: string;
   jobCount: number;
   masterCount: number;
   status: 'GREEN' | 'RED' | 'YELLOW';
@@ -286,9 +287,21 @@ export default function AdminStatsScreen() {
 
         {/* Demand vs Master Heatmap */}
         <View style={styles.heatmapSection}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="map" size={20} color="#1E1B4B" />
-            <Text style={styles.sectionTitle}>Talep & Arz Dengesi (İlçe Bazlı)</Text>
+          <View style={styles.sectionHeaderWithAction}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="map" size={20} color="#1E1B4B" />
+              <Text style={styles.sectionTitle}>Talep & Arz Dengesi (İlçe Bazlı)</Text>
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.tableCityFilter}
+              onPress={() => setShowCityPicker(true)}
+            >
+              <Text style={styles.tableCityFilterText}>
+                {selectedCity === 'ALL' ? 'İl Seçin' : selectedCity}
+              </Text>
+              <Ionicons name="chevron-down" size={12} color="#64748B" />
+            </TouchableOpacity>
           </View>
           
           <View style={styles.heatmapCard}>
@@ -306,7 +319,14 @@ export default function AdminStatsScreen() {
                 activeOpacity={0.7}
                 onPress={() => navigateToUsers({ initialCity: selectedCity !== 'ALL' ? selectedCity : undefined, initialDistrict: item.district })}
               >
-                <Text style={[styles.tableCell, { flex: 2, fontFamily: fonts.bold }]}>{item.district}</Text>
+                <View style={[styles.tableCell, { flex: 2, alignItems: 'flex-start' }]}>
+                  <Text style={{ fontFamily: fonts.bold, color: '#1E1B4B', fontSize: 13 }}>{item.district}</Text>
+                  {selectedCity === 'ALL' && (
+                    <Text style={{ fontFamily: fonts.medium, color: '#94A3B8', fontSize: 10, marginTop: 2 }}>
+                      / {item.city}
+                    </Text>
+                  )}
+                </View>
                 <Text style={styles.tableCell}>{item.jobCount}</Text>
                 <Text style={styles.tableCell}>{item.masterCount}</Text>
                 <View style={styles.statusCell}>
@@ -653,6 +673,28 @@ const styles = StyleSheet.create({
   statusText: {
     fontFamily: fonts.bold,
     fontSize: 11,
+  },
+  sectionHeaderWithAction: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  tableCityFilter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 4,
+  },
+  tableCityFilterText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: '#64748B',
   },
   footerSpace: {
     height: 40,

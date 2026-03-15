@@ -354,10 +354,10 @@ export const getBidByIdController = async (
   next: NextFunction
 ) => {
   try {
-    const { id } = req.params;
+    const idStr = String(req.params.id);
 
     try {
-      const bid = await bidService.getBidById(id);
+      const bid = await bidService.getBidById(idStr);
 
       res.json({
         success: true,
@@ -375,16 +375,16 @@ export const getBidByIdController = async (
         dbError.constructor.name === 'PrismaClientInitializationError';
 
       // If database error, search in memory store
-      if (isConnectionError || id.startsWith('mock-')) {
+      if (isConnectionError || idStr.startsWith('mock-')) {
         console.warn('⚠️ Database connection failed, searching for bid in memory store');
 
         // Search in global store first (faster)
-        let foundBid: any = bidStoreById.get(id as string);
+        let foundBid: any = bidStoreById.get(idStr);
 
         // Fallback to userBidsStore if needed (legacy check)
         if (!foundBid) {
           for (const [, bids] of userBidsStore.entries()) {
-            const bid = bids.find((b: any) => b.id === id as string);
+            const bid = bids.find((b: any) => b.id === idStr);
             if (bid) {
               foundBid = bid;
               break;
@@ -421,12 +421,13 @@ export const getJobBidsController = async (
     // Support both :id and :jobId params
     const jobId = req.params.jobId || req.params.id;
 
+    const jobIdStr = String(jobId);
     // FAST PATH: If using mock data, return immediately without calling bidService
     // This avoids any potential Prisma initialization delays
-    if ((jobId as string).startsWith('mock-') || (req.user?.id as string)?.startsWith('mock-')) {
-      console.log('⚡ Fast path: returning mock bids for job:', jobId);
+    if (jobIdStr.startsWith('mock-') || (req.user?.id as string)?.startsWith('mock-')) {
+      console.log('⚡ Fast path: returning mock bids for job:', jobIdStr);
       const bids = Array.from(bidStoreById.values())
-        .filter(bid => bid.jobPostId === jobId)
+        .filter(bid => bid.jobPostId === jobIdStr)
         .map(bid => {
           // Enrich bid with up-to-date electrician profile data from mockStorage
           const electricianData = mockStorage.get(bid.electricianId);
@@ -452,12 +453,14 @@ export const getJobBidsController = async (
     }
 
     try {
-      const bids = await bidService.getJobBids(jobId, req.user?.id);
+      const jobIdStr = String(jobId);
+      const bids = await bidService.getJobBids(jobIdStr, req.user?.id);
       res.json({
         success: true,
         data: { bids },
       });
     } catch (dbError: any) {
+      const jobIdStr = String(jobId);
       const isConnectionError =
         dbError.message?.includes('connect') ||
         dbError.message?.includes('database') ||
@@ -469,12 +472,12 @@ export const getJobBidsController = async (
         dbError.constructor.name === 'PrismaClientInitializationError';
 
       // If database error and it's a mock ID, return bids from memory store
-      if (isConnectionError || jobId.startsWith('mock-')) {
+      if (isConnectionError || jobIdStr.startsWith('mock-')) {
         console.warn('⚠️ Database not connected, searching for bids in memory store');
 
         // Filter bids by jobPostId from global store and enrich with profile data
         const bids = Array.from(bidStoreById.values())
-          .filter(bid => bid.jobPostId === jobId)
+          .filter(bid => bid.jobPostId === jobIdStr)
           .map(bid => {
             // Enrich bid with up-to-date electrician profile data from mockStorage
             const electricianData = mockStorage.get(bid.electricianId);
@@ -573,10 +576,10 @@ export const updateBidController = async (
       });
     }
 
-    const { id } = req.params;
+    const idStr = String(req.params.id);
 
     try {
-      const bid = await bidService.updateBid(id, req.user.id, req.body);
+      const bid = await bidService.updateBid(idStr, String(req.user?.id), req.body);
 
       res.json({
         success: true,
@@ -593,12 +596,12 @@ export const updateBidController = async (
         dbError.constructor.name === 'PrismaClientInitializationError';
 
       // If database error, handle mock bid update
-      if (isConnectionError || id.startsWith('mock-')) {
+      if (isConnectionError || idStr.startsWith('mock-')) {
         console.warn('⚠️ Database connection failed, handling mock bid update');
 
         // Find and update bid in memory store
-        const userBids = userBidsStore.get(req.user.id) || [];
-        const bidIndex = userBids.findIndex((b: any) => b.id === id);
+        const userBids = userBidsStore.get(String(req.user?.id)) || [];
+        const bidIndex = userBids.findIndex((b: any) => b.id === idStr);
 
         if (bidIndex === -1) {
           return res.status(404).json({
@@ -627,10 +630,10 @@ export const updateBidController = async (
         };
 
         userBids[bidIndex] = updatedBid;
-        userBidsStore.set(req.user.id, userBids);
+        userBidsStore.set(String(req.user?.id), userBids);
 
         // Update global store and save to disk
-        bidStoreById.set(id, updatedBid);
+        bidStoreById.set(idStr, updatedBid);
         saveMockBids();
 
         return res.json({
@@ -651,7 +654,7 @@ export const acceptBidController = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { id } = req.params;
+  const idStr = String(req.params.id);
   const userId = req.user?.id;
 
   try {
@@ -659,15 +662,15 @@ export const acceptBidController = async (
       return res.status(401).json({ success: false, error: { message: 'Unauthorized' } });
     }
 
-    if (!id) {
+    if (!idStr) {
       return res.status(400).json({ success: false, error: { message: 'Bid ID is required' } });
     }
 
     // --- 1. FAST PATH: Mock İşlemi ---
-    if (id.startsWith('mock-') || !isDatabaseAvailable) {
-      console.log('⚡ Handling bid acceptance in MOCK mode:', id);
+    if (idStr.startsWith('mock-') || !isDatabaseAvailable) {
+      console.log('⚡ Handling bid acceptance in MOCK mode:', idStr);
 
-      const foundBid = bidStoreById.get(id);
+      const foundBid = bidStoreById.get(idStr);
       if (!foundBid) {
         return res.status(404).json({ success: false, error: { message: 'Bid not found in mock store' } });
       }
@@ -679,13 +682,13 @@ export const acceptBidController = async (
         updatedAt: new Date().toISOString()
       };
 
-      bidStoreById.set(id, acceptedBid);
+      bidStoreById.set(idStr, acceptedBid);
       saveMockBids();
 
       // Sync with user's specific bid list
       if (acceptedBid.electricianId) {
         const userBids = userBidsStore.get(acceptedBid.electricianId) || [];
-        const bidIndex = userBids.findIndex((b: any) => b.id === id);
+        const bidIndex = userBids.findIndex((b: any) => b.id === idStr);
         if (bidIndex !== -1) {
           userBids[bidIndex] = acceptedBid;
           userBidsStore.set(acceptedBid.electricianId, userBids);
@@ -750,7 +753,7 @@ export const acceptBidController = async (
 
     // --- 2. DATABASE PATH ---
     try {
-      const bid = await bidService.acceptBid(id, userId);
+      const bid = await bidService.acceptBid(idStr, String(userId));
 
       // notifyUser already called in bidService.acceptBid for DB path
       return res.json({ success: true, data: { bid } });
@@ -758,10 +761,10 @@ export const acceptBidController = async (
       console.error('⚠️ DB Bid Acceptance Error:', dbError.message);
 
       // Veritabanı hatası alırsak ama ID mock formatındaysa veya acil durumsa mock onaylamayı dene
-      const foundBid = bidStoreById.get(id);
+      const foundBid = bidStoreById.get(idStr);
       if (foundBid) {
         foundBid.status = 'ACCEPTED';
-        bidStoreById.set(id, foundBid);
+        bidStoreById.set(idStr, foundBid);
         return res.json({ success: true, data: { bid: foundBid } });
       }
 
@@ -774,7 +777,7 @@ export const acceptBidController = async (
     return res.status(200).json({
       success: true,
       data: {
-        bid: { id, status: 'ACCEPTED', updatedAt: new Date().toISOString() }
+        bid: { id: idStr, status: 'ACCEPTED', updatedAt: new Date().toISOString() }
       }
     });
   }
@@ -800,12 +803,12 @@ export const rejectBidController = async (
       });
     }
 
-    const { id } = req.params;
+    const idStr = String(req.params.id);
 
     // FAST PATH: If this is a mock bid, handle it immediately
-    if (id && id.startsWith('mock-')) {
-      console.log('⚡ Fast path: rejecting mock bid:', id);
-      const foundBid: any = bidStoreById.get(id as string);
+    if (idStr && idStr.startsWith('mock-')) {
+      console.log('⚡ Fast path: rejecting mock bid:', idStr);
+      const foundBid: any = bidStoreById.get(idStr);
 
       if (!foundBid) {
         return res.status(404).json({
@@ -821,7 +824,7 @@ export const rejectBidController = async (
         updatedAt: new Date().toISOString()
       };
 
-      bidStoreById.set(id, rejectedBid);
+      bidStoreById.set(idStr, rejectedBid);
       saveMockBids();
 
       // --- ADDED: Real-time notification for electrician ---
@@ -858,7 +861,7 @@ export const rejectBidController = async (
     }
 
     try {
-      const bid = await bidService.rejectBid(id, req.user.id);
+      const bid = await bidService.rejectBid(idStr, String(req.user?.id));
 
       // notifyUser already called in bidService.rejectBid for DB path
       res.json({
@@ -876,11 +879,11 @@ export const rejectBidController = async (
         dbError.constructor.name === 'PrismaClientInitializationError';
 
       // If database error, handle mock bid reject
-      if (isConnectionError || id.startsWith('mock-')) {
+      if (isConnectionError || idStr.startsWith('mock-')) {
         console.warn('⚠️ Database connection failed, handling mock bid reject');
 
         // Search in global store first
-        const foundBid: any = bidStoreById.get(id);
+        const foundBid: any = bidStoreById.get(idStr);
 
         if (!foundBid) {
           return res.status(404).json({
@@ -910,7 +913,7 @@ export const rejectBidController = async (
 
         // Update bid status to REJECTED
         const userBids = userBidsStore.get(foundBid.ownerId) || [];
-        const bidIndex = userBids.findIndex((b: any) => b.id === id);
+        const bidIndex = userBids.findIndex((b: any) => b.id === idStr);
         if (bidIndex !== -1) {
           userBids[bidIndex].status = 'REJECTED';
           userBids[bidIndex].rejectedAt = new Date().toISOString();
@@ -921,7 +924,7 @@ export const rejectBidController = async (
         const rejectedBid = { ...foundBid, status: 'REJECTED', rejectedAt: new Date().toISOString() };
 
         // Update global store and save to disk
-        bidStoreById.set(id, rejectedBid);
+        bidStoreById.set(idStr, rejectedBid);
         saveMockBids();
 
         return res.json({
@@ -950,12 +953,12 @@ export const withdrawBidController = async (
       });
     }
 
-    const { id } = req.params;
+    const idStr = String(req.params.id);
 
     // FAST PATH: If this is a mock bid, handle it immediately
-    if (id && (id as string).startsWith('mock-')) {
-      console.log('⚡ Fast path: withdrawing mock bid:', id);
-      const foundBid: any = bidStoreById.get(id as string);
+    if (idStr && idStr.startsWith('mock-')) {
+      console.log('⚡ Fast path: withdrawing mock bid:', idStr);
+      const foundBid: any = bidStoreById.get(idStr);
 
       if (!foundBid) {
         return res.status(404).json({
@@ -970,7 +973,7 @@ export const withdrawBidController = async (
         updatedAt: new Date().toISOString()
       };
 
-      bidStoreById.set(id as string, withdrawnBid);
+      bidStoreById.set(idStr, withdrawnBid);
       saveMockBids();
 
       return res.json({
@@ -980,7 +983,7 @@ export const withdrawBidController = async (
     }
 
     try {
-      const bid = await bidService.withdrawBid(id, req.user.id);
+      const bid = await bidService.withdrawBid(idStr, String(req.user?.id));
 
       res.json({
         success: true,
@@ -997,11 +1000,11 @@ export const withdrawBidController = async (
         dbError.constructor.name === 'PrismaClientInitializationError';
 
       // If database error, handle mock bid withdrawal
-      if (isConnectionError || (id as string).startsWith('mock-')) {
+      if (isConnectionError || idStr.startsWith('mock-')) {
         console.warn('⚠️ Database connection failed, handling mock bid withdrawal');
 
         // Find bid in global store
-        const existingBid: any = bidStoreById.get(id);
+        const existingBid: any = bidStoreById.get(idStr);
 
         if (!existingBid) {
           return res.status(404).json({
@@ -1011,8 +1014,8 @@ export const withdrawBidController = async (
         }
 
         // Find and update bid in memory store for the user
-        const userBids = userBidsStore.get(req.user.id) || [];
-        const bidIndex = userBids.findIndex((b: any) => b.id === id);
+        const userBids = userBidsStore.get(String(req.user?.id)) || [];
+        const bidIndex = userBids.findIndex((b: any) => b.id === idStr);
 
         if (bidIndex === -1) {
           return res.status(404).json({
@@ -1039,7 +1042,7 @@ export const withdrawBidController = async (
         userBidsStore.set(req.user.id, userBids);
 
         // Update global store and save to disk
-        bidStoreById.set(id, existingBid);
+        bidStoreById.set(idStr, existingBid);
         saveMockBids();
 
         return res.json({
@@ -1068,10 +1071,10 @@ export const deleteBidController = async (
       });
     }
 
-    const { id } = req.params;
+    const idStr = String(req.params.id);
 
     try {
-      const result = await bidService.deleteBid(id, req.user.id);
+      const result = await bidService.deleteBid(idStr, String(req.user?.id));
 
       res.json({
         success: true,
@@ -1088,11 +1091,11 @@ export const deleteBidController = async (
         dbError.constructor.name === 'PrismaClientInitializationError';
 
       // If database error, handle mock bid deletion
-      if (isConnectionError || id.startsWith('mock-')) {
+      if (isConnectionError || idStr.startsWith('mock-')) {
         console.warn('⚠️ Database connection failed, handling mock bid deletion');
 
         // Check global store
-        const existingBid = bidStoreById.get(id);
+        const existingBid = bidStoreById.get(idStr);
 
         if (!existingBid) {
           return res.status(404).json({
@@ -1102,17 +1105,15 @@ export const deleteBidController = async (
         }
 
         // Find and remove bid from memory store
-        const userBids = userBidsStore.get(req.user.id) || [];
-        const bidIndex = userBids.findIndex((b: any) => b.id === id);
+        const userBids = userBidsStore.get(String(req.user?.id)) || [];
+        const bidIndex = userBids.findIndex((b: any) => b.id === idStr);
 
         // Remove bid from array
         userBids.splice(bidIndex, 1);
-        // Remove bid from array
-        userBids.splice(bidIndex, 1);
-        userBidsStore.set(req.user.id, userBids);
+        userBidsStore.set(String(req.user?.id), userBids);
 
         // Remove from global store and save to disk
-        bidStoreById.delete(id);
+        bidStoreById.delete(idStr);
         saveMockBids();
 
         return res.json({

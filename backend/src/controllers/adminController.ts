@@ -224,7 +224,8 @@ export const processVerification = async (req: Request, res: Response, next: Nex
                 });
 
                 // 2. Database Notification (If DB is available)
-                if (isDatabaseAvailable && !targetUserId.startsWith('mock-')) {
+                const targetUserIdStr = String(targetUserId);
+                if (isDatabaseAvailable && !targetUserIdStr.startsWith('mock-')) {
                     await prisma.notification.create({
                         data: {
                             userId: targetUserId,
@@ -470,24 +471,25 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
 
             // Advanced filtering
             if (city) {
+                const cityStr = String(city);
                 whereClause.OR = whereClause.OR || [];
                 whereClause.OR.push(
-                    { city: { equals: city as string, mode: 'insensitive' } },
-                    { locations: { some: { city: { equals: city as string, mode: 'insensitive' } } } }
+                    { city: { equals: cityStr, mode: 'insensitive' } },
+                    { locations: { some: { city: { equals: cityStr, mode: 'insensitive' } } } }
                 );
             }
 
             if (district) {
                 whereClause.locations = {
                     some: {
-                        district: { equals: district as string, mode: 'insensitive' }
+                        district: { equals: String(district), mode: 'insensitive' }
                     }
                 };
             }
 
             if (serviceCategory) {
                 whereClause.electricianProfile = {
-                    serviceCategory: { equals: serviceCategory as string, mode: 'insensitive' }
+                    serviceCategory: { equals: String(serviceCategory), mode: 'insensitive' }
                 };
             }
 
@@ -608,17 +610,17 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
         const user = (req as any).user;
         if (user.userType !== 'ADMIN') throw new Error('Unauthorized');
 
-        const { id } = req.params;
+        const idStr = String(req.params.id);
 
-        if (isDatabaseAvailable && !id.startsWith('mock-')) {
+        if (isDatabaseAvailable && !idStr.startsWith('mock-')) {
             // DB Implementation
             try {
-                await prisma.jobPost.delete({ where: { id } });
-                console.log(`🗑️ Database job deleted: ${id}`);
+                await prisma.jobPost.delete({ where: { id: idStr } });
+                console.log(`🗑️ Database job deleted: ${idStr}`);
 
                 // Also remove from mock store if it exists there to keep sync
-                if (jobStoreById.has(id)) {
-                    deleteMockJob(id);
+                if (jobStoreById.has(idStr)) {
+                    deleteMockJob(idStr);
                 }
 
                 return res.json({ success: true, message: 'İlan veritabanından silindi' });
@@ -630,7 +632,7 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
         }
 
         // Mock Implementation
-        const success = deleteMockJob(id);
+        const success = deleteMockJob(idStr);
 
         if (success) {
             res.json({ success: true, message: 'İlan silindi' });
@@ -792,6 +794,21 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                 const normalizedCity = city?.toLowerCase();
 
                 heatmap = allDistricts.map(d => {
+                    // Try to find the city for this district from jobs first
+                    let districtCity = jobsInCity.find((j: any) => (j.location as any).district?.trim() === d)?.location as any;
+                    districtCity = districtCity?.city;
+                    
+                    // Fallback to master locations
+                    if (!districtCity) {
+                        for (const m of mastersInCity) {
+                            const loc = m.user.locations.find((l: any) => l.district?.trim() === d);
+                            if (loc) {
+                                districtCity = loc.city;
+                                break;
+                            }
+                        }
+                    }
+
                     const jobCount = jobsInCity.filter((j: any) => (j.location as any).district?.trim() === d).length;
                     const masterCount = mastersInCity.filter((m: any) => 
                         (m.user.locations.some((l: any) => 
@@ -804,7 +821,7 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                     if (jobCount > 0 && masterCount === 0) status = 'RED';
                     else if (jobCount > masterCount) status = 'YELLOW';
 
-                    return { district: d, jobCount, masterCount, status };
+                    return { district: d, city: districtCity || city || 'Unknown', jobCount, masterCount, status };
                 });
 
                 // ONLY show districts with actual data for this city
@@ -858,16 +875,16 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
  */
 export const getUserDetails = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { id } = req.params;
-        if (isDatabaseAvailable && !id.startsWith('mock-')) {
+        const idStr = String(req.params.id);
+        if (isDatabaseAvailable && !idStr.startsWith('mock-')) {
             const user = await prisma.user.findUnique({
-                where: { id },
+                where: { id: idStr },
                 include: { electricianProfile: true }
             });
             if (user) return res.json({ success: true, data: user });
         }
         
-        const mockUser = mockStorage.getFullUser(id);
+        const mockUser = mockStorage.getFullUser(idStr);
         if (mockUser) return res.json({ success: true, data: mockUser });
         
         res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı' });
@@ -882,18 +899,18 @@ export const getUserDetails = async (req: Request, res: Response, next: NextFunc
  */
 export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { id } = req.params;
+        const idStr = String(req.params.id);
         const updates = req.body;
         
-        if (isDatabaseAvailable && !id.startsWith('mock-')) {
+        if (isDatabaseAvailable && !idStr.startsWith('mock-')) {
             const updated = await prisma.user.update({
-                where: { id },
+                where: { id: idStr },
                 data: updates
             });
             return res.json({ success: true, data: updated });
         }
         
-        const updatedMock = mockStorage.updateProfile(id, updates);
+        const updatedMock = mockStorage.updateProfile(idStr, updates);
         res.json({ success: true, data: updatedMock });
     } catch (error) {
         next(error);
