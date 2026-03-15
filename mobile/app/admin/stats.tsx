@@ -102,61 +102,63 @@ export default function AdminStatsScreen() {
 
   const renderDistributionList = (items: DistributionItem[], showAll: boolean, setShowAll: (v: boolean) => void, color: string, type: 'CATEGORY' | 'DISTRICT') => {
     const sorted = [...items].sort((a, b) => b.count - a.count);
-    const top5 = sorted.slice(0, 5);
     const rest = sorted.slice(5);
     const total = sorted.reduce((acc, curr) => acc + curr.count, 0);
 
-    const renderItem = (item: DistributionItem, index: number) => (
-      <TouchableOpacity 
-        key={index} 
-        style={styles.listItem}
-        activeOpacity={0.7}
-        hitSlop={{ top: 5, bottom: 5, left: 10, right: 10 }}
-        onPress={() => {
-          if (type === 'CATEGORY') {
-            navigateToUsers({ initialFilter: 'ELECTRICIAN', initialCategory: item.name, initialCity: selectedCity !== 'ALL' ? selectedCity : undefined });
-          } else {
-            navigateToUsers({ initialFilter: 'CITIZEN', initialDistrict: item.name, initialCity: selectedCity !== 'ALL' ? selectedCity : undefined });
-          }
-        }}
-      >
-        <View style={styles.listTextRow}>
-          <Text style={styles.itemName}>{item.name}</Text>
-          <Text style={styles.itemCount}>{item.count}</Text>
-        </View>
-        <View style={styles.progressBarBg}>
-          <View 
-            style={[
-              styles.progressBarFill, 
-              { backgroundColor: color, width: `${(item.count / total) * 100}%` }
-            ]} 
-          />
-        </View>
-      </TouchableOpacity>
-    );
-
     return (
       <View style={styles.listContainer}>
-        {top5.map((item, index) => renderItem(item, index))}
+        {sorted.slice(0, showAll ? sorted.length : 5).map((item, index) => (
+          <TouchableOpacity 
+            key={`${type}-${index}`} 
+            style={styles.listItem}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            onPress={() => {
+              console.log(`[Stats] Navigating to users for ${type}: ${item.name}`);
+              if (type === 'CATEGORY') {
+                navigateToUsers({ 
+                  initialFilter: 'ELECTRICIAN', 
+                  initialCategory: item.name, 
+                  initialCity: selectedCity !== 'ALL' ? selectedCity : undefined 
+                });
+              } else {
+                navigateToUsers({ 
+                  initialFilter: 'CITIZEN', 
+                  initialDistrict: item.name, 
+                  initialCity: selectedCity !== 'ALL' ? selectedCity : undefined 
+                });
+              }
+            }}
+          >
+            <View style={styles.listTextRow}>
+              <Text style={styles.itemName}>{item.name}</Text>
+              <Text style={styles.itemCount}>{item.count}</Text>
+            </View>
+            <View style={styles.progressBarBg}>
+              <View 
+                style={[
+                  styles.progressBarFill, 
+                  { backgroundColor: color, width: `${(item.count / total) * 100}%` }
+                ]} 
+              />
+            </View>
+          </TouchableOpacity>
+        ))}
 
         {rest.length > 0 && (
-          <>
-            <TouchableOpacity 
-              style={styles.showMoreBtn} 
-              onPress={() => setShowAll(!showAll)}
-            >
-              <Text style={[styles.showMoreText, { color }]}>
-                {showAll ? 'Gizle' : `Tümünü Gör (${rest.length}+)`}
-              </Text>
-              <Ionicons 
-                name={showAll ? 'chevron-up' : 'chevron-down'} 
-                size={16} 
-                color={color} 
-              />
-            </TouchableOpacity>
-
-            {showAll && rest.map((item, index) => renderItem(item, index))}
-          </>
+          <TouchableOpacity 
+            style={styles.showMoreBtn} 
+            onPress={() => setShowAll(!showAll)}
+          >
+            <Text style={[styles.showMoreText, { color }]}>
+              {showAll ? 'Gizle' : `Tümünü Gör (${rest.length}+)`}
+            </Text>
+            <Ionicons 
+              name={showAll ? 'chevron-up' : 'chevron-down'} 
+              size={16} 
+              color={color} 
+            />
+          </TouchableOpacity>
         )}
       </View>
     );
@@ -552,7 +554,10 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   listItem: {
-    marginBottom: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    marginBottom: 2,
   },
   listTextRow: {
     flexDirection: 'row',
