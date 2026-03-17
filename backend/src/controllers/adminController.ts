@@ -671,60 +671,60 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                 // Fetch dynamic city list from both users and locations
                 const [userCities, locationCities] = await Promise.all([
                     prisma.user.findMany({
-                        where: { city: { not: null }, NOT: { city: 'ALL' }, deletedAt: null },
+                        where: { city: { not: null, notIn: ['ALL', 'All', 'all'] }, deletedAt: null },
                         select: { city: true },
                         distinct: ['city']
                     }),
                     prisma.location.findMany({
-                        where: {},
                         select: { city: true },
                         distinct: ['city']
                     })
                 ]);
                 
                 const allCityNames = new Set([
-                    ...userCities.map((c: any) => c.city!),
-                    ...locationCities.map((l: any) => l.city!)
+                    ...userCities.map((c: any) => c.city?.trim()),
+                    ...locationCities.map((l: any) => l.city?.trim())
                 ]);
 
-                if (allCityNames.size > 0) {
-                    availableCities = Array.from(allCityNames).filter(Boolean).sort();
-                }
+                availableCities = Array.from(allCityNames)
+                    .filter(Boolean)
+                    .map(c => c!.charAt(0).toUpperCase() + c!.slice(1).toLowerCase())
+                    .sort();
+                
+                // If "Aksaray" is in list but user sent "aksaray", normalize
+                const normalizedSearchCity = city ? (city.charAt(0).toUpperCase() + city.slice(1).toLowerCase()) : undefined;
 
-                // Better city filter: check both user.city and user.locations
-                const cityFilter = city ? {
+                // City filter: check both user.city and user.locations
+                const cityFilter = normalizedSearchCity ? {
                     OR: [
-                        { city: { equals: city, mode: 'insensitive' } as any },
-                        { locations: { some: { city: { equals: city, mode: 'insensitive' } as any } } }
+                        { city: { equals: normalizedSearchCity, mode: 'insensitive' } as any },
+                        { locations: { some: { city: { equals: normalizedSearchCity, mode: 'insensitive' } as any } } }
                     ]
                 } : {};
 
-                // 1. KPI Cards (Matches User Management logic)
+                // 1. KPI Cards
                 const [totalCitizens, totalElectricians] = await Promise.all([
                     prisma.user.count({ where: { userType: 'CITIZEN' as any, ...cityFilter, deletedAt: null } }),
                     prisma.user.count({ where: { userType: 'ELECTRICIAN' as any, ...cityFilter, deletedAt: null } }),
                 ]);
 
-                // Count pending verifications with documents for the filtered city
+                // Pending verifications
                 const pendingWithDocsProfiles = await prisma.electricianProfile.findMany({
                     where: {
                         verificationStatus: 'PENDING' as any,
                         user: { deletedAt: null, ...cityFilter },
                         NOT: {
-                            verificationDocuments: {
-                                equals: null as any
-                            }
+                            verificationDocuments: { equals: null as any }
                         }
                     }
                 });
-
                 const pendingVerifications = pendingWithDocsProfiles.filter(p => hasValidDocument(p.verificationDocuments)).length;
 
-                // 2. Service Distribution
+                // 2. Service Distribution (Electricians)
                 const categoryCounts = await prisma.electricianProfile.groupBy({
                     by: ['serviceCategory' as any],
                     _count: { _all: true },
-                    where: city ? { user: { ...cityFilter } } : {}
+                    where: normalizedSearchCity ? { user: { ...cityFilter } } : {}
                 });
 
                 // 3. District Distribution (Citizens only)
@@ -734,14 +734,29 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                 });
                 
                 citizens.forEach((u: any) => {
-                    const locations = u.locations || [];
-                    const defaultLoc = locations.find((l: any) => l.isDefault) || locations[0];
+                    // Check user's main city first
+                    if (normalizedSearchCity && u.city?.toLowerCase().trim() === normalizedSearchCity.toLowerCase()) {
+                        const district = u.district || 'Belirtilmemiş';
+                        districtStats[district] = (districtStats[district] || 0) + 1;
+                    }
                     
-                    let targetCity = defaultLoc?.city || u.city;
-                    let targetDistrict = defaultLoc?.district || 'Belirtilmemiş';
-
-                    if (!city || (targetCity && targetCity.toLowerCase().trim() === city.toLowerCase().trim())) {
-                        districtStats[targetDistrict] = (districtStats[targetDistrict] || 0) + 1;
+                    // Then check locations
+                    const relevantLocs = u.locations.filter((l: any) => 
+                        !normalizedSearchCity || l.city.toLowerCase().trim() === normalizedSearchCity.toLowerCase()
+                    );
+                    
+                    if (relevantLocs.length > 0) {
+                        relevantLocs.forEach((l: any) => {
+                            const d = l.district || 'Belirtilmemiş';
+                            districtStats[d] = (districtStats[d] || 0) + 1;
+                        });
+                    } else if (normalizedSearchCity && (!u.city || u.city.toLowerCase().trim() !== normalizedSearchCity.toLowerCase())) {
+                        // This user was found via cityFilter but neither main city nor filtered locations matched?
+                        // (Shouldn't happen with cityFilter logic, but safety first)
+                    } else if (!normalizedSearchCity) {
+                        // Global view
+                        const d = u.district || 'Belirtilmemiş';
+                        districtStats[d] = (districtStats[d] || 0) + 1;
                     }
                 });
 
@@ -749,26 +764,14 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                 const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
                 const [activeUstalar, activeCitizens] = await Promise.all([
                     prisma.user.count({ 
-                        where: { 
-                            userType: 'ELECTRICIAN' as any, 
-                            ...cityFilter, 
-                            deletedAt: null,
-                            lastSeenAt: { gte: last24h } 
-                        } 
+                        where: { userType: 'ELECTRICIAN' as any, ...cityFilter, deletedAt: null, lastSeenAt: { gte: last24h } } 
                     }),
                     prisma.user.count({ 
-                        where: { 
-                            userType: 'CITIZEN' as any, 
-                            ...cityFilter, 
-                            deletedAt: null,
-                            lastSeenAt: { gte: last24h } 
-                        } 
+                        where: { userType: 'CITIZEN' as any, ...cityFilter, deletedAt: null, lastSeenAt: { gte: last24h } } 
                     }),
                 ]);
 
                 // 5. Heatmap: Jobs vs Masters per District
-                let heatmap: any[] = [];
-                // We fetch all open jobs first (strictly not deleted)
                 const allOpenJobs = await prisma.jobPost.findMany({
                     where: { 
                         status: 'OPEN' as any, 
@@ -777,72 +780,38 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                     }
                 });
 
-                // Filter jobs by city in-memory since location is Json
-                const jobsInCity = city 
-                    ? allOpenJobs.filter((j: any) => 
-                        (j.location as any).city?.trim().toLowerCase() === city.toLowerCase()
-                    )
+                const jobsInCity = normalizedSearchCity 
+                    ? allOpenJobs.filter((j: any) => (j.location as any).city?.trim().toLowerCase() === normalizedSearchCity.toLowerCase())
                     : allOpenJobs;
 
-                // Fetch all masters (verified or not, to show capacity)
                 const mastersInCity = await prisma.electricianProfile.findMany({
                     where: { 
-                        user: { 
-                            deletedAt: null,
-                            ...(city ? cityFilter : {})
-                        },
+                        user: { deletedAt: null, ...cityFilter },
                         ...(serviceCategory ? { serviceCategory } : {})
                     },
                     include: { user: { include: { locations: true } } }
                 });
 
-                // Get unique districts from both jobs and masters, STRICTLY filtered by city
                 const allDistricts = [...new Set([
                     ...jobsInCity.map((j: any) => (j.location as any).district?.trim()),
-                    ...mastersInCity.flatMap((m: any) => 
-                        m.user.locations
-                            .filter((l: any) => !city || l.city.trim().toLowerCase() === city.toLowerCase())
-                            .map((l: any) => l.district?.trim())
+                    ...mastersInCity.flatMap((m: any) => m.user.locations
+                        .filter((l: any) => !normalizedSearchCity || l.city.trim().toLowerCase() === normalizedSearchCity.toLowerCase())
+                        .map((l: any) => l.district?.trim())
                     )
                 ])].filter(Boolean);
 
-                const normalizedCity = city?.toLowerCase();
-
-                heatmap = allDistricts.map(d => {
-                    // Try to find the city for this district from jobs first
-                    let districtCity = jobsInCity.find((j: any) => (j.location as any).district?.trim() === d)?.location as any;
-                    districtCity = districtCity?.city;
-                    
-                    // Fallback to master locations
-                    if (!districtCity) {
-                        for (const m of mastersInCity) {
-                            const loc = m.user.locations.find((l: any) => l.district?.trim() === d);
-                            if (loc) {
-                                districtCity = loc.city;
-                                break;
-                            }
-                        }
-                    }
-
+                let heatmap = allDistricts.map(d => {
                     const jobCount = jobsInCity.filter((j: any) => (j.location as any).district?.trim() === d).length;
-                    const masterCount = mastersInCity.filter((m: any) => 
-                        (m.user.locations.some((l: any) => 
-                            l.district?.trim() === d && 
-                            (!normalizedCity || l.city.trim().toLowerCase() === normalizedCity)
-                        ))
-                    ).length;
+                    const masterCount = mastersInCity.filter((m: any) => m.user.locations.some((l: any) => 
+                        l.district?.trim() === d && (!normalizedSearchCity || l.city.trim().toLowerCase() === normalizedSearchCity.toLowerCase())
+                    )).length;
 
                     let status = 'GREEN';
                     if (jobCount > 0 && masterCount === 0) status = 'RED';
                     else if (jobCount > masterCount) status = 'YELLOW';
 
-                    return { district: d, city: districtCity || city || 'Unknown', jobCount, masterCount, status };
+                    return { district: d, city: normalizedSearchCity || 'Bilinmiyor', jobCount, masterCount, status };
                 });
-
-                // ONLY show districts with actual data for this city
-                heatmap = heatmap.filter(h => h.jobCount > 0 || h.masterCount > 0)
-                    .sort((a, b) => (b.jobCount + b.masterCount) - (a.jobCount + a.masterCount))
-                    .slice(0, 15);
 
                 return res.json({
                     success: true,
@@ -851,7 +820,7 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                         serviceDistribution: categoryCounts.map((c: any) => ({ name: c.serviceCategory, count: c._count?._all || 0 })),
                         districtDistribution: Object.entries(districtStats).map(([name, count]) => ({ name, count })),
                         liveData: { activeUstalar, activeCitizens },
-                        heatmap: heatmap.slice(0, 15), // Show top 15 districts
+                        heatmap: heatmap.filter(h => h.jobCount > 0 || h.masterCount > 0).slice(0, 15),
                         availableCities
                     }
                 });
@@ -860,20 +829,33 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
             }
         }
 
-        // ── Fallback: Dynamic Mock (If DB is empty or down) ──────
-        // If we reach here, it means DB might have 0 data or failed
-        const kpis = {
-            totalCitizens: 0,
-            totalElectricians: 0,
-            pendingVerifications: 0
-        };
+        // ── Fallback: Improved Mock Using mockStorage ──────────────
+        const allUsers = mockStorage.getAllUsers();
+        let filteredUsers = allUsers.filter(u => u.isActive !== false);
+
+        if (city && city !== 'ALL') {
+             filteredUsers = filteredUsers.filter((u: any) => 
+                u.city?.toLowerCase() === city.toLowerCase() || 
+                (u.locations as any[])?.some(l => l.city?.toLowerCase() === city.toLowerCase())
+            );
+        }
+
+        const mTotalCitizens = filteredUsers.filter(u => u.userType === 'CITIZEN').length;
+        const mTotalElectricians = filteredUsers.filter(u => u.userType === 'ELECTRICIAN').length;
+        const mPending = filteredUsers.filter(u => u.userType === 'ELECTRICIAN' && u.verificationStatus === 'PENDING').length;
+
+        const mDistrictStats: Record<string, number> = {};
+        filteredUsers.filter(u => u.userType === 'CITIZEN').forEach((u: any) => {
+            const d = u.district || 'Belirtilmemiş';
+            mDistrictStats[d] = (mDistrictStats[d] || 0) + 1;
+        });
 
         res.json({
             success: true,
             data: {
-                kpis,
+                kpis: { totalCitizens: mTotalCitizens, totalElectricians: mTotalElectricians, pendingVerifications: mPending },
                 serviceDistribution: [],
-                districtDistribution: [],
+                districtDistribution: Object.entries(mDistrictStats).map(([name, count]) => ({ name, count })),
                 liveData: { activeUstalar: 0, activeCitizens: 0 },
                 heatmap: [],
                 availableCities
