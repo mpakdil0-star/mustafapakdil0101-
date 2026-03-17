@@ -130,18 +130,31 @@ function RootLayoutNav() {
 
         // Profile completion check for professionals
         if (user?.userType === 'ELECTRICIAN') {
-          // Wait for profile data to be fully loaded if possible, 
-          // but if we are in auth group and just registered, we should check what we have
           const isIncomplete = checkIsProfileIncomplete(user);
 
-          if (isIncomplete && !isInsideProfileGroup) {
+          // Check if user has already completed profile setup at least once
+          const { getItemAsync, setItemAsync } = await import('expo-secure-store');
+          const profileSetupDone = await getItemAsync('profile_setup_completed_' + user.id);
+
+          if (isIncomplete && !isInsideProfileGroup && !profileSetupDone) {
+            // Only force redirect on FIRST TIME setup (no flag saved yet)
             router.replace('/profile/edit?mandatory=true');
             return;
+          }
+
+          // If profile is now complete, save the flag so we never force-redirect again
+          if (!isIncomplete && !profileSetupDone) {
+            await setItemAsync('profile_setup_completed_' + user.id, 'true');
+            console.log('✅ Profile setup completed flag saved for user:', user.id);
           }
 
           // If profile is complete but we are still on the mandatory edit page, go home
           if (!isIncomplete && isInsideProfileGroup && params.mandatory === 'true') {
             console.log('✅ Profile complete, exiting mandatory edit mode');
+            // Save the flag here too in case it wasn't saved yet
+            if (!profileSetupDone) {
+              await setItemAsync('profile_setup_completed_' + user.id, 'true');
+            }
             router.replace('/(tabs)');
             return;
           }

@@ -297,6 +297,17 @@ export default function EditProfileScreen() {
                 // Clear draft on success
                 dispatch(clearDraftProfile());
 
+                // Mark profile setup as completed (prevents future mandatory redirects)
+                if (mandatory && user?.id) {
+                    try {
+                        const SecureStore = await import('expo-secure-store');
+                        await SecureStore.setItemAsync('profile_setup_completed_' + user.id, 'true');
+                        console.log('✅ Profile setup completed flag saved from edit screen');
+                    } catch (e) {
+                        console.warn('Failed to save profile setup flag:', e);
+                    }
+                }
+
                 setShowSuccessModal(true);
             } else {
                 throw new Error(response.data.message || 'Bir hata oluştu');
