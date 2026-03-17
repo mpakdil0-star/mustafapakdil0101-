@@ -214,6 +214,14 @@ function RootLayoutNav() {
         const { status } = await Notifications.getPermissionsAsync();
 
         if (status !== 'granted') {
+          // Check if we already dismissed this popup before
+          const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+          const dismissed = await AsyncStorage.getItem('has_dismissed_push_popup');
+          if (dismissed === 'true') {
+            // Don't show popup again, but still try to register if possible
+            return;
+          }
+
           showAlert(
             '🔔 Bildirimlerinizi Açın',
             'Yeni iş ilanları, teklifler ve mesajlardan anında haberdar olmak için bildirimleri açmanızı öneririz.',
@@ -225,8 +233,8 @@ function RootLayoutNav() {
                 onPress: async () => {
                   setAlertConfig(prev => ({ ...prev, visible: false }));
                   try {
-                    const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-                    await AsyncStorage.setItem('has_dismissed_push_popup', 'true');
+                    const AS = (await import('@react-native-async-storage/async-storage')).default;
+                    await AS.setItem('has_dismissed_push_popup', 'true');
                   } catch (e) {
                     console.log('AsyncStorage error:', e);
                   }
@@ -237,7 +245,34 @@ function RootLayoutNav() {
                 variant: 'primary',
                 onPress: async () => {
                   setAlertConfig(prev => ({ ...prev, visible: false }));
-                  await authService.registerPushToken();
+                  
+                  try {
+                    // Directly request system permission (triggers native OS dialog)
+                    const NotifModule = await import('expo-notifications');
+                    const { status: newStatus, canAskAgain: canAsk } = await NotifModule.getPermissionsAsync();
+                    
+                    if (newStatus === 'granted') {
+                      // Already granted, just register token
+                      await authService.registerPushToken();
+                      return;
+                    }
+                    
+                    if (canAsk) {
+                      // System dialog will appear now
+                      const { status: requestedStatus } = await NotifModule.requestPermissionsAsync();
+                      if (requestedStatus === 'granted') {
+                        await authService.registerPushToken();
+                      }
+                    } else {
+                      // Permission permanently denied - must go to settings
+                      const { Linking } = await import('react-native');
+                      Linking.openSettings();
+                    }
+                  } catch (permErr) {
+                    console.warn('Permission request error:', permErr);
+                    // Fallback: try registerPushToken which also requests permission
+                    await authService.registerPushToken();
+                  }
                 }
               }
             ]

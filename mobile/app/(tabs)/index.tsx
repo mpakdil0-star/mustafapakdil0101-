@@ -630,16 +630,39 @@ export default function HomeScreen() {
                   onPress={async () => {
                     setPushBannerLoading(true);
                     try {
-                      const result = await authService.registerPushToken();
-                      if (result === 'granted') {
-                        // Save activation locally so banner never reappears
-                        await AsyncStorage.setItem('push_activated', 'true');
-                        setShowPushBanner(false);
-                        // Also sync preferences to backend
-                        try {
-                          await api.put('/users/notification-preferences', { pushEnabled: true });
-                        } catch (e) { }
-                      } else if (result === 'needs_settings' || result === 'denied') {
+                      const { Platform } = await import('react-native');
+                      const Constants = (await import('expo-constants')).default;
+                      
+                      // Skip for Expo Go on Android
+                      if (Platform.OS === 'android' && Constants.appOwnership === 'expo') {
+                        setPushBannerLoading(false);
+                        return;
+                      }
+                      
+                      const Notifications = await import('expo-notifications');
+                      const { status: currentStatus, canAskAgain } = await Notifications.getPermissionsAsync();
+                      
+                      if (currentStatus === 'granted') {
+                        // Already granted - just register token
+                        const result = await authService.registerPushToken();
+                        if (result === 'granted') {
+                          await AsyncStorage.setItem('push_activated', 'true');
+                          setShowPushBanner(false);
+                          try { await api.put('/users/notification-preferences', { pushEnabled: true }); } catch (e) { }
+                        }
+                      } else if (canAskAgain) {
+                        // Trigger native system permission dialog
+                        const { status: newStatus } = await Notifications.requestPermissionsAsync();
+                        if (newStatus === 'granted') {
+                          const result = await authService.registerPushToken();
+                          if (result === 'granted') {
+                            await AsyncStorage.setItem('push_activated', 'true');
+                            setShowPushBanner(false);
+                            try { await api.put('/users/notification-preferences', { pushEnabled: true }); } catch (e) { }
+                          }
+                        }
+                      } else {
+                        // Permission permanently denied - open system settings
                         const { Linking } = await import('react-native');
                         Alert.alert(
                           'Sistem İzni Gerekli',
