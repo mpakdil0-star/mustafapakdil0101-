@@ -377,9 +377,10 @@ export const mockStorage = {
                 serviceCategory: store.serviceCategory ||
                     (store.specialties?.some(s => s.toLowerCase().includes('klima')) ? 'klima' :
                         store.specialties?.some(s => s.toLowerCase().includes('beyaz')) ? 'beyaz-esya' :
-                            store.specialties?.some(s => s.toLowerCase().includes('çilingir')) ? 'cilingir' :
+                            store.specialties?.some(s => s.toLowerCase().includes('çilingir') || s.toLowerCase().includes('kilit')) ? 'cilingir' :
                                 store.specialties?.some(s => s.toLowerCase().includes('su') || s.toLowerCase().includes('tesisat')) ? 'tesisat' :
-                                    'elektrik')
+                                    store.specialties?.some(s => s.toLowerCase().includes('elektrik')) ? 'elektrik' :
+                                        null)
             } : null
         };
     },

@@ -143,7 +143,23 @@ const authSlice = createSlice({
       state.error = null;
     },
     setUser: (state, action: PayloadAction<User>) => {
-      state.user = action.payload;
+      if (state.user) {
+        // Deep merge: preserve existing nested data (especially electricianProfile)
+        const incoming = action.payload;
+        const existingProfile = state.user.electricianProfile;
+        const incomingProfile = incoming.electricianProfile;
+
+        state.user = {
+          ...state.user,
+          ...incoming,
+          // Deep merge electricianProfile to avoid losing serviceCategory, specialties, etc.
+          electricianProfile: existingProfile && incomingProfile
+            ? { ...existingProfile, ...incomingProfile }
+            : incomingProfile || existingProfile,
+        };
+      } else {
+        state.user = action.payload;
+      }
       state.isAuthenticated = true;
     },
     setGuestRole: (state, action: PayloadAction<'CITIZEN' | 'ELECTRICIAN' | null>) => {

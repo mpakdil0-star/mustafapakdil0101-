@@ -159,8 +159,9 @@ export const uploadAvatar = async (req: Request, res: Response, next: NextFuncti
             });
         } catch (dbError: any) {
             console.warn('Database update failed, returning mock response:', dbError.message);
-            // Return consistent mock user from storage
-            updatedUser = mockStorage.getFullUser(userId, (req as any).user.userType);
+            // Return consistent mock user from storage - use actual user type from JWT
+            const actualUserType = (req as any).user.userType || 'CITIZEN';
+            updatedUser = mockStorage.getFullUser(userId, actualUserType);
         }
 
         res.status(200).json({
@@ -215,11 +216,10 @@ export const uploadAvatarBase64 = async (req: Request, res: Response, next: Next
             });
             console.log('Database updated');
         } catch (dbError: any) {
-            // For mock users, extract userType from userId
-            const userType = userId.endsWith('-ADMIN') ? 'ADMIN' :
-                (userId.endsWith('-ELECTRICIAN') ? 'ELECTRICIAN' : 'CITIZEN');
+            // Use actual user type from authenticated request (JWT), not guessed from userId
+            const actualUserType = user.userType || 'CITIZEN';
             // Return consistent mock user with new profile image from storage
-            updatedUser = mockStorage.getFullUser(userId, userType);
+            updatedUser = mockStorage.getFullUser(userId, actualUserType);
         }
 
         console.log('Returning user:', updatedUser);
