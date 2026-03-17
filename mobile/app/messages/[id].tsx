@@ -12,6 +12,8 @@ import {
     Alert,
     ImageBackground,
     Modal,
+    StatusBar,
+    Keyboard,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -206,7 +208,7 @@ export default function ChatScreen() {
         if (messages.length > 0) {
             setTimeout(() => {
                 flatListRef.current?.scrollToEnd({ animated: true });
-            }, 100);
+            }, 150);
         }
     }, [messages.length]);
 
@@ -347,22 +349,20 @@ export default function ChatScreen() {
         if (isTempMessage) {
             // Gönderiliyor: tek gri tik
             return (
-                <Ionicons name="checkmark" size={12} color="rgba(255,255,255,0.6)" style={{ marginLeft: 3 }} />
+                <Ionicons name="time-outline" size={10} color="rgba(255,255,255,0.7)" style={{ marginLeft: 4 }} />
             );
         } else if (isRead) {
-            // Okundu: çift mavi tik (beyaz + parlak)
+            // Okundu: çift mavi tik
             return (
-                <View style={{ flexDirection: 'row', marginLeft: 3 }}>
-                    <Ionicons name="checkmark" size={12} color="rgba(255,255,255,1)" style={{ marginRight: -6 }} />
-                    <Ionicons name="checkmark" size={12} color="rgba(255,255,255,1)" />
+                <View style={{ flexDirection: 'row', marginLeft: 4 }}>
+                    <Ionicons name="checkmark-done" size={14} color="#FFF" />
                 </View>
             );
         } else {
             // Gönderildi / iletildi: çift soluk tik
             return (
-                <View style={{ flexDirection: 'row', marginLeft: 3 }}>
-                    <Ionicons name="checkmark" size={12} color="rgba(255,255,255,0.55)" style={{ marginRight: -6 }} />
-                    <Ionicons name="checkmark" size={12} color="rgba(255,255,255,0.55)" />
+                <View style={{ flexDirection: 'row', marginLeft: 4 }}>
+                    <Ionicons name="checkmark-done" size={14} color="rgba(255,255,255,0.4)" />
                 </View>
             );
         }
@@ -370,17 +370,22 @@ export default function ChatScreen() {
 
     const renderMessage = ({ item, index }: { item: Message, index: number }) => {
         const isMyMessage = item.senderId === user?.id;
-        const showAvatar = !isMyMessage && (index === 0 || messages[index - 1].senderId !== item.senderId);
+        const nextMessage = messages[index + 1];
+        const prevMessage = messages[index - 1];
+        
+        const isLastInGroup = !nextMessage || nextMessage.senderId !== item.senderId;
+        const isFirstInGroup = !prevMessage || prevMessage.senderId !== item.senderId;
 
         return (
             <View style={[
                 styles.messageContainer,
-                isMyMessage ? styles.myMessageContainer : styles.otherMessageContainer
+                isMyMessage ? styles.myMessageContainer : styles.otherMessageContainer,
+                { marginBottom: isLastInGroup ? 12 : 3 }
             ]}>
                 {!isMyMessage && (
-                    <View style={styles.otherUserAvatarPlaceholder}>
-                        {showAvatar && (
-                            <View style={[styles.avatarMiniContainer, { backgroundColor: colors.primary + '15' }]}>
+                    <View style={styles.avatarSpace}>
+                        {isLastInGroup && (
+                            <View style={[styles.avatarMini, { backgroundColor: colors.primary + '15' }]}>
                                 <Text style={[styles.avatarMiniText, { color: colors.primary }]}>
                                     {otherUser?.fullName.charAt(0).toUpperCase()}
                                 </Text>
@@ -390,28 +395,40 @@ export default function ChatScreen() {
                 )}
 
                 <View style={[
-                    styles.messageBubble,
-                    isMyMessage ? [styles.myMessageBubble, { backgroundColor: colors.primary }] : styles.otherMessageBubble
+                    styles.bubbleWrapper,
+                    isMyMessage ? styles.myBubbleWrapper : styles.otherBubbleWrapper
                 ]}>
-                    <Text style={[
-                        styles.messageText,
-                        isMyMessage ? styles.myMessageText : styles.otherMessageText
-                    ]}>
-                        {item.content}
-                    </Text>
-                    {/* Saat + okundu tiki satırı */}
-                    <View style={styles.messageFooter}>
+                    <LinearGradient
+                        colors={isMyMessage ? [colors.primary, colors.primaryDark || colors.primary] : ['#FFFFFF', '#F8FAFC']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={[
+                            styles.messageBubble,
+                            isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble,
+                            !isFirstInGroup && (isMyMessage ? { borderTopRightRadius: 6 } : { borderTopLeftRadius: 6 }),
+                            !isLastInGroup && (isMyMessage ? { borderBottomRightRadius: 6 } : { borderBottomLeftRadius: 6 })
+                        ]}
+                    >
                         <Text style={[
-                            styles.messageTime,
-                            isMyMessage ? styles.myMessageTime : styles.otherMessageTime
+                            styles.messageText,
+                            isMyMessage ? styles.myMessageText : styles.otherMessageText
                         ]}>
-                            {new Date(item.createdAt).toLocaleTimeString('tr-TR', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                            })}
+                            {item.content}
                         </Text>
-                        <ReadReceipt message={item} isMyMessage={isMyMessage} />
-                    </View>
+                        
+                        <View style={styles.messageFooter}>
+                            <Text style={[
+                                styles.messageTime,
+                                isMyMessage ? styles.myMessageTime : styles.otherMessageTime
+                            ]}>
+                                {new Date(item.createdAt).toLocaleTimeString('tr-TR', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                })}
+                            </Text>
+                            <ReadReceipt message={item} isMyMessage={isMyMessage} />
+                        </View>
+                    </LinearGradient>
                 </View>
             </View>
         );
@@ -419,42 +436,47 @@ export default function ChatScreen() {
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
+            <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
                 <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Yüklenüyor...</Text>
             </View>
         );
     }
 
     return (
-        <View style={styles.mainContainer}>
+        <View style={[styles.mainContainer, { backgroundColor: colors.background }]}>
             <Stack.Screen options={{ headerShown: false }} />
+            <StatusBar barStyle="light-content" />
 
             <PremiumHeader
                 title={otherUser?.fullName || 'Mesajlaşma'}
                 subtitle={isTyping ? 'yazıyor...' : (otherUser?.userType === 'ELECTRICIAN' ? 'Profesyonel' : 'Müşteri')}
                 showBackButton
-                backgroundImage={require('../../assets/images/header_bg.png')}
+                variant="transparent"
                 rightElement={
                     otherUser && (
                         <TouchableOpacity
                             onPress={() => setIsActionMenuVisible(true)}
                             style={styles.headerActionBtn}
                         >
-                            <Ionicons name="ellipsis-vertical" size={24} color={staticColors.white} />
+                            <Ionicons name="ellipsis-vertical" size={24} color="#FFF" />
                         </TouchableOpacity>
                     )
                 }
             />
 
             <KeyboardAvoidingView
-                style={styles.container}
-                behavior="padding"
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+                style={styles.flex1}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
-                <View style={[styles.securityBanner, { backgroundColor: staticColors.secondary + '10', borderBottomColor: staticColors.secondary + '20' }]}>
-                    <Ionicons name="shield-checkmark" size={16} color={staticColors.secondary} />
-                    <Text style={[styles.securityBannerText, { color: staticColors.secondary }]}>
-                        Güvenliğiniz için ödeme ve iletişim bilgilerinizi platform dışından paylaşmayın.
+                {/* Security Banner Header */}
+                <View style={[styles.securityBanner, { backgroundColor: '#F0F9FF', borderBottomColor: '#E0F2FE' }]}>
+                    <View style={styles.securityIconBox}>
+                        <Ionicons name="shield-checkmark" size={14} color="#0369A1" />
+                    </View>
+                    <Text style={styles.securityBannerText}>
+                        Güvenliğiniz için platform dışından ödeme yapmayın.
                     </Text>
                 </View>
 
@@ -463,59 +485,60 @@ export default function ChatScreen() {
                     data={messages}
                     renderItem={renderMessage}
                     keyExtractor={(item) => item.id}
-                    contentContainerStyle={styles.messagesList}
+                    contentContainerStyle={[styles.messagesList, { paddingBottom: 20 }]}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
-                            <View style={[styles.emptyIconCircle, { backgroundColor: colors.primary + '10' }]}>
-                                <Ionicons name="chatbubble-ellipses-outline" size={32} color={colors.primary} />
-                            </View>
-                            <Text style={styles.emptyText}>Mesajlaşmaya Başlayın</Text>
-                            <Text style={styles.emptySubtext}>Selam vererek ilk adımı atabilirsiniz.</Text>
+                            <LinearGradient
+                                colors={['#F8FAFC', '#EEF2FF']}
+                                style={styles.emptyIconCircle}
+                            >
+                                <Ionicons name="chatbubbles-outline" size={36} color={colors.primary} />
+                            </LinearGradient>
+                            <Text style={[styles.emptyText, { color: colors.text }]}>Mesajlaşmaya Başlayın</Text>
+                            <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Selam vererek ilk adımı atabilirsiniz.</Text>
                         </View>
                     }
                 />
 
-                <View style={[styles.bottomSection, { paddingBottom: Math.max(insets.bottom + 8, Platform.OS === 'ios' ? 34 : 20) }]}>
-                    {isTyping && (
-                        <View style={styles.typingContainer}>
-                            <Text style={styles.typingText}>{otherUser?.fullName} yazıyor...</Text>
-                        </View>
-                    )}
+                {/* Input Area */}
+                <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 10 }]}>
+                    <View style={[styles.inputContainer, { backgroundColor: '#FFF' }]}>
+                        {/* Attach Icon Placeholder */}
+                        <TouchableOpacity style={styles.attachButton} activeOpacity={0.7}>
+                            <Ionicons name="add" size={24} color={colors.textSecondary} />
+                        </TouchableOpacity>
 
-                    <View style={[styles.inputCard, { shadowColor: colors.primary }]}>
-                        <View style={styles.inputWrapper}>
-                            <TextInput
-                                style={styles.input}
-                                value={newMessage}
-                                onChangeText={handleTyping}
-                                placeholder="Mesajınızı buraya yazın..."
-                                placeholderTextColor={colors.textLight}
-                                multiline
-                                maxLength={1000}
-                                autoCorrect={false}
-                                autoComplete="off"
-                                autoCapitalize="sentences"
-                                spellCheck={false}
-                            />
-                            <TouchableOpacity
-                                style={[
-                                    styles.sendButton,
-                                    { backgroundColor: colors.primary, shadowColor: colors.primary },
-                                    (!newMessage.trim() || sending) && [styles.sendButtonDisabled, { backgroundColor: staticColors.textLight }]
-                                ]}
-                                onPress={handleSend}
-                                disabled={!newMessage.trim() || sending}
-                                activeOpacity={0.8}
-                            >
-                                {sending ? (
-                                    <ActivityIndicator size="small" color={staticColors.white} />
-                                ) : (
-                                    <Ionicons name="send" size={18} color={staticColors.white} />
-                                )}
-                            </TouchableOpacity>
-                        </View>
+                        <TextInput
+                            style={styles.input}
+                            value={newMessage}
+                            onChangeText={handleTyping}
+                            placeholder="Mesajınızı yazın..."
+                            placeholderTextColor="#94A3B8"
+                            multiline
+                            maxLength={1000}
+                        />
+
+                        <TouchableOpacity
+                            style={[
+                                styles.sendButton,
+                                { backgroundColor: colors.primary },
+                                (!newMessage.trim() || sending) && { backgroundColor: '#E2E8F0' }
+                            ]}
+                            onPress={handleSend}
+                            disabled={!newMessage.trim() || sending}
+                            activeOpacity={0.8}
+                        >
+                            {sending ? (
+                                <ActivityIndicator size="small" color="#FFF" />
+                            ) : (
+                                <Ionicons name="send" size={18} color="#FFF" />
+                            )}
+                        </TouchableOpacity>
                     </View>
+                    {isTyping && (
+                        <Text style={styles.isTypingLabel}>{otherUser?.fullName} yazıyor...</Text>
+                    )}
                 </View>
             </KeyboardAvoidingView>
 
@@ -528,27 +551,41 @@ export default function ChatScreen() {
                 onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
             />
 
-            {/* Action Menu Modal */}
+            {/* Modern Bottom Sheet styled Action Menu */}
             <Modal
                 visible={isActionMenuVisible}
                 transparent
-                animationType="fade"
+                animationType="slide"
                 onRequestClose={() => setIsActionMenuVisible(false)}
             >
                 <TouchableOpacity
-                    style={styles.modalOverlay}
+                    style={styles.modalBackdrop}
                     activeOpacity={1}
                     onPress={() => setIsActionMenuVisible(false)}
                 >
-                    <View style={styles.actionMenu}>
-                        <TouchableOpacity style={styles.actionMenuItem} onPress={handleReport}>
-                            <Ionicons name="flag-outline" size={20} color={colors.text} />
-                            <Text style={[styles.actionMenuText, { color: colors.text }]}>Şikayet Et</Text>
+                    <View style={[styles.actionSheet, { paddingBottom: insets.bottom + 20 }]}>
+                        <View style={styles.sheetIndicator} />
+                        <Text style={[styles.sheetTitle, { color: colors.text }]}>İşlemler</Text>
+                        
+                        <TouchableOpacity style={styles.sheetItem} onPress={handleReport}>
+                            <View style={[styles.sheetIconBox, { backgroundColor: '#F1F5F9' }]}>
+                                <Ionicons name="flag-outline" size={20} color={colors.text} />
+                            </View>
+                            <Text style={[styles.sheetItemText, { color: colors.text }]}>Kullanıcıyı Şikayet Et</Text>
                         </TouchableOpacity>
-                        <View style={styles.actionMenuSeparator} />
-                        <TouchableOpacity style={styles.actionMenuItem} onPress={handleBlock}>
-                            <Ionicons name="ban-outline" size={20} color={staticColors.error} />
-                            <Text style={[styles.actionMenuText, { color: staticColors.error }]}>Engelle</Text>
+
+                        <TouchableOpacity style={styles.sheetItem} onPress={handleBlock}>
+                            <View style={[styles.sheetIconBox, { backgroundColor: '#FEF2F2' }]}>
+                                <Ionicons name="ban-outline" size={20} color="#EF4444" />
+                            </View>
+                            <Text style={[styles.sheetItemText, { color: '#EF4444' }]}>Kullanıcıyı Engelle</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                            style={styles.sheetCancelBtn} 
+                            onPress={() => setIsActionMenuVisible(false)}
+                        >
+                            <Text style={[styles.sheetCancelText, { color: colors.textSecondary }]}>Vazgeç</Text>
                         </TouchableOpacity>
                     </View>
                 </TouchableOpacity>
@@ -560,37 +597,48 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
     },
-    container: {
-        flex: 1,
-    },
-    securityBanner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: spacing.md,
-        gap: 8,
-        borderBottomWidth: 1,
-    },
-    securityBannerText: {
-        fontFamily: fonts.medium,
-        fontSize: 12,
+    flex1: {
         flex: 1,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F8FAFC',
+        gap: 12,
     },
+    loadingText: {
+        fontSize: 14,
+        fontFamily: fonts.medium,
+    },
+
+    // ── Security Header ──
+    securityBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        gap: 10,
+        borderBottomWidth: 1,
+    },
+    securityIconBox: {
+        backgroundColor: '#BAE6FD',
+        padding: 4,
+        borderRadius: 6,
+    },
+    securityBannerText: {
+        fontFamily: fonts.semiBold,
+        fontSize: 11,
+        color: '#0369A1',
+        flex: 1,
+    },
+
+    // ── Message List ──
     messagesList: {
-        padding: spacing.md,
-        paddingBottom: 20,
+        padding: 14,
         flexGrow: 1,
     },
     messageContainer: {
-        marginBottom: 10,
         flexDirection: 'row',
         alignItems: 'flex-end',
     },
@@ -600,66 +648,64 @@ const styles = StyleSheet.create({
     otherMessageContainer: {
         justifyContent: 'flex-start',
     },
-    otherUserAvatarPlaceholder: {
-        width: 32,
+    avatarSpace: {
+        width: 34,
         marginRight: 8,
     },
-    avatarMiniContainer: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+    avatarMini: {
+        width: 34,
+        height: 34,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: staticColors.white,
+        backgroundColor: '#FFF',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     avatarMiniText: {
-        fontFamily: fonts.extraBold,
-        fontSize: 12,
+        fontFamily: fonts.black,
+        fontSize: 14,
+    },
+    bubbleWrapper: {
+        maxWidth: '82%',
+    },
+    myBubbleWrapper: {
+        alignItems: 'flex-end',
+    },
+    otherBubbleWrapper: {
+        alignItems: 'flex-start',
     },
     messageBubble: {
-        maxWidth: '75%',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 16,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 20,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.03,
-        shadowRadius: 3,
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
         elevation: 1,
     },
     myMessageBubble: {
         borderBottomRightRadius: 4,
     },
     otherMessageBubble: {
-        backgroundColor: staticColors.white,
         borderBottomLeftRadius: 4,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.8)',
+        borderColor: '#F1F5F9',
     },
     messageText: {
         fontFamily: fonts.medium,
-        fontSize: 14,
-        lineHeight: 20,
+        fontSize: 15,
+        lineHeight: 22,
     },
     myMessageText: {
-        color: staticColors.white,
+        color: '#FFF',
     },
     otherMessageText: {
-        color: staticColors.text,
-    },
-    messageTime: {
-        fontFamily: fonts.medium,
-        fontSize: 10,
-        marginTop: 4,
-    },
-    myMessageTime: {
-        color: 'rgba(255, 255, 255, 0.65)',
-        textAlign: 'right',
-    },
-    otherMessageTime: {
-        color: staticColors.textLight,
-        textAlign: 'left',
+        color: '#1E293B',
     },
     messageFooter: {
         flexDirection: 'row',
@@ -667,85 +713,98 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
         marginTop: 4,
     },
-    bottomSection: {
-        backgroundColor: 'transparent',
-        paddingHorizontal: spacing.md,
-        paddingBottom: Platform.OS === 'ios' ? 34 : 20,
-    },
-    typingContainer: {
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-    },
-    typingText: {
+    messageTime: {
         fontFamily: fonts.medium,
-        fontSize: 12,
-        color: staticColors.textSecondary,
-        fontStyle: 'italic',
+        fontSize: 10,
     },
-    inputCard: {
-        backgroundColor: staticColors.white,
-        borderRadius: 20,
-        paddingHorizontal: 8,
-        paddingVertical: 6,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.8)',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 3,
+    myMessageTime: {
+        color: 'rgba(255, 255, 255, 0.7)',
     },
-    inputWrapper: {
+    otherMessageTime: {
+        color: '#94A3B8',
+    },
+
+    // ── Input Section ──
+    bottomSection: {
+        paddingHorizontal: 14,
+        paddingTop: 8,
+        backgroundColor: 'transparent',
+    },
+    inputContainer: {
         flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 24,
+        paddingHorizontal: 6,
+        paddingVertical: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 5,
+    },
+    attachButton: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        justifyContent: 'center',
         alignItems: 'center',
     },
     input: {
         flex: 1,
         fontFamily: fonts.medium,
-        fontSize: 14,
-        color: staticColors.text,
-        paddingHorizontal: 12,
+        fontSize: 15,
+        color: '#1E293B',
+        paddingHorizontal: 10,
         paddingVertical: 8,
-        maxHeight: 100,
+        maxHeight: 120,
     },
     sendButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
     },
-    sendButtonDisabled: {
-        shadowOpacity: 0,
+    isTypingLabel: {
+        fontSize: 11,
+        fontFamily: fonts.medium,
+        fontStyle: 'italic',
+        color: '#64748B',
+        marginLeft: 20,
+        marginTop: 6,
     },
+
+    // ── Empty State ──
     emptyContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 60,
+        paddingVertical: 80,
     },
     emptyIconCircle: {
-        width: 70,
-        height: 70,
-        borderRadius: 35,
+        width: 80,
+        height: 80,
+        borderRadius: 40,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 20,
     },
     emptyText: {
-        fontFamily: fonts.extraBold,
-        fontSize: 18,
-        color: staticColors.text,
+        fontFamily: fonts.black,
+        fontSize: 20,
+        marginBottom: 8,
     },
     emptySubtext: {
         fontFamily: fonts.medium,
         fontSize: 14,
-        color: staticColors.textSecondary,
-        marginTop: 6,
+        opacity: 0.6,
     },
+
+    // ── Header Actions ──
     headerActionBtn: {
         width: 40,
         height: 40,
@@ -753,32 +812,58 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    modalOverlay: {
+
+    // ── Action Sheet Modal ──
+    modalBackdrop: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
+        justifyContent: 'flex-end',
     },
-    actionMenu: {
-        backgroundColor: staticColors.white,
-        borderRadius: 16,
-        width: '100%',
-        maxWidth: 300,
-        overflow: 'hidden',
+    actionSheet: {
+        backgroundColor: '#FFF',
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        padding: 24,
+        paddingTop: 12,
     },
-    actionMenuItem: {
+    sheetIndicator: {
+        width: 40,
+        height: 5,
+        backgroundColor: '#E2E8F0',
+        borderRadius: 3,
+        alignSelf: 'center',
+        marginBottom: 20,
+    },
+    sheetTitle: {
+        fontSize: 18,
+        fontFamily: fonts.black,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    sheetItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
-        gap: 12,
+        paddingVertical: 14,
+        gap: 16,
     },
-    actionMenuText: {
-        fontFamily: fonts.bold,
+    sheetIconBox: {
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    sheetItemText: {
         fontSize: 15,
+        fontFamily: fonts.semiBold,
     },
-    actionMenuSeparator: {
-        height: 1,
-        backgroundColor: '#F1F5F9',
+    sheetCancelBtn: {
+        marginTop: 12,
+        paddingVertical: 16,
+        alignItems: 'center',
+    },
+    sheetCancelText: {
+        fontSize: 15,
+        fontFamily: fonts.bold,
     },
 });

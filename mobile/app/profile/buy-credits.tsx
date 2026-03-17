@@ -11,6 +11,7 @@ import {
     Platform,
     Animated,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -61,6 +62,7 @@ export default function BuyCreditsScreen() {
     const [packages, setPackages] = useState<CreditPackage[]>([]);
     const [selectedPkg, setSelectedPkg] = useState<string | null>(null);
     const colors = useAppColors();
+    const insets = useSafeAreaInsets();
     const currentBalance = user?.electricianProfile?.creditBalance || 0;
 
     // Animations
@@ -205,16 +207,19 @@ export default function BuyCreditsScreen() {
         <View style={[styles.container, { backgroundColor: colors.backgroundDark }]}>
             <StatusBar barStyle="dark-content" />
 
-            <PremiumHeader
-                title="Kredi Yükle"
-                subtitle="Paketinizi Seçin"
-                showBackButton
-                variant="transparent"
-            />
+            {/* Premium Header - Reduced height for more space */}
+            <View style={{ height: 60 + insets.top }}>
+                <PremiumHeader
+                    title="Kredi Yükle"
+                    subtitle="Paketinizi Seçin"
+                    showBackButton
+                    variant="transparent"
+                />
+            </View>
 
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 + insets.bottom }]}
                 showsVerticalScrollIndicator={false}
             >
                 {/* Current Balance Mini Card */}
@@ -346,8 +351,15 @@ export default function BuyCreditsScreen() {
                 <View style={{ height: 80 }} />
             </ScrollView>
 
-            {/* Fixed Bottom Button */}
-            <View style={[styles.footer, { backgroundColor: colors.backgroundDark }]}>
+            {/* Fixed Bottom Button - Adjusted for Safe Area */}
+            <View style={[
+                styles.footer,
+                {
+                    backgroundColor: colors.backgroundDark,
+                    paddingBottom: Math.max(insets.bottom, 16),
+                    height: 100 + insets.bottom
+                }
+            ]}>
                 {selectedPackage && (
                     <View style={styles.footerSummary}>
                         <Text style={[styles.footerSummaryText, { color: colors.textSecondary }]}>
@@ -613,7 +625,6 @@ const styles = StyleSheet.create({
         right: 0,
         paddingHorizontal: 14,
         paddingTop: 8,
-        paddingBottom: Platform.OS === 'ios' ? 26 : 16,
         borderTopWidth: 1,
         borderTopColor: '#F1F5F9',
     },

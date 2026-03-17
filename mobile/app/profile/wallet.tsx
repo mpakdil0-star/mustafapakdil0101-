@@ -11,6 +11,7 @@ import {
     Platform,
     Animated,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,6 +42,7 @@ export default function WalletScreen() {
     const dispatch = useAppDispatch();
     const { user } = useAppSelector((state) => state.auth);
     const colors = useAppColors();
+    const insets = useSafeAreaInsets();
     const [loading, setLoading] = useState(true);
     const [history, setHistory] = useState<Transaction[]>([]);
 
@@ -177,16 +179,19 @@ export default function WalletScreen() {
         <View style={[styles.container, { backgroundColor: colors.backgroundDark }]}>
             <StatusBar barStyle="light-content" />
 
-            <PremiumHeader
-                title="Cüzdanım"
-                subtitle="Kredi ve İşlem Yönetimi"
-                showBackButton
-                variant="transparent"
-            />
+            {/* Premium Header with Safe Area handling */}
+            <View style={{ height: 60 + insets.top }}>
+                <PremiumHeader
+                    title="Cüzdanım"
+                    subtitle="Kredi ve İşlem Yönetimi"
+                    showBackButton
+                    variant="transparent"
+                />
+            </View>
 
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 20) }]}
                 showsVerticalScrollIndicator={false}
             >
                 {/* Premium Balance Card */}
