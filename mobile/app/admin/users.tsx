@@ -44,7 +44,6 @@ export default function AdminUsersScreen() {
     
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [totalUsersCount, setTotalUsersCount] = useState(0);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
 
     // Modal State
@@ -83,19 +82,9 @@ export default function AdminUsersScreen() {
 
             if (response.data.success) {
                 const { users: fetchedUsers, pagination } = response.data.data;
-                if (resetPage) {
-                    setUsers(fetchedUsers);
-                    setPage(1);
-                } else {
-                    setUsers(prev => {
-                        // Filter out duplicates based on ID
-                        const existingIds = new Set(prev.map(u => u.id));
-                        const newOnes = fetchedUsers.filter((u: User) => !existingIds.has(u.id));
-                        return [...prev, ...newOnes];
-                    });
-                }
+                setUsers(resetPage ? fetchedUsers : [...users, ...fetchedUsers]);
                 setTotalPages(pagination.totalPages);
-                setTotalUsersCount(pagination.total || fetchedUsers.length);
+                if (resetPage) setPage(1);
             }
         } catch (error: any) {
             console.error('Failed to fetch users:', error);
@@ -320,7 +309,7 @@ export default function AdminUsersScreen() {
 
     return (
         <View style={styles.container}>
-            <PremiumHeader title="Kullanıcı Yönetimi" subtitle={`${totalUsersCount} kullanıcı`} showBackButton />
+            <PremiumHeader title="Kullanıcı Yönetimi" subtitle={`${users.length} kullanıcı`} showBackButton />
 
             <View style={styles.searchContainer}>
                 <View style={styles.searchBox}>

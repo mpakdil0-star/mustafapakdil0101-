@@ -13,7 +13,7 @@ import { socketService } from '../services/socketService';
 import { authService } from '../services/authService';
 import { PremiumAlert } from '../components/common/PremiumAlert';
 import { useAppDispatch } from '../hooks/redux';
-import { addNotification, fetchNotifications, incrementUnreadCount, fetchUnreadCount } from '../store/slices/notificationSlice';
+import { addNotification, fetchNotifications, incrementUnreadCount } from '../store/slices/notificationSlice';
 import { getMe, setRequiredLegalVersion } from '../store/slices/authSlice';
 import LegalUpdateModal from '../components/legal/LegalUpdateModal';
 import { Alert } from 'react-native';
@@ -250,17 +250,6 @@ function RootLayoutNav() {
         return;
       }
 
-      const convId = (notification as any).conversationId;
-      const currentConvId = params.id;
-
-      // Handle message notifications specially
-      if ((notification.type === 'new_message' || convId) && convId === currentConvId) {
-        console.log('🔇 [_layout] Notification for active chat received, adding softly (read)');
-        // If we are in the chat, the message is being read. We can add it as read to avoid badge increase.
-        dispatch(addNotification({ ...notification, isRead: true }));
-        return;
-      }
-
       // Add to Redux store
       dispatch(addNotification(notification));
       console.log('🔔 [_layout] addNotification dispatched');
@@ -462,15 +451,8 @@ function RootLayoutNav() {
 
     // Increment badge when push notification received (foreground)
     const receivedSubscription = Notifications.addNotificationReceivedListener(notification => {
-      console.log('🔔 [FOREGROUND] Push received');
-      // Redux addNotification (via socket) already handles unreadCount. 
-      // Only increment if socket is disconnected is an option, but for now 
-      // let's rely on Redux being the source of truth to avoid doubling.
-      
-      // If we don't have socket, we might want to fetchUnreadCount to stay in sync
-      if (!socketService.getConnectionStatus()) {
-        dispatch(fetchUnreadCount());
-      }
+      console.log('🔔 [FOREGROUND] Push received, incrementing badge');
+      dispatch(incrementUnreadCount());
     });
 
     // Also check for initial notification (app was opened from killed state via notification)
@@ -503,14 +485,6 @@ function RootLayoutNav() {
       receivedSubscription.remove();
     };
   }, [router, isNavigationReady, dispatch]);
-
-  // Sync native badge count with Redux unreadCount
-  const { unreadCount } = useSelector((state: RootState) => state.notifications);
-  useEffect(() => {
-    if (isAuthenticated) {
-      Notifications.setBadgeCountAsync(unreadCount).catch(err => console.log('Badge sync error:', err));
-    }
-  }, [unreadCount, isAuthenticated]);
 
   const [fontsLoaded] = useFonts(fontFiles);
 

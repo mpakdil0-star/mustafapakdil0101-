@@ -184,13 +184,11 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                     const receiverData = mockStorage.get(mockMessage.receiverId);
                     if (receiverData?.pushToken) {
                         const pushNotificationService = require('../services/pushNotificationService').default;
-                        const unreadCount = mockStore.getUnreadCount(mockMessage.receiverId); // Get unread count for badge
                         pushNotificationService.sendNotification({
                             to: receiverData.pushToken,
                             title: `${senderUser?.fullName || 'Birisi'} mesaj gönderdi 💬`,
                             body: content.substring(0, 80) + (content.length > 80 ? '...' : ''),
-                            data: { conversationId, type: 'new_message' },
-                            badge: unreadCount
+                            data: { conversationId, type: 'new_message' }
                         }).catch((err: any) => console.error('Push Notification Error:', err));
                     }
 
@@ -298,17 +296,11 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                 });
 
                 if (recipient?.pushToken) {
-                    // Fetch total unread count for badge
-                    const unreadCount = await prisma.notification.count({
-                        where: { userId: recipientId, isRead: false }
-                    });
-
-                    await pushNotificationService.sendNotification({
+                    pushNotificationService.sendNotification({
                         to: recipient.pushToken,
-                        title: message.sender.fullName,
-                        body: messageType === 'TEXT' ? content : `[Fotoğraf Gönderildi]`,
-                        data: { conversationId, type: 'new_message' },
-                        badge: unreadCount
+                        title: `${message.sender.fullName} mesaj gönderdi 💬`,
+                        body: content.substring(0, 80) + (content.length > 80 ? '...' : ''),
+                        data: { conversationId, type: 'new_message' }
                     }).catch((err: any) => console.error('Push Notification Error (Real DB):', err));
                 }
 
