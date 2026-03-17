@@ -110,8 +110,6 @@ export default function CreateJobScreen() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
-  const [isUrgencyExpanded, setIsUrgencyExpanded] = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdJobId, setCreatedJobId] = useState<string | null>(null);
 
@@ -551,8 +549,6 @@ export default function CreateJobScreen() {
             </View>
           )}
 
-
-
           {/* Main Form Section */}
           <Card variant="default" style={styles.sectionCard}>
             {/* İlan Detayı */}
@@ -972,27 +968,6 @@ const styles = StyleSheet.create({
     padding: 10,
     paddingBottom: 30,
   },
-  infoBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-  },
-  infoIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: staticColors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 2,
-  },
   wizardMessage: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1010,29 +985,6 @@ const styles = StyleSheet.create({
     color: staticColors.white,
     fontFamily: fonts.bold,
     flex: 1,
-  },
-  micButton: {
-    position: 'absolute',
-    right: 12,
-    top: 38,
-    padding: 4,
-  },
-  textAreaMicButton: {
-    position: 'absolute',
-    right: 12,
-    bottom: 12,
-    padding: 4,
-  },
-  infoTitle: {
-    fontFamily: fonts.extraBold,
-    fontSize: 17,
-    color: staticColors.text,
-    marginBottom: 2,
-  },
-  infoSubtitle: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: staticColors.textSecondary,
   },
   sectionCard: {
     padding: 10,
@@ -1063,9 +1015,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   label: {
-    fontFamily: fonts.semiBold, // Bolder font
-    fontSize: 14, // Larger size
-    color: '#333333', // Darker color
+    fontFamily: fonts.semiBold,
+    fontSize: 14,
+    color: '#333333',
     marginBottom: 6,
     marginLeft: 4,
   },
@@ -1111,10 +1063,6 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontFamily: fonts.medium,
   },
-  categoryScroll: {
-    marginTop: 4,
-  },
-  // Compact pill styles for categories
   pillContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1138,47 +1086,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: staticColors.textSecondary,
   },
-  categoryChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: 14,
-    backgroundColor: '#F5F6FA',
-    borderWidth: 0,
-    marginRight: 8,
-    alignItems: 'center',
-    minWidth: 70,
-    maxWidth: 100,
-    gap: 4,
-  },
-  categoryChipSelected: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 0,
-  },
-  categoryIconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  categoryIconCircleSelected: {
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-  },
-  categoryChipText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 10,
-    color: staticColors.textSecondary,
-    textAlign: 'center',
-  },
-  categoryChipTextSelected: {
-    color: staticColors.white,
-    fontFamily: fonts.bold,
-  },
-  // Compact urgency row
   urgencyRow: {
     flexDirection: 'row',
     gap: 8,
@@ -1200,37 +1107,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 12,
     color: staticColors.textSecondary,
-  },
-  urgencyContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-    marginTop: 2,
-  },
-  urgencyButton: {
-    flex: 1,
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    borderRadius: 14,
-    borderWidth: 0,
-    backgroundColor: '#F5F6FA',
-    gap: 4,
-  },
-  urgencyIconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  urgencyText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 10,
-    color: staticColors.textSecondary,
-    textAlign: 'center',
   },
   row: {
     flexDirection: 'row',
@@ -1314,20 +1190,10 @@ const styles = StyleSheet.create({
     marginTop: 10,
     lineHeight: 16,
   },
-  expandableHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
   sectionHeaderNoMargin: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  expandableContent: {
-    marginTop: 2,
-    marginBottom: 8,
   },
   divider: {
     height: 1,
