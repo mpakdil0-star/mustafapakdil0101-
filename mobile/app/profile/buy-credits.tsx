@@ -1,32 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     TouchableOpacity,
     ScrollView,
-    SafeAreaView,
     StatusBar,
     ActivityIndicator,
     Dimensions,
     Platform,
-    Alert
+    Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors as staticColors } from '../../constants/colors';
 import { fonts } from '../../constants/typography';
-import { spacing } from '../../constants/spacing';
 import { useAppColors } from '../../hooks/useAppColors';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
-import { Button } from '../../components/common/Button';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
 import api from '../../services/api';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { getMe, updateCreditBalance } from '../../store/slices/authSlice';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 interface CreditPackage {
     id: string;
@@ -37,14 +34,39 @@ interface CreditPackage {
     isPopular?: boolean;
 }
 
+const PACKAGE_ICONS: Record<string, string> = {
+    'pkg-10': 'rocket-outline',
+    'pkg-35': 'trending-up-outline',
+    'pkg-75': 'diamond-outline',
+    'pkg-175': 'trophy-outline',
+};
+
+const PACKAGE_DESCRIPTIONS: Record<string, string> = {
+    'pkg-10': 'İlk adım için ideal',
+    'pkg-35': 'Düzenli iş yapanlar için',
+    'pkg-75': 'En çok tercih edilen',
+    'pkg-175': 'Maksimum tasarruf',
+};
+
+const getPerCredit = (pkg: CreditPackage) => {
+    return (pkg.price / pkg.credits).toFixed(1);
+};
+
 export default function BuyCreditsScreen() {
     const router = useRouter();
     const dispatch = useAppDispatch();
+    const { user } = useAppSelector((state) => state.auth);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [packages, setPackages] = useState<CreditPackage[]>([]);
     const [selectedPkg, setSelectedPkg] = useState<string | null>(null);
     const colors = useAppColors();
+    const currentBalance = user?.electricianProfile?.creditBalance || 0;
+
+    // Animations
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(20)).current;
+    const selectedScale = useRef(new Animated.Value(1)).current;
 
     // Alert State
     const [alertConfig, setAlertConfig] = useState<{
@@ -64,6 +86,15 @@ export default function BuyCreditsScreen() {
         fetchPackages();
     }, []);
 
+    useEffect(() => {
+        Animated.spring(selectedScale, {
+            toValue: 1,
+            tension: 100,
+            friction: 8,
+            useNativeDriver: true,
+        }).start();
+    }, [selectedPkg]);
+
     const fetchPackages = async () => {
         try {
             setLoading(true);
@@ -73,6 +104,19 @@ export default function BuyCreditsScreen() {
                 const popular = response.data.data.find((p: any) => p.isPopular);
                 if (popular) setSelectedPkg(popular.id);
             }
+
+            Animated.parallel([
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 600,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(slideAnim, {
+                    toValue: 0,
+                    duration: 500,
+                    useNativeDriver: true,
+                }),
+            ]).start();
         } catch (error) {
             console.error('Packages fetch error:', error);
         } finally {
@@ -155,12 +199,11 @@ export default function BuyCreditsScreen() {
         }
     };
 
+    const selectedPackage = packages.find(p => p.id === selectedPkg);
+
     return (
         <View style={[styles.container, { backgroundColor: colors.backgroundDark }]}>
             <StatusBar barStyle="dark-content" />
-
-            {/* Background Glow */}
-            <View style={[styles.mainGlow, { backgroundColor: colors.primary + '10' }]} />
 
             <PremiumHeader
                 title="Kredi Yükle"
@@ -174,86 +217,163 @@ export default function BuyCreditsScreen() {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
+                {/* Current Balance Mini Card */}
+                <Animated.View style={[styles.balanceMini, { opacity: fadeAnim, backgroundColor: colors.card || '#FFF' }]}>
+                    <View style={styles.balanceMiniLeft}>
+                        <View style={styles.balanceMiniIcon}>
+                            <Ionicons name="wallet" size={18} color="#7C3AED" />
+                        </View>
+                        <View>
+                            <Text style={[styles.balanceMiniLabel, { color: colors.textSecondary }]}>Mevcut Bakiye</Text>
+                            <Text style={[styles.balanceMiniValue, { color: colors.text }]}>{currentBalance} <Text style={styles.balanceMiniUnit}>Kredi</Text></Text>
+                        </View>
+                    </View>
+                    <View style={styles.balanceMiniDivider} />
+                    <View style={styles.balanceMiniRight}>
+                        <Text style={[styles.balanceMiniLabel, { color: colors.textSecondary }]}>Yüklenecek</Text>
+                        <Text style={[styles.balanceMiniValue, { color: '#10B981' }]}>
+                            +{selectedPackage?.credits || 0} <Text style={[styles.balanceMiniUnit, { color: '#10B981' }]}>Kredi</Text>
+                        </Text>
+                    </View>
+                </Animated.View>
+
+                {/* Header Text */}
                 <View style={styles.headerBox}>
-                    <Text style={[styles.title, { color: colors.text }]}>İşinizi Büyütün</Text>
-                    <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Eksik kredilerinizi tamamlayarak yeni ilanlara teklif vermeye hemen başlayın.</Text>
+                    <Text style={[styles.title, { color: colors.text }]}>Paket Seçin</Text>
+                    <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                        Size uygun paketi seçerek iş tekliflerinizi artırın.
+                    </Text>
                 </View>
 
                 {loading ? (
                     <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
                 ) : (
                     <View style={styles.packagesContainer}>
-                        {packages.map((pkg) => {
+                        {packages.map((pkg, index) => {
                             const isSelected = selectedPkg === pkg.id;
+                            const iconName = PACKAGE_ICONS[pkg.id] || 'flash-outline';
+                            const desc = PACKAGE_DESCRIPTIONS[pkg.id] || '';
+
                             return (
-                                <TouchableOpacity
+                                <Animated.View
                                     key={pkg.id}
-                                    activeOpacity={0.9}
-                                    onPress={() => setSelectedPkg(pkg.id)}
-                                    style={[
-                                        styles.packageCard,
-                                        { backgroundColor: staticColors.white, borderColor: isSelected ? pkg.color : staticColors.borderLight }
-                                    ]}
+                                    style={{
+                                        opacity: fadeAnim,
+                                        transform: [{ translateY: Animated.multiply(slideAnim, (index + 1) * 0.3) }],
+                                    }}
                                 >
-                                    {isSelected && <View style={[styles.cardGlow, { backgroundColor: pkg.color }]} />}
-
-                                    <View style={styles.cardMain}>
-                                        <View style={[styles.iconBox, { backgroundColor: pkg.color + '15' }]}>
-                                            <Ionicons name="flash" size={24} color={pkg.color} />
-                                        </View>
-
-                                        <View style={styles.infoBox}>
-                                            {pkg.isPopular && (
-                                                <View style={[styles.popularTag, { backgroundColor: pkg.color }]}>
+                                    <TouchableOpacity
+                                        activeOpacity={0.85}
+                                        onPress={() => setSelectedPkg(pkg.id)}
+                                        style={[
+                                            styles.packageCard,
+                                            {
+                                                backgroundColor: colors.card || '#FFF',
+                                                borderColor: isSelected ? pkg.color : 'transparent',
+                                                borderWidth: isSelected ? 2 : 0,
+                                            }
+                                        ]}
+                                    >
+                                        {/* Popular Tag */}
+                                        {pkg.isPopular && (
+                                            <View style={styles.popularTagContainer}>
+                                                <LinearGradient
+                                                    colors={[pkg.color, pkg.color + 'DD']}
+                                                    start={{ x: 0, y: 0 }}
+                                                    end={{ x: 1, y: 0 }}
+                                                    style={styles.popularTag}
+                                                >
+                                                    <Ionicons name="star" size={10} color="#FFF" />
                                                     <Text style={styles.popularText}>EN POPÜLER</Text>
-                                                </View>
-                                            )}
-                                            <Text style={[styles.packageName, { color: colors.textSecondary }]}>{pkg.name}</Text>
-                                            <View style={styles.creditRow}>
-                                                <Text style={[styles.creditValue, { color: colors.text }]}>{pkg.credits}</Text>
-                                                <Text style={[styles.creditLabel, { color: colors.primary }]}>KREDİ</Text>
+                                                </LinearGradient>
                                             </View>
-                                        </View>
+                                        )}
 
-                                        <View style={styles.priceBox}>
-                                            <Text style={[styles.priceValue, { color: colors.text }]}>{pkg.price} TL</Text>
-                                            <View style={[styles.selector, isSelected && { backgroundColor: pkg.color, borderColor: pkg.color }]}>
-                                                {isSelected && <Ionicons name="checkmark" size={14} color={staticColors.white} />}
+                                        {/* Selected Glow */}
+                                        {isSelected && (
+                                            <View style={[styles.selectedGlow, { backgroundColor: pkg.color }]} />
+                                        )}
+
+                                        <View style={styles.cardContent}>
+                                            {/* Left: Icon + Info */}
+                                            <View style={[styles.cardIconBox, { backgroundColor: pkg.color + '12' }]}>
+                                                <Ionicons name={iconName as any} size={26} color={pkg.color} />
+                                            </View>
+
+                                            <View style={styles.cardInfo}>
+                                                <Text style={[styles.packageName, { color: colors.text }]}>{pkg.name}</Text>
+                                                <View style={styles.creditsRow}>
+                                                    <Text style={[styles.creditValue, { color: pkg.color }]}>{pkg.credits}</Text>
+                                                    <Text style={[styles.creditLabel, { color: pkg.color }]}>KREDİ</Text>
+                                                </View>
+                                                <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>{desc}</Text>
+                                            </View>
+
+                                            {/* Right: Price + Selector */}
+                                            <View style={styles.cardRight}>
+                                                <Text style={[styles.priceValue, { color: colors.text }]}>{pkg.price}</Text>
+                                                <Text style={[styles.priceCurrency, { color: colors.textSecondary }]}>TL</Text>
+                                                <Text style={[styles.perCredit, { color: colors.textSecondary }]}>
+                                                    {getPerCredit(pkg)} ₺/kr
+                                                </Text>
+
+                                                <View style={[
+                                                    styles.selector,
+                                                    isSelected && { backgroundColor: pkg.color, borderColor: pkg.color }
+                                                ]}>
+                                                    {isSelected && <Ionicons name="checkmark" size={14} color="#FFF" />}
+                                                </View>
                                             </View>
                                         </View>
-                                    </View>
-                                </TouchableOpacity>
+                                    </TouchableOpacity>
+                                </Animated.View>
                             );
                         })}
                     </View>
                 )}
 
-                <View style={styles.footerNote}>
-                    <Ionicons name="lock-closed" size={16} color={colors.textSecondary + '40'} />
-                    <Text style={[styles.footerNoteText, { color: colors.textSecondary }]}>
+                {/* Security Note */}
+                <View style={styles.securityNote}>
+                    <View style={styles.securityIconBox}>
+                        <Ionicons name="shield-checkmark" size={18} color="#10B981" />
+                    </View>
+                    <Text style={[styles.securityText, { color: colors.textSecondary }]}>
                         Geliştirme aşamasında test ödemesi simüle edilir. Gerçek bir tahsilat yapılmaz.
                     </Text>
                 </View>
+
+                {/* Bottom spacer for fixed button */}
+                <View style={{ height: 80 }} />
             </ScrollView>
 
+            {/* Fixed Bottom Button */}
             <View style={[styles.footer, { backgroundColor: colors.backgroundDark }]}>
+                {selectedPackage && (
+                    <View style={styles.footerSummary}>
+                        <Text style={[styles.footerSummaryText, { color: colors.textSecondary }]}>
+                            Toplam: <Text style={[styles.footerSummaryBold, { color: colors.text }]}>{selectedPackage.price} TL</Text> → <Text style={{ color: '#10B981', fontFamily: fonts.bold }}>{selectedPackage.credits} Kredi</Text>
+                        </Text>
+                    </View>
+                )}
                 <TouchableOpacity
-                    style={[styles.payButton, processing && { opacity: 0.7 }, { shadowColor: colors.primary }]}
+                    style={[styles.payButton, processing && { opacity: 0.7 }]}
                     onPress={handlePurchase}
-                    disabled={processing}
+                    disabled={processing || !selectedPkg}
+                    activeOpacity={0.85}
                 >
                     <LinearGradient
-                        colors={[colors.primary, colors.primaryDark]}
+                        colors={selectedPkg ? ['#7C3AED', '#6D28D9'] : ['#94A3B8', '#94A3B8']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.payGradient}
                     >
                         {processing ? (
-                            <ActivityIndicator color={staticColors.white} />
+                            <ActivityIndicator color="#FFF" />
                         ) : (
                             <>
+                                <Ionicons name="lock-closed" size={18} color="rgba(255,255,255,0.8)" />
                                 <Text style={styles.payText}>Güvenli Ödeme Yap</Text>
-                                <Ionicons name="arrow-forward" size={20} color={staticColors.white} />
+                                <Ionicons name="arrow-forward" size={20} color="#FFF" />
                             </>
                         )}
                     </LinearGradient>
@@ -276,28 +396,71 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    mainGlow: {
-        position: 'absolute',
-        top: height * 0.3,
-        left: -width * 0.2,
-        width: width * 1.5,
-        height: width * 1.5,
-        borderRadius: width,
-        opacity: 0.08,
-    },
     scrollView: {
         flex: 1,
     },
     scrollContent: {
         padding: 16,
-        paddingBottom: 100,
+        paddingBottom: 20,
     },
-    headerBox: {
+
+    // ── Balance Mini Card ──
+    balanceMini: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 18,
+        padding: 16,
         marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    balanceMiniLeft: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    balanceMiniIcon: {
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: '#F5F3FF',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    balanceMiniLabel: {
+        fontSize: 11,
+        fontFamily: fonts.medium,
+    },
+    balanceMiniValue: {
+        fontSize: 18,
+        fontFamily: fonts.black,
+    },
+    balanceMiniUnit: {
+        fontSize: 12,
+        fontFamily: fonts.bold,
+        color: '#7C3AED',
+    },
+    balanceMiniDivider: {
+        width: 1,
+        height: 36,
+        backgroundColor: '#E2E8F0',
+        marginHorizontal: 14,
+    },
+    balanceMiniRight: {
+        alignItems: 'flex-end',
+    },
+
+    // ── Header ──
+    headerBox: {
+        marginBottom: 18,
     },
     title: {
         fontFamily: fonts.black,
-        fontSize: 24,
+        fontSize: 22,
         marginBottom: 4,
     },
     subtitle: {
@@ -305,117 +468,172 @@ const styles = StyleSheet.create({
         fontSize: 14,
         lineHeight: 20,
     },
+
+    // ── Package Cards ──
     packagesContainer: {
         gap: 12,
     },
     packageCard: {
-        borderRadius: 24,
-        borderWidth: 1.5,
+        borderRadius: 20,
         overflow: 'hidden',
         position: 'relative',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 10,
+        elevation: 2,
     },
-    cardGlow: {
+    popularTagContainer: {
         position: 'absolute',
-        top: -50,
-        right: -50,
-        width: 150,
-        height: 150,
-        borderRadius: 75,
-        opacity: 0.1,
+        top: 10,
+        left: 10,
+        zIndex: 10,
     },
-    cardMain: {
+    popularTag: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    popularText: {
+        fontFamily: fonts.bold,
+        fontSize: 9,
+        color: '#FFF',
+        letterSpacing: 0.8,
+    },
+    selectedGlow: {
+        position: 'absolute',
+        top: -60,
+        right: -60,
+        width: 160,
+        height: 160,
+        borderRadius: 80,
+        opacity: 0.06,
+    },
+    cardContent: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: 16,
         gap: 14,
     },
-    iconBox: {
-        width: 52,
-        height: 52,
+    cardIconBox: {
+        width: 54,
+        height: 54,
         borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    infoBox: {
+    cardInfo: {
         flex: 1,
     },
-    popularTag: {
-        alignSelf: 'flex-start',
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 6,
-        marginBottom: 6,
-    },
-    popularText: {
-        fontFamily: fonts.bold,
-        fontSize: 8,
-        color: '#fff',
-        letterSpacing: 0.5,
-    },
     packageName: {
-        fontFamily: fonts.medium,
-        fontSize: 13,
+        fontFamily: fonts.semiBold,
+        fontSize: 14,
         marginBottom: 2,
     },
-    creditRow: {
+    creditsRow: {
         flexDirection: 'row',
         alignItems: 'baseline',
         gap: 4,
     },
     creditValue: {
         fontFamily: fonts.black,
-        fontSize: 20,
+        fontSize: 22,
     },
     creditLabel: {
         fontFamily: fonts.bold,
-        fontSize: 12,
+        fontSize: 11,
+        letterSpacing: 1,
     },
-    priceBox: {
+    cardDesc: {
+        fontFamily: fonts.medium,
+        fontSize: 11,
+        marginTop: 2,
+    },
+    cardRight: {
         alignItems: 'center',
-        gap: 8,
+        minWidth: 60,
     },
     priceValue: {
         fontFamily: fonts.black,
-        fontSize: 16,
+        fontSize: 18,
+    },
+    priceCurrency: {
+        fontFamily: fonts.bold,
+        fontSize: 11,
+        marginTop: -2,
+    },
+    perCredit: {
+        fontFamily: fonts.medium,
+        fontSize: 9,
+        marginTop: 2,
     },
     selector: {
-        width: 22,
-        height: 22,
-        borderRadius: 11,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
         borderWidth: 2,
-        borderColor: staticColors.borderLight,
+        borderColor: '#D1D5DB',
         justifyContent: 'center',
         alignItems: 'center',
+        marginTop: 6,
     },
-    footerNote: {
+
+    // ── Security Note ──
+    securityNote: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 30,
-        gap: 10,
+        marginTop: 24,
+        gap: 8,
         paddingHorizontal: 20,
     },
-    footerNoteText: {
+    securityIconBox: {
+        width: 30,
+        height: 30,
+        borderRadius: 10,
+        backgroundColor: '#ECFDF5',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    securityText: {
         fontFamily: fonts.medium,
         fontSize: 12,
-        textAlign: 'center',
+        flex: 1,
         lineHeight: 18,
     },
+
+    // ── Footer ──
     footer: {
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
-        padding: 16,
+        paddingHorizontal: 16,
+        paddingTop: 10,
         paddingBottom: Platform.OS === 'ios' ? 30 : 20,
-        backgroundColor: staticColors.backgroundDark,
+        borderTopWidth: 1,
+        borderTopColor: '#F1F5F9',
+    },
+    footerSummary: {
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    footerSummaryText: {
+        fontSize: 13,
+        fontFamily: fonts.medium,
+    },
+    footerSummaryBold: {
+        fontFamily: fonts.bold,
     },
     payButton: {
         borderRadius: 16,
         overflow: 'hidden',
         elevation: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 5 },
+        shadowColor: '#7C3AED',
+        shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 15,
     },
@@ -423,12 +641,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 14,
+        paddingVertical: 15,
         gap: 10,
     },
     payText: {
         fontFamily: fonts.bold,
         fontSize: 16,
-        color: '#fff',
-    }
+        color: '#FFF',
+    },
 });

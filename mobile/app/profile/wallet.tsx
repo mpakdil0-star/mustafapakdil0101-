@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     TouchableOpacity,
     ScrollView,
-    SafeAreaView,
     StatusBar,
     ActivityIndicator,
     Dimensions,
@@ -18,7 +17,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors as staticColors } from '../../constants/colors';
 import { fonts } from '../../constants/typography';
-import { spacing } from '../../constants/spacing';
 import { useAppColors } from '../../hooks/useAppColors';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import api from '../../services/api';
@@ -27,7 +25,7 @@ import { getMe } from '../../store/slices/authSlice';
 import { format, isToday, isYesterday } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 interface Transaction {
     id: string;
@@ -49,6 +47,7 @@ export default function WalletScreen() {
     // Animations
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(30)).current;
+    const cardScale = useRef(new Animated.Value(0.92)).current;
 
     const fetchData = async () => {
         try {
@@ -61,6 +60,12 @@ export default function WalletScreen() {
 
             // Start entrance animation
             Animated.parallel([
+                Animated.spring(cardScale, {
+                    toValue: 1,
+                    tension: 50,
+                    friction: 7,
+                    useNativeDriver: true,
+                }),
                 Animated.timing(fadeAnim, {
                     toValue: 1,
                     duration: 800,
@@ -101,13 +106,25 @@ export default function WalletScreen() {
         return groups;
     };
 
+    const getTransactionMeta = (item: Transaction) => {
+        const isPositive = item.amount > 0;
+        switch (item.transactionType) {
+            case 'PURCHASE':
+                return { icon: 'arrow-down-circle', color: '#10B981', label: 'Kredi Yükleme', bgColor: '#ECFDF5' };
+            case 'BID_SPENT':
+                return { icon: 'flash', color: '#3B82F6', label: 'Teklif Harcaması', bgColor: '#EFF6FF' };
+            case 'REFUND':
+                return { icon: 'refresh-circle', color: '#F59E0B', label: 'İade', bgColor: '#FFFBEB' };
+            case 'BONUS':
+                return { icon: 'gift', color: '#8B5CF6', label: 'Bonus', bgColor: '#F5F3FF' };
+            default:
+                return { icon: 'swap-horizontal', color: '#64748B', label: 'İşlem', bgColor: '#F8FAFC' };
+        }
+    };
+
     const renderTransaction = (item: Transaction, index: number) => {
         const isPositive = item.amount > 0;
-        const iconName = item.transactionType === 'PURCHASE' ? 'card-outline' :
-            item.transactionType === 'BID_SPENT' ? 'flash-outline' :
-                item.transactionType === 'REFUND' ? 'refresh-outline' : 'gift-outline';
-
-        const accentColor = isPositive ? '#10B981' : item.transactionType === 'BID_SPENT' ? '#3B82F6' : '#EF4444';
+        const meta = getTransactionMeta(item);
 
         return (
             <Animated.View
@@ -115,24 +132,32 @@ export default function WalletScreen() {
                 style={[
                     styles.transactionCard,
                     {
+                        backgroundColor: colors.card || '#FFF',
                         opacity: fadeAnim,
-                        transform: [{ translateY: Animated.multiply(slideAnim, (index + 1) * 0.2) }]
+                        transform: [{ translateY: Animated.multiply(slideAnim, (index + 1) * 0.15) }]
                     }
                 ]}
             >
-                <View style={[styles.transactionIconWrapper, { backgroundColor: accentColor + '15' }]}>
-                    <Ionicons name={iconName as any} size={20} color={accentColor} />
+                <View style={[styles.transactionIconWrapper, { backgroundColor: meta.bgColor }]}>
+                    <Ionicons name={meta.icon as any} size={22} color={meta.color} />
                 </View>
 
                 <View style={styles.transactionInfo}>
-                    <Text style={[styles.transactionTitle, { color: colors.text }]}>{item.description}</Text>
-                    <Text style={[styles.transactionSubtitle, { color: colors.textSecondary }]}>
-                        {format(new Date(item.createdAt), 'HH:mm')} • {item.transactionType === 'PURCHASE' ? 'Yükleme' : 'Harcama'}
+                    <Text style={[styles.transactionTitle, { color: colors.text }]} numberOfLines={1}>
+                        {item.description}
                     </Text>
+                    <View style={styles.transactionMetaRow}>
+                        <Text style={[styles.transactionSubtitle, { color: colors.textSecondary }]}>
+                            {format(new Date(item.createdAt), 'HH:mm')}
+                        </Text>
+                        <View style={[styles.transactionTypeBadge, { backgroundColor: meta.bgColor }]}>
+                            <Text style={[styles.transactionTypeText, { color: meta.color }]}>{meta.label}</Text>
+                        </View>
+                    </View>
                 </View>
 
                 <View style={styles.transactionValue}>
-                    <Text style={[styles.transactionAmount, { color: isPositive ? '#10B981' : colors.text }]}>
+                    <Text style={[styles.transactionAmount, { color: isPositive ? '#10B981' : '#EF4444' }]}>
                         {isPositive ? '+' : ''}{item.amount}
                     </Text>
                     <Text style={[styles.transactionUnit, { color: colors.textSecondary }]}>Kredi</Text>
@@ -144,6 +169,7 @@ export default function WalletScreen() {
     const balance = user?.electricianProfile?.creditBalance || 0;
     const totalLoaded = history.filter(t => Number(t.amount) > 0).reduce((acc, t) => acc + Number(t.amount), 0);
     const totalSpent = Math.abs(history.filter(t => Number(t.amount) < 0).reduce((acc, t) => acc + Number(t.amount), 0));
+    const totalTransactions = history.length;
 
     const groupedHistory = groupTransactions(history);
 
@@ -163,122 +189,160 @@ export default function WalletScreen() {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Premium Credit Card Section */}
-                <Animated.View style={[styles.cardContainer, { opacity: fadeAnim, transform: [{ scale: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) }] }]}>
+                {/* Premium Balance Card */}
+                <Animated.View style={[styles.cardContainer, { transform: [{ scale: cardScale }] }]}>
                     <LinearGradient
-                        colors={['#1E293B', '#0F172A']}
+                        colors={['#1A1A2E', '#16213E', '#0F3460']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.creditCard}
                     >
-                        {/* Decorative Patterns */}
-                        <View style={styles.cardMesh} />
-                        <View style={styles.cardGlow} />
+                        {/* Decorative Orbs */}
+                        <View style={styles.cardOrb1} />
+                        <View style={styles.cardOrb2} />
+                        <View style={styles.cardOrb3} />
 
                         <View style={styles.cardInternal}>
+                            {/* Card Top */}
                             <View style={styles.cardHeader}>
                                 <View style={styles.cardBrand}>
-                                    <View style={styles.brandCircle1} />
-                                    <View style={styles.brandCircle2} />
-                                    <Text style={styles.brandText}>ELEKTRİKCİM</Text>
+                                    <LinearGradient
+                                        colors={['#F59E0B', '#EF4444']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 1 }}
+                                        style={styles.brandIcon}
+                                    >
+                                        <Ionicons name="flash" size={14} color="#FFF" />
+                                    </LinearGradient>
+                                    <Text style={styles.brandText}>İŞBİTİR</Text>
                                 </View>
-                                <Ionicons name="wifi-outline" size={24} color="rgba(255,255,255,0.3)" style={{ transform: [{ rotate: '90deg' }] }} />
-                            </View>
-
-                            <View style={styles.chipWrapper}>
-                                <LinearGradient
-                                    colors={['#F59E0B', '#D97706']}
-                                    style={styles.cardChip}
-                                />
-                                <View style={styles.chipLines}>
-                                    <View style={styles.chipLine} />
-                                    <View style={styles.chipLine} />
-                                    <View style={styles.chipLine} />
+                                <View style={styles.cardTypeBadge}>
+                                    <Ionicons name="diamond" size={12} color="#F59E0B" />
+                                    <Text style={styles.cardTypeText}>PREMIUM</Text>
                                 </View>
                             </View>
 
+                            {/* Balance Display */}
                             <View style={styles.balanceSection}>
                                 <Text style={styles.balanceLabel}>MEVCUT BAKİYE</Text>
                                 <View style={styles.balanceRow}>
                                     <Text style={styles.balanceText}>{balance}</Text>
-                                    <Text style={styles.balanceCurrency}>KREDİ</Text>
+                                    <View style={styles.currencyBadge}>
+                                        <Ionicons name="flash" size={12} color="#F59E0B" />
+                                        <Text style={styles.balanceCurrency}>KREDİ</Text>
+                                    </View>
                                 </View>
                             </View>
 
+                            {/* Card Bottom */}
                             <View style={styles.cardBottom}>
                                 <View>
-                                    <Text style={styles.cardHolderLabel}>KART SAHİBİ</Text>
+                                    <Text style={styles.cardHolderLabel}>HESAP SAHİBİ</Text>
                                     <Text style={styles.cardHolderName}>{user?.fullName?.toUpperCase() || 'DEĞERLİ USTA'}</Text>
                                 </View>
-                                <View style={styles.cardType}>
-                                    <Ionicons name="flash" size={16} color="#F59E0B" />
-                                    <Text style={styles.cardTypeText}>PREMIUM</Text>
+                                <View style={styles.contactlessIcon}>
+                                    <Ionicons name="wifi-outline" size={20} color="rgba(255,255,255,0.3)" style={{ transform: [{ rotate: '90deg' }] }} />
                                 </View>
                             </View>
                         </View>
                     </LinearGradient>
                 </Animated.View>
 
-                {/* Stats Summary Panel */}
-                <Animated.View style={[styles.statsPanel, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-                    <View style={styles.statItem}>
-                        <View style={[styles.statIconBox, { backgroundColor: 'rgba(16, 185, 129, 0.1)' }]}>
-                            <Ionicons name="trending-up" size={18} color="#10B981" />
+                {/* Quick Stats Row */}
+                <Animated.View style={[styles.statsRow, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+                    <View style={[styles.statCard, { backgroundColor: colors.card || '#FFF' }]}>
+                        <View style={[styles.statIconCircle, { backgroundColor: '#ECFDF5' }]}>
+                            <Ionicons name="arrow-up-circle" size={20} color="#10B981" />
                         </View>
-                        <View>
-                            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Yüklenen</Text>
-                            <Text style={[styles.statValue, { color: '#10B981' }]}>{totalLoaded}</Text>
-                        </View>
+                        <Text style={[styles.statValue, { color: '#10B981' }]}>{totalLoaded}</Text>
+                        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Yüklenen</Text>
                     </View>
 
-                    <View style={styles.statDivider} />
+                    <View style={[styles.statCard, { backgroundColor: colors.card || '#FFF' }]}>
+                        <View style={[styles.statIconCircle, { backgroundColor: '#EFF6FF' }]}>
+                            <Ionicons name="arrow-down-circle" size={20} color="#3B82F6" />
+                        </View>
+                        <Text style={[styles.statValue, { color: '#3B82F6' }]}>{totalSpent}</Text>
+                        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Harcanan</Text>
+                    </View>
 
-                    <View style={itemStyles.statItem}>
-                        <View style={[styles.statIconBox, { backgroundColor: 'rgba(59, 130, 246, 0.1)' }]}>
-                            <Ionicons name="trending-down" size={18} color="#3B82F6" />
+                    <View style={[styles.statCard, { backgroundColor: colors.card || '#FFF' }]}>
+                        <View style={[styles.statIconCircle, { backgroundColor: '#F5F3FF' }]}>
+                            <Ionicons name="receipt" size={20} color="#8B5CF6" />
                         </View>
-                        <View>
-                            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Harcanan</Text>
-                            <Text style={[styles.statValue, { color: '#3B82F6' }]}>{totalSpent}</Text>
-                        </View>
+                        <Text style={[styles.statValue, { color: '#8B5CF6' }]}>{totalTransactions}</Text>
+                        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>İşlem</Text>
                     </View>
                 </Animated.View>
 
-                {/* Main Action Button */}
+                {/* Buy Credits CTA */}
                 <TouchableOpacity
                     style={styles.buyBtn}
                     onPress={() => router.push('/profile/buy-credits')}
-                    activeOpacity={0.8}
+                    activeOpacity={0.85}
                 >
                     <LinearGradient
-                        colors={[colors.primary, colors.primaryDark]}
+                        colors={['#7C3AED', '#6D28D9']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.buyBtnGradient}
                     >
-                        <Ionicons name="add-circle" size={24} color="#FFF" />
-                        <Text style={styles.buyBtnText}>Kredi Yükle</Text>
+                        <View style={styles.buyBtnIconCircle}>
+                            <Ionicons name="add" size={22} color="#7C3AED" />
+                        </View>
+                        <View style={styles.buyBtnContent}>
+                            <Text style={styles.buyBtnText}>Kredi Yükle</Text>
+                            <Text style={styles.buyBtnSubtext}>Paketi seç, hemen başla</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={22} color="rgba(255,255,255,0.6)" />
                     </LinearGradient>
                 </TouchableOpacity>
 
                 {/* Transaction History Section */}
                 <View style={styles.historyContainer}>
-                    <Text style={[styles.historyHeader, { color: colors.text }]}>İşlem Geçmişi</Text>
+                    <View style={styles.historyHeaderRow}>
+                        <View style={styles.historyTitleGroup}>
+                            <View style={styles.historyIndicator} />
+                            <Text style={[styles.historyHeader, { color: colors.text }]}>İşlem Geçmişi</Text>
+                        </View>
+                        {history.length > 0 && (
+                            <Text style={[styles.historyCount, { color: colors.textSecondary }]}>{history.length} kayıt</Text>
+                        )}
+                    </View>
 
                     {loading ? (
-                        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="large" color={colors.primary} />
+                            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Yükleniyor...</Text>
+                        </View>
                     ) : history.length === 0 ? (
-                        <View style={styles.emptyContainer}>
-                            <View style={styles.emptyIconCircle}>
-                                <Ionicons name="receipt-outline" size={32} color={colors.textSecondary + '40'} />
-                            </View>
-                            <Text style={[styles.emptyHeader, { color: colors.text }]}>Kayıt Bulunamadı</Text>
-                            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>Henüz bir kredi yüklemesi veya harcaması yapmadınız.</Text>
+                        <View style={[styles.emptyContainer, { backgroundColor: colors.card || '#FFF' }]}>
+                            <LinearGradient
+                                colors={['#F8FAFC', '#EEF2FF']}
+                                style={styles.emptyIconCircle}
+                            >
+                                <Ionicons name="receipt-outline" size={36} color="#94A3B8" />
+                            </LinearGradient>
+                            <Text style={[styles.emptyHeader, { color: colors.text }]}>Henüz İşlem Yok</Text>
+                            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                                İlk kredinizi yükleyerek iş teklifi vermeye başlayın.
+                            </Text>
+                            <TouchableOpacity
+                                style={styles.emptyBtn}
+                                onPress={() => router.push('/profile/buy-credits')}
+                                activeOpacity={0.8}
+                            >
+                                <Text style={styles.emptyBtnText}>İlk Kredini Yükle</Text>
+                                <Ionicons name="arrow-forward" size={16} color="#7C3AED" />
+                            </TouchableOpacity>
                         </View>
                     ) : (
                         Object.keys(groupedHistory).map((date) => (
                             <View key={date} style={styles.dateGroup}>
-                                <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>{date}</Text>
+                                <View style={styles.dateLabelRow}>
+                                    <View style={styles.dateDot} />
+                                    <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>{date}</Text>
+                                </View>
                                 {groupedHistory[date].map((t, idx) => renderTransaction(t, idx))}
                             </View>
                         ))
@@ -288,16 +352,6 @@ export default function WalletScreen() {
         </View>
     );
 }
-
-const itemStyles = {
-    statItem: {
-        flex: 1,
-        flexDirection: 'row' as const,
-        alignItems: 'center' as const,
-        gap: 12,
-        paddingLeft: 20,
-    }
-};
 
 const styles = StyleSheet.create({
     container: {
@@ -310,42 +364,58 @@ const styles = StyleSheet.create({
         padding: 16,
         paddingBottom: 80,
     },
+
+    // ── Credit Card ──
     cardContainer: {
-        marginBottom: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 15 },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-        elevation: 10,
+        marginBottom: 20,
+        shadowColor: '#0F3460',
+        shadowOffset: { width: 0, height: 20 },
+        shadowOpacity: 0.35,
+        shadowRadius: 30,
+        elevation: 15,
     },
     creditCard: {
-        borderRadius: 20,
-        height: 200,
+        borderRadius: 24,
+        height: 210,
         width: '100%',
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
+        borderColor: 'rgba(255,255,255,0.08)',
     },
     cardInternal: {
-        padding: 20,
+        padding: 22,
         flex: 1,
         justifyContent: 'space-between',
     },
-    cardMesh: {
+    cardOrb1: {
         position: 'absolute',
-        top: 0, left: 0, right: 0, bottom: 0,
-        opacity: 0.05,
-        backgroundColor: 'transparent',
-    },
-    cardGlow: {
-        position: 'absolute',
-        top: -100,
-        right: -100,
-        width: 300,
-        height: 300,
-        borderRadius: 150,
+        top: -60,
+        right: -40,
+        width: 200,
+        height: 200,
+        borderRadius: 100,
         backgroundColor: '#7C3AED',
-        opacity: 0.1,
+        opacity: 0.12,
+    },
+    cardOrb2: {
+        position: 'absolute',
+        bottom: -80,
+        left: -40,
+        width: 180,
+        height: 180,
+        borderRadius: 90,
+        backgroundColor: '#3B82F6',
+        opacity: 0.08,
+    },
+    cardOrb3: {
+        position: 'absolute',
+        top: 60,
+        left: width * 0.4,
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: '#F59E0B',
+        opacity: 0.06,
     },
     cardHeader: {
         flexDirection: 'row',
@@ -357,73 +427,71 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
     },
-    brandCircle1: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        backgroundColor: '#EF4444',
-        opacity: 0.8,
-    },
-    brandCircle2: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        backgroundColor: '#F59E0B',
-        marginLeft: -10,
-        opacity: 0.8,
+    brandIcon: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     brandText: {
         color: '#FFF',
-        fontSize: 12,
+        fontSize: 13,
         fontFamily: fonts.bold,
-        letterSpacing: 2,
-        marginLeft: 4,
+        letterSpacing: 3,
     },
-    chipWrapper: {
-        marginVertical: 10,
-    },
-    cardChip: {
-        width: 45,
-        height: 35,
-        borderRadius: 6,
+    cardTypeBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: 'rgba(245, 158, 11, 0.15)',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 10,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
+        borderColor: 'rgba(245, 158, 11, 0.2)',
     },
-    chipLines: {
-        position: 'absolute',
-        top: 0, left: 0, width: 45, height: 35,
-        justifyContent: 'space-evenly',
-        paddingHorizontal: 8,
-    },
-    chipLine: {
-        height: 1,
-        backgroundColor: 'rgba(0,0,0,0.1)',
-        width: '100%',
-    },
-    balanceSection: {
-        marginTop: 6,
-    },
-    balanceLabel: {
-        color: 'rgba(255,255,255,0.5)',
+    cardTypeText: {
+        color: '#F59E0B',
         fontSize: 10,
         fontFamily: fonts.bold,
         letterSpacing: 1,
-        marginBottom: 4,
+    },
+    balanceSection: {
+        marginTop: 8,
+    },
+    balanceLabel: {
+        color: 'rgba(255,255,255,0.45)',
+        fontSize: 10,
+        fontFamily: fonts.bold,
+        letterSpacing: 2,
+        marginBottom: 6,
     },
     balanceRow: {
         flexDirection: 'row',
-        alignItems: 'baseline',
-        gap: 8,
+        alignItems: 'center',
+        gap: 12,
     },
     balanceText: {
         color: '#FFF',
-        fontSize: 36,
+        fontSize: 42,
         fontFamily: fonts.black,
+        letterSpacing: -1,
+    },
+    currencyBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: 'rgba(245, 158, 11, 0.15)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
     },
     balanceCurrency: {
         color: '#F59E0B',
-        fontSize: 14,
+        fontSize: 12,
         fontFamily: fonts.bold,
+        letterSpacing: 1,
     },
     cardBottom: {
         flexDirection: 'row',
@@ -431,139 +499,211 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     cardHolderLabel: {
-        color: 'rgba(255,255,255,0.4)',
+        color: 'rgba(255,255,255,0.35)',
         fontSize: 8,
         fontFamily: fonts.bold,
-        marginBottom: 2,
+        letterSpacing: 1,
+        marginBottom: 3,
     },
     cardHolderName: {
-        color: '#FFF',
-        fontSize: 14,
+        color: 'rgba(255,255,255,0.85)',
+        fontSize: 13,
         fontFamily: fonts.semiBold,
-        letterSpacing: 1,
+        letterSpacing: 1.5,
     },
-    cardType: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
+    contactlessIcon: {
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        padding: 6,
         borderRadius: 8,
     },
-    cardTypeText: {
-        color: '#F59E0B',
-        fontSize: 10,
-        fontFamily: fonts.bold,
-    },
-    statsPanel: {
+
+    // ── Stats Row ──
+    statsRow: {
         flexDirection: 'row',
-        backgroundColor: '#FFF',
-        borderRadius: 20,
-        padding: 16,
-        marginBottom: 16,
+        gap: 10,
+        marginBottom: 20,
+    },
+    statCard: {
+        flex: 1,
+        alignItems: 'center',
+        paddingVertical: 16,
+        borderRadius: 18,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
         elevation: 2,
     },
-    statItem: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    statIconBox: {
-        width: 36,
-        height: 36,
-        borderRadius: 12,
+    statIconCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
+        marginBottom: 8,
+    },
+    statValue: {
+        fontSize: 20,
+        fontFamily: fonts.black,
+        marginBottom: 2,
     },
     statLabel: {
         fontSize: 11,
         fontFamily: fonts.medium,
     },
-    statValue: {
-        fontSize: 18,
-        fontFamily: fonts.bold,
-    },
-    statDivider: {
-        width: 1,
-        height: '100%',
-        backgroundColor: '#E2E8F0',
-    },
+
+    // ── Buy Button ──
     buyBtn: {
         marginBottom: 24,
-        borderRadius: 16,
+        borderRadius: 18,
         overflow: 'hidden',
-        shadowColor: staticColors.primary,
-        shadowOffset: { width: 0, height: 8 },
+        shadowColor: '#7C3AED',
+        shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.3,
-        shadowRadius: 12,
-        elevation: 5,
+        shadowRadius: 15,
+        elevation: 8,
     },
     buyBtnGradient: {
         flexDirection: 'row',
         alignItems: 'center',
+        paddingVertical: 16,
+        paddingHorizontal: 18,
+        gap: 14,
+    },
+    buyBtnIconCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255,255,255,0.95)',
         justifyContent: 'center',
-        gap: 10,
-        paddingVertical: 14,
+        alignItems: 'center',
+    },
+    buyBtnContent: {
+        flex: 1,
     },
     buyBtnText: {
         color: '#FFF',
         fontSize: 16,
         fontFamily: fonts.bold,
     },
+    buyBtnSubtext: {
+        color: 'rgba(255,255,255,0.6)',
+        fontSize: 12,
+        fontFamily: fonts.medium,
+        marginTop: 1,
+    },
+
+    // ── History ──
     historyContainer: {
         flex: 1,
+    },
+    historyHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    historyTitleGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    historyIndicator: {
+        width: 4,
+        height: 20,
+        borderRadius: 2,
+        backgroundColor: '#7C3AED',
     },
     historyHeader: {
         fontSize: 18,
         fontFamily: fonts.bold,
-        marginBottom: 16,
+    },
+    historyCount: {
+        fontSize: 12,
+        fontFamily: fonts.medium,
+        backgroundColor: '#F1F5F9',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 10,
+        overflow: 'hidden',
+    },
+    loadingContainer: {
+        alignItems: 'center',
+        paddingVertical: 50,
+        gap: 12,
+    },
+    loadingText: {
+        fontSize: 14,
+        fontFamily: fonts.medium,
     },
     dateGroup: {
         marginBottom: 20,
     },
+    dateLabelRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 10,
+        marginLeft: 2,
+    },
+    dateDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#CBD5E1',
+    },
     dateLabel: {
         fontSize: 13,
         fontFamily: fonts.bold,
-        textTransform: 'uppercase',
-        letterSpacing: 1,
-        marginBottom: 12,
-        marginLeft: 4,
+        letterSpacing: 0.5,
     },
+
+    // ── Transaction Cards ──
     transactionCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFF',
         padding: 14,
         borderRadius: 16,
         marginBottom: 8,
-        borderWidth: 1,
-        borderColor: '#F1F5F9',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 4,
+        elevation: 1,
     },
     transactionIconWrapper: {
-        width: 44,
-        height: 44,
+        width: 46,
+        height: 46,
         borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
     },
     transactionInfo: {
         flex: 1,
-        marginLeft: 16,
+        marginLeft: 14,
     },
     transactionTitle: {
-        fontSize: 15,
+        fontSize: 14,
         fontFamily: fonts.semiBold,
-        marginBottom: 2,
+        marginBottom: 4,
+    },
+    transactionMetaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
     },
     transactionSubtitle: {
         fontSize: 12,
         fontFamily: fonts.medium,
+    },
+    transactionTypeBadge: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 6,
+    },
+    transactionTypeText: {
+        fontSize: 10,
+        fontFamily: fonts.bold,
     },
     transactionValue: {
         alignItems: 'flex-end',
@@ -575,19 +715,24 @@ const styles = StyleSheet.create({
     transactionUnit: {
         fontSize: 10,
         fontFamily: fonts.bold,
+        marginTop: 1,
     },
+
+    // ── Empty State ──
     emptyContainer: {
         alignItems: 'center',
-        paddingVertical: 60,
+        paddingVertical: 50,
+        paddingHorizontal: 30,
+        borderRadius: 20,
+        marginTop: 8,
     },
     emptyIconCircle: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: '#F8FAFC',
+        width: 88,
+        height: 88,
+        borderRadius: 44,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 18,
     },
     emptyHeader: {
         fontSize: 18,
@@ -598,8 +743,23 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontFamily: fonts.medium,
         textAlign: 'center',
-        paddingHorizontal: 40,
+        lineHeight: 20,
         opacity: 0.7,
+        marginBottom: 20,
+    },
+    emptyBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: '#7C3AED',
+    },
+    emptyBtnText: {
+        color: '#7C3AED',
+        fontSize: 14,
+        fontFamily: fonts.bold,
     },
 });
-
