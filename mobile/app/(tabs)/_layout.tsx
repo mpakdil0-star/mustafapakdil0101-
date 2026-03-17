@@ -17,7 +17,7 @@ export default function TabsLayout() {
   const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
   const isGuest = !user;
 
-  const { notifications, unreadCount } = useAppSelector((state) => state.notifications);
+  const { notifications, unreadCount, unreadMessageCount } = useAppSelector((state) => state.notifications);
 
   const dispatch = useAppDispatch();
   const { fetchNotifications, fetchUnreadCount } = require('../../store/slices/notificationSlice');
@@ -52,10 +52,10 @@ export default function TabsLayout() {
         size={22}
         color={focused ? colors.primary : colors.textLight}
       />
-      {unreadCount > 0 && (
+      {unreadMessageCount > 0 && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
           </Text>
         </View>
       )}

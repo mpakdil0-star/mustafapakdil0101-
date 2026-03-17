@@ -1,9 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { notificationService, Notification } from '../../services/notificationService';
 
+const MESSAGE_TYPES = ['new_message', 'MESSAGE_RECEIVED'];
+
 interface NotificationState {
   notifications: Notification[];
   unreadCount: number;
+  unreadMessageCount: number;
   isLoading: boolean;
   error: string | null;
 }
@@ -11,6 +14,7 @@ interface NotificationState {
 const initialState: NotificationState = {
   notifications: [],
   unreadCount: 0,
+  unreadMessageCount: 0,
   isLoading: false,
   error: null,
 };
@@ -74,6 +78,7 @@ const notificationSlice = createSlice({
     },
     addNotification: (state, action) => {
       const notification = { ...action.payload };
+      const isMessage = MESSAGE_TYPES.includes(notification.type);
       // Map conversationId to relatedId for consistency in clearing
       if (!notification.relatedId && notification.conversationId) {
         notification.relatedId = notification.conversationId;
@@ -82,13 +87,19 @@ const notificationSlice = createSlice({
       // Avoid duplicates
       const existingIndex = state.notifications.findIndex(n => n.id === notification.id);
       if (existingIndex !== -1) {
+        const wasUnread = !state.notifications[existingIndex].isRead;
+        const isNowRead = notification.isRead;
         // If it was unread and now it's read, decrement
-        if (!state.notifications[existingIndex].isRead && notification.isRead) {
+        if (wasUnread && isNowRead) {
           state.unreadCount = Math.max(0, state.unreadCount - 1);
+          if (isMessage) state.unreadMessageCount = Math.max(0, state.unreadMessageCount - 1);
         }
         // If it was read and now it's unread, increment
-        else if (state.notifications[existingIndex].isRead && !notification.isRead) {
+        else if (!wasUnread && !isNowRead) {
+          // was read before, skip
+        } else if (state.notifications[existingIndex].isRead && !notification.isRead) {
           state.unreadCount += 1;
+          if (isMessage) state.unreadMessageCount += 1;
         }
         state.notifications[existingIndex] = notification;
         return;
@@ -97,10 +108,17 @@ const notificationSlice = createSlice({
       state.notifications.unshift(notification);
       if (!notification.isRead) {
         state.unreadCount += 1;
+        if (isMessage) state.unreadMessageCount += 1;
       }
     },
     incrementUnreadCount: (state) => {
       state.unreadCount += 1;
+    },
+    incrementUnreadMessageCount: (state) => {
+      state.unreadMessageCount += 1;
+    },
+    resetUnreadMessageCount: (state) => {
+      state.unreadMessageCount = 0;
     },
     markTypeAsRead: (state, action: { payload: { type: string | string[]; relatedId?: string } }) => {
       const { type, relatedId } = action.payload;
@@ -112,6 +130,9 @@ const notificationSlice = createSlice({
         if (types.includes(n.type) && matchesRelatedId && !n.isRead) {
           n.isRead = true;
           state.unreadCount = Math.max(0, state.unreadCount - 1);
+          if (MESSAGE_TYPES.includes(n.type)) {
+            state.unreadMessageCount = Math.max(0, state.unreadMessageCount - 1);
+          }
         }
       });
     },
@@ -127,6 +148,7 @@ const notificationSlice = createSlice({
         state.isLoading = false;
         state.notifications = action.payload;
         state.unreadCount = action.payload.filter((n: Notification) => !n.isRead).length;
+        state.unreadMessageCount = action.payload.filter((n: Notification) => !n.isRead && MESSAGE_TYPES.includes(n.type)).length;
       })
       .addCase(fetchNotifications.rejected, (state, action) => {
         state.isLoading = false;
@@ -138,6 +160,9 @@ const notificationSlice = createSlice({
       .addCase(markNotificationAsRead.fulfilled, (state, action) => {
         const notification = state.notifications.find((n) => n.id === action.payload);
         if (notification && !notification.isRead) {
+          if (MESSAGE_TYPES.includes(notification.type)) {
+            state.unreadMessageCount = Math.max(0, state.unreadMessageCount - 1);
+          }
           notification.isRead = true;
           state.unreadCount = Math.max(0, state.unreadCount - 1);
         }
@@ -150,6 +175,7 @@ const notificationSlice = createSlice({
           notification.isRead = true;
         });
         state.unreadCount = 0;
+        state.unreadMessageCount = 0;
       });
 
     // Delete Notification
@@ -171,13 +197,16 @@ const notificationSlice = createSlice({
           if (n.type === type && (!relatedId || n.relatedId === relatedId) && !n.isRead) {
             n.isRead = true;
             state.unreadCount = Math.max(0, state.unreadCount - 1);
+            if (MESSAGE_TYPES.includes(n.type)) {
+              state.unreadMessageCount = Math.max(0, state.unreadMessageCount - 1);
+            }
           }
         });
       });
   },
 });
 
-export const { clearError, addNotification, incrementUnreadCount, markTypeAsRead } = notificationSlice.actions;
+export const { clearError, addNotification, incrementUnreadCount, incrementUnreadMessageCount, resetUnreadMessageCount, markTypeAsRead } = notificationSlice.actions;
 export default notificationSlice.reducer;
 
 

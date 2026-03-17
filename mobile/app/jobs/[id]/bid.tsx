@@ -296,25 +296,31 @@ export default function CreateBidScreen() {
             </View>
             
             {costItems.map((item, index) => (
-              <View key={item.id} style={[styles.costItemRow, { backgroundColor: colors.surface + '80', borderColor: colors.border }]}>
-                <TextInput
-                  style={[styles.costDescInput, { color: colors.text }]}
-                  placeholder={`${index + 1}. Kalem (Örn: Malzeme)`}
-                  value={item.description}
-                  onChangeText={(val) => updateCostItem(item.id, 'description', val)}
-                  placeholderTextColor={staticColors.textLight}
-                />
-                <TextInput
-                  style={[styles.costAmountInput, { color: colors.text }]}
-                  placeholder="0"
-                  keyboardType="numeric"
-                  value={item.amount}
-                  onChangeText={(val) => updateCostItem(item.id, 'amount', val)}
-                  placeholderTextColor={staticColors.textLight}
-                />
-                <Text style={[styles.currencyText, { color: colors.textSecondary }]}>₺</Text>
-                <TouchableOpacity onPress={() => removeCostItem(item.id)} style={styles.removeBtn}>
-                  <Ionicons name="trash-outline" size={18} color="#EF4444" />
+              <View key={item.id} style={styles.costItemRow}>
+                <View style={[styles.costFieldWrapper, styles.costDescWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <TextInput
+                    style={[styles.costDescInput, { color: colors.text }]}
+                    placeholder={`${index + 1}. Kalem (Örn: İşçilik)`}
+                    value={item.description}
+                    onChangeText={(val) => updateCostItem(item.id, 'description', val)}
+                    placeholderTextColor={staticColors.textLight}
+                  />
+                </View>
+                
+                <View style={[styles.costFieldWrapper, styles.costAmountWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <TextInput
+                    style={[styles.costAmountInput, { color: colors.text }]}
+                    placeholder="0"
+                    keyboardType="numeric"
+                    value={item.amount}
+                    onChangeText={(val) => updateCostItem(item.id, 'amount', val)}
+                    placeholderTextColor={staticColors.textLight}
+                  />
+                  <Text style={[styles.costCurrency, { color: colors.primary }]}>₺</Text>
+                </View>
+
+                <TouchableOpacity onPress={() => removeCostItem(item.id)} style={[styles.removeBtn, { backgroundColor: '#FEE2E2' }]}>
+                  <Ionicons name="trash" size={16} color="#EF4444" />
                 </TouchableOpacity>
               </View>
             ))}
@@ -507,16 +513,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     gap: 8, 
-    marginBottom: 8, 
-    padding: 8, 
-    borderRadius: 12,
-    borderWidth: 1,
+    marginBottom: 8,
   },
-  costDescInput: { flex: 2, fontSize: 13, fontFamily: fonts.medium, padding: 4 },
-  costAmountInput: { flex: 0.8, fontSize: 13, fontFamily: fonts.extraBold, textAlign: 'right', padding: 4 },
-  currencyText: { fontSize: 12, fontFamily: fonts.bold },
-  removeBtn: { padding: 4 },
-  infoText: { fontSize: 10, fontFamily: fonts.medium, color: staticColors.textLight, marginTop: 2, marginLeft: 4 },
+  costFieldWrapper: {
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+  },
+  costDescWrapper: { flex: 2 },
+  costAmountWrapper: { flex: 0.9, paddingHorizontal: 8 },
+  costDescInput: { flex: 1, fontSize: 13, fontFamily: fonts.semiBold, height: '100%' },
+  costAmountInput: { flex: 1, fontSize: 14, fontFamily: fonts.extraBold, textAlign: 'right', height: '100%' },
+  costCurrency: { fontSize: 13, fontFamily: fonts.extraBold, marginLeft: 2 },
+  removeBtn: { 
+    width: 36, 
+    height: 36, 
+    borderRadius: 18, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  infoText: { fontSize: 10, fontFamily: fonts.bold, color: '#6366F1', marginTop: 4, marginLeft: 4 },
   inputGroup: { gap: 4 },
   label: { fontSize: 12, fontFamily: fonts.bold, marginLeft: 2 },
 
