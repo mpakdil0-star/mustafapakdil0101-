@@ -395,71 +395,76 @@ export default function EditProfileScreen() {
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Profile Photo Upload Card - Visible to ALL users */}
+                {/* Profile Photo Card - Premium Centered Layout */}
                 <View style={[styles.previewCard, { shadowColor: colors.primary }]}>
-                    <TouchableOpacity
-                        style={styles.previewAvatarWrapper}
-                        onPress={handlePhotoOptions}
-                        activeOpacity={0.8}
-                    >
-                        {user?.profileImageUrl ? (
-                            <Image
-                                source={{ uri: getFileUrl(user.profileImageUrl) || '' }}
-                                style={styles.previewAvatar}
-                            />
-                        ) : (
-                            <View style={[styles.previewAvatarPlaceholder, { backgroundColor: colors.primary + '15' }]}>
-                                <Text style={[styles.previewAvatarText, { color: colors.primary }]}>
-                                    {user?.fullName?.charAt(0).toUpperCase() || 'U'}
-                                </Text>
+                    <View style={styles.previewCardInner}>
+                        <TouchableOpacity
+                            style={styles.previewAvatarWrapper}
+                            onPress={handlePhotoOptions}
+                            activeOpacity={0.8}
+                        >
+                            <LinearGradient
+                                colors={[colors.primary + '30', colors.primary + '08']}
+                                style={styles.avatarRing}
+                            >
+                                {user?.profileImageUrl ? (
+                                    <Image
+                                        source={{ uri: getFileUrl(user.profileImageUrl) || '' }}
+                                        style={styles.previewAvatar}
+                                    />
+                                ) : (
+                                    <View style={[styles.previewAvatarPlaceholder, { backgroundColor: colors.primary + '12' }]}>
+                                        <Text style={[styles.previewAvatarText, { color: colors.primary }]}>
+                                            {user?.fullName?.charAt(0).toUpperCase() || 'U'}
+                                        </Text>
+                                    </View>
+                                )}
+                            </LinearGradient>
+                            <View style={[styles.photoCameraBadge, { backgroundColor: colors.primary }]}>
+                                {photoLoading ? (
+                                    <ActivityIndicator size={10} color="#FFF" />
+                                ) : (
+                                    <Ionicons name="camera" size={11} color="#FFF" />
+                                )}
                             </View>
-                        )}
-                        {/* Camera badge overlay */}
-                        <View style={[styles.photoCameraBadge, { backgroundColor: colors.primary }]}>
-                            {photoLoading ? (
-                                <ActivityIndicator size={10} color="#FFF" />
-                            ) : (
-                                <Ionicons name="camera" size={12} color="#FFF" />
-                            )}
-                        </View>
-                    </TouchableOpacity>
-                    <View style={styles.previewInfo}>
-                        <Text style={styles.previewName}>{user?.fullName}</Text>
+                        </TouchableOpacity>
+                        <Text style={[styles.previewName, { color: colors.text }]}>{user?.fullName}</Text>
                         {user?.userType === 'ELECTRICIAN' ? (
                             <View style={styles.previewMetaRow}>
-                                <View style={[styles.previewBadge, { backgroundColor: colors.primary + '15' }]}>
+                                <View style={[styles.previewBadge, { backgroundColor: colors.primary + '12' }]}>
                                     <Text style={[styles.previewBadgeText, { color: colors.primary }]}>
                                         {SERVICE_CATEGORIES.find(c => c.id === user?.electricianProfile?.serviceCategory)?.name || 'Usta'}
                                     </Text>
                                 </View>
                                 <View style={styles.previewStat}>
-                                    <Ionicons name="star" size={12} color="#F59E0B" />
+                                    <Ionicons name="star" size={11} color="#F59E0B" />
                                     <Text style={styles.previewStatText}>{Number((user?.electricianProfile as any)?.ratingAverage || 0).toFixed(1)}</Text>
                                 </View>
                                 <View style={styles.previewStat}>
-                                    <Ionicons name="briefcase-outline" size={12} color={staticColors.textLight} />
+                                    <Ionicons name="briefcase-outline" size={11} color={staticColors.textLight} />
                                     <Text style={styles.previewStatText}>{experienceYears || '0'} Yıl</Text>
                                 </View>
                             </View>
                         ) : (
-                            <TouchableOpacity onPress={handlePhotoOptions}>
+                            <TouchableOpacity onPress={handlePhotoOptions} style={styles.photoChangeBtn}>
+                                <Ionicons name={user?.profileImageUrl ? "refresh-outline" : "camera-outline"} size={13} color={colors.primary} />
                                 <Text style={[styles.photoChangeHint, { color: colors.primary }]}>
-                                    {user?.profileImageUrl ? 'Fotoğrafı değiştir' : '📷 Fotoğraf ekle'}
+                                    {user?.profileImageUrl ? 'Fotoğrafı değiştir' : 'Fotoğraf ekle'}
                                 </Text>
                             </TouchableOpacity>
                         )}
                     </View>
-                    {user?.userType === 'ELECTRICIAN' && (
-                        <View style={styles.previewHint}>
-                            <Ionicons name="eye-outline" size={14} color={staticColors.textLight} />
-                            <Text style={styles.previewHintText}>Önizleme</Text>
-                        </View>
-                    )}
                 </View>
 
                 <Card variant="default" style={[styles.mainCard, { shadowColor: colors.primary }]}>
                     {/* Temel Bilgiler */}
                     <View style={styles.sectionPadding}>
+                        <View style={[styles.sectionHeader, { marginTop: 0 }]}>
+                            <View style={[styles.sectionIconBox, { backgroundColor: colors.primary + '10' }]}>
+                                <Ionicons name="person-outline" size={15} color={colors.primary} />
+                            </View>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Kişisel Bilgiler</Text>
+                        </View>
                         <Input
                             label="Ad Soyad"
                             value={fullName}
@@ -735,71 +740,71 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        padding: 10,
-        paddingBottom: 20,
+        padding: 12,
+        paddingBottom: 24,
     },
     mainCard: {
-        borderRadius: 20,
+        borderRadius: 18,
         backgroundColor: staticColors.white,
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.04,
-        shadowRadius: 10,
+        shadowRadius: 8,
         elevation: 2,
         overflow: 'hidden',
     },
     sectionPadding: {
-        padding: 12,
+        padding: 14,
     },
     divider: {
         height: 1,
         backgroundColor: '#F1F5F9',
-        marginHorizontal: 12,
+        marginHorizontal: 14,
     },
     infoCard: {
-        borderRadius: 24,
-        padding: 20,
+        borderRadius: 20,
+        padding: 16,
         backgroundColor: staticColors.white,
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.05,
-        shadowRadius: 15,
-        elevation: 4,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.04,
+        shadowRadius: 12,
+        elevation: 3,
     },
     infoTitleRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
-        marginBottom: 12,
+        gap: 8,
+        marginBottom: 10,
     },
     infoCardTitle: {
         fontFamily: fonts.bold,
-        fontSize: 16,
+        fontSize: 15,
         color: staticColors.text,
     },
     infoText: {
         fontFamily: fonts.medium,
-        fontSize: 14,
+        fontSize: 13,
         color: staticColors.textSecondary,
-        lineHeight: 20,
-        marginBottom: 20,
+        lineHeight: 19,
+        marginBottom: 16,
     },
     input: {
-        marginBottom: 6,
+        marginBottom: 4,
     },
     inputNoMargin: {
         marginBottom: 0,
     },
     button: {
-        marginTop: 10,
+        marginTop: 8,
     },
     expertiseButton: {
-        marginTop: 5,
+        marginTop: 4,
     },
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        marginTop: 12,
-        marginBottom: 8,
+        marginTop: 8,
+        marginBottom: 6,
     },
     sectionHeaderNoMargin: {
         flexDirection: 'row',
@@ -813,8 +818,8 @@ const styles = StyleSheet.create({
         paddingVertical: 2,
     },
     sectionIconBox: {
-        width: 30,
-        height: 30,
+        width: 28,
+        height: 28,
         borderRadius: 8,
         backgroundColor: staticColors.primary + '10',
         justifyContent: 'center',
@@ -827,46 +832,47 @@ const styles = StyleSheet.create({
     },
     sectionSubtitle: {
         fontFamily: fonts.medium,
-        fontSize: 11,
+        fontSize: 10,
         color: staticColors.textSecondary,
     },
     expertiseContainer: {
-        marginBottom: 16,
+        marginBottom: 12,
     },
     expertiseGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 6,
-        marginTop: 10,
+        gap: 5,
+        marginTop: 8,
     },
     expertiseItemWrapper: {
-        width: '49%',
+        width: '48.5%',
     },
     expertiseItem: {
         paddingHorizontal: 8,
-        paddingVertical: 7,
+        paddingVertical: 6,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: '#F1F5F9',
+        borderColor: '#E8ECF0',
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        gap: 5,
     },
     expertiseItemSelected: {
+        borderColor: 'transparent',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.12,
         shadowRadius: 4,
         elevation: 2,
     },
     expertiseIconBox: {
-        width: 20,
-        height: 20,
-        borderRadius: 6,
+        width: 18,
+        height: 18,
+        borderRadius: 5,
         justifyContent: 'center',
         alignItems: 'center',
     },
     expertiseLabel: {
-        fontFamily: fonts.bold,
+        fontFamily: fonts.semiBold,
         fontSize: 10,
         color: staticColors.textSecondary,
         flex: 1,
@@ -886,65 +892,65 @@ const styles = StyleSheet.create({
     },
     successModal: {
         width: '100%',
-        borderRadius: 32,
-        padding: 32,
+        borderRadius: 28,
+        padding: 28,
         alignItems: 'center',
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.5)',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 20 },
+        shadowOffset: { width: 0, height: 16 },
         shadowOpacity: 0.2,
-        shadowRadius: 30,
-        elevation: 20,
+        shadowRadius: 24,
+        elevation: 16,
     },
     successIconWrapper: {
-        width: 80,
-        height: 80,
+        width: 72,
+        height: 72,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 16,
     },
     successIconGlow: {
         position: 'absolute',
-        width: 60,
-        height: 60,
+        width: 54,
+        height: 54,
         backgroundColor: '#10B981',
-        borderRadius: 30,
+        borderRadius: 27,
         opacity: 0.2,
         transform: [{ scale: 1.5 }],
     },
     successIconBox: {
-        width: 64,
-        height: 64,
-        borderRadius: 22,
+        width: 56,
+        height: 56,
+        borderRadius: 18,
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 1,
     },
     successTitle: {
         fontFamily: fonts.extraBold,
-        fontSize: 24,
+        fontSize: 22,
         color: staticColors.text,
-        marginBottom: 8,
+        marginBottom: 6,
     },
     successMessage: {
         fontFamily: fonts.medium,
-        fontSize: 15,
+        fontSize: 14,
         color: staticColors.textSecondary,
         textAlign: 'center',
-        lineHeight: 22,
-        marginBottom: 24,
+        lineHeight: 20,
+        marginBottom: 20,
     },
     successModalBtn: {
         width: '100%',
-        height: 54,
-        borderRadius: 16,
+        height: 48,
+        borderRadius: 14,
         overflow: 'hidden',
         shadowColor: staticColors.primary,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
-        elevation: 6,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 5,
     },
     successModalBtnGradient: {
         flex: 1,
@@ -953,118 +959,118 @@ const styles = StyleSheet.create({
     },
     successModalBtnText: {
         fontFamily: fonts.bold,
-        fontSize: 16,
+        fontSize: 15,
         color: staticColors.white,
     },
     serviceAreasContainer: {
-        marginBottom: 20,
+        marginBottom: 16,
     },
     serviceAreaCard: {
         backgroundColor: '#F8FAFC',
-        borderRadius: 16,
-        padding: 12,
+        borderRadius: 14,
+        padding: 10,
         borderWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: '#E8ECF0',
     },
     serviceAreaCardInner: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 14,
+        gap: 10,
     },
     serviceAreaIconBox: {
-        width: 48,
-        height: 48,
-        borderRadius: 14,
+        width: 40,
+        height: 40,
+        borderRadius: 12,
         backgroundColor: staticColors.primary + '10',
         justifyContent: 'center',
         alignItems: 'center',
     },
     serviceAreaCardTitle: {
         fontFamily: fonts.bold,
-        fontSize: 15,
+        fontSize: 13,
         color: staticColors.text,
     },
     serviceAreaCardSubtitle: {
         fontFamily: fonts.medium,
-        fontSize: 12,
+        fontSize: 11,
         color: staticColors.textSecondary,
-        marginTop: 2,
+        marginTop: 1,
     },
     locationCountBadge: {
         backgroundColor: staticColors.success,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
-        marginRight: 8,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 10,
+        marginRight: 4,
     },
     locationCountText: {
         fontFamily: fonts.bold,
-        fontSize: 12,
+        fontSize: 11,
         color: staticColors.white,
     },
     // Warning Modal Styles
     warningModal: {
         width: '100%',
-        borderRadius: 32,
-        padding: 32,
+        borderRadius: 28,
+        padding: 28,
         alignItems: 'center',
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.5)',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 20 },
+        shadowOffset: { width: 0, height: 16 },
         shadowOpacity: 0.2,
-        shadowRadius: 30,
-        elevation: 20,
+        shadowRadius: 24,
+        elevation: 16,
     },
     warningIconWrapper: {
-        width: 80,
-        height: 80,
+        width: 72,
+        height: 72,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 16,
     },
     warningIconGlow: {
         position: 'absolute',
-        width: 60,
-        height: 60,
+        width: 54,
+        height: 54,
         backgroundColor: '#F59E0B',
-        borderRadius: 30,
+        borderRadius: 27,
         opacity: 0.2,
         transform: [{ scale: 1.5 }],
     },
     warningIconBox: {
-        width: 64,
-        height: 64,
-        borderRadius: 22,
+        width: 56,
+        height: 56,
+        borderRadius: 18,
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 1,
     },
     warningTitle: {
         fontFamily: fonts.extraBold,
-        fontSize: 24,
+        fontSize: 22,
         color: staticColors.text,
-        marginBottom: 8,
+        marginBottom: 6,
     },
     warningMessage: {
         fontFamily: fonts.medium,
-        fontSize: 15,
+        fontSize: 14,
         color: staticColors.textSecondary,
         textAlign: 'center',
-        lineHeight: 22,
-        marginBottom: 24,
-        paddingHorizontal: 10,
+        lineHeight: 20,
+        marginBottom: 20,
+        paddingHorizontal: 8,
     },
     warningModalBtn: {
         width: '100%',
-        height: 54,
-        borderRadius: 16,
+        height: 48,
+        borderRadius: 14,
         overflow: 'hidden',
         shadowColor: staticColors.primary,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
-        elevation: 6,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 5,
     },
     warningModalBtnGradient: {
         flex: 1,
@@ -1073,54 +1079,64 @@ const styles = StyleSheet.create({
     },
     warningModalBtnText: {
         fontFamily: fonts.bold,
-        fontSize: 16,
+        fontSize: 15,
         color: staticColors.white,
     },
-    // Profile Preview Card Styles
+    // Profile Preview Card Styles — Centered Layout
     previewCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
         backgroundColor: staticColors.white,
-        borderRadius: 16,
-        padding: 10,
+        borderRadius: 18,
+        padding: 14,
         marginBottom: 10,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.06,
+        shadowRadius: 10,
+        elevation: 3,
+    },
+    previewCardInner: {
+        alignItems: 'center',
     },
     previewAvatarWrapper: {
-        marginRight: 10,
+        marginBottom: 8,
+    },
+    avatarRing: {
+        width: 68,
+        height: 68,
+        borderRadius: 34,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 3,
     },
     previewAvatar: {
-        width: 44,
-        height: 44,
-        borderRadius: 12,
+        width: 62,
+        height: 62,
+        borderRadius: 31,
     },
     previewAvatarPlaceholder: {
-        width: 44,
-        height: 44,
-        borderRadius: 12,
+        width: 62,
+        height: 62,
+        borderRadius: 31,
         justifyContent: 'center',
         alignItems: 'center',
     },
     previewAvatarText: {
-        fontFamily: fonts.bold,
-        fontSize: 18,
+        fontFamily: fonts.extraBold,
+        fontSize: 24,
     },
     previewInfo: {
         flex: 1,
+        alignItems: 'center',
     },
     previewName: {
         fontFamily: fonts.bold,
-        fontSize: 14,
+        fontSize: 15,
         color: staticColors.text,
-        marginBottom: 2,
+        marginBottom: 4,
     },
     previewMetaRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: 6,
     },
     previewBadge: {
         paddingHorizontal: 8,
@@ -1138,7 +1154,7 @@ const styles = StyleSheet.create({
     },
     previewStatText: {
         fontFamily: fonts.medium,
-        fontSize: 11,
+        fontSize: 10,
         color: staticColors.textSecondary,
     },
     previewHint: {
@@ -1147,18 +1163,18 @@ const styles = StyleSheet.create({
         gap: 4,
         backgroundColor: '#F1F5F9',
         paddingHorizontal: 8,
-        paddingVertical: 4,
+        paddingVertical: 3,
         borderRadius: 8,
     },
     previewHintText: {
         fontFamily: fonts.medium,
-        fontSize: 10,
+        fontSize: 9,
         color: staticColors.textLight,
     },
     photoCameraBadge: {
         position: 'absolute',
-        bottom: -2,
-        right: -2,
+        bottom: 0,
+        right: 0,
         width: 22,
         height: 22,
         borderRadius: 11,
@@ -1167,26 +1183,35 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: staticColors.white,
     },
-    photoChangeHint: {
-        fontFamily: fonts.bold,
-        fontSize: 12,
+    photoChangeBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
         marginTop: 2,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 8,
+        backgroundColor: staticColors.primary + '08',
+    },
+    photoChangeHint: {
+        fontFamily: fonts.semiBold,
+        fontSize: 11,
     },
     // Save Button Container & Changes Indicator
     saveButtonContainer: {
-        marginTop: 16,
-        marginBottom: 20,
+        marginTop: 12,
+        marginBottom: 16,
     },
     changesIndicator: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 6,
-        marginBottom: 10,
+        gap: 5,
+        marginBottom: 8,
     },
     changesIndicatorText: {
         fontFamily: fonts.medium,
-        fontSize: 12,
+        fontSize: 11,
         color: '#10B981',
     },
     saveButton: {
@@ -1194,31 +1219,31 @@ const styles = StyleSheet.create({
     },
     saveButtonActive: {
         shadowColor: '#10B981',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+        elevation: 3,
     },
     categoryGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 10,
-        marginTop: 12,
+        gap: 8,
+        marginTop: 10,
     },
     categoryItem: {
         flex: 1,
         minWidth: '30%',
-        padding: 12,
-        borderRadius: 16,
+        padding: 10,
+        borderRadius: 14,
         borderWidth: 1,
         borderColor: '#E2E8F0',
         alignItems: 'center',
         backgroundColor: '#F8FAFC',
-        gap: 6,
+        gap: 4,
     },
     categoryText: {
         fontFamily: fonts.medium,
-        fontSize: 11,
+        fontSize: 10,
         textAlign: 'center',
     },
 });
