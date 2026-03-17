@@ -132,7 +132,7 @@ export default function WalletScreen() {
                 style={[
                     styles.transactionCard,
                     {
-                        backgroundColor: colors.card || '#FFF',
+                        backgroundColor: colors.surface || '#FFF',
                         opacity: fadeAnim,
                         transform: [{ translateY: Animated.multiply(slideAnim, (index + 1) * 0.15) }]
                     }
@@ -199,7 +199,6 @@ export default function WalletScreen() {
                     >
                         {/* Decorative Orbs */}
                         <View style={styles.cardOrb1} />
-                        <View style={styles.cardOrb2} />
                         <View style={styles.cardOrb3} />
 
                         <View style={styles.cardInternal}>
@@ -250,7 +249,7 @@ export default function WalletScreen() {
 
                 {/* Quick Stats Row */}
                 <Animated.View style={[styles.statsRow, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-                    <View style={[styles.statCard, { backgroundColor: colors.card || '#FFF' }]}>
+                    <View style={[styles.statCard, { backgroundColor: colors.surface || '#FFF' }]}>
                         <View style={[styles.statIconCircle, { backgroundColor: '#ECFDF5' }]}>
                             <Ionicons name="arrow-up-circle" size={20} color="#10B981" />
                         </View>
@@ -258,7 +257,7 @@ export default function WalletScreen() {
                         <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Yüklenen</Text>
                     </View>
 
-                    <View style={[styles.statCard, { backgroundColor: colors.card || '#FFF' }]}>
+                    <View style={[styles.statCard, { backgroundColor: colors.surface || '#FFF' }]}>
                         <View style={[styles.statIconCircle, { backgroundColor: '#EFF6FF' }]}>
                             <Ionicons name="arrow-down-circle" size={20} color="#3B82F6" />
                         </View>
@@ -266,7 +265,7 @@ export default function WalletScreen() {
                         <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Harcanan</Text>
                     </View>
 
-                    <View style={[styles.statCard, { backgroundColor: colors.card || '#FFF' }]}>
+                    <View style={[styles.statCard, { backgroundColor: colors.surface || '#FFF' }]}>
                         <View style={[styles.statIconCircle, { backgroundColor: '#F5F3FF' }]}>
                             <Ionicons name="receipt" size={20} color="#8B5CF6" />
                         </View>
@@ -316,7 +315,7 @@ export default function WalletScreen() {
                             <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Yükleniyor...</Text>
                         </View>
                     ) : history.length === 0 ? (
-                        <View style={[styles.emptyContainer, { backgroundColor: colors.card || '#FFF' }]}>
+                        <View style={[styles.emptyContainer, { backgroundColor: colors.surface || '#FFF' }]}>
                             <LinearGradient
                                 colors={['#F8FAFC', '#EEF2FF']}
                                 style={styles.emptyIconCircle}
@@ -361,51 +360,41 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        padding: 16,
-        paddingBottom: 80,
+        padding: 14,
+        paddingBottom: 60,
     },
 
     // ── Credit Card ──
     cardContainer: {
-        marginBottom: 20,
+        marginBottom: 14,
         shadowColor: '#0F3460',
-        shadowOffset: { width: 0, height: 20 },
-        shadowOpacity: 0.35,
-        shadowRadius: 30,
-        elevation: 15,
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+        elevation: 12,
     },
     creditCard: {
-        borderRadius: 24,
-        height: 210,
+        borderRadius: 20,
+        height: 180,
         width: '100%',
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.08)',
     },
     cardInternal: {
-        padding: 22,
+        padding: 18,
         flex: 1,
         justifyContent: 'space-between',
     },
     cardOrb1: {
         position: 'absolute',
-        top: -60,
-        right: -40,
-        width: 200,
-        height: 200,
-        borderRadius: 100,
+        top: -50,
+        right: -30,
+        width: 160,
+        height: 160,
+        borderRadius: 80,
         backgroundColor: '#7C3AED',
         opacity: 0.12,
-    },
-    cardOrb2: {
-        position: 'absolute',
-        bottom: -80,
-        left: -40,
-        width: 180,
-        height: 180,
-        borderRadius: 90,
-        backgroundColor: '#3B82F6',
-        opacity: 0.08,
     },
     cardOrb3: {
         position: 'absolute',
@@ -428,17 +417,17 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     brandIcon: {
-        width: 28,
-        height: 28,
-        borderRadius: 8,
+        width: 24,
+        height: 24,
+        borderRadius: 7,
         justifyContent: 'center',
         alignItems: 'center',
     },
     brandText: {
         color: '#FFF',
-        fontSize: 13,
+        fontSize: 11,
         fontFamily: fonts.bold,
-        letterSpacing: 3,
+        letterSpacing: 2,
     },
     cardTypeBadge: {
         flexDirection: 'row',
@@ -458,23 +447,23 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
     },
     balanceSection: {
-        marginTop: 8,
+        marginTop: 4,
     },
     balanceLabel: {
         color: 'rgba(255,255,255,0.45)',
-        fontSize: 10,
+        fontSize: 9,
         fontFamily: fonts.bold,
         letterSpacing: 2,
-        marginBottom: 6,
+        marginBottom: 4,
     },
     balanceRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
+        gap: 10,
     },
     balanceText: {
         color: '#FFF',
-        fontSize: 42,
+        fontSize: 34,
         fontFamily: fonts.black,
         letterSpacing: -1,
     },
@@ -520,14 +509,14 @@ const styles = StyleSheet.create({
     // ── Stats Row ──
     statsRow: {
         flexDirection: 'row',
-        gap: 10,
-        marginBottom: 20,
+        gap: 8,
+        marginBottom: 14,
     },
     statCard: {
         flex: 1,
         alignItems: 'center',
-        paddingVertical: 16,
-        borderRadius: 18,
+        paddingVertical: 12,
+        borderRadius: 14,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.04,
@@ -535,45 +524,45 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     statIconCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 14,
+        width: 34,
+        height: 34,
+        borderRadius: 11,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 6,
     },
     statValue: {
-        fontSize: 20,
+        fontSize: 17,
         fontFamily: fonts.black,
-        marginBottom: 2,
+        marginBottom: 1,
     },
     statLabel: {
-        fontSize: 11,
+        fontSize: 10,
         fontFamily: fonts.medium,
     },
 
     // ── Buy Button ──
     buyBtn: {
-        marginBottom: 24,
-        borderRadius: 18,
+        marginBottom: 18,
+        borderRadius: 14,
         overflow: 'hidden',
         shadowColor: '#7C3AED',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
-        shadowRadius: 15,
-        elevation: 8,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
+        elevation: 6,
     },
     buyBtnGradient: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 16,
-        paddingHorizontal: 18,
-        gap: 14,
+        paddingVertical: 13,
+        paddingHorizontal: 16,
+        gap: 12,
     },
     buyBtnIconCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
+        width: 36,
+        height: 36,
+        borderRadius: 10,
         backgroundColor: 'rgba(255,255,255,0.95)',
         justifyContent: 'center',
         alignItems: 'center',
@@ -601,7 +590,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 12,
     },
     historyTitleGroup: {
         flexDirection: 'row',
@@ -609,13 +598,13 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     historyIndicator: {
-        width: 4,
-        height: 20,
+        width: 3,
+        height: 16,
         borderRadius: 2,
         backgroundColor: '#7C3AED',
     },
     historyHeader: {
-        fontSize: 18,
+        fontSize: 16,
         fontFamily: fonts.bold,
     },
     historyCount: {
@@ -637,13 +626,13 @@ const styles = StyleSheet.create({
         fontFamily: fonts.medium,
     },
     dateGroup: {
-        marginBottom: 20,
+        marginBottom: 14,
     },
     dateLabelRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        marginBottom: 10,
+        gap: 6,
+        marginBottom: 8,
         marginLeft: 2,
     },
     dateDot: {
@@ -662,9 +651,9 @@ const styles = StyleSheet.create({
     transactionCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 14,
-        borderRadius: 16,
-        marginBottom: 8,
+        padding: 12,
+        borderRadius: 14,
+        marginBottom: 6,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.03,
@@ -672,20 +661,20 @@ const styles = StyleSheet.create({
         elevation: 1,
     },
     transactionIconWrapper: {
-        width: 46,
-        height: 46,
-        borderRadius: 14,
+        width: 40,
+        height: 40,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
     },
     transactionInfo: {
         flex: 1,
-        marginLeft: 14,
+        marginLeft: 12,
     },
     transactionTitle: {
-        fontSize: 14,
+        fontSize: 13,
         fontFamily: fonts.semiBold,
-        marginBottom: 4,
+        marginBottom: 3,
     },
     transactionMetaRow: {
         flexDirection: 'row',
@@ -709,11 +698,11 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     transactionAmount: {
-        fontSize: 18,
+        fontSize: 16,
         fontFamily: fonts.black,
     },
     transactionUnit: {
-        fontSize: 10,
+        fontSize: 9,
         fontFamily: fonts.bold,
         marginTop: 1,
     },
@@ -721,18 +710,18 @@ const styles = StyleSheet.create({
     // ── Empty State ──
     emptyContainer: {
         alignItems: 'center',
-        paddingVertical: 50,
-        paddingHorizontal: 30,
-        borderRadius: 20,
-        marginTop: 8,
+        paddingVertical: 40,
+        paddingHorizontal: 24,
+        borderRadius: 16,
+        marginTop: 4,
     },
     emptyIconCircle: {
-        width: 88,
-        height: 88,
-        borderRadius: 44,
+        width: 72,
+        height: 72,
+        borderRadius: 36,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 18,
+        marginBottom: 14,
     },
     emptyHeader: {
         fontSize: 18,

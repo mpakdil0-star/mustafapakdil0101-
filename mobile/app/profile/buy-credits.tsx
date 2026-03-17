@@ -218,7 +218,7 @@ export default function BuyCreditsScreen() {
                 showsVerticalScrollIndicator={false}
             >
                 {/* Current Balance Mini Card */}
-                <Animated.View style={[styles.balanceMini, { opacity: fadeAnim, backgroundColor: colors.card || '#FFF' }]}>
+                <Animated.View style={[styles.balanceMini, { opacity: fadeAnim, backgroundColor: colors.surface || '#FFF' }]}>
                     <View style={styles.balanceMiniLeft}>
                         <View style={styles.balanceMiniIcon}>
                             <Ionicons name="wallet" size={18} color="#7C3AED" />
@@ -268,7 +268,7 @@ export default function BuyCreditsScreen() {
                                         style={[
                                             styles.packageCard,
                                             {
-                                                backgroundColor: colors.card || '#FFF',
+                                                backgroundColor: colors.surface || '#FFF',
                                                 borderColor: isSelected ? pkg.color : 'transparent',
                                                 borderWidth: isSelected ? 2 : 0,
                                             }
@@ -400,17 +400,17 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        padding: 16,
-        paddingBottom: 20,
+        padding: 14,
+        paddingBottom: 16,
     },
 
     // ── Balance Mini Card ──
     balanceMini: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderRadius: 18,
-        padding: 16,
-        marginBottom: 20,
+        borderRadius: 14,
+        padding: 12,
+        marginBottom: 14,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.04,
@@ -424,19 +424,19 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     balanceMiniIcon: {
-        width: 38,
-        height: 38,
-        borderRadius: 12,
+        width: 34,
+        height: 34,
+        borderRadius: 10,
         backgroundColor: '#F5F3FF',
         justifyContent: 'center',
         alignItems: 'center',
     },
     balanceMiniLabel: {
-        fontSize: 11,
+        fontSize: 10,
         fontFamily: fonts.medium,
     },
     balanceMiniValue: {
-        fontSize: 18,
+        fontSize: 16,
         fontFamily: fonts.black,
     },
     balanceMiniUnit: {
@@ -446,9 +446,9 @@ const styles = StyleSheet.create({
     },
     balanceMiniDivider: {
         width: 1,
-        height: 36,
+        height: 32,
         backgroundColor: '#E2E8F0',
-        marginHorizontal: 14,
+        marginHorizontal: 10,
     },
     balanceMiniRight: {
         alignItems: 'flex-end',
@@ -456,25 +456,25 @@ const styles = StyleSheet.create({
 
     // ── Header ──
     headerBox: {
-        marginBottom: 18,
+        marginBottom: 14,
     },
     title: {
         fontFamily: fonts.black,
-        fontSize: 22,
-        marginBottom: 4,
+        fontSize: 20,
+        marginBottom: 3,
     },
     subtitle: {
         fontFamily: fonts.medium,
-        fontSize: 14,
-        lineHeight: 20,
+        fontSize: 13,
+        lineHeight: 18,
     },
 
     // ── Package Cards ──
     packagesContainer: {
-        gap: 12,
+        gap: 10,
     },
     packageCard: {
-        borderRadius: 20,
+        borderRadius: 16,
         overflow: 'hidden',
         position: 'relative',
         shadowColor: '#000',
@@ -515,13 +515,13 @@ const styles = StyleSheet.create({
     cardContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
-        gap: 14,
+        padding: 14,
+        gap: 12,
     },
     cardIconBox: {
-        width: 54,
-        height: 54,
-        borderRadius: 16,
+        width: 48,
+        height: 48,
+        borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -530,8 +530,8 @@ const styles = StyleSheet.create({
     },
     packageName: {
         fontFamily: fonts.semiBold,
-        fontSize: 14,
-        marginBottom: 2,
+        fontSize: 13,
+        marginBottom: 1,
     },
     creditsRow: {
         flexDirection: 'row',
@@ -540,25 +540,25 @@ const styles = StyleSheet.create({
     },
     creditValue: {
         fontFamily: fonts.black,
-        fontSize: 22,
+        fontSize: 20,
     },
     creditLabel: {
         fontFamily: fonts.bold,
-        fontSize: 11,
+        fontSize: 10,
         letterSpacing: 1,
     },
     cardDesc: {
         fontFamily: fonts.medium,
-        fontSize: 11,
-        marginTop: 2,
+        fontSize: 10,
+        marginTop: 1,
     },
     cardRight: {
         alignItems: 'center',
-        minWidth: 60,
+        minWidth: 55,
     },
     priceValue: {
         fontFamily: fonts.black,
-        fontSize: 18,
+        fontSize: 16,
     },
     priceCurrency: {
         fontFamily: fonts.bold,
@@ -586,23 +586,23 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 24,
+        marginTop: 18,
         gap: 8,
-        paddingHorizontal: 20,
+        paddingHorizontal: 16,
     },
     securityIconBox: {
-        width: 30,
-        height: 30,
-        borderRadius: 10,
+        width: 26,
+        height: 26,
+        borderRadius: 8,
         backgroundColor: '#ECFDF5',
         justifyContent: 'center',
         alignItems: 'center',
     },
     securityText: {
         fontFamily: fonts.medium,
-        fontSize: 12,
+        fontSize: 11,
         flex: 1,
-        lineHeight: 18,
+        lineHeight: 16,
     },
 
     // ── Footer ──
@@ -611,9 +611,9 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        paddingHorizontal: 16,
-        paddingTop: 10,
-        paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+        paddingHorizontal: 14,
+        paddingTop: 8,
+        paddingBottom: Platform.OS === 'ios' ? 26 : 16,
         borderTopWidth: 1,
         borderTopColor: '#F1F5F9',
     },
@@ -622,27 +622,27 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     footerSummaryText: {
-        fontSize: 13,
+        fontSize: 12,
         fontFamily: fonts.medium,
     },
     footerSummaryBold: {
         fontFamily: fonts.bold,
     },
     payButton: {
-        borderRadius: 16,
+        borderRadius: 14,
         overflow: 'hidden',
-        elevation: 10,
+        elevation: 8,
         shadowColor: '#7C3AED',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 15,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
     },
     payGradient: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 15,
-        gap: 10,
+        paddingVertical: 13,
+        gap: 8,
     },
     payText: {
         fontFamily: fonts.bold,
