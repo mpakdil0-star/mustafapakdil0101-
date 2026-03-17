@@ -5,13 +5,11 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    Alert,
     Image,
     ActivityIndicator,
     TextInput,
     KeyboardAvoidingView,
     Platform,
-    ImageBackground,
     Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -47,25 +45,17 @@ const EMERGENCY_TYPES = [
     { id: 'klima', label: 'Klima', color: '#2563EB', icon: 'snow' },
 ];
 
-// Seçilen hizmet türüne göre dinamik placeholder metni
 const getDescriptionPlaceholder = (type: string | null): string => {
     switch (type) {
-        case 'elektrik':
-            return 'Örnek: Mutfak prizleri çalışmıyor, sigorta attı. En kısa sürede bakılması gerekiyor...';
-        case 'tesisat':
-            return 'Örnek: Mutfak lavabosundan su akıyor, tezgah altı ıslanıyor. Acil müdahale gerekiyor...';
-        case 'cilingir':
-            return 'Örnek: Ev anahtarım içeride kaldı, kapı kilitli. Acil açılması gerekiyor...';
-        case 'beyaz-esya':
-            return 'Örnek: Bulaşık makinesi çalışırken durdu, hata kodu veriyor. Tamir edilmesi gerekiyor...';
-        case 'klima':
-            return 'Örnek: Klima soğutmuyor, çalışıyor ama sıcak hava üflüyor. Bakım gerekiyor...';
-        default:
-            return 'Sorununuzu detaylı açıklayın. Ne oldu? Ne zaman başladı? Acil mi?';
+        case 'elektrik': return 'Örnek: Mutfak prizleri çalışmıyor, sigorta attı...';
+        case 'tesisat': return 'Örnek: Lavabodan su akıyor, acil tamir lazım...';
+        case 'cilingir': return 'Örnek: Anahtar içeride kaldı, kapı kilitli...';
+        case 'beyaz-esya': return 'Örnek: Çamaşır makinesi su boşaltmıyor...';
+        case 'klima': return 'Örnek: Klima soğutmuyor, acil servis lazım...';
+        default: return 'Sorununuzu kısaca açıklayın...';
     }
 };
 
-// Map category ID to 3D image asset (same as home screen)
 const getCategoryImage = (id: string) => {
     switch (id) {
         case 'elektrik': return require('../../assets/images/categories/electric.png');
@@ -77,13 +67,12 @@ const getCategoryImage = (id: string) => {
     }
 };
 
-
 const MAX_IMAGES = 3;
 
 export default function QuickCreateScreen() {
     const router = useRouter();
     const dispatch = useAppDispatch();
-    const { isLoading, error } = useAppSelector((state) => state.jobs);
+    const { isLoading } = useAppSelector((state) => state.jobs);
     const { user, isAuthenticated } = useAppSelector((state) => state.auth);
     const colors = useAppColors();
 
@@ -91,19 +80,17 @@ export default function QuickCreateScreen() {
     const [images, setImages] = useState<string[]>([]);
     const [description, setDescription] = useState<string>('');
     const [budget, setBudget] = useState<string>('');
-
-    // Location State - Start with empty values, will be filled by GPS
     const [city, setCity] = useState('');
     const [district, setDistrict] = useState('');
     const [neighborhood, setNeighborhood] = useState('');
     const [address, setAddress] = useState('');
     const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const [isLoadingLocation, setIsLoadingLocation] = useState(true);
     const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [createdJobId, setCreatedJobId] = useState<string | null>(null);
+    const [photoLoading, setPhotoLoading] = useState(false);
 
     const [alertConfig, setAlertConfig] = useState<{
         visible: boolean;
@@ -117,168 +104,68 @@ export default function QuickCreateScreen() {
         setAlertConfig({ visible: true, title, message, type, buttons });
     };
 
-    // Derived Options
     const districtOptions = getDistrictsByCity(city);
     const neighborhoodOptions = getNeighborhoodsByCityAndDistrict(city, district);
 
-    // Reset district and neighborhood when city changes
     useEffect(() => {
-        if (city) {
-            setDistrict('');
-            setNeighborhood('');
-        }
+        if (city) { setDistrict(''); setNeighborhood(''); }
     }, [city]);
 
-    // Reset neighborhood when district changes
     useEffect(() => {
-        if (district) {
-            setNeighborhood('');
-        }
+        if (district) { setNeighborhood(''); }
     }, [district]);
 
-    // Initialize Location: User Profile -> Saved Address -> GPS Fallback
     useEffect(() => {
         const initializeLocation = async () => {
             if (!isAuthenticated) return;
-
-            // Step 1: Check user object for city (Fastest)
             if (user?.city) {
                 setCity(user.city);
                 if (user.district) setDistrict(user.district);
             }
-
-            let foundSaved = false;
             try {
-                // Step 2: Fetch actual saved addresses
                 const response = await api.get('/locations');
                 if (response.data.success && response.data.data.length > 0) {
-                    const saved = response.data.data;
-                    setSavedAddresses(saved);
-
-                    // Auto-use first saved address (more specific than user.city)
-                    const first = saved[0];
+                    setSavedAddresses(response.data.data);
+                    const first = response.data.data[0];
                     if (first) {
                         setCity(first.city);
                         setDistrict(first.district || '');
                         setNeighborhood(first.neighborhood || '');
                         setAddress(first.address);
                         setCoords({ latitude: first.latitude, longitude: first.longitude });
-
-                        setIsLoadingLocation(false);
-                        foundSaved = true;
                     }
                 }
             } catch (error) {
-                console.error('Error fetching addresses for quick-create:', error);
-            }
-
-            // Fallback to GPS if no saved address found
-            if (!foundSaved) {
-                // If we at least have city from user profile, don't show loading forever
-                if (user?.city) setIsLoadingLocation(false);
-                getLocation();
+                console.error('Error fetching addresses:', error);
             }
         };
-
-        if (isAuthenticated) {
-            initializeLocation();
-        }
+        if (isAuthenticated) initializeLocation();
     }, [isAuthenticated]);
 
-    // Authentication kontrolü
     useEffect(() => {
-        if (!isAuthenticated || !user) {
-            setShowAuthModal(true);
-        }
+        if (!isAuthenticated || !user) setShowAuthModal(true);
     }, [isAuthenticated, user]);
-
-    const getLocation = async () => {
-        try {
-            setIsLoadingLocation(true);
-
-            // Use the robust service which handles permissions and fallbacks
-            let fetchedCoords = await locationService.getCurrentLocation();
-
-            // If automatic location fails, fallback to user's profile city
-            if (!fetchedCoords) {
-                console.log('Location service returned null, using profile fallback.');
-                const profileCity = user?.city || 'İstanbul';
-                showAlert(
-                    'Konum Alınamadı',
-                    `Konumunuz otomatik olarak belirlenemedi. Profil bilginizdeki şehir (${profileCity}) seçildi. Lütfen haritadan düzeltin.`,
-                    'warning'
-                );
-
-                setCity(profileCity);
-                setDistrict(user?.district || '');
-                setAddress('Konum alınamadı - Profil bilgisi kullanıldı');
-                // Don't set coords if GPS failed, keep it null
-                return;
-            }
-
-            const { latitude, longitude } = fetchedCoords;
-            setCoords({ latitude, longitude });
-
-            // Reverse geocode explicitly
-            const addressData = await locationService.reverseGeocode(latitude, longitude);
-
-            if (addressData) {
-                if (addressData.city) {
-                    // Try to match normalized city
-                    const matchedCity = CITY_NAMES.find(c => c.toLowerCase().includes(addressData.city!.toLowerCase()));
-                    if (matchedCity) setCity(matchedCity);
-                    else setCity(addressData.city);
-                }
-                if (addressData.district) setDistrict(addressData.district);
-                if (addressData.neighborhood) setNeighborhood(addressData.neighborhood);
-                if (addressData.address) setAddress(addressData.address);
-            } else {
-                setAddress('Konum Paylaşıldı');
-            }
-        } catch (error) {
-            console.error('Location error in quick-create:', error);
-            // Fallback to user's profile city
-            const profileCity = user?.city || 'İstanbul';
-            setCity(profileCity);
-            setDistrict(user?.district || '');
-            setAddress('Konum hatası - Profil bilgisi kullanıldı');
-        } finally {
-            setIsLoadingLocation(false);
-        }
-    };
-
-    // ... (Image handlers remain same) ...
 
     const handleTakePhoto = async () => {
         if (images.length >= MAX_IMAGES) {
             showAlert('Limit', `En fazla ${MAX_IMAGES} fotoğraf ekleyebilirsiniz`, 'warning');
             return;
         }
-
         try {
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
-            if (status !== 'granted') {
-                showAlert('İzin Gerekli', 'Kamera izni vermeniz gerekiyor', 'error');
-                return;
-            }
-
+            if (status !== 'granted') return;
             const result = await ImagePicker.launchCameraAsync({
                 allowsEditing: true,
                 aspect: [4, 3],
                 quality: 0.4,
                 base64: true,
             });
-
-            if (!result.canceled && result.assets && result.assets.length > 0) {
+            if (!result.canceled && result.assets?.[0]) {
                 const asset = result.assets[0];
-                if (asset.base64) {
-                    setImages([...images, `data:image/jpeg;base64,${asset.base64}`]);
-                } else if (asset.uri) { // Fix: check uri separately
-                    setImages([...images, asset.uri]);
-                }
+                setImages([...images, asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri]);
             }
         } catch (error) {
-            showAlert('Hata', 'Fotoğraf çekilirken bir hata oluştu', 'error');
+            showAlert('Hata', 'Fotoğraf çekilemedi', 'error');
         }
     };
 
@@ -287,7 +174,6 @@ export default function QuickCreateScreen() {
             showAlert('Limit', `En fazla ${MAX_IMAGES} fotoğraf ekleyebilirsiniz`, 'warning');
             return;
         }
-
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -296,17 +182,12 @@ export default function QuickCreateScreen() {
                 quality: 0.4,
                 base64: true,
             });
-
-            if (!result.canceled && result.assets && result.assets.length > 0) {
+            if (!result.canceled && result.assets?.[0]) {
                 const asset = result.assets[0];
-                if (asset.base64) {
-                    setImages([...images, `data:image/jpeg;base64,${asset.base64}`]);
-                } else if (asset.uri) {
-                    setImages([...images, asset.uri]);
-                }
+                setImages([...images, asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri]);
             }
         } catch (error) {
-            showAlert('Hata', 'Fotoğraf seçilirken bir hata oluştu', 'error');
+            showAlert('Hata', 'Fotoğraf seçilemedi', 'error');
         }
     };
 
@@ -315,88 +196,35 @@ export default function QuickCreateScreen() {
     };
 
     const handleSubmit = async () => {
-        console.log('🔍 handleSubmit called');
-        console.log('📋 Current form state:', { selectedType, city, district, address: address?.length, description: description?.length });
-
-        // Comprehensive validation
         const validationErrors: string[] = [];
+        if (!selectedType) validationErrors.push('• Arıza tipi seçilmedi');
+        if (!city) validationErrors.push('• Şehir seçilmedi');
+        if (!district) validationErrors.push('• İlçe seçilmedi');
+        if (!address || address.trim().length < 10) validationErrors.push('• Adres en az 10 karakter olmalı');
+        if (!description || description.trim().length < 10) validationErrors.push('• Sorun açıklaması en az 10 karakter olmalı');
 
-        // 1. Check emergency type selection
-        if (!selectedType) {
-            validationErrors.push('• Arıza tipi seçilmedi');
-        }
-
-        // 2. Check city
-        if (!city) {
-            validationErrors.push('• Şehir seçilmedi');
-        }
-
-        // 3. Check district
-        if (!district) {
-            validationErrors.push('• İlçe seçilmedi');
-        }
-
-        // 4. Check neighborhood
-        if (!neighborhood) {
-            validationErrors.push('• Mahalle seçilmedi');
-        }
-
-        // 5. Check address (minimum 10 characters)
-        if (!address || address.trim().length < 10) {
-            validationErrors.push('• Detaylı adres en az 10 karakter olmalı');
-        }
-
-        // 6. Check description character limit (min 10, max 500)
-        if (!description || description.trim().length < 10) {
-            validationErrors.push('• Sorun açıklaması en az 10 karakter olmalı');
-        } else if (description.length > 500) {
-            validationErrors.push('• Açıklama en fazla 500 karakter olabilir');
-        }
-
-        // 7. Check address character limit (max 200)
-        if (address.length > 200) {
-            validationErrors.push('• Adres en fazla 200 karakter olabilir');
-        }
-
-        console.log('❗ Validation errors:', validationErrors);
-
-        // If there are validation errors, show them in a popup
         if (validationErrors.length > 0) {
-            console.log('🚨 Showing validation alert popup');
-            showAlert(
-                'Eksik Bilgiler',
-                'Lütfen aşağıdaki alanları kontrol edin:\n\n' + validationErrors.join('\n'),
-                'warning',
-                [{ text: 'Tamam', variant: 'primary', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }]
-            );
+            showAlert('Eksik Bilgiler', 'Lütfen kontrol edin:\n\n' + validationErrors.join('\n'), 'warning');
             return;
         }
 
-        console.log('✅ Validation passed, creating job...');
-
         const typeInfo = EMERGENCY_TYPES.find(t => t.id === selectedType);
-
         try {
             const jobData = {
                 title: `🚨 ACİL: ${typeInfo?.label}`,
-                description: description.trim() || `Acil elektrik arızası: ${typeInfo?.label}. Hızlı müdahale bekliyorum.`,
-                category: getCategoryFromType(selectedType!), // Non-null assertion - already validated above
+                description: description.trim(),
+                category: getCategoryFromType(selectedType!),
                 location: {
-                    address: address || 'Adres detayda belirtilecek',
-                    city: city,
-                    district: district,
-                    neighborhood: neighborhood || undefined,
+                    address, city, district, neighborhood: neighborhood || undefined,
                     latitude: coords?.latitude || 41.0082,
                     longitude: coords?.longitude || 28.9784,
                 },
                 urgencyLevel: 'HIGH' as const,
                 images: images.length > 0 ? images : undefined,
-                serviceCategory: selectedType || undefined, // Pass the ID directly (elektrik, tesisat, etc.)
+                serviceCategory: selectedType || undefined,
             };
 
             const newJob = await dispatch(createJob(jobData)).unwrap();
-
-            // Show themed success modal
             setCreatedJobId(newJob.id);
             dispatch(fetchJobs({ status: 'OPEN', limit: 20 }));
             dispatch(fetchMyJobs());
@@ -407,7 +235,6 @@ export default function QuickCreateScreen() {
     };
 
     const getCategoryFromType = (type: string): string => {
-        // Return category name that matches JOB_CATEGORIES for proper notification routing
         switch (type) {
             case 'elektrik': return 'Elektrik Tamiri';
             case 'tesisat': return 'Tesisat';
@@ -432,118 +259,86 @@ export default function QuickCreateScreen() {
                     contentContainerStyle={styles.content}
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* Emergency Banner */}
-                    <View style={styles.emergencyBanner}>
+                    {/* Emergency Banner - Premium UI */}
+                    <LinearGradient
+                        colors={['#FF4B2B', '#FF416C']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.emergencyBanner}
+                    >
                         <View style={styles.emergencyIconWrapper}>
-                            <Ionicons name="flash" size={24} color={colors.white} />
+                            <View style={styles.emergencyIconGlow} />
+                            <Ionicons name="flash" size={20} color="#FFF" />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.bannerTitle}>Hızlı Müdahale</Text>
-                            <Text style={styles.bannerSubtitle}>Çağrınız bölgenizdeki tüm aktif ustalara anında iletilir.</Text>
+                            <Text style={styles.bannerSubtitle}>Çağrınız bölgenizdeki ustalara anında iletilir.</Text>
                         </View>
+                        <View style={styles.bannerBadge}>
+                            <Text style={styles.bannerBadgeText}>7/24 Aktif</Text>
+                        </View>
+                    </LinearGradient>
+
+                    {/* Hizmet Türü */}
+                    <View style={styles.sectionHeader}>
+                        <View style={[styles.sectionIconBox, { backgroundColor: staticColors.error + '10' }]}>
+                            <Ionicons name="alert-circle" size={16} color={staticColors.error} />
+                        </View>
+                        <Text style={styles.sectionTitle}>Hangi alanda usta lazım?</Text>
                     </View>
 
-                    {/* Arıza Tipi */}
-                    <Card variant="default" elevated={false} style={styles.sectionCard}>
-                        <View style={styles.sectionHeader}>
-                            <View style={[styles.sectionIconWrapper, { backgroundColor: staticColors.error + '10' }]}>
-                                <Ionicons name="alert-circle-outline" size={20} color={staticColors.error} />
-                            </View>
-                            <Text style={styles.sectionTitle}>Hizmet Türü</Text>
-                        </View>
-
-                        <View style={styles.typeGrid}>
-                            {EMERGENCY_TYPES.map((type) => (
+                    <View style={styles.typeGrid}>
+                        {EMERGENCY_TYPES.map((type) => {
+                            const isSelected = selectedType === type.id;
+                            return (
                                 <TouchableOpacity
                                     key={type.id}
-                                    style={[
-                                        styles.typeBtn,
-                                        selectedType === type.id
-                                            ? { borderColor: type.color, backgroundColor: type.color + '10', shadowColor: type.color }
-                                            : {}
-                                    ]}
-                                    activeOpacity={0.7}
+                                    style={[styles.typeBtn, isSelected && { borderColor: type.color, backgroundColor: type.color + '05' }]}
+                                    activeOpacity={0.8}
                                     onPress={() => setSelectedType(type.id)}
                                 >
-                                    <View style={styles.typeBtnContent}>
-                                        <View style={[styles.typeIconBox, { backgroundColor: type.color + '15' }]}>
-                                            <View style={StyleSheet.absoluteFill}>
-                                                <LinearGradient
-                                                    colors={[`${type.color}15`, `${type.color}25`]}
-                                                    style={[StyleSheet.absoluteFill, { borderRadius: 14, justifyContent: 'center', alignItems: 'center' }]}
-                                                >
-                                                    <Ionicons name={type.icon as any} size={24} color={type.color} />
-                                                </LinearGradient>
-                                            </View>
-                                            <Image
-                                                source={getCategoryImage(type.id)}
-                                                style={styles.type3dImage}
-                                                resizeMode="contain"
-                                            />
-                                        </View>
-
-                                        <Text style={[
-                                            styles.typeLabel,
-                                            selectedType === type.id && { color: type.color, fontFamily: fonts.bold }
-                                        ]} numberOfLines={2}>
-                                            {type.label}
-                                        </Text>
-                                        {selectedType === type.id && (
-                                            <View style={[styles.checkBadge, { backgroundColor: type.color }]}>
-                                                <Ionicons name="checkmark" size={10} color={colors.white} />
-                                            </View>
-                                        )}
+                                    <View style={[styles.typeIconBox, { backgroundColor: type.color + '12' }]}>
+                                        <Image source={getCategoryImage(type.id)} style={styles.type3dImage} resizeMode="contain" />
                                     </View>
+                                    <Text style={[styles.typeLabel, isSelected && { color: type.color, fontFamily: fonts.bold }]}>
+                                        {type.label}
+                                    </Text>
+                                    {isSelected && <View style={[styles.checkIndicator, { backgroundColor: type.color }]}>
+                                        <Ionicons name="checkmark" size={10} color="#FFF" />
+                                    </View>}
                                 </TouchableOpacity>
-                            ))}
-                        </View>
-                    </Card>
+                            );
+                        })}
+                    </View>
 
-                    {/* Kayıtlı Adres Seçimi */}
-                    {savedAddresses.length > 0 && (
-                        <View style={styles.savedAddressesContainer}>
-                            <Text style={styles.savedTitle}>Kayıtlı Adresten Seç</Text>
+                    {/* Konum Bilgileri */}
+                    <View style={styles.sectionHeader}>
+                        <View style={[styles.sectionIconBox, { backgroundColor: colors.primary + '10' }]}>
+                            <Ionicons name="location" size={16} color={colors.primary} />
+                        </View>
+                        <Text style={styles.sectionTitle}>Konum Bilgileri</Text>
+                    </View>
+
+                    <Card variant="default" style={styles.mainCard}>
+                        {savedAddresses.length > 0 && (
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.addressScroll}>
                                 {savedAddresses.map((addr) => (
                                     <TouchableOpacity
                                         key={addr.id}
-                                        style={[
-                                            styles.addressChip,
-                                            coords?.latitude === addr.latitude && [styles.addressChipActive, { backgroundColor: colors.primary, borderColor: colors.primary, shadowColor: colors.primary }]
-                                        ]}
+                                        style={[styles.addressChip, coords?.latitude === addr.latitude && { backgroundColor: colors.primary, borderColor: colors.primary }]}
                                         onPress={() => {
-                                            setCity(addr.city);
-                                            setDistrict(addr.district || '');
-                                            setNeighborhood(addr.neighborhood || '');
-                                            setAddress(addr.address);
+                                            setCity(addr.city); setDistrict(addr.district || '');
+                                            setNeighborhood(addr.neighborhood || ''); setAddress(addr.address);
                                             setCoords({ latitude: addr.latitude, longitude: addr.longitude });
                                         }}
                                     >
-                                        <Ionicons
-                                            name="location"
-                                            size={14}
-                                            color={coords?.latitude === addr.latitude ? staticColors.white : colors.primary}
-                                        />
-                                        <Text style={[
-                                            styles.addressChipText,
-                                            coords?.latitude === addr.latitude && [styles.addressChipTextActive, { color: staticColors.white }]
-                                        ]}>
-                                            {addr.city} / {addr.district || 'Merkez'}
+                                        <Text style={[styles.addressChipText, coords?.latitude === addr.latitude && { color: '#FFF' }]}>
+                                            {addr.city} / {addr.district}
                                         </Text>
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
-                        </View>
-                    )}
-
-                    {/* Konum Bilgileri */}
-                    <Card variant="default" style={styles.sectionCard}>
-                        <View style={styles.sectionHeader}>
-                            <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '10' }]}>
-                                <Ionicons name="location-outline" size={20} color={colors.primary} />
-                            </View>
-                            <Text style={styles.sectionTitle}>Konum Bilgileri</Text>
-                        </View>
+                        )}
 
                         <LocationPicker
                             onLocationSelected={(loc) => {
@@ -558,124 +353,68 @@ export default function QuickCreateScreen() {
                             initialLocation={coords || { latitude: 41.0082, longitude: 28.9784 }}
                         />
 
-                        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
-                            <View style={{ flex: 1 }}>
-                                <Picker
-                                    label="Şehir"
-                                    value={city}
-                                    options={CITY_NAMES}
-                                    onValueChange={setCity}
-                                    error={errors.city}
-                                />
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Picker
-                                    label="İlçe"
-                                    value={district}
-                                    options={districtOptions}
-                                    onValueChange={setDistrict}
-                                    error={errors.district}
-                                    disabled={!city}
-                                />
-                            </View>
+                        <View style={styles.row}>
+                            <View style={{ flex: 1 }}><Picker label="Şehir" value={city} options={CITY_NAMES} onValueChange={setCity} /></View>
+                            <View style={{ flex: 1 }}><Picker label="İlçe" value={district} options={districtOptions} onValueChange={setDistrict} disabled={!city} /></View>
                         </View>
-
-                        <Picker
-                            label="Mahalle"
-                            value={neighborhood}
-                            options={neighborhoodOptions.length > 0 ? neighborhoodOptions : (district ? ['Merkez'] : [])}
-                            onValueChange={setNeighborhood}
-                            error={errors.neighborhood}
-                            disabled={!district}
+                        <Picker label="Mahalle" value={neighborhood} options={neighborhoodOptions.length > 0 ? neighborhoodOptions : (district ? ['Merkez'] : [])} onValueChange={setNeighborhood} disabled={!district} />
+                        <TextInput
+                            style={styles.addressInput}
+                            placeholder="Detaylı Adres (Bina, Da No...)"
+                            value={address}
+                            onChangeText={setAddress}
+                            multiline
+                            placeholderTextColor={colors.textLight}
                         />
-
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Detaylı Adres</Text>
-                            <TextInput
-                                style={[styles.textAreaSmall, errors.address && styles.inputError]}
-                                placeholder="Bina, daire, kat bilgisi yazın..."
-                                value={address}
-                                onChangeText={(text) => {
-                                    setAddress(text);
-                                    if (errors.address) setErrors({ ...errors, address: '' });
-                                }}
-                                multiline
-                                numberOfLines={2}
-                                placeholderTextColor={colors.textLight}
-                            />
-                            {errors.address && <Text style={styles.errorText}>{errors.address}</Text>}
-                        </View>
                     </Card>
 
-                    {/* Açıklama + Görsel + Bütçe */}
-                    <Card variant="default" style={styles.sectionCard}>
-                        <View style={styles.sectionHeader}>
-                            <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '10' }]}>
-                                <Ionicons name="create-outline" size={20} color={colors.primary} />
-                            </View>
-                            <Text style={styles.sectionTitle}>Sorun ve Detaylar</Text>
+                    {/* Detaylar */}
+                    <View style={styles.sectionHeader}>
+                        <View style={[styles.sectionIconBox, { backgroundColor: colors.primary + '10' }]}>
+                            <Ionicons name="create" size={16} color={colors.primary} />
                         </View>
+                        <Text style={styles.sectionTitle}>Sorun ve Detaylar</Text>
+                    </View>
 
-                        {/* Açıklama Alanı */}
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Sorunu Açıklayın <Text style={[styles.optionalLabel, { color: staticColors.error }]}>* (En az 10 karakter)</Text></Text>
-                            <TextInput
-                                style={styles.textArea}
-                                placeholder={getDescriptionPlaceholder(selectedType)}
-                                value={description}
-                                onChangeText={setDescription}
-                                multiline
-                                numberOfLines={3}
-                                maxLength={500}
-                                placeholderTextColor={colors.textLight}
-                            />
-                            <Text style={[styles.charCount, description.length > 450 && { color: staticColors.error }]}>
-                                {description.length}/500
-                            </Text>
-                        </View>
-
-                        {/* Fotoğraf Ekle */}
-                        <Text style={[styles.optionalLabel, { marginTop: 8 }]}>Fotoğraf Ekle (Opsiyonel)</Text>
-                        <View style={styles.photoPillRow}>
-                            <TouchableOpacity style={styles.photoPillBtn} onPress={handleTakePhoto}>
-                                <Ionicons name="camera-outline" size={18} color={colors.primary} />
-                                <Text style={[styles.photoPillText, { color: colors.primary }]}>Çek</Text>
+                    <Card variant="default" style={styles.mainCard}>
+                        <TextInput
+                            style={styles.textArea}
+                            placeholder={getDescriptionPlaceholder(selectedType)}
+                            value={description}
+                            onChangeText={setDescription}
+                            multiline
+                            numberOfLines={3}
+                            placeholderTextColor={colors.textLight}
+                        />
+                        <View style={styles.photoRow}>
+                            <TouchableOpacity style={styles.photoBtn} onPress={handleTakePhoto}>
+                                <Ionicons name="camera" size={20} color={colors.primary} />
+                                <Text style={[styles.photoBtnText, { color: colors.primary }]}>Çek</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.photoPillBtn} onPress={handlePickImage}>
-                                <Ionicons name="images-outline" size={18} color={colors.primary} />
-                                <Text style={[styles.photoPillText, { color: colors.primary }]}>Galeri</Text>
+                            <TouchableOpacity style={styles.photoBtn} onPress={handlePickImage}>
+                                <Ionicons name="images" size={20} color={colors.primary} />
+                                <Text style={[styles.photoBtnText, { color: colors.primary }]}>Galeri</Text>
                             </TouchableOpacity>
+                            {images.map((img, i) => (
+                                <View key={i} style={styles.imgPreview}>
+                                    <Image source={{ uri: img }} style={styles.img} />
+                                    <TouchableOpacity style={styles.imgRemove} onPress={() => handleRemoveImage(i)}>
+                                        <Ionicons name="close-circle" size={16} color={staticColors.error} />
+                                    </TouchableOpacity>
+                                </View>
+                            ))}
                         </View>
-
-                        {/* Fotoğraf Önizlemeleri */}
-                        {images.length > 0 && (
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagePreviewScroll}>
-                                {images.map((img, index) => (
-                                    <View key={index} style={styles.imgWrapper}>
-                                        <Image source={{ uri: img }} style={styles.previewImg} />
-                                        <TouchableOpacity
-                                            style={styles.imgRemoveBtn}
-                                            onPress={() => handleRemoveImage(index)}
-                                        >
-                                            <Ionicons name="close-circle" size={18} color={colors.error} />
-                                        </TouchableOpacity>
-                                    </View>
-                                ))}
-                            </ScrollView>
-                        )}
-
-                        {/* Tahmini Bütçe */}
-                        <Text style={[styles.optionalLabel, { marginTop: 16 }]}>Tahmini Bütçe (₺) (Opsiyonel)</Text>
-                        <View style={styles.budgetInputContainer}>
-                            <Ionicons name="wallet-outline" size={20} color={colors.textLight} style={{ marginRight: 8 }} />
+                        <View style={styles.budgetRow}>
+                            <Ionicons name="wallet-outline" size={20} color={colors.textLight} />
                             <TextInput
                                 style={styles.budgetInput}
-                                placeholder="Bütçeniz (Opsiyonel)"
-                                placeholderTextColor={colors.textLight}
+                                placeholder="Tahmini Bütçe (Opsiyonel)"
                                 value={budget}
                                 onChangeText={setBudget}
                                 keyboardType="numeric"
+                                placeholderTextColor={colors.textLight}
                             />
+                            <Text style={styles.currency}>₺</Text>
                         </View>
                     </Card>
 
@@ -684,557 +423,85 @@ export default function QuickCreateScreen() {
                         onPress={handleSubmit}
                         loading={isLoading}
                         variant="primary"
-                        style={styles.callBtn}
-                        icon={<Ionicons name="flash" size={20} color={colors.white} />}
+                        style={styles.submitBtn}
+                        icon={<Ionicons name="flash" size={18} color="#FFF" />}
                     />
-
-
+                    <Text style={styles.safetyHint}>Güvenliğiniz için ödemeyi uygulama üzerinden yapın.</Text>
                 </ScrollView>
             </KeyboardAvoidingView>
 
             <AuthGuardModal
                 visible={showAuthModal}
-                onClose={() => {
-                    setShowAuthModal(false);
-                    router.back();
-                }}
-                onLogin={() => {
-                    setShowAuthModal(false);
-                    router.replace({
-                        pathname: '/(auth)/login',
-                        params: { redirectTo: '/jobs/quick-create' }
-                    });
-                }}
-                onRegister={() => {
-                    setShowAuthModal(false);
-                    router.replace({
-                        pathname: '/(auth)/register',
-                        params: { redirectTo: '/jobs/quick-create' }
-                    });
-                }}
+                onClose={() => { setShowAuthModal(false); router.back(); }}
+                onLogin={() => { setShowAuthModal(false); router.replace({ pathname: '/(auth)/login', params: { redirectTo: '/jobs/quick-create' } }); }}
+                onRegister={() => { setShowAuthModal(false); router.replace({ pathname: '/(auth)/register', params: { redirectTo: '/jobs/quick-create' } }); }}
                 title="Giriş Gerekiyor"
-                message="Acil usta çağırabilmek için giriş yapmanız veya kayıt olmanız gerekmektedir."
+                message="Acil usta çağırabilmek için giriş yapmanız gerekmektedir."
                 icon="flash-outline"
             />
 
-            {/* Success Modal - Emergency Glass Glow Design */}
             <Modal visible={showSuccessModal} transparent animationType="fade">
                 <View style={styles.modalOverlay}>
-                    <LinearGradient
-                        colors={['rgba(30, 41, 59, 0.98)', 'rgba(15, 23, 42, 0.95)']}
-                        style={styles.successModal}
-                    >
-                        <View style={styles.successIconWrapper}>
-                            <View style={styles.successIconGlow} />
-                            <LinearGradient
-                                colors={['#EF4444', '#DC2626']}
-                                style={styles.successIconBox}
-                            >
-                                <Ionicons name="flash" size={36} color={staticColors.white} />
+                    <LinearGradient colors={['rgba(30, 41, 59, 0.98)', 'rgba(15, 23, 42, 0.95)']} style={styles.successModal}>
+                        <View style={styles.successIconBox}>
+                            <LinearGradient colors={['#EF4444', '#DC2626']} style={styles.iconCircle}>
+                                <Ionicons name="flash" size={32} color="#FFF" />
                             </LinearGradient>
                         </View>
-
-                        <Text style={[styles.successTitle, { color: staticColors.white }]}>Çağrı Gönderildi! ⚡</Text>
-                        <Text style={[styles.successMessage, { color: 'rgba(255,255,255,0.6)' }]}>
-                            Yakındaki ustalara bildirim gönderildi. En kısa sürede teklifler gelmeye başlayacak!
-                        </Text>
-
-                        <View style={styles.successBtnGroup}>
-                            <TouchableOpacity
-                                style={[styles.successSecondaryBtn, { backgroundColor: 'rgba(255,255,255,0.1)' }]}
-                                onPress={() => {
-                                    setShowSuccessModal(false);
-                                    router.back();
-                                }}
-                                activeOpacity={0.8}
-                            >
-                                <Text style={[styles.successSecondaryBtnText, { color: 'rgba(255,255,255,0.6)' }]}>Ana Sayfa</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.successPrimaryBtn, { shadowColor: '#EF4444' }]}
-                                onPress={() => {
-                                    setShowSuccessModal(false);
-                                    router.back();
-                                    if (createdJobId) {
-                                        setTimeout(() => {
-                                            router.push(`/jobs/${createdJobId}`);
-                                        }, 300);
-                                    }
-                                }}
-                                activeOpacity={0.8}
-                            >
-                                <LinearGradient
-                                    colors={['#EF4444', '#DC2626']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 0 }}
-                                    style={styles.successPrimaryBtnGradient}
-                                >
-                                    <Ionicons name="eye-outline" size={18} color={staticColors.white} style={{ marginRight: 6 }} />
-                                    <Text style={styles.successPrimaryBtnText}>Çağrıyı Takip Et</Text>
-                                </LinearGradient>
-                            </TouchableOpacity>
-                        </View>
+                        <Text style={styles.successTitle}>Çağrı Gönderildi!</Text>
+                        <Text style={styles.successMessage}>Ustalar en kısa sürede teklif verecek.</Text>
+                        <Button title="Çağrıyı Takip Et" onPress={() => { setShowSuccessModal(false); router.replace(`/jobs/${createdJobId}`); }} variant="primary" fullWidth />
                     </LinearGradient>
                 </View>
             </Modal>
 
-            <PremiumAlert
-                visible={alertConfig.visible}
-                title={alertConfig.title}
-                message={alertConfig.message}
-                type={alertConfig.type}
-                buttons={alertConfig.buttons}
-                onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
-            />
+            <PremiumAlert visible={alertConfig.visible} title={alertConfig.title} message={alertConfig.message} type={alertConfig.type} buttons={alertConfig.buttons} onClose={() => setAlertConfig({ ...alertConfig, visible: false })} />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#F8FAFC',
-    },
-    scrollView: {
-        flex: 1,
-    },
-    content: {
-        padding: 12, // Reduced from spacing.md
-        paddingBottom: 40,
-    },
-    emergencyBanner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#EF4444',
-        padding: 16, // Increased padding
-        borderRadius: 12, // Updated per request
-        marginBottom: 12,
-        shadowColor: '#EF4444',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    emergencyIconWrapper: {
-        width: 40, // Reduced from 48
-        height: 40, // Reduced from 48
-        borderRadius: 12, // Reduced from 14
-        backgroundColor: 'rgba(255, 255, 255, 0.25)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
-    },
-    bannerTitle: {
-        fontFamily: fonts.bold,
-        fontSize: 15,
-        color: staticColors.white,
-    },
-    bannerSubtitle: {
-        fontFamily: fonts.medium,
-        fontSize: 11,
-        color: 'rgba(255, 255, 255, 0.95)',
-    },
-    sectionCard: {
-        padding: 12,
-        marginBottom: 10,
-        borderRadius: 20,
-        backgroundColor: staticColors.white,
-    },
-    sectionHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 12, // Reduced from 20
-        gap: 10,
-    },
-    sectionIconWrapper: {
-        width: 32,
-        height: 32,
-        borderRadius: 8,
-        backgroundColor: staticColors.primary + '10',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    sectionTitle: {
-        fontFamily: fonts.bold,
-        fontSize: 15,
-        color: '#1F2937', // Darker black
-    },
-    typeGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8, // Reduced from 10
-    },
-    typeBtn: {
-        width: '31%',
-        aspectRatio: 0.9,
-        backgroundColor: staticColors.white,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: staticColors.borderLight,
-        shadowColor: 'transparent',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0,
-        elevation: 0,
-        overflow: 'hidden',
-    },
-    typeBtnContent: {
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 4,
-    },
-    typeIconBox: {
-        width: 48, // Larger for 3D icons
-        height: 48,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 6,
-        position: 'relative',
-        overflow: 'hidden',
-    },
-    typeGlowEffect: {
-        position: 'absolute',
-        width: '100%',
-        height: '100%',
-        borderRadius: 10,
-        transform: [{ scale: 1.5 }],
-        opacity: 0.5,
-    },
-    type3dImage: {
-        width: 40,
-        height: 40,
-    },
-    typeLabel: {
-        fontFamily: fonts.extraBold,
-        fontSize: 11, // Slightly smaller
-        color: staticColors.text,
-        textAlign: 'center',
-    },
-    checkBadge: {
-        position: 'absolute',
-        top: 4,
-        right: 4,
-        width: 14,
-        height: 14,
-        borderRadius: 7,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    locationLoading: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 10,
-        gap: 8,
-    },
-    locationText: {
-        fontFamily: fonts.medium,
-        fontSize: 13,
-        color: staticColors.textSecondary,
-    },
-    locationBox: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderRadius: 12,
-        padding: 10,
-    },
-    locationMain: {
-        fontFamily: fonts.bold,
-        fontSize: 13,
-        color: staticColors.text,
-    },
-    locationSub: {
-        fontFamily: fonts.medium,
-        fontSize: 11,
-        color: staticColors.textSecondary,
-        marginTop: 2,
-    },
-    descInput: {
-        backgroundColor: '#F3F4F6', // Light gray
-        borderRadius: 12,
-        padding: 12,
-        fontFamily: fonts.regular,
-        fontSize: 14,
-        color: staticColors.text,
-        borderWidth: 0, // No border
-        height: 60,
-        marginBottom: 10,
-    },
-    imageActionRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-    },
-    imgActionBtn: {
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        backgroundColor: staticColors.white,
-        borderWidth: 1,
-        borderStyle: 'dashed',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    imgWrapper: {
-        position: 'relative',
-        marginRight: 8,
-    },
-    previewImg: {
-        width: 44, // Reduced from 50
-        height: 44, // Reduced from 50
-        borderRadius: 10,
-    },
-    imgRemoveBtn: {
-        position: 'absolute',
-        top: -4,
-        right: -4,
-        backgroundColor: staticColors.white,
-        borderRadius: 8,
-    },
-    callBtn: {
-        marginTop: 8,
-        height: 50, // Reduced from 60
-        borderRadius: 16, // Reduced from 20
-        backgroundColor: '#EF4444',
-    },
-    footerNote: {
-        textAlign: 'center',
-        fontFamily: fonts.medium,
-        fontSize: 11,
-        color: staticColors.textLight,
-        marginTop: 20,
-    },
-    savedAddressesContainer: {
-        marginBottom: 16,
-    },
-    savedTitle: {
-        fontFamily: fonts.bold,
-        fontSize: 13,
-        color: staticColors.textSecondary,
-        marginBottom: 8,
-    },
-    inputContainer: {
-        marginBottom: 16,
-    },
-    label: {
-        fontFamily: fonts.semiBold, // Bolder
-        fontSize: 14,
-        color: '#333333', // Darker
-        marginBottom: 6,
-    },
-    textAreaSmall: {
-        backgroundColor: '#F3F4F6', // Light gray
-        borderRadius: 12,
-        padding: 14,
-        fontFamily: fonts.regular,
-        fontSize: 14,
-        color: staticColors.text,
-        borderWidth: 0, // No border
-        height: 80,
-        textAlignVertical: 'top',
-    },
-    inputError: {
-        borderColor: staticColors.error,
-    },
-    errorText: {
-        fontFamily: fonts.regular,
-        fontSize: 12,
-        color: staticColors.error,
-        marginTop: 4,
-    },
-    addressScroll: {
-        flexDirection: 'row',
-    },
-    addressChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: staticColors.white,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 12,
-        marginRight: 8,
-        marginBottom: 4,
-        borderWidth: 1,
-        borderColor: staticColors.borderLight,
-        gap: 6,
-    },
-    addressChipActive: {
-    },
-    addressChipText: {
-        fontFamily: fonts.bold,
-        fontSize: 12,
-        color: staticColors.text,
-    },
-    addressChipTextActive: {
-    },
-    // Success Modal Styles
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(15, 23, 42, 0.6)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 24,
-    },
-    successModal: {
-        width: '100%',
-        borderRadius: 32,
-        padding: 32,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.5)',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 20 },
-        shadowOpacity: 0.2,
-        shadowRadius: 30,
-        elevation: 20,
-    },
-    successIconWrapper: {
-        width: 100,
-        height: 100,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 24,
-    },
-    successIconGlow: {
-        position: 'absolute',
-        width: 80,
-        height: 80,
-        backgroundColor: '#EF4444',
-        borderRadius: 40,
-        opacity: 0.25,
-        transform: [{ scale: 1.5 }],
-    },
-    successIconBox: {
-        width: 72,
-        height: 72,
-        borderRadius: 24,
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1,
-    },
-    successTitle: {
-        fontFamily: fonts.extraBold,
-        fontSize: 26,
-        color: staticColors.text,
-        marginBottom: 10,
-        textAlign: 'center',
-    },
-    successMessage: {
-        fontFamily: fonts.medium,
-        fontSize: 15,
-        color: staticColors.textSecondary,
-        textAlign: 'center',
-        lineHeight: 23,
-        marginBottom: 28,
-        paddingHorizontal: 10,
-    },
-    successBtnGroup: {
-        flexDirection: 'row',
-        width: '100%',
-        gap: 12,
-    },
-    successSecondaryBtn: {
-        flex: 1,
-        height: 52,
-        borderRadius: 16,
-        backgroundColor: '#F1F5F9',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#E2E8F0',
-    },
-    successSecondaryBtnText: {
-        fontFamily: fonts.bold,
-        fontSize: 14,
-        color: staticColors.textSecondary,
-    },
-    successPrimaryBtn: {
-        flex: 1.5,
-        height: 52,
-        borderRadius: 16,
-        overflow: 'hidden',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
-        elevation: 6,
-    },
-    successPrimaryBtnGradient: {
-        flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    successPrimaryBtnText: {
-        fontFamily: fonts.bold,
-        fontSize: 14,
-        color: staticColors.white,
-    },
-    // New styles for Görsel ve Bütçe section
-    optionalLabel: {
-        fontFamily: fonts.medium,
-        fontSize: 13,
-        color: staticColors.textSecondary,
-        marginBottom: 10,
-    },
-    photoPillRow: {
-        flexDirection: 'row',
-        gap: 12,
-        marginBottom: 12,
-    },
-    photoPillBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        backgroundColor: staticColors.white,
-        gap: 6,
-    },
-    photoPillText: {
-        fontFamily: fonts.semiBold,
-        fontSize: 14,
-    },
-    imagePreviewScroll: {
-        flexDirection: 'row',
-        marginBottom: 8,
-    },
-    budgetInputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F3F4F6',
-        borderRadius: 12,
-        paddingHorizontal: 14,
-        paddingVertical: 12,
-    },
-    budgetInput: {
-        flex: 1,
-        fontFamily: fonts.regular,
-        fontSize: 14,
-        color: staticColors.text,
-    },
-    textArea: {
-        backgroundColor: '#F8FAFC',
-        borderWidth: 1,
-        borderColor: '#E2E8F0',
-        borderRadius: 12,
-        padding: 14,
-        fontFamily: fonts.medium,
-        fontSize: 14,
-        color: staticColors.text,
-        minHeight: 90,
-        textAlignVertical: 'top',
-    },
-    charCount: {
-        fontFamily: fonts.medium,
-        fontSize: 11,
-        color: staticColors.textLight,
-        textAlign: 'right',
-        marginTop: 4,
-    },
+    container: { flex: 1, backgroundColor: '#F8FAFC' },
+    scrollView: { flex: 1 },
+    content: { padding: 14, paddingBottom: 30 },
+    emergencyBanner: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, marginBottom: 16, elevation: 4, shadowColor: '#FF416C', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+    emergencyIconWrapper: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', marginRight: 12, position: 'relative' },
+    emergencyIconGlow: { position: 'absolute', width: 30, height: 30, borderRadius: 15, backgroundColor: '#FFF', opacity: 0.2, transform: [{ scale: 1.5 }] },
+    bannerTitle: { fontFamily: fonts.bold, fontSize: 16, color: '#FFF' },
+    bannerSubtitle: { fontFamily: fonts.medium, fontSize: 11, color: 'rgba(255,255,255,0.8)' },
+    bannerBadge: { backgroundColor: 'rgba(0,0,0,0.2)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+    bannerBadgeText: { fontFamily: fonts.bold, fontSize: 10, color: '#FFF' },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10, marginTop: 4 },
+    sectionIconBox: { width: 28, height: 28, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+    sectionTitle: { fontFamily: fonts.bold, fontSize: 14, color: '#1E293B' },
+    typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
+    typeBtn: { width: '31.5%', aspectRatio: 0.95, backgroundColor: '#FFF', borderRadius: 16, borderWidth: 1, borderColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', padding: 6, position: 'relative' },
+    typeIconBox: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+    type3dImage: { width: 36, height: 36 },
+    typeLabel: { fontFamily: fonts.semiBold, fontSize: 11, color: '#64748B', textAlign: 'center' },
+    checkIndicator: { position: 'absolute', top: 6, right: 6, width: 14, height: 14, borderRadius: 7, justifyContent: 'center', alignItems: 'center' },
+    mainCard: { padding: 12, borderRadius: 18, marginBottom: 16 },
+    addressScroll: { flexDirection: 'row', marginBottom: 12 },
+    addressChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', marginRight: 8, backgroundColor: '#F8FAFC' },
+    addressChipText: { fontFamily: fonts.bold, fontSize: 11, color: '#64748B' },
+    row: { flexDirection: 'row', gap: 10, marginBottom: 4 },
+    addressInput: { backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', padding: 12, fontFamily: fonts.medium, fontSize: 13, color: '#1E293B', marginTop: 10, minHeight: 60, textAlignVertical: 'top' },
+    textArea: { backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', padding: 12, fontFamily: fonts.medium, fontSize: 14, color: '#1E293B', minHeight: 80, textAlignVertical: 'top' },
+    photoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },
+    photoBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: '#F1F5F9' },
+    photoBtnText: { fontFamily: fonts.bold, fontSize: 12 },
+    imgPreview: { width: 40, height: 40, borderRadius: 8, position: 'relative' },
+    img: { width: '100%', height: '100%', borderRadius: 8 },
+    imgRemove: { position: 'absolute', top: -5, right: -5, backgroundColor: '#FFF', borderRadius: 10 },
+    budgetRow: { flexDirection: 'row', alignItems: 'center', marginTop: 16, backgroundColor: '#F8FAFC', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: '#E2E8F0' },
+    budgetInput: { flex: 1, paddingHorizontal: 8, fontFamily: fonts.bold, fontSize: 14, color: '#1E293B' },
+    currency: { fontFamily: fonts.bold, fontSize: 14, color: '#64748B' },
+    submitBtn: { marginTop: 10, height: 54, borderRadius: 16, shadowColor: '#EF4444', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 },
+    safetyHint: { textAlign: 'center', fontFamily: fonts.medium, fontSize: 11, color: '#94A3B8', marginTop: 12 },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.8)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+    successModal: { width: '100%', borderRadius: 28, padding: 24, alignItems: 'center' },
+    successIconBox: { marginBottom: 20 },
+    iconCircle: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center' },
+    successTitle: { fontFamily: fonts.extraBold, fontSize: 24, color: '#FFF', marginBottom: 8 },
+    successMessage: { fontFamily: fonts.medium, fontSize: 14, color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginBottom: 24 },
 });
