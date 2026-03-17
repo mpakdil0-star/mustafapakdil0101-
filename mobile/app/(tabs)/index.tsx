@@ -213,7 +213,7 @@ export default function HomeScreen() {
     }
 
     if (!user?.profileImageUrl) {
-      missing.push({ id: 'avatar', label: 'Profil Fotoğrafı', icon: 'image-outline', route: '/profile' });
+      missing.push({ id: 'avatar', label: 'Profil Fotoğrafı', icon: 'camera-outline', route: '/profile/edit' });
     }
 
     if (isElectrician) {

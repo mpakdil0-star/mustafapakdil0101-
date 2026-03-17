@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Text, TouchableOpacity, Modal, Platform, Image } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Text, TouchableOpacity, Modal, Platform, Image, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { fonts } from '../../constants/typography';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,6 +15,8 @@ import { useDispatch } from 'react-redux';
 import { setUser, setDraftProfile, clearDraftProfile } from '../../store/slices/authSlice';
 import api from '../../services/api';
 import { useEffect } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import { authService } from '../../services/authService';
 
 // Uzmanlık alanları listesi
 // ... (rest of imports remains similar)
@@ -111,6 +113,66 @@ export default function EditProfileScreen() {
     const [loading, setLoading] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [isExpertiseExpanded, setIsExpertiseExpanded] = useState(true); // Default open for easier access
+    const [photoLoading, setPhotoLoading] = useState(false);
+
+    // === Photo Upload Logic ===
+    const handlePhotoOptions = () => {
+        const buttons: any[] = [
+            { text: 'Galeriden Seç', onPress: handlePickImage, variant: 'primary' },
+            ...(user?.profileImageUrl ? [{ text: 'Fotoğrafı Kaldır', onPress: handleRemovePhoto, variant: 'danger' }] : []),
+            { text: 'İptal', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })), variant: 'ghost' }
+        ];
+        setAlertConfig({
+            visible: true,
+            title: 'Profil Fotoğrafı',
+            message: user?.profileImageUrl
+                ? 'Profil fotoğrafınızı güncellemek veya kaldırmak mı istiyorsunuz?'
+                : 'Profil fotoğrafı ekleyerek profilinizi daha güvenilir hale getirin.',
+            type: 'info',
+            buttons
+        });
+    };
+
+    const handlePickImage = async () => {
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: false,
+                quality: 0.8,
+                base64: true,
+            });
+            if (!result.canceled && result.assets?.[0]?.base64) {
+                setPhotoLoading(true);
+                try {
+                    const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+                    const updatedUser = await authService.uploadAvatarBase64(base64Image);
+                    dispatch(setUser(updatedUser));
+                    showAlert('Başarılı', 'Profil fotoğrafı güncellendi!', 'success');
+                } catch (error: any) {
+                    showAlert('Hata', error.message || 'Fotoğraf yüklenemedi', 'error');
+                } finally {
+                    setPhotoLoading(false);
+                }
+            }
+        } catch (error) {
+            showAlert('Hata', 'Fotoğraf seçilirken bir hata oluştu', 'error');
+        }
+    };
+
+    const handleRemovePhoto = async () => {
+        if (!user) return;
+        setPhotoLoading(true);
+        try {
+            const updatedUser = await authService.removeAvatar();
+            dispatch(setUser(updatedUser));
+            showAlert('Başarılı', 'Profil fotoğrafı kaldırıldı', 'success');
+        } catch (error: any) {
+            dispatch(setUser({ ...user, profileImageUrl: undefined } as any));
+            showAlert('Başarılı', 'Profil fotoğrafı kaldırıldı', 'success');
+        } finally {
+            setPhotoLoading(false);
+        }
+    };
 
     // Track initial values to detect changes
     const initialValues = useRef({
@@ -333,25 +395,37 @@ export default function EditProfileScreen() {
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Profile Preview Card - Quick glance at how profile looks */}
-                {user?.userType === 'ELECTRICIAN' && (
-                    <View style={[styles.previewCard, { shadowColor: colors.primary }]}>
-                        <View style={styles.previewAvatarWrapper}>
-                            {user?.profileImageUrl ? (
-                                <Image
-                                    source={{ uri: getFileUrl(user.profileImageUrl) || '' }}
-                                    style={styles.previewAvatar}
-                                />
+                {/* Profile Photo Upload Card - Visible to ALL users */}
+                <View style={[styles.previewCard, { shadowColor: colors.primary }]}>
+                    <TouchableOpacity
+                        style={styles.previewAvatarWrapper}
+                        onPress={handlePhotoOptions}
+                        activeOpacity={0.8}
+                    >
+                        {user?.profileImageUrl ? (
+                            <Image
+                                source={{ uri: getFileUrl(user.profileImageUrl) || '' }}
+                                style={styles.previewAvatar}
+                            />
+                        ) : (
+                            <View style={[styles.previewAvatarPlaceholder, { backgroundColor: colors.primary + '15' }]}>
+                                <Text style={[styles.previewAvatarText, { color: colors.primary }]}>
+                                    {user?.fullName?.charAt(0).toUpperCase() || 'U'}
+                                </Text>
+                            </View>
+                        )}
+                        {/* Camera badge overlay */}
+                        <View style={[styles.photoCameraBadge, { backgroundColor: colors.primary }]}>
+                            {photoLoading ? (
+                                <ActivityIndicator size={10} color="#FFF" />
                             ) : (
-                                <View style={[styles.previewAvatarPlaceholder, { backgroundColor: colors.primary + '15' }]}>
-                                    <Text style={[styles.previewAvatarText, { color: colors.primary }]}>
-                                        {user?.fullName?.charAt(0).toUpperCase() || 'U'}
-                                    </Text>
-                                </View>
+                                <Ionicons name="camera" size={12} color="#FFF" />
                             )}
                         </View>
-                        <View style={styles.previewInfo}>
-                            <Text style={styles.previewName}>{user?.fullName}</Text>
+                    </TouchableOpacity>
+                    <View style={styles.previewInfo}>
+                        <Text style={styles.previewName}>{user?.fullName}</Text>
+                        {user?.userType === 'ELECTRICIAN' ? (
                             <View style={styles.previewMetaRow}>
                                 <View style={[styles.previewBadge, { backgroundColor: colors.primary + '15' }]}>
                                     <Text style={[styles.previewBadgeText, { color: colors.primary }]}>
@@ -367,13 +441,21 @@ export default function EditProfileScreen() {
                                     <Text style={styles.previewStatText}>{experienceYears || '0'} Yıl</Text>
                                 </View>
                             </View>
-                        </View>
+                        ) : (
+                            <TouchableOpacity onPress={handlePhotoOptions}>
+                                <Text style={[styles.photoChangeHint, { color: colors.primary }]}>
+                                    {user?.profileImageUrl ? 'Fotoğrafı değiştir' : '📷 Fotoğraf ekle'}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                    {user?.userType === 'ELECTRICIAN' && (
                         <View style={styles.previewHint}>
                             <Ionicons name="eye-outline" size={14} color={staticColors.textLight} />
                             <Text style={styles.previewHintText}>Önizleme</Text>
                         </View>
-                    </View>
-                )}
+                    )}
+                </View>
 
                 <Card variant="default" style={[styles.mainCard, { shadowColor: colors.primary }]}>
                     {/* Temel Bilgiler */}
@@ -1072,6 +1154,23 @@ const styles = StyleSheet.create({
         fontFamily: fonts.medium,
         fontSize: 10,
         color: staticColors.textLight,
+    },
+    photoCameraBadge: {
+        position: 'absolute',
+        bottom: -2,
+        right: -2,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: staticColors.white,
+    },
+    photoChangeHint: {
+        fontFamily: fonts.bold,
+        fontSize: 12,
+        marginTop: 2,
     },
     // Save Button Container & Changes Indicator
     saveButtonContainer: {
