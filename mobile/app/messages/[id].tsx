@@ -452,7 +452,6 @@ export default function ChatScreen() {
                 title={otherUser?.fullName || 'Mesajlaşma'}
                 subtitle={isTyping ? 'yazıyor...' : (otherUser?.userType === 'ELECTRICIAN' ? 'Profesyonel' : 'Müşteri')}
                 showBackButton
-                variant="transparent"
                 rightElement={
                     otherUser && (
                         <TouchableOpacity
@@ -467,18 +466,10 @@ export default function ChatScreen() {
 
             <KeyboardAvoidingView
                 style={styles.flex1}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
-                {/* Security Banner Header */}
-                <View style={[styles.securityBanner, { backgroundColor: '#F0F9FF', borderBottomColor: '#E0F2FE' }]}>
-                    <View style={styles.securityIconBox}>
-                        <Ionicons name="shield-checkmark" size={14} color="#0369A1" />
-                    </View>
-                    <Text style={styles.securityBannerText}>
-                        Güvenliğiniz için platform dışından ödeme yapmayın.
-                    </Text>
-                </View>
+
 
                 <FlatList
                     ref={flatListRef}
@@ -635,7 +626,7 @@ const styles = StyleSheet.create({
 
     // ── Message List ──
     messagesList: {
-        padding: 14,
+        padding: 10,
         flexGrow: 1,
     },
     messageContainer: {
@@ -649,13 +640,13 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start',
     },
     avatarSpace: {
-        width: 34,
-        marginRight: 8,
+        width: 30,
+        marginRight: 6,
     },
     avatarMini: {
-        width: 34,
-        height: 34,
-        borderRadius: 12,
+        width: 30,
+        height: 30,
+        borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#FFF',
@@ -670,7 +661,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     bubbleWrapper: {
-        maxWidth: '82%',
+        maxWidth: '85%',
     },
     myBubbleWrapper: {
         alignItems: 'flex-end',
@@ -679,9 +670,9 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
     },
     messageBubble: {
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        borderRadius: 20,
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 16,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
@@ -698,8 +689,8 @@ const styles = StyleSheet.create({
     },
     messageText: {
         fontFamily: fonts.medium,
-        fontSize: 15,
-        lineHeight: 22,
+        fontSize: 14,
+        lineHeight: 20,
     },
     myMessageText: {
         color: '#FFF',
@@ -726,16 +717,16 @@ const styles = StyleSheet.create({
 
     // ── Input Section ──
     bottomSection: {
-        paddingHorizontal: 14,
-        paddingTop: 8,
+        paddingHorizontal: 10,
+        paddingTop: 6,
         backgroundColor: 'transparent',
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderRadius: 24,
-        paddingHorizontal: 6,
-        paddingVertical: 6,
+        borderRadius: 22,
+        paddingHorizontal: 4,
+        paddingVertical: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
@@ -752,16 +743,16 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         fontFamily: fonts.medium,
-        fontSize: 15,
+        fontSize: 14,
         color: '#1E293B',
-        paddingHorizontal: 10,
-        paddingVertical: 8,
+        paddingHorizontal: 8,
+        paddingVertical: 6,
         maxHeight: 120,
     },
     sendButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         justifyContent: 'center',
         alignItems: 'center',
         shadowOffset: { width: 0, height: 2 },
