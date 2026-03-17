@@ -279,27 +279,14 @@ export default function BuyCreditsScreen() {
                                             }
                                         ]}
                                     >
-                                        {/* Popular Tag */}
-                                        {pkg.isPopular && (
-                                            <View style={styles.popularTagContainer}>
-                                                <LinearGradient
-                                                    colors={[pkg.color, pkg.color + 'DD']}
-                                                    start={{ x: 0, y: 0 }}
-                                                    end={{ x: 1, y: 0 }}
-                                                    style={styles.popularTag}
-                                                >
-                                                    <Ionicons name="star" size={10} color="#FFF" />
-                                                    <Text style={styles.popularText}>EN POPÜLER</Text>
-                                                </LinearGradient>
-                                            </View>
-                                        )}
+                                        {/* Clipping container for internal decorations like glow */}
+                                        <View style={styles.clippingContainer}>
+                                            {isSelected && (
+                                                <View style={[styles.selectedGlow, { backgroundColor: pkg.color }]} />
+                                            )}
+                                        </View>
 
-                                        {/* Selected Glow */}
-                                        {isSelected && (
-                                            <View style={[styles.selectedGlow, { backgroundColor: pkg.color }]} />
-                                        )}
-
-                                        <View style={styles.cardContent}>
+                                        <View style={[styles.cardContent, pkg.isPopular && { paddingTop: 20 }]}>
                                             {/* Left: Icon + Info */}
                                             <View style={[styles.cardIconBox, { backgroundColor: pkg.color + '12' }]}>
                                                 <Ionicons name={iconName as any} size={26} color={pkg.color} />
@@ -330,6 +317,21 @@ export default function BuyCreditsScreen() {
                                                 </View>
                                             </View>
                                         </View>
+
+                                        {/* Popular Tag - Rendered outside clipping container to allow hanging */}
+                                        {pkg.isPopular && (
+                                            <View style={[styles.popularTagContainer, { zIndex: 100 }]}>
+                                                <LinearGradient
+                                                    colors={[pkg.color, pkg.color + 'DD']}
+                                                    start={{ x: 0, y: 0 }}
+                                                    end={{ x: 1, y: 0 }}
+                                                    style={styles.popularTag}
+                                                >
+                                                    <Ionicons name="star" size={10} color="#FFF" />
+                                                    <Text style={styles.popularText}>EN POPÜLER</Text>
+                                                </LinearGradient>
+                                            </View>
+                                        )}
                                     </TouchableOpacity>
                                 </Animated.View>
                             );
@@ -483,11 +485,16 @@ const styles = StyleSheet.create({
 
     // ── Package Cards ──
     packagesContainer: {
-        gap: 10,
+        gap: 16,
+    },
+    clippingContainer: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: 16,
+        overflow: 'hidden',
     },
     packageCard: {
         borderRadius: 16,
-        overflow: 'hidden',
+        // overflow: 'hidden', // Disabled to allow popular tag to hang
         position: 'relative',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -497,8 +504,8 @@ const styles = StyleSheet.create({
     },
     popularTagContainer: {
         position: 'absolute',
-        top: 10,
-        left: 10,
+        top: -12, // Moved up to hang over the top edge
+        left: 12,
         zIndex: 10,
     },
     popularTag: {
