@@ -49,6 +49,27 @@ export default function CreateBidScreen() {
   const [estimatedStartDate, setEstimatedStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [message, setMessage] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [costItems, setCostItems] = useState<{ id: string; description: string; amount: string }[]>([]);
+
+  // Maliyet kalemleri değiştiğinde toplam tutarı güncelle
+  useEffect(() => {
+    if (costItems.length > 0) {
+      const total = costItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+      setAmount(total.toString());
+    }
+  }, [costItems]);
+
+  const addCostItem = () => {
+    setCostItems([...costItems, { id: Math.random().toString(), description: '', amount: '' }]);
+  };
+
+  const removeCostItem = (id: string) => {
+    setCostItems(costItems.filter(item => item.id !== id));
+  };
+
+  const updateCostItem = (id: string, field: 'description' | 'amount', value: string) => {
+    setCostItems(costItems.map(item => item.id === id ? { ...item, [field]: value } : item));
+  };
 
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -124,6 +145,10 @@ export default function CreateBidScreen() {
         estimatedDuration: parseFloat(estimatedDuration),
         estimatedStartDate: estimatedStartDate ? new Date(estimatedStartDate).toISOString() : undefined,
         message: message.trim(),
+        costItems: costItems.length > 0 ? costItems.map(item => ({
+          description: item.description,
+          amount: parseFloat(item.amount)
+        })) : undefined,
       })).unwrap();
 
       setShowSuccessModal(true);
@@ -260,10 +285,49 @@ export default function CreateBidScreen() {
         <View style={styles.formSection}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Teklif Detayları</Text>
 
+          {/* Cost Items Section */}
+          <View style={styles.inputGroup}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Maliyet Kalemleri (Opsiyonel)</Text>
+              <TouchableOpacity onPress={addCostItem} style={styles.addBtn}>
+                <Ionicons name="add-circle" size={20} color={colors.primary} />
+                <Text style={[styles.addBtnText, { color: colors.primary }]}>Ekle</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {costItems.map((item, index) => (
+              <View key={item.id} style={[styles.costItemRow, { backgroundColor: colors.surface + '80', borderColor: colors.border }]}>
+                <TextInput
+                  style={[styles.costDescInput, { color: colors.text }]}
+                  placeholder={`${index + 1}. Kalem (Örn: Malzeme)`}
+                  value={item.description}
+                  onChangeText={(val) => updateCostItem(item.id, 'description', val)}
+                  placeholderTextColor={staticColors.textLight}
+                />
+                <TextInput
+                  style={[styles.costAmountInput, { color: colors.text }]}
+                  placeholder="0"
+                  keyboardType="numeric"
+                  value={item.amount}
+                  onChangeText={(val) => updateCostItem(item.id, 'amount', val)}
+                  placeholderTextColor={staticColors.textLight}
+                />
+                <Text style={[styles.currencyText, { color: colors.textSecondary }]}>₺</Text>
+                <TouchableOpacity onPress={() => removeCostItem(item.id)} style={styles.removeBtn}>
+                  <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+
           {/* Amount Input */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Sizin Teklifiniz (₺)</Text>
-            <View style={[styles.inputWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Sizin Teklifiniz (Genel Toplam ₺)</Text>
+            <View style={[
+              styles.inputWrapper, 
+              { backgroundColor: colors.surface, borderColor: colors.border },
+              costItems.length > 0 && { backgroundColor: colors.surface + '50', opacity: 0.8 }
+            ]}>
               <Ionicons name="cash-outline" size={20} color={colors.primary} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: colors.text }]}
@@ -271,9 +335,13 @@ export default function CreateBidScreen() {
                 keyboardType="numeric"
                 value={amount}
                 onChangeText={setAmount}
+                editable={costItems.length === 0}
                 placeholderTextColor={staticColors.textLight}
               />
             </View>
+            {costItems.length > 0 && (
+              <Text style={styles.infoText}>* Toplam tutar maliyet kalemlerine göre hesaplanmıştır.</Text>
+            )}
           </View>
 
           {/* Duration Pills */}
@@ -431,7 +499,24 @@ const styles = StyleSheet.create({
 
   // Form Section
   formSection: { gap: 10 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   sectionTitle: { fontSize: 14, fontFamily: fonts.extraBold, marginBottom: 0, marginLeft: 2 },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  addBtnText: { fontSize: 12, fontFamily: fonts.bold },
+  costItemRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 8, 
+    marginBottom: 8, 
+    padding: 8, 
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  costDescInput: { flex: 2, fontSize: 13, fontFamily: fonts.medium, padding: 4 },
+  costAmountInput: { flex: 0.8, fontSize: 13, fontFamily: fonts.extraBold, textAlign: 'right', padding: 4 },
+  currencyText: { fontSize: 12, fontFamily: fonts.bold },
+  removeBtn: { padding: 4 },
+  infoText: { fontSize: 10, fontFamily: fonts.medium, color: staticColors.textLight, marginTop: 2, marginLeft: 4 },
   inputGroup: { gap: 4 },
   label: { fontSize: 12, fontFamily: fonts.bold, marginLeft: 2 },
 

@@ -63,6 +63,8 @@ export default function JobDetailScreen() {
   const [isCancelling, setIsCancelling] = useState(false); // İlan iptal state'i
   const [isCancelModalVisible, setIsCancelModalVisible] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const [showCostModal, setShowCostModal] = useState(false);
+  const [selectedCostItems, setSelectedCostItems] = useState<any[]>([]);
 
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -445,6 +447,19 @@ export default function JobDetailScreen() {
                   </View>
 
                   {bid.message && <Text style={styles.bidMessage}>"{bid.message}"</Text>}
+
+                  {bid.costItems && (
+                    <TouchableOpacity 
+                      style={styles.costBreakdownBtn} 
+                      onPress={() => {
+                        setSelectedCostItems(Array.isArray(bid.costItems) ? bid.costItems : []);
+                        setShowCostModal(true);
+                      }}
+                    >
+                      <Ionicons name="list" size={16} color={colors.primary} />
+                      <Text style={[styles.costBreakdownText, { color: colors.primary }]}>Maliyet Dökümünü Gör</Text>
+                    </TouchableOpacity>
+                  )}
 
                   <View style={styles.bidActions}>
                     {bid.status === 'PENDING' && jobData.status !== 'CANCELLED' && (
@@ -864,6 +879,45 @@ export default function JobDetailScreen() {
         </View>
       </Modal>
 
+      {/* Maliyet Kalemleri Modalı */}
+      <Modal visible={showCostModal} transparent animationType="slide" onRequestClose={() => setShowCostModal(false)}>
+        <View style={styles.reviewModalOverlay}>
+          <LinearGradient
+            colors={['rgba(30, 41, 59, 0.98)', 'rgba(15, 23, 42, 0.95)']}
+            style={styles.reviewModalContent}
+          >
+            <View style={styles.modalScrollIndicator} />
+            <Text style={[styles.reviewModalTitle, { color: staticColors.white }]}>Maliyet Detayları</Text>
+            <Text style={[styles.reviewModalSubtitle, { color: 'rgba(255,255,255,0.6)' }]}>Teklifin kalem dökümü aşağıdadır.</Text>
+
+            <View style={styles.costItemsList}>
+              {selectedCostItems.map((item, idx) => (
+                <View key={idx} style={styles.costItemRow}>
+                  <Text style={[styles.costItemDesc, { color: 'rgba(255,255,255,0.8)' }]}>{item.description}</Text>
+                  <Text style={[styles.costItemAmount, { color: colors.primary }]}>{item.amount} ₺</Text>
+                </View>
+              ))}
+              
+              <View style={[styles.divider, { backgroundColor: 'rgba(255,255,255,0.1)', marginTop: 12 }]} />
+              
+              <View style={styles.costTotalRow}>
+                <Text style={[styles.costTotalLabel, { color: staticColors.white }]}>Genel Toplam</Text>
+                <Text style={[styles.costTotalValue, { color: colors.primary }]}>
+                  {selectedCostItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0)} ₺
+                </Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.successPrimaryBtn, { marginTop: 24, backgroundColor: colors.primary }]}
+              onPress={() => setShowCostModal(false)}
+            >
+              <Text style={styles.successPrimaryBtnText}>Kapat</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+      </Modal>
+
       <PremiumAlert
         visible={alertConfig.visible}
         title={alertConfig.title}
@@ -1107,5 +1161,64 @@ const styles = StyleSheet.create({
     color: staticColors.error,
     fontFamily: fonts.extraBold,
     fontSize: 15
+  },
+  costBreakdownBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: '#F1F5F9',
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  costBreakdownText: {
+    fontSize: 12,
+    fontFamily: fonts.bold,
+  },
+  costItemsList: {
+    marginTop: 10,
+    gap: 12,
+  },
+  costItemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  costItemDesc: {
+    fontSize: 14,
+    fontFamily: fonts.medium,
+    flex: 1,
+  },
+  costItemAmount: {
+    fontSize: 14,
+    fontFamily: fonts.extraBold,
+  },
+  costTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  costTotalLabel: {
+    fontSize: 16,
+    fontFamily: fonts.extraBold,
+  },
+  costTotalValue: {
+    fontSize: 18,
+    fontFamily: fonts.extraBold,
+  },
+  successPrimaryBtn: {
+    width: '100%',
+    height: 52,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  successPrimaryBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: fonts.bold,
   },
 });

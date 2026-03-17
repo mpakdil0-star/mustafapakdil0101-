@@ -7,6 +7,7 @@ export interface CreateBidData {
   estimatedDuration: number; // in hours
   estimatedStartDate?: string;
   message: string;
+  costItems?: any[];
 }
 
 export interface Bid {
@@ -17,6 +18,7 @@ export interface Bid {
   estimatedDuration: number;
   estimatedStartDate?: string | null;
   message: string;
+  costItems?: any;
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN' | 'EXPIRED';
   createdAt: string;
   updatedAt: string;

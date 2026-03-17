@@ -93,49 +93,50 @@ export const createBidController = async (
     try {
       console.log('🚀 Attempting to create bid via bidService...');
       const bid = await bidService.createBid(bidData);
+      const b = bid as any;
 
       // İş sahibine (vatandaşa) yeni teklif bildirimi gönder
-      if (bid.jobPost?.citizenId) {
+      if (b.jobPost?.citizenId) {
         try {
-          console.log(`📢 Sending bid_received notification to citizen ${bid.jobPost.citizenId}`);
+          console.log(`📢 Sending bid_received notification to citizen ${b.jobPost.citizenId}`);
 
           // Push bildirimi için vatandaşın pushToken'ını al
-          const prisma = require('../config/database').default;
-          const citizen = await prisma.user.findUnique({
-            where: { id: bid.jobPost.citizenId },
+          const prismaConfig = require('../config/database').default;
+          const citizen = await prismaConfig.user.findUnique({
+            where: { id: b.jobPost.citizenId },
             select: { pushToken: true }
           });
 
           // Push bildirimi gönder (uygulama arka planda veya kapalıyken)
           if (citizen?.pushToken) {
-            console.log(`📲 [CONTROLLER] Sending PUSH to citizen ${bid.jobPost.citizenId}`);
+            console.log(`📲 [CONTROLLER] Sending PUSH to citizen ${b.jobPost.citizenId}`);
             const pushNotificationService = require('../services/pushNotificationService').default;
             pushNotificationService.sendNotification({
               to: citizen.pushToken,
               title: 'Yeni Teklif Aldınız! 💰',
-              body: `${bid.electrician?.fullName || 'Bir usta'} "${bid.jobPost?.title || 'ilanınız'}" için ${bid.amount} ₺ teklif verdi.`,
-              data: { jobId: bid.jobPostId, type: 'bid_received' }
+              body: `${b.electrician?.fullName || 'Bir usta'} "${b.jobPost?.title || 'ilanınız'}" için ${b.amount} ₺ teklif verdi.`,
+              data: { jobId: b.jobPostId, type: 'bid_received' }
             }).catch((err: any) => console.error('Push Notification Error (Controller):', err));
           }
           const notificationPayload = {
             id: `bid-notif-${Date.now()}`,
             type: 'bid_received',
-            bidId: bid.id,
-            jobPostId: bid.jobPostId,
-            jobTitle: bid.jobPost?.title || 'İş İlanı',
-            amount: bid.amount,
-            electricianName: bid.electrician?.fullName || 'Elektrikçi',
-            message: `${bid.electrician?.fullName || 'Bir elektrikçi'} iş ilanınıza ${bid.amount} TL teklif verdi.`,
+            bidId: b.id,
+            jobPostId: b.jobPostId,
+            jobTitle: b.jobPost?.title || 'İş İlanı',
+            amount: b.amount,
+            electricianName: b.electrician?.fullName || 'Elektrikçi',
+            message: `${b.electrician?.fullName || 'Bir elektrikçi'} iş ilanınıza ${b.amount} TL teklif verdi.`,
             isRead: false,
             createdAt: new Date().toISOString(),
-            relatedId: bid.jobPostId,
+            relatedId: b.jobPostId,
             relatedType: 'JOB'
           };
 
           // 1. Emit specific event
-          notifyUser(bid.jobPost.citizenId, 'bid_received', notificationPayload);
+          notifyUser(b.jobPost.citizenId, 'bid_received', notificationPayload);
           // 2. Emit general notification event for badge handling
-          notifyUser(bid.jobPost.citizenId, 'notification', notificationPayload);
+          notifyUser(b.jobPost.citizenId, 'notification', notificationPayload);
         } catch (notifErr) {
           console.error('⚠️ Failed to send real-time notification for bid:', notifErr);
         }
@@ -227,6 +228,7 @@ export const createBidController = async (
             estimatedDuration: bidData.estimatedDuration,
             estimatedStartDate: bidData.estimatedStartDate || new Date(),
             message: bidData.message,
+            costItems: bidData.costItems || null,
             status: 'PENDING',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),

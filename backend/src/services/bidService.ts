@@ -12,6 +12,7 @@ export interface CreateBidData {
   estimatedDuration: number; // in hours
   estimatedStartDate?: Date;
   message: string;
+  costItems?: any[];
 }
 
 export interface UpdateBidData {
@@ -137,8 +138,9 @@ export const bidService = {
           estimatedDuration,
           estimatedStartDate: parsedStartDate,
           message,
+          costItems: data.costItems || null,
           status: BidStatus.PENDING,
-        },
+        } as any,
         include: {
           electrician: {
             select: {
@@ -186,7 +188,7 @@ export const bidService = {
           userId: electricianId,
           amount: -1,
           transactionType: 'BID_SPENT',
-          relatedId: bid.id,
+          relatedId: (bid as any).id,
           description: `"${jobPost.title}" ilanı için teklif verildi.`,
           balanceAfter: currentBalance - 1
         }
@@ -195,7 +197,7 @@ export const bidService = {
       // Notify citizen (job owner)
       try {
         const citizen = await prisma.user.findUnique({
-          where: { id: jobPost.citizenId },
+          where: { id: ((bid as any).jobPost as any).citizenId },
           select: { id: true, pushToken: true }
         });
 
@@ -203,9 +205,9 @@ export const bidService = {
         console.log(`   Citizen ID: ${jobPost.citizenId}`);
         console.log(`   Citizen found: ${!!citizen}`);
         console.log(`   Citizen pushToken: ${citizen?.pushToken || 'NULL/EMPTY'}`);
-        console.log(`   Bid ID: ${bid.id}`);
-        console.log(`   Bid Amount: ${bid.amount}`);
-        console.log(`   Electrician: ${bid.electrician.fullName}`);
+        console.log(`   Bid ID: ${(bid as any).id}`);
+        console.log(`   Bid Amount: ${(bid as any).amount}`);
+        console.log(`   Electrician: ${(bid as any).electrician.fullName}`);
         console.log(`   Job Title: ${jobPost.title}`);
 
         if (citizen) {
@@ -215,11 +217,11 @@ export const bidService = {
             jobId: jobPostId,
             jobPostId: jobPostId,
             jobTitle: jobPost.title,
-            bidId: bid.id,
-            amount: bid.amount,
-            electricianName: bid.electrician.fullName,
+            bidId: (bid as any).id,
+            amount: (bid as any).amount,
+            electricianName: (bid as any).electrician.fullName,
             title: 'Yeni Teklif Aldınız! 💰',
-            message: `${bid.electrician.fullName} "${jobPost.title}" ilanınıza ${bid.amount}₺ teklif verdi.`,
+            message: `${(bid as any).electrician.fullName} "${jobPost.title}" ilanınıza ${(bid as any).amount}₺ teklif verdi.`,
             isRead: false,
             createdAt: new Date().toISOString(),
             relatedId: jobPostId,
@@ -242,7 +244,7 @@ export const bidService = {
                 userId: citizen.id,
                 type: 'new_bid',
                 title: 'Yeni Teklif!',
-                message: `"${jobPost.title}" ilanınız için ${bid.electrician.fullName} tarafından ${bid.amount}₺ tutarında bir teklif verildi.`,
+                message: `"${jobPost.title}" ilanınız için ${(bid as any).electrician.fullName} tarafından ${(bid as any).amount}₺ tutarında bir teklif verildi.`,
                 relatedType: 'JOB',
                 relatedId: jobPostId,
               }
@@ -256,7 +258,7 @@ export const bidService = {
             await pushNotificationService.sendNotification({
               to: citizen.pushToken,
               title: 'Yeni Teklif Aldınız! 💰',
-              body: `${bid.electrician.fullName} "${jobPost.title}" ilanınıza ${bid.amount}₺ teklif verdi.`,
+              body: `${(bid as any).electrician.fullName} "${jobPost.title}" ilanınıza ${(bid as any).amount}₺ teklif verdi.`,
               data: { jobId: jobPostId, type: 'bid_received' }
             });
             console.log(`   ✅ PUSH sent successfully`);

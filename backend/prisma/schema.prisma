@@ -253,6 +253,7 @@ model Bid {
   expiresAt          DateTime? @map("expires_at")
   acceptedAt         DateTime? @map("accepted_at")
   rejectedAt         DateTime? @map("rejected_at")
+  costItems          Json?     @map("cost_items")
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
 
