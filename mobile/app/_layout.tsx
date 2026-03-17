@@ -13,7 +13,7 @@ import { socketService } from '../services/socketService';
 import { authService } from '../services/authService';
 import { PremiumAlert } from '../components/common/PremiumAlert';
 import { useAppDispatch } from '../hooks/redux';
-import { addNotification, fetchNotifications, incrementUnreadCount } from '../store/slices/notificationSlice';
+import { addNotification, fetchNotifications, incrementUnreadCount, fetchUnreadCount } from '../store/slices/notificationSlice';
 import { getMe, setRequiredLegalVersion } from '../store/slices/authSlice';
 import LegalUpdateModal from '../components/legal/LegalUpdateModal';
 import { Alert } from 'react-native';
@@ -250,6 +250,18 @@ function RootLayoutNav() {
         return;
       }
 
+      const convId = (notification as any).conversationId || (notification as any).relatedId;
+      // useGlobalSearchParams provides 'id' when in /messages/[id]
+      const currentChatId = params.id;
+
+      // PROACTIVE: If user is actively looking at THIS conversation, 
+      // add it to Redux state already marked as read and DON'T show an alert
+      if (convId && convId === currentChatId) {
+        console.log('🔇 [_layout] Notification for active chat received, adding as read to prevent badge');
+        dispatch(addNotification({ ...notification, isRead: true }));
+        return;
+      }
+
       // Add to Redux store
       dispatch(addNotification(notification));
       console.log('🔔 [_layout] addNotification dispatched');
@@ -449,10 +461,15 @@ function RootLayoutNav() {
       }
     });
 
-    // Increment badge when push notification received (foreground)
+    // Sync native badge when push received in foreground
     const receivedSubscription = Notifications.addNotificationReceivedListener(notification => {
-      console.log('🔔 [FOREGROUND] Push received, incrementing badge');
-      dispatch(incrementUnreadCount());
+      console.log('🔔 [FOREGROUND] Push notification received');
+      
+      // We rely on socket notifications + Redux for the UI badge.
+      // If socket is disconnected, we might want to manually fetch.
+      if (!socketService.getConnectionStatus()) {
+        dispatch(fetchUnreadCount());
+      }
     });
 
     // Also check for initial notification (app was opened from killed state via notification)
@@ -485,6 +502,14 @@ function RootLayoutNav() {
       receivedSubscription.remove();
     };
   }, [router, isNavigationReady, dispatch]);
+
+  // Sycn native App icon badge with Redux unreadCount
+  const { unreadCount } = useSelector((state: RootState) => state.notifications);
+  useEffect(() => {
+    if (isAuthenticated) {
+      Notifications.setBadgeCountAsync(unreadCount).catch(err => console.log('Badge sync error:', err));
+    }
+  }, [unreadCount, isAuthenticated]);
 
   const [fontsLoaded] = useFonts(fontFiles);
 

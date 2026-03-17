@@ -113,7 +113,7 @@ export default function ChatScreen() {
                 dispatch(markRelatedNotificationsAsRead({ type: 'MESSAGE_RECEIVED', relatedId: conversationId }))
             ]);
 
-            dispatch(fetchUnreadCount());
+            await dispatch(fetchUnreadCount());
         } catch (error: any) {
             console.error('Error loading conversation:', error);
         } finally {
@@ -135,36 +135,31 @@ export default function ChatScreen() {
         connectAndJoin();
 
         // Yeni mesaj dinle
-        const unsubMessage = socketService.onMessage((data) => {
+        const unsubMessage = socketService.onMessage(async (data) => {
             if (data.message.conversationId === conversationId) {
                 setMessages(prev => {
-                    // Mesaj zaten listede varsa (ID ile kontrol) ekleme
                     if (prev.some(m => m.id === data.message.id)) return prev;
-
-                    // Eğer benim gönderdiğim mesajsa, geçici (temp) mesajı bununla değiştir (optimistic update temizliği)
                     if (data.message.senderId === user?.id) {
-                        const tempIndex = prev.findIndex(m =>
-                            m.id.startsWith('temp-') &&
-                            m.content === data.message.content
-                        );
-
+                        const tempIndex = prev.findIndex(m => m.id.startsWith('temp-') && m.content === data.message.content);
                         if (tempIndex !== -1) {
                             const newMessages = [...prev];
                             newMessages[tempIndex] = data.message;
                             return newMessages;
                         }
                     }
-
-                    // Mesaj zaten listede yoksa ekle
                     return [...prev, data.message];
                 });
 
-                // Mesajı okundu olarak işaretle
+                // Aktif sohbet olduğu için okundu olarak işaretle
                 socketService.markAsRead(conversationId);
                 const messageTypes = ['new_message', 'MESSAGE_RECEIVED'];
                 dispatch(markTypeAsRead({ type: messageTypes, relatedId: conversationId }));
-                dispatch(markRelatedNotificationsAsRead({ type: 'new_message', relatedId: conversationId }));
-                dispatch(markRelatedNotificationsAsRead({ type: 'MESSAGE_RECEIVED', relatedId: conversationId }));
+                
+                // Bekleyip badge'i temizle
+                await Promise.all([
+                    dispatch(markRelatedNotificationsAsRead({ type: 'new_message', relatedId: conversationId })),
+                    dispatch(markRelatedNotificationsAsRead({ type: 'MESSAGE_RECEIVED', relatedId: conversationId }))
+                ]);
                 dispatch(fetchUnreadCount());
             }
         });

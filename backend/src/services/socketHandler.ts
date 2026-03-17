@@ -268,14 +268,6 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                     },
                 });
 
-                // Alıcıya bildirim gönder (konuşmada değilse bile)
-                io.to(`user:${recipientId}`).emit('notification', {
-                    type: 'new_message',
-                    conversationId,
-                    senderName: message.sender.fullName,
-                    preview: content.substring(0, 50),
-                });
-
                 // Bildirimi veritabanına kaydet (Kalıcı rozet için)
                 const dbNotification = await prisma.notification.create({
                     data: {
@@ -286,6 +278,25 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                         relatedType: 'CONVERSATION',
                         relatedId: conversationId,
                     }
+                });
+
+                // Alıcıya socket bildirimi gönder (konuşmada değilse bile gerçek zamanlı güncelleme için)
+                io.to(`user:${recipientId}`).emit('notification', {
+                    id: dbNotification.id,
+                    type: 'new_message',
+                    conversationId,
+                    message: {
+                        id: message.id,
+                        conversationId: message.conversationId,
+                        senderId: message.senderId,
+                        content: message.content,
+                        messageType: message.messageType,
+                        createdAt: message.createdAt,
+                    },
+                    senderName: message.sender.fullName,
+                    preview: content.substring(0, 50),
+                    isRead: false,
+                    createdAt: dbNotification.createdAt,
                 });
 
                 // CRITICAL: Alıcıya PUSH bildirimi gönder (Arka plan/ Kapalı uygulama için)

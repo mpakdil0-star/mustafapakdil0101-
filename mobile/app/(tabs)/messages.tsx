@@ -136,7 +136,7 @@ export default function MessagesScreen() {
 
     return (
       <TouchableOpacity
-        onPress={() => {
+        onPress={async () => {
           // PROACTIVE: Mark as read locally immediately for better UX
           if (hasUnread) {
             setConversations(prev => prev.map(c =>
@@ -144,9 +144,17 @@ export default function MessagesScreen() {
             ));
 
             const messageTypes = ['new_message', 'MESSAGE_RECEIVED'];
+                // Update local Redux state synchronously for instant UI response
             dispatch(markTypeAsRead({ type: messageTypes, relatedId: conversation.id }));
-            dispatch(markRelatedNotificationsAsRead({ type: 'new_message', relatedId: conversation.id }));
-            dispatch(markRelatedNotificationsAsRead({ type: 'MESSAGE_RECEIVED', relatedId: conversation.id }));
+            socketService.markAsRead(conversation.id);
+
+            // Wait for backend updates to complete
+            await Promise.all([
+              dispatch(markRelatedNotificationsAsRead({ type: 'new_message', relatedId: conversation.id })),
+              dispatch(markRelatedNotificationsAsRead({ type: 'MESSAGE_RECEIVED', relatedId: conversation.id }))
+            ]);
+
+                // Now fetch the final definitive count from the server
             dispatch(fetchUnreadCount());
           }
           router.push({ pathname: '/messages/[id]', params: { id: conversation.id } });
