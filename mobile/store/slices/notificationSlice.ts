@@ -78,6 +78,22 @@ const notificationSlice = createSlice({
       if (!notification.relatedId && notification.conversationId) {
         notification.relatedId = notification.conversationId;
       }
+
+      // Avoid duplicates
+      const existingIndex = state.notifications.findIndex(n => n.id === notification.id);
+      if (existingIndex !== -1) {
+        // If it was unread and now it's read, decrement
+        if (!state.notifications[existingIndex].isRead && notification.isRead) {
+          state.unreadCount = Math.max(0, state.unreadCount - 1);
+        }
+        // If it was read and now it's unread, increment
+        else if (state.notifications[existingIndex].isRead && !notification.isRead) {
+          state.unreadCount += 1;
+        }
+        state.notifications[existingIndex] = notification;
+        return;
+      }
+
       state.notifications.unshift(notification);
       if (!notification.isRead) {
         state.unreadCount += 1;

@@ -82,16 +82,31 @@ export const messageService = {
                 // 1. Send real-time socket notification (if not already handled by socketHandler)
                 // Note: socketHandler handles real-time messaging, this is for background/push
 
-                // 2. Save Notification to DB (usually messages don't create separate notifications in list, 
-                // but for critical stuff they might. Here we just rely on unreadCount)
+                // 2. Save Notification to DB (Kalıcı rozet için)
+                await prisma.notification.create({
+                    data: {
+                        userId: recipientId,
+                        type: 'new_message',
+                        title: '💬 Yeni Mesaj',
+                        message: `${message.sender.fullName}: ${content.substring(0, 50)}`,
+                        relatedType: 'CONVERSATION',
+                        relatedId: conversationId,
+                    }
+                });
 
                 // 3. Send Push Notification if token exists
                 if (recipient.pushToken) {
+                    // Fetch total unread count for badge
+                    const unreadCount = await prisma.notification.count({
+                        where: { userId: recipientId, isRead: false }
+                    });
+
                     await pushNotificationService.sendNotification({
                         to: recipient.pushToken,
                         title: message.sender.fullName,
                         body: messageType === 'TEXT' ? content : `[Fotoğraf Gönderildi]`,
-                        data: { conversationId, type: 'new_message' }
+                        data: { conversationId, type: 'new_message' },
+                        badge: unreadCount
                     });
                 }
             }
