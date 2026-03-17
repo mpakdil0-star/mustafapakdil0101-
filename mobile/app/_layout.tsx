@@ -269,7 +269,7 @@ function RootLayoutNav() {
       // Show in-app alert if appropriate
       showAlert(
         (notification as any).title || 'Bildirim',
-        (notification as any).message || notification.preview || '',
+        (notification as any).preview || (typeof (notification as any).message === 'string' ? (notification as any).message : '') || 'Yeni bir mesajınız var',
         'info',
         [
           {
