@@ -6,6 +6,36 @@ import pushNotificationService from '../services/pushNotificationService';
 import { jobStoreById, deleteMockJob, loadMockJobs } from './jobController';
 import { mockTransactionStorage } from '../utils/mockStorage';
 
+const hasValidDocument = (docs: any): boolean => {
+    if (!docs) return false;
+    
+    const isValidUrl = (url: any): boolean => {
+        if (typeof url !== 'string') return false;
+        const trimmed = url.trim().toLowerCase();
+        // Temel kontroller: Çok kısa olmayacak, 'null'/'undefined' metni olmayacak ve bir uzantısı (.jpg, .png vb.) olacak
+        return trimmed.length > 5 && 
+               !['null', 'undefined', 'none', '[object object]'].includes(trimmed) &&
+               (trimmed.includes('.') || trimmed.startsWith('/uploads/'));
+    };
+
+    // Case 1: If docs is directly a string (sometimes JSON fields are strings)
+    if (typeof docs === 'string') {
+        return isValidUrl(docs);
+    }
+
+    // Case 2: Single object
+    if (typeof docs === 'object' && !Array.isArray(docs)) {
+        const url = docs.documentUrl || docs.url;
+        return isValidUrl(url);
+    }
+
+    // Case 3: Array
+    if (Array.isArray(docs) && docs.length > 0) {
+        return docs.some((d: any) => isValidUrl(d?.documentUrl || d?.url));
+    }
+    return false;
+};
+
 /**
  * Get all pending verifications
  * Admin ONLY
@@ -26,7 +56,11 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
         if (!isDatabaseAvailable || user.id.startsWith('mock-')) {
             const allUsers = mockStorage.getAllUsers();
             const pendingMocks = allUsers
-                .filter(u => u.userType === 'ELECTRICIAN' && u.verificationStatus === 'PENDING')
+                .filter(u => {
+                    return u.userType === 'ELECTRICIAN' && 
+                           u.verificationStatus === 'PENDING' && 
+                           hasValidDocument(u.electricianProfile?.verificationDocuments);
+                })
                 .map(u => ({
                     userId: u.id,
                     verificationStatus: 'PENDING',
@@ -40,32 +74,6 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
                     }
                 }));
 
-            // If no real pending mocks, AND the sample user is not already processed/verified in mockStorage
-            if (pendingMocks.length === 0) {
-                const sampleMockUser = mockStorage.get('mock-electrician-1');
-                // Only add if it doesn't exist (fresh start) or if it exists and is explicitly PENDING
-                const shouldAddSample = !sampleMockUser || (sampleMockUser.verificationStatus === 'PENDING');
-
-                if (shouldAddSample) {
-                    pendingMocks.push({
-                        userId: 'mock-electrician-1',
-                        verificationStatus: 'PENDING',
-                        verificationDocuments: {
-                            documentType: 'ELEKTRIK_USTASI',
-                            documentUrl: undefined,
-                            submittedAt: new Date().toISOString(),
-                        },
-                        serviceCategory: 'elektrik',
-                        user: {
-                            id: 'mock-electrician-1',
-                            fullName: 'Ahmet Yılmaz (Örnek)',
-                            email: 'ahmet@test.com',
-                            phone: '5551234455'
-                        }
-                    });
-                }
-            }
-
             return res.json({
                 success: true,
                 data: pendingMocks
@@ -76,7 +84,12 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
             const pendingProfiles = await prisma.electricianProfile.findMany({
                 where: {
                     verificationStatus: 'PENDING' as any,
-                    user: { deletedAt: null }
+                    user: { deletedAt: null },
+                    NOT: {
+                        verificationDocuments: {
+                            equals: null as any
+                        }
+                    }
                 },
                 include: {
                     user: {
@@ -93,33 +106,18 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
                 }
             });
 
+            // Filter out profiles with no document URL in JS to be safe with JSON structure
+            const filteredProfiles = pendingProfiles.filter(p => hasValidDocument(p.verificationDocuments));
+
             res.json({
                 success: true,
-                data: pendingProfiles,
+                data: filteredProfiles,
             });
         } catch (dbErr: any) {
             console.error('Database error in getAllVerifications:', dbErr.message);
-            // Fallback to same mock data if query fails
             res.json({
                 success: true,
-                data: [
-                    {
-                        userId: 'mock-electrician-1',
-                        verificationStatus: 'PENDING',
-                        verificationDocuments: {
-                            documentType: 'ELEKTRIK_USTASI',
-                            documentUrl: undefined,
-                            submittedAt: new Date().toISOString(),
-                        },
-                        serviceCategory: 'elektrik',
-                        user: {
-                            id: 'mock-electrician-1',
-                            fullName: 'Ahmet Yılmaz (Mock - Fallback)',
-                            email: 'ahmet@test.com',
-                            phone: '5551234455'
-                        }
-                    }
-                ]
+                data: [] 
             });
         }
     } catch (error) {
@@ -321,19 +319,27 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
             totalElectricians,
             totalCitizens,
             activeJobs,
-            pendingVerifications,
         ] = await Promise.all([
             prisma.user.count({ where: { deletedAt: null } }),
             prisma.user.count({ where: { userType: 'ELECTRICIAN' as any, deletedAt: null } }),
             prisma.user.count({ where: { userType: 'CITIZEN' as any, deletedAt: null } }),
             prisma.jobPost.count({ where: { status: 'OPEN' as any } }),
-            prisma.electricianProfile.count({ 
-                where: { 
-                    verificationStatus: 'PENDING' as any,
-                    user: { deletedAt: null }
-                } 
-            }),
         ]);
+
+        // Count pending verifications with documents
+        const pendingWithDocsProfiles = await prisma.electricianProfile.findMany({
+            where: {
+                verificationStatus: 'PENDING' as any,
+                user: { deletedAt: null },
+                NOT: {
+                    verificationDocuments: {
+                        equals: null as any
+                    }
+                }
+            }
+        });
+
+        const pendingVerifications = pendingWithDocsProfiles.filter(p => hasValidDocument(p.verificationDocuments)).length;
 
         // Revenue calculation (if you have a Transaction table, otherwise 0 or mock)
         // const totalRevenue = await prisma.transaction.aggregate({ _sum: { amount: true } });
@@ -694,16 +700,25 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                 } : {};
 
                 // 1. KPI Cards (Matches User Management logic)
-                const [totalCitizens, totalElectricians, pendingVerifications] = await Promise.all([
+                const [totalCitizens, totalElectricians] = await Promise.all([
                     prisma.user.count({ where: { userType: 'CITIZEN' as any, ...cityFilter, deletedAt: null } }),
                     prisma.user.count({ where: { userType: 'ELECTRICIAN' as any, ...cityFilter, deletedAt: null } }),
-                    prisma.electricianProfile.count({ 
-                        where: { 
-                            verificationStatus: 'PENDING' as any,
-                            user: { deletedAt: null, ...cityFilter }
-                        } 
-                    }),
                 ]);
+
+                // Count pending verifications with documents for the filtered city
+                const pendingWithDocsProfiles = await prisma.electricianProfile.findMany({
+                    where: {
+                        verificationStatus: 'PENDING' as any,
+                        user: { deletedAt: null, ...cityFilter },
+                        NOT: {
+                            verificationDocuments: {
+                                equals: null as any
+                            }
+                        }
+                    }
+                });
+
+                const pendingVerifications = pendingWithDocsProfiles.filter(p => hasValidDocument(p.verificationDocuments)).length;
 
                 // 2. Service Distribution
                 const categoryCounts = await prisma.electricianProfile.groupBy({
