@@ -662,15 +662,12 @@ export default function HomeScreen() {
                           }
                         }
                       } else {
-                        // Permission permanently denied - open system settings
-                        const { Linking } = await import('react-native');
+                        // Permission permanently denied — show friendly in-app message
+                        // Don't open settings or force user out of app
                         Alert.alert(
-                          'Sistem İzni Gerekli',
-                          'Bildirim almak için lütfen telefon ayarlarından uygulama bildirimlerini açın.',
-                          [
-                            { text: 'İptal', style: 'cancel' },
-                            { text: 'Ayarlara Git', onPress: () => Linking.openSettings() }
-                          ]
+                          'Bildirimler Kapalı',
+                          'Bildirim izni daha önce reddedildi. Profil > Bildirim Ayarları sayfasından kontrol edebilirsiniz.',
+                          [{ text: 'Tamam', style: 'default' }]
                         );
                       }
                     } catch (e) {

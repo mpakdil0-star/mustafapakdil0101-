@@ -198,88 +198,88 @@ function RootLayoutNav() {
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    // Register Push Token on login
+    // Register Push Token on login — Per-user notification prompt
     const requestNotificationPermission = async () => {
       try {
         const { Platform } = await import('react-native');
         const Constants = (await import('expo-constants')).default;
 
         // CRITICAL: SDK 53+ removed push support from Expo Go Android
-        // We MUST NOT even import the module to avoid the error stack
         if (Platform.OS === 'android' && Constants.appOwnership === 'expo') {
           return;
         }
 
-        const Notifications = await import('expo-notifications');
-        const { status } = await Notifications.getPermissionsAsync();
+        const NotifModule = await import('expo-notifications');
+        const { status } = await NotifModule.getPermissionsAsync();
 
-        if (status !== 'granted') {
-          // Check if we already dismissed this popup before
-          const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-          const dismissed = await AsyncStorage.getItem('has_dismissed_push_popup');
-          if (dismissed === 'true') {
-            // Don't show popup again, but still try to register if possible
-            return;
-          }
+        if (status === 'granted') {
+          // Already granted — just ensure push token is registered
+          await authService.registerPushToken();
+          return;
+        }
 
-          showAlert(
-            '🔔 Bildirimlerinizi Açın',
-            'Yeni iş ilanları, teklifler ve mesajlardan anında haberdar olmak için bildirimleri açmanızı öneririz.',
-            'info',
-            [
-              {
-                text: 'Daha Sonra',
-                variant: 'ghost',
-                onPress: async () => {
-                  setAlertConfig(prev => ({ ...prev, visible: false }));
-                  try {
-                    const AS = (await import('@react-native-async-storage/async-storage')).default;
-                    await AS.setItem('has_dismissed_push_popup', 'true');
-                  } catch (e) {
-                    console.log('AsyncStorage error:', e);
-                  }
-                }
-              },
-              {
-                text: 'Bildirimleri Aç',
-                variant: 'primary',
-                onPress: async () => {
-                  setAlertConfig(prev => ({ ...prev, visible: false }));
-                  
-                  try {
-                    // Directly request system permission (triggers native OS dialog)
-                    const NotifModule = await import('expo-notifications');
-                    const { status: newStatus, canAskAgain: canAsk } = await NotifModule.getPermissionsAsync();
-                    
-                    if (newStatus === 'granted') {
-                      // Already granted, just register token
-                      await authService.registerPushToken();
-                      return;
-                    }
-                    
-                    if (canAsk) {
-                      // System dialog will appear now
-                      const { status: requestedStatus } = await NotifModule.requestPermissionsAsync();
-                      if (requestedStatus === 'granted') {
-                        await authService.registerPushToken();
-                      }
-                    } else {
-                      // Permission permanently denied - must go to settings
-                      const { Linking } = await import('react-native');
-                      Linking.openSettings();
-                    }
-                  } catch (permErr) {
-                    console.warn('Permission request error:', permErr);
-                    // Fallback: try registerPushToken which also requests permission
-                    await authService.registerPushToken();
-                  }
+        // Per-user dismissal key (so new accounts always see the prompt)
+        const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+        const userId = user?.id || 'unknown';
+        const dismissKey = `push_prompt_dismissed_${userId}`;
+        const dismissed = await AsyncStorage.getItem(dismissKey);
+
+        if (dismissed === 'true') {
+          // User explicitly chose 'Daha Sonra' before — respect that, don't nag
+          return;
+        }
+
+        // Small delay to let the UI settle after login/navigation
+        await new Promise(resolve => setTimeout(resolve, 1200));
+
+        showAlert(
+          '🔔 Bildirimlerinizi Açın',
+          'Yeni iş ilanları, teklifler ve mesajlardan anında haberdar olmak için bildirimleri açmanızı öneririz.',
+          'info',
+          [
+            {
+              text: 'Daha Sonra',
+              variant: 'ghost',
+              onPress: async () => {
+                setAlertConfig(prev => ({ ...prev, visible: false }));
+                try {
+                  const AS = (await import('@react-native-async-storage/async-storage')).default;
+                  await AS.setItem(dismissKey, 'true');
+                } catch (e) {
+                  console.log('AsyncStorage error:', e);
                 }
               }
-            ]
-          );
-        } else {
-          await authService.registerPushToken();
-        }
+            },
+            {
+              text: 'Bildirimleri Aç',
+              variant: 'primary',
+              onPress: async () => {
+                setAlertConfig(prev => ({ ...prev, visible: false }));
+
+                try {
+                  // Tiny delay to let our modal close animation finish
+                  await new Promise(resolve => setTimeout(resolve, 400));
+
+                  // DIRECTLY trigger the OS-level permission dialog
+                  const { status: requestedStatus } = await NotifModule.requestPermissionsAsync();
+
+                  if (requestedStatus === 'granted') {
+                    // Permission granted! Register the push token immediately
+                    await authService.registerPushToken();
+                    // Clear dismiss flag so we don't block future checks
+                    await AsyncStorage.removeItem(dismissKey);
+                  }
+                  // If denied, we do NOT open settings — respect the user's choice
+                  // They can always enable from Profil > Bildirim Ayarları later
+                } catch (permErr) {
+                  console.warn('Permission request error:', permErr);
+                  // Fallback: try registerPushToken which also requests permission
+                  await authService.registerPushToken();
+                }
+              }
+            }
+          ]
+        );
       } catch (err) {
         console.warn('Notification permission check failed:', err);
         await authService.registerPushToken();
