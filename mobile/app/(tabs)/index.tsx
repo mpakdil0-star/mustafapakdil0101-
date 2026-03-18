@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity, Modal, ImageBackground, Image, Platform, Dimensions, PanResponder, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity, Modal, ImageBackground, Image, Platform, Dimensions, PanResponder, Alert, ActivityIndicator, AppState, Linking } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
@@ -405,39 +405,17 @@ export default function HomeScreen() {
           }
           const Notifications = await import('expo-notifications');
           const { status } = await Notifications.getPermissionsAsync();
-          if (status !== 'granted') {
-            // System permission revoked - clear local flag and show banner
-            await AsyncStorage.removeItem('push_activated');
-            setShowPushBanner(true);
-            return;
-          }
-          // System permission granted - check local activation flag first (fast path)
-          const localFlag = await AsyncStorage.getItem('push_activated');
-          if (localFlag === 'true') {
+          if (status === 'granted') {
+            // Permission granted — hide banner and ensure token is registered
+            await AsyncStorage.setItem('push_activated', 'true');
             setShowPushBanner(false);
+            // Silently ensure push token is registered
+            authService.registerPushToken().catch(() => {});
             return;
           }
-          // No local flag - check backend as fallback
-          try {
-            const prefRes = await api.get('/users/notification-preferences');
-            const prefData = prefRes.data?.data;
-            if (prefRes.data?.success && prefData) {
-              if (prefData.pushEnabled === false) {
-                setShowPushBanner(false);
-                return;
-              }
-              if (prefData.hasPushToken) {
-                // Backend confirms token exists - save locally for next time
-                await AsyncStorage.setItem('push_activated', 'true');
-                setShowPushBanner(false);
-                return;
-              }
-              // User wants notifications but no token yet
-              setShowPushBanner(true);
-              return;
-            }
-          } catch (e) { }
-          setShowPushBanner(false);
+          // System permission NOT granted — show the fallback banner
+          await AsyncStorage.removeItem('push_activated');
+          setShowPushBanner(true);
         } catch (e) { }
       };
 
@@ -446,6 +424,36 @@ export default function HomeScreen() {
       if (isAuthenticated) checkPushStatus();
     }, [isAuthenticated, isElectrician, fetchNewJobsCount])
   );
+
+  // AppState listener: auto-detect when user returns from system settings
+  // If notification permission was just granted, auto-hide banner & register token
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const subscription = AppState.addEventListener('change', async (nextState) => {
+      if (nextState === 'active' && showPushBanner) {
+        try {
+          const Constants = (await import('expo-constants')).default;
+          if (Platform.OS === 'android' && Constants.appOwnership === 'expo') return;
+
+          const Notifications = await import('expo-notifications');
+          const { status } = await Notifications.getPermissionsAsync();
+
+          if (status === 'granted') {
+            console.log('🔔 [HomeScreen] Permission granted after returning from settings — registering token...');
+            await AsyncStorage.setItem('push_activated', 'true');
+            setShowPushBanner(false);
+            await authService.registerPushToken();
+            try { await api.put('/users/notification-preferences', { pushEnabled: true }); } catch (e) { }
+          }
+        } catch (e) {
+          console.warn('AppState permission check error:', e);
+        }
+      }
+    });
+
+    return () => subscription.remove();
+  }, [isAuthenticated, showPushBanner]);
 
   // Separate useEffect for fetching featured electricians when userCities changes
   useEffect(() => {
@@ -607,7 +615,7 @@ export default function HomeScreen() {
           </ImageBackground>
         </View>
 
-        {/* Push Notification Banner */}
+        {/* Push Notification Banner — Fallback for users who dismissed the initial popup */}
         {showPushBanner && isAuthenticated && (
           <View style={[styles.bannerWrapper, { marginTop: 16, marginBottom: -4 }]}>
             <View
@@ -626,65 +634,13 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   style={{ backgroundColor: '#F59E0B', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 4 }}
                   activeOpacity={0.8}
-                  disabled={pushBannerLoading}
-                  onPress={async () => {
-                    setPushBannerLoading(true);
-                    try {
-                      const { Platform } = await import('react-native');
-                      const Constants = (await import('expo-constants')).default;
-                      
-                      // Skip for Expo Go on Android
-                      if (Platform.OS === 'android' && Constants.appOwnership === 'expo') {
-                        setPushBannerLoading(false);
-                        return;
-                      }
-                      
-                      const Notifications = await import('expo-notifications');
-                      const { status: currentStatus, canAskAgain } = await Notifications.getPermissionsAsync();
-                      
-                      if (currentStatus === 'granted') {
-                        // Already granted - just register token
-                        const result = await authService.registerPushToken();
-                        if (result === 'granted') {
-                          await AsyncStorage.setItem('push_activated', 'true');
-                          setShowPushBanner(false);
-                          try { await api.put('/users/notification-preferences', { pushEnabled: true }); } catch (e) { }
-                        }
-                      } else if (canAskAgain) {
-                        // Trigger native system permission dialog
-                        const { status: newStatus } = await Notifications.requestPermissionsAsync();
-                        if (newStatus === 'granted') {
-                          const result = await authService.registerPushToken();
-                          if (result === 'granted') {
-                            await AsyncStorage.setItem('push_activated', 'true');
-                            setShowPushBanner(false);
-                            try { await api.put('/users/notification-preferences', { pushEnabled: true }); } catch (e) { }
-                          }
-                        }
-                      } else {
-                        // Permission permanently denied — show friendly in-app message
-                        // Don't open settings or force user out of app
-                        Alert.alert(
-                          'Bildirimler Kapalı',
-                          'Bildirim izni daha önce reddedildi. Profil > Bildirim Ayarları sayfasından kontrol edebilirsiniz.',
-                          [{ text: 'Tamam', style: 'default' }]
-                        );
-                      }
-                    } catch (e) {
-                      console.error('Push activation error:', e);
-                    } finally {
-                      setPushBannerLoading(false);
-                    }
+                  onPress={() => {
+                    // Deep link directly to the app's notification settings on the OS
+                    Linking.openSettings();
                   }}
                 >
-                  {pushBannerLoading ? (
-                    <ActivityIndicator size="small" color="#FFF" />
-                  ) : (
-                    <>
-                      <Text style={{ color: '#FFF', fontFamily: fonts.bold, fontSize: 13 }}>Aktif Et</Text>
-                      <Ionicons name="chevron-forward" size={14} color="#FFF" />
-                    </>
-                  )}
+                  <Text style={{ color: '#FFF', fontFamily: fonts.bold, fontSize: 13 }}>Ayarları Aç</Text>
+                  <Ionicons name="open-outline" size={14} color="#FFF" />
                 </TouchableOpacity>
               </View>
             </View>

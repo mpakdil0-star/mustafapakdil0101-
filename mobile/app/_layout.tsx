@@ -198,7 +198,7 @@ function RootLayoutNav() {
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    // Register Push Token on login — Per-user notification prompt
+    // Register Push Token on login — Device-based notification prompt (one-time per install)
     const requestNotificationPermission = async () => {
       try {
         const { Platform } = await import('react-native');
@@ -213,19 +213,20 @@ function RootLayoutNav() {
         const { status } = await NotifModule.getPermissionsAsync();
 
         if (status === 'granted') {
-          // Already granted — just ensure push token is registered
+          // Already granted — register token + mark device as complete
           await authService.registerPushToken();
+          const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+          await AsyncStorage.setItem('device_push_prompt_completed', 'true');
           return;
         }
 
-        // Per-user dismissal key (so new accounts always see the prompt)
+        // Device-based key: persists across account switches, clears on app uninstall
         const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-        const userId = user?.id || 'unknown';
-        const dismissKey = `push_prompt_dismissed_${userId}`;
-        const dismissed = await AsyncStorage.getItem(dismissKey);
+        const promptCompleted = await AsyncStorage.getItem('device_push_prompt_completed');
 
-        if (dismissed === 'true') {
-          // User explicitly chose 'Daha Sonra' before — respect that, don't nag
+        if (promptCompleted === 'true') {
+          // Prompt already shown on this device install — don't show again
+          // The home screen banner will take over as fallback
           return;
         }
 
@@ -243,8 +244,9 @@ function RootLayoutNav() {
               onPress: async () => {
                 setAlertConfig(prev => ({ ...prev, visible: false }));
                 try {
+                  // Mark as completed so it never shows again on this device
                   const AS = (await import('@react-native-async-storage/async-storage')).default;
-                  await AS.setItem(dismissKey, 'true');
+                  await AS.setItem('device_push_prompt_completed', 'true');
                 } catch (e) {
                   console.log('AsyncStorage error:', e);
                 }
@@ -260,20 +262,21 @@ function RootLayoutNav() {
                   // Tiny delay to let our modal close animation finish
                   await new Promise(resolve => setTimeout(resolve, 400));
 
-                  // DIRECTLY trigger the OS-level permission dialog
+                  // DIRECTLY trigger the OS-level permission dialog (chained flow)
                   const { status: requestedStatus } = await NotifModule.requestPermissionsAsync();
+
+                  // Mark device prompt as completed regardless of result
+                  await AsyncStorage.setItem('device_push_prompt_completed', 'true');
 
                   if (requestedStatus === 'granted') {
                     // Permission granted! Register the push token immediately
                     await authService.registerPushToken();
-                    // Clear dismiss flag so we don't block future checks
-                    await AsyncStorage.removeItem(dismissKey);
+                    await AsyncStorage.setItem('push_activated', 'true');
                   }
-                  // If denied, we do NOT open settings — respect the user's choice
-                  // They can always enable from Profil > Bildirim Ayarları later
+                  // If denied, the home screen banner will handle fallback
                 } catch (permErr) {
                   console.warn('Permission request error:', permErr);
-                  // Fallback: try registerPushToken which also requests permission
+                  await AsyncStorage.setItem('device_push_prompt_completed', 'true');
                   await authService.registerPushToken();
                 }
               }
