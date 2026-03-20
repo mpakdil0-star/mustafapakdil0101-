@@ -110,6 +110,9 @@ export default function CreateJobScreen() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 3;
+  const scrollViewRef = useRef<ScrollView>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdJobId, setCreatedJobId] = useState<string | null>(null);
 
@@ -339,9 +342,9 @@ export default function CreateJobScreen() {
     }
 
     if (!description.trim()) {
-      newErrors.description = 'Açıklama zorunludur';
-    } else if (description.trim().length < 5) {
-      newErrors.description = 'Açıklama en az 5 karakter olmalıdır';
+      newErrors.description = 'Açıklama boş bırakılamaz';
+    } else if (description.trim().length < 10) {
+      newErrors.description = 'Açıklama en az 10 karakter olmalıdır';
     }
 
     if (!category) {
@@ -387,9 +390,9 @@ export default function CreateJobScreen() {
 
     // 2. Description validation
     if (!description.trim()) {
-      validationErrors.push('• Açıklama girilmedi');
-    } else if (description.trim().length < 5) {
-      validationErrors.push('• Açıklama en az 5 karakter olmalı');
+      validationErrors.push('• Açıklama boş bırakılamaz');
+    } else if (description.trim().length < 10) {
+      validationErrors.push('• Açıklama en az 10 karakter olmalı');
     } else if (description.length > 500) {
       validationErrors.push('• Açıklama en fazla 500 karakter olabilir');
     }
@@ -520,8 +523,83 @@ export default function CreateJobScreen() {
     }
   };
 
+  const nextStep = () => {
+    if (currentStep === 1) {
+      if (!title.trim() || title.trim().length < 5) {
+        setErrors({ ...errors, title: 'Başlık en az 5 karakter olmalıdır' });
+        return;
+      }
+      if (!category) {
+        setErrors({ ...errors, category: 'Kategori seçiniz' });
+        return;
+      }
+    } else if (currentStep === 2) {
+      if (!description.trim()) {
+        setErrors({ ...errors, description: 'Açıklama boş bırakılamaz' });
+        return;
+      }
+      if (description.trim().length < 10) {
+        setErrors({ ...errors, description: 'Açıklama en az 10 karakter olmalıdır' });
+        return;
+      }
+    }
+
+    setErrors({});
+    setCurrentStep(prev => Math.min(prev + 1, totalSteps));
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  const prevStep = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 1));
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  const renderStepIndicator = () => (
+    <View style={[styles.stepperContainer, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+      {[1, 2, 3].map((step) => (
+        <View key={step} style={styles.stepItem}>
+          <View style={[
+            styles.stepCircle,
+            currentStep >= step
+              ? { backgroundColor: colors.primary, borderWidth: 0 }
+              : { backgroundColor: colors.borderLight, borderWidth: 1, borderColor: colors.border },
+          ]}>
+            {currentStep > step ? (
+              <Ionicons name="checkmark" size={14} color={staticColors.white} />
+            ) : (
+              <Text style={[styles.stepNumber, currentStep >= step ? { color: staticColors.white } : { color: colors.textLight }]}>
+                {step}
+              </Text>
+            )}
+          </View>
+          <Text
+            style={[
+              styles.stepLabel,
+              currentStep === step
+                ? { color: colors.text, fontFamily: fonts.semiBold }
+                : currentStep > step
+                  ? { color: colors.textSecondary, fontFamily: fonts.medium }
+                  : { color: colors.textLight, fontFamily: fonts.medium },
+            ]}
+            numberOfLines={1}
+          >
+            {step === 1 ? 'Özet' : step === 2 ? 'Detay' : 'Konum'}
+          </Text>
+          {step < 3 && (
+            <View
+              style={[
+                styles.stepLine,
+                currentStep > step ? { backgroundColor: colors.primary + '55' } : { backgroundColor: colors.border },
+              ]}
+            />
+          )}
+        </View>
+      ))}
+    </View>
+  );
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.backgroundLight }]}>
       <PremiumHeader
         title="Hemen Hizmet Al"
         showBackButton
@@ -534,325 +612,430 @@ export default function CreateJobScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <ScrollView
+          ref={scrollViewRef}
           style={styles.scrollView}
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
+          {renderStepIndicator()}
+
           {/* AI Wizard Notification */}
           {wizardDraft && (
-            <View style={[styles.wizardMessage, { backgroundColor: colors.primary, shadowColor: colors.primary }]}>
-              <Ionicons name="sparkles" size={16} color={staticColors.white} />
-              <Text style={styles.wizardMessageText}>
-                {wizardDraft.category ? `Kategoriyi "${wizardDraft.category}" olarak güncelledim! ` : ''}
-                {wizardDraft.urgency === 'HIGH' ? 'Bu önemli bir arıza, aciliyeti yükselttim.' : ''}
+            <View
+              style={[
+                styles.wizardMessage,
+                {
+                  backgroundColor: colors.surfaceElevated,
+                  borderColor: colors.border,
+                  shadowColor: colors.shadow,
+                },
+              ]}
+            >
+              <View style={[styles.wizardIconBg, { backgroundColor: colors.primary + '12' }]}>
+                <Ionicons name="sparkles" size={15} color={colors.primary} />
+              </View>
+              <Text style={[styles.wizardMessageText, { color: colors.text }]}>
+                {wizardDraft.category ? `Öneri: kategori "${wizardDraft.category}" olarak ayarlandı. ` : ''}
+                {wizardDraft.urgency === 'HIGH' ? 'Aciliyet yüksek olarak işaretlendi.' : ''}
               </Text>
             </View>
           )}
 
-          {/* Main Form Section */}
-          <Card variant="default" style={styles.sectionCard}>
-            {/* İlan Detayı */}
-            <View style={[styles.sectionHeader, { marginTop: 0 }]}>
-              <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '10' }]}>
-                <Ionicons name="document-text-outline" size={20} color={colors.primary} />
-              </View>
-              <Text style={styles.sectionTitle}>
-                İlan Detayı{serviceCategory ? ` - ${SERVICE_CATEGORIES.find(s => s.id === serviceCategory)?.name || ''}` : ''}
-              </Text>
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>İlan Başlığı</Text>
-              <TextInput
-                style={[styles.input, errors.title && styles.inputError]}
-                placeholder={getPlaceholdersByCategory(serviceCategory).title}
-                value={title}
-                onChangeText={(text) => {
-                  setTitle(text);
-                  if (errors.title) setErrors({ ...errors, title: '' });
-                }}
-                placeholderTextColor={colors.textLight}
-                autoCorrect={false}
-                spellCheck={false}
-                autoCapitalize="sentences"
-              />
-              {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Açıklama</Text>
-              <View>
-                <TextInput
-                  style={[styles.textArea, errors.description && styles.inputError]}
-                  placeholder={getPlaceholdersByCategory(serviceCategory).description}
-                  value={description}
-                  onChangeText={(text) => {
-                    setDescription(text);
-                    if (errors.description) setErrors({ ...errors, description: '' });
-                  }}
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                  placeholderTextColor={colors.textLight}
-                  autoCorrect={false}
-                  spellCheck={false}
-                  autoCapitalize="sentences"
-                />
-              </View>
-              {errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
-            </View>
-
-            <View style={styles.divider} />
-
-            {/* Hizmet Türü ve Kategori Seçimi - Always visible */}
-            <View style={styles.sectionHeaderNoMargin}>
-              <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '10' }]}>
-                <Ionicons name="list-outline" size={18} color={colors.primary} />
-              </View>
-              <Text style={styles.sectionTitle}>Hizmet Türü & Kategori</Text>
-            </View>
-
-            {/* Hizmet Türü - Horizontal Pills */}
-            <Text style={[styles.label, { marginTop: 8, marginBottom: 4 }]}>Hizmet Türü</Text>
-            <View style={styles.pillContainer}>
-              {SERVICE_CATEGORIES.map((svc) => (
-                <TouchableOpacity
-                  key={svc.id}
-                  style={[
-                    styles.pill,
-                    serviceCategory === svc.id && { backgroundColor: svc.colors[0], borderColor: svc.colors[0] },
-                  ]}
-                  onPress={() => {
-                    setServiceCategory(svc.id);
-                    setCategory('');
-                    if (errors.category) setErrors({ ...errors, category: '' });
-                  }}
-                >
-                  <Ionicons
-                    name={svc.icon as any}
-                    size={14}
-                    color={serviceCategory === svc.id ? '#fff' : svc.colors[0]}
-                  />
-                  <Text style={[
-                    styles.pillText,
-                    serviceCategory === svc.id && { color: '#fff', fontFamily: fonts.bold },
-                  ]}>
-                    {svc.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Alt Kategori - Wrap Pills */}
-            {serviceCategory && (
-              <>
-                <View style={[styles.divider, { marginVertical: 8 }]} />
-                <Text style={[styles.label, { marginBottom: 4 }]}>Alt Kategori</Text>
-                <View style={styles.pillContainer}>
-                  {getSubCategoriesByParent(serviceCategory).map((cat) => (
-                    <TouchableOpacity
-                      key={cat.id}
-                      style={[
-                        styles.pill,
-                        category === cat.name && { backgroundColor: cat.colors[0], borderColor: cat.colors[0] },
-                      ]}
-                      onPress={() => {
-                        setCategory(cat.name);
-                        if (errors.category) setErrors({ ...errors, category: '' });
-                      }}
-                    >
-                      <Ionicons
-                        name={cat.icon as any}
-                        size={14}
-                        color={category === cat.name ? '#fff' : cat.colors[0]}
-                      />
-                      <Text style={[
-                        styles.pillText,
-                        category === cat.name && { color: '#fff', fontFamily: fonts.bold },
-                      ]}>
-                        {cat.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+          {currentStep === 1 && (
+            <View>
+              <Card variant="glass" style={[styles.sectionCard, { borderColor: colors.border }]}>
+                <View style={styles.sectionHeader}>
+                  <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12' }]}>
+                    <Ionicons name="create-outline" size={18} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.sectionKicker, { color: colors.textLight }]}>Adım 1</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Hizmet tanımı</Text>
+                  </View>
                 </View>
-              </>
-            )}
-            {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
 
-            <View style={styles.divider} />
-
-            {/* Aciliyet Durumu - Inline Row */}
-            <View style={[styles.sectionHeaderNoMargin, { marginBottom: 6 }]}>
-              <View style={[styles.sectionIconWrapper, { backgroundColor: '#EF444410' }]}>
-                <Ionicons name="flash-outline" size={18} color="#EF4444" />
-              </View>
-              <Text style={styles.sectionTitle}>Aciliyet</Text>
-            </View>
-            <View style={styles.urgencyRow}>
-              {URGENCY_LEVELS.map((level) => (
-                <TouchableOpacity
-                  key={level.value}
-                  style={[
-                    styles.urgencyPill,
-                    urgencyLevel === level.value && {
-                      backgroundColor: level.color,
-                      borderColor: level.color,
-                    },
-                  ]}
-                  onPress={() => setUrgencyLevel(level.value as any)}
-                >
-                  <Ionicons
-                    name={level.icon as any}
-                    size={14}
-                    color={urgencyLevel === level.value ? '#fff' : level.color}
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>İlan başlığı</Text>
+                  <TextInput
+                    style={[
+                      styles.modernInput,
+                      errors.title && { borderColor: staticColors.error, borderWidth: 1.5 },
+                      {
+                        backgroundColor: colors.surfaceElevated,
+                        borderColor: errors.title ? staticColors.error : colors.border,
+                        color: colors.text,
+                      },
+                    ]}
+                    placeholder={getPlaceholdersByCategory(serviceCategory).title}
+                    value={title}
+                    onChangeText={(text) => {
+                      setTitle(text);
+                      if (errors.title) setErrors({ ...errors, title: '' });
+                    }}
+                    placeholderTextColor={colors.textLight}
+                    autoCorrect={false}
+                    spellCheck={false}
+                    autoCapitalize="sentences"
                   />
-                  <Text style={[
-                    styles.urgencyPillText,
-                    urgencyLevel === level.value && { color: '#fff', fontFamily: fonts.bold },
-                  ]}>
-                    {level.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                  {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
+                </View>
 
-            <View style={styles.divider} />
+                <View style={styles.divider} />
 
-            {/* Konum Bilgileri */}
-            <View style={[styles.sectionHeader, { marginTop: 12 }]}>
-              <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '10' }]}>
-                <Ionicons name="location-outline" size={20} color={colors.primary} />
-              </View>
-              <Text style={styles.sectionTitle}>Konum Bilgileri</Text>
-            </View>
-
-            <LocationPicker
-              onLocationSelected={(loc) => {
-                setCoords({ latitude: loc.latitude, longitude: loc.longitude });
-                if (loc.address) setAddress(loc.address);
-                if (loc.city) {
-                  const matchedCity = CITY_NAMES.find(c => c.toLowerCase().includes(loc.city!.toLowerCase()));
-                  if (matchedCity) setCity(matchedCity);
-                }
-                if (loc.district) setDistrict(loc.district);
-              }}
-            />
-
-            <View style={styles.row}>
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <Picker
-                  label="Şehir"
-                  value={city}
-                  options={CITY_NAMES}
-                  onValueChange={setCity}
-                  error={errors.city}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Picker
-                  label="İlçe"
-                  value={district}
-                  options={districtOptions}
-                  onValueChange={setDistrict}
-                  error={errors.district}
-                  disabled={!city}
-                />
-              </View>
-            </View>
-
-            <Picker
-              label="Mahalle"
-              value={neighborhood}
-              options={neighborhoodOptions.length > 0 ? neighborhoodOptions : (district ? ['Merkez'] : [])}
-              onValueChange={setNeighborhood}
-              error={errors.neighborhood}
-              disabled={!district}
-            />
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Detaylı Adres</Text>
-              <TextInput
-                style={[styles.textAreaSmall, errors.address && styles.inputError]}
-                placeholder="Bina, daire, kat bilgisi yazın..."
-                value={address}
-                onChangeText={(text) => {
-                  setAddress(text);
-                  if (errors.address) setErrors({ ...errors, address: '' });
-                }}
-                multiline
-                numberOfLines={2}
-                placeholderTextColor={colors.textLight}
-              />
-              {errors.address && <Text style={styles.errorText}>{errors.address}</Text>}
-            </View>
-
-            <View style={styles.divider} />
-
-            {/* Fotoğraflar ve Bütçe */}
-            <View style={[styles.sectionHeader, { marginTop: 12 }]}>
-              <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '10' }]}>
-                <Ionicons name="camera-outline" size={20} color={colors.primary} />
-              </View>
-              <Text style={styles.sectionTitle}>Görsel ve Bütçe</Text>
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Fotoğraf Ekle (Opsiyonel)</Text>
-              <View style={styles.imageButtons}>
-                <TouchableOpacity style={[styles.imageActionBtn, { borderColor: colors.primary + '30' }]} onPress={handleTakePhoto}>
-                  <Ionicons name="camera" size={24} color={colors.primary} />
-                  <Text style={[styles.imageActionText, { color: colors.primary }]}>Çek</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.imageActionBtn, { borderColor: colors.primary + '30' }]} onPress={handlePickImage}>
-                  <Ionicons name="images" size={24} color={colors.primary} />
-                  <Text style={[styles.imageActionText, { color: colors.primary }]}>Galeri</Text>
-                </TouchableOpacity>
-              </View>
-
-              {images.length > 0 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagePreviewScroll}>
-                  {images.map((img, index) => (
-                    <View key={index} style={styles.imagePreviewWrapper}>
-                      <Image source={{ uri: img }} style={styles.previewImage} />
-                      <TouchableOpacity
-                        style={styles.removeImgBtn}
-                        onPress={() => handleRemoveImage(index)}
-                      >
-                        <Ionicons name="close-circle" size={20} color={colors.error} />
-                      </TouchableOpacity>
+                <View style={styles.inputContainer}>
+                  <View style={styles.sectionHeaderNoMargin}>
+                    <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12' }]}>
+                      <Ionicons name="list-outline" size={17} color={colors.primary} />
                     </View>
-                  ))}
-                </ScrollView>
-              )}
-            </View>
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 15 }]}>Kategori</Text>
+                  </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Tahmini Bütçe (₺) (Opsiyonel)</Text>
-              <View style={styles.budgetInputWrapper}>
-                <Ionicons name="cash-outline" size={20} color={colors.primary} style={styles.budgetIcon} />
-                <TextInput
-                  style={styles.budgetInput}
-                  placeholder="Bütçeniz (Opsiyonel)"
-                  value={estimatedBudget}
-                  onChangeText={(text) => setEstimatedBudget(text.replace(/[^0-9.]/g, ''))}
-                  keyboardType="numeric"
-                  placeholderTextColor={colors.textLight}
+                  <Text style={[styles.label, { marginTop: 12, color: colors.textSecondary }]}>Hizmet grubu</Text>
+                  <View style={styles.pillContainer}>
+                    {SERVICE_CATEGORIES.map((svc) => {
+                      const selected = serviceCategory === svc.id;
+                      return (
+                        <TouchableOpacity
+                          key={svc.id}
+                          style={[
+                            styles.pill,
+                            { borderColor: colors.border, backgroundColor: colors.surfaceElevated },
+                            selected && {
+                              backgroundColor: svc.colors[0] + '14',
+                              borderColor: svc.colors[0],
+                            },
+                          ]}
+                          onPress={() => {
+                            setServiceCategory(svc.id);
+                            setCategory('');
+                            if (errors.category) setErrors({ ...errors, category: '' });
+                          }}
+                        >
+                          <Ionicons
+                            name={svc.icon as any}
+                            size={14}
+                            color={selected ? svc.colors[0] : colors.textSecondary}
+                          />
+                          <Text
+                            style={[
+                              styles.pillText,
+                              { color: colors.textSecondary },
+                              selected && { color: svc.colors[0], fontFamily: fonts.semiBold },
+                            ]}
+                          >
+                            {svc.name}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  {serviceCategory && (
+                    <>
+                      <Text style={[styles.label, { marginTop: 16, color: colors.textSecondary }]}>Alt branş</Text>
+                      <View style={styles.pillContainer}>
+                        {getSubCategoriesByParent(serviceCategory).map((cat) => {
+                          const selected = category === cat.name;
+                          return (
+                            <TouchableOpacity
+                              key={cat.id}
+                              style={[
+                                styles.pill,
+                                { borderColor: colors.border, backgroundColor: colors.surfaceElevated },
+                                selected && {
+                                  backgroundColor: cat.colors[0] + '14',
+                                  borderColor: cat.colors[0],
+                                },
+                              ]}
+                              onPress={() => {
+                                setCategory(cat.name);
+                                if (errors.category) setErrors({ ...errors, category: '' });
+                              }}
+                            >
+                              <Ionicons
+                                name={cat.icon as any}
+                                size={14}
+                                color={selected ? cat.colors[0] : colors.textSecondary}
+                              />
+                              <Text
+                                style={[
+                                  styles.pillText,
+                                  { color: colors.textSecondary },
+                                  selected && { color: cat.colors[0], fontFamily: fonts.semiBold },
+                                ]}
+                              >
+                                {cat.name}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </>
+                  )}
+                  {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
+                </View>
+
+                <Button
+                  title="Devam Et"
+                  onPress={nextStep}
+                  style={styles.nextBtn}
+                  icon={<Ionicons name="arrow-forward" size={18} color={staticColors.white} />}
                 />
-              </View>
+              </Card>
             </View>
-          </Card>
+          )}
 
-          <Button
-            title="İlanı Yayınla"
-            onPress={handleSubmit}
-            loading={isLoading}
-            variant="primary"
-            style={styles.submitBtn}
-            icon={<Ionicons name="rocket-outline" size={20} color={colors.white} />}
-          />
+          {currentStep === 2 && (
+            <View>
+              <Card variant="glass" style={[styles.sectionCard, { borderColor: colors.border }]}>
+                <View style={styles.sectionHeader}>
+                  <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12' }]}>
+                    <Ionicons name="reader-outline" size={18} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.sectionKicker, { color: colors.textLight }]}>Adım 2</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Detay ve görseller</Text>
+                  </View>
+                </View>
 
-          <Text style={styles.finalNote}>
-            İlanınız yayınlandıktan sonra bölgenizdeki uzmanlar size teklif sunacaktır.
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Açıklama</Text>
+                  <TextInput
+                    style={[
+                      styles.modernTextArea,
+                      errors.description && { borderColor: staticColors.error, borderWidth: 1.5 },
+                      {
+                        backgroundColor: colors.surfaceElevated,
+                        borderColor: errors.description ? staticColors.error : colors.border,
+                        color: colors.text,
+                      },
+                    ]}
+                    placeholder={getPlaceholdersByCategory(serviceCategory).description}
+                    value={description}
+                    onChangeText={(text) => {
+                      setDescription(text);
+                      if (errors.description) setErrors({ ...errors, description: '' });
+                    }}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    placeholderTextColor={colors.textLight}
+                    autoCorrect={false}
+                    spellCheck={false}
+                    autoCapitalize="sentences"
+                  />
+                  {errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Fotoğraf (isteğe bağlı)</Text>
+                  <View style={styles.imageButtons}>
+                    <TouchableOpacity
+                      style={[styles.modernImageBtn, { borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}
+                      onPress={handleTakePhoto}
+                    >
+                      <Ionicons name="camera-outline" size={22} color={colors.primary} />
+                      <Text style={[styles.imageActionText, { color: colors.text }]}>Kamera</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.modernImageBtn, { borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}
+                      onPress={handlePickImage}
+                    >
+                      <Ionicons name="images-outline" size={22} color={colors.primary} />
+                      <Text style={[styles.imageActionText, { color: colors.text }]}>Galeri</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {images.length > 0 && (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagePreviewScroll}>
+                      {images.map((img, index) => (
+                        <View key={index} style={styles.imagePreviewWrapper}>
+                          <Image source={{ uri: img }} style={styles.previewImage} />
+                          <TouchableOpacity style={styles.removeImgBtn} onPress={() => handleRemoveImage(index)}>
+                            <Ionicons name="close-circle" size={22} color={staticColors.error} />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </ScrollView>
+                  )}
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Öncelik</Text>
+                  <View style={styles.urgencyGrid}>
+                    {URGENCY_LEVELS.map((level) => (
+                      <TouchableOpacity
+                        key={level.value}
+                        style={[
+                          styles.urgencyCard,
+                          { borderColor: colors.border, backgroundColor: colors.surfaceElevated },
+                          urgencyLevel === level.value && {
+                            borderColor: level.color,
+                            backgroundColor: level.color + '0D',
+                          },
+                        ]}
+                        onPress={() => setUrgencyLevel(level.value as any)}
+                      >
+                        <Ionicons
+                          name={level.icon as any}
+                          size={22}
+                          color={urgencyLevel === level.value ? level.color : colors.textLight}
+                        />
+                        <Text
+                          style={[
+                            styles.urgencyCardLabel,
+                            { color: colors.textSecondary },
+                            urgencyLevel === level.value && { color: level.color, fontFamily: fonts.semiBold },
+                          ]}
+                        >
+                          {level.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                <View style={styles.btnRow}>
+                  <Button
+                    title="Geri"
+                    variant="outline"
+                    onPress={prevStep}
+                    style={styles.backBtn}
+                    icon={<Ionicons name="arrow-back" size={18} color={colors.primary} />}
+                  />
+                  <Button
+                    title="Devam Et"
+                    onPress={nextStep}
+                    style={styles.flexBtn}
+                    icon={<Ionicons name="arrow-forward" size={18} color={staticColors.white} />}
+                  />
+                </View>
+              </Card>
+            </View>
+          )}
+
+
+          {currentStep === 3 && (
+            <View>
+              <Card variant="glass" style={[styles.sectionCard, { borderColor: colors.border }]}>
+                <View style={styles.sectionHeader}>
+                  <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12' }]}>
+                    <Ionicons name="location-outline" size={18} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.sectionKicker, { color: colors.textLight }]}>Adım 3</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Konum</Text>
+                  </View>
+                </View>
+
+                <LocationPicker
+                  onLocationSelected={(loc) => {
+                    setCoords({ latitude: loc.latitude, longitude: loc.longitude });
+                    if (loc.address) setAddress(loc.address);
+                    if (loc.city) {
+                      const matchedCity = CITY_NAMES.find(c => c.toLowerCase().includes(loc.city!.toLowerCase()));
+                      if (matchedCity) setCity(matchedCity);
+                    }
+                    if (loc.district) setDistrict(loc.district);
+                  }}
+                />
+
+                <View style={styles.row}>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Picker
+                      label="Şehir"
+                      value={city}
+                      options={CITY_NAMES}
+                      onValueChange={setCity}
+                      error={errors.city}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Picker
+                      label="İlçe"
+                      value={district}
+                      options={districtOptions}
+                      onValueChange={setDistrict}
+                      error={errors.district}
+                      disabled={!city}
+                    />
+                  </View>
+                </View>
+
+                <Picker
+                  label="Mahalle"
+                  value={neighborhood}
+                  options={neighborhoodOptions.length > 0 ? neighborhoodOptions : (district ? ['Merkez'] : [])}
+                  onValueChange={setNeighborhood}
+                  error={errors.neighborhood}
+                  disabled={!district}
+                />
+
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Açık adres / tarif</Text>
+                  <TextInput
+                    style={[
+                      styles.modernTextArea,
+                      { minHeight: 88, height: 88 },
+                      errors.address && { borderColor: staticColors.error, borderWidth: 1.5 },
+                      {
+                        backgroundColor: colors.surfaceElevated,
+                        borderColor: errors.address ? staticColors.error : colors.border,
+                        color: colors.text,
+                      },
+                    ]}
+                    placeholder="Sokak, bina no, kat ve varsa tarif..."
+                    placeholderTextColor={colors.textLight}
+                    value={address}
+                    onChangeText={(text) => {
+                      setAddress(text);
+                      if (errors.address) setErrors({ ...errors, address: '' });
+                    }}
+                    multiline
+                    textAlignVertical="top"
+                  />
+                  {errors.address && <Text style={styles.errorText}>{errors.address}</Text>}
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Tahmini bütçe (₺, isteğe bağlı)</Text>
+                  <View style={[styles.modernBudgetWrapper, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
+                    <TextInput
+                      style={[styles.modernBudgetInput, { color: colors.text }]}
+                      placeholder="0"
+                      placeholderTextColor={colors.textLight}
+                      keyboardType="numeric"
+                      value={estimatedBudget}
+                      onChangeText={(text) => setEstimatedBudget(text.replace(/[^0-9.]/g, ''))}
+                    />
+                    <Text style={[styles.currencyText, { color: colors.textSecondary }]}>₺</Text>
+                  </View>
+                </View>
+
+                <View style={styles.btnRow}>
+                  <Button
+                    title="Geri"
+                    variant="outline"
+                    onPress={prevStep}
+                    style={styles.backBtn}
+                    icon={<Ionicons name="arrow-back" size={18} color={colors.primary} />}
+                  />
+                  <Button
+                    title={isLoading ? 'Gönderiliyor...' : 'İlanı Yayınla'}
+                    onPress={handleSubmit}
+                    loading={isLoading}
+                    style={styles.flexBtn}
+                    icon={<Ionicons name="checkmark-circle" size={18} color={staticColors.white} />}
+                  />
+                </View>
+              </Card>
+            </View>
+          )}
+
+          <Text style={[styles.finalNote, { color: colors.textLight }]}>
+            İlan yayınlandığında bölgenizdeki ustalara bildirim gönderilir.
           </Text>
         </ScrollView>
 
@@ -898,7 +1081,7 @@ export default function CreateJobScreen() {
                 </LinearGradient>
               </View>
 
-              <Text style={[styles.successTitle, { color: staticColors.white }]}>İlan Yayında! 🎉</Text>
+              <Text style={[styles.successTitle, { color: staticColors.white }]}>İlan yayında</Text>
               <Text style={[styles.successMessage, { color: 'rgba(255,255,255,0.6)' }]}>
                 İlanınız başarıyla oluşturuldu. Bölgenizdeki ustalar en kısa sürede tekliflerini gönderecek.
               </Text>
@@ -959,7 +1142,6 @@ export default function CreateJobScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
   },
   scrollView: {
     flex: 1,
@@ -970,34 +1152,44 @@ const styles = StyleSheet.create({
   },
   wizardMessage: {
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 16,
-    marginBottom: 16,
-    gap: 10,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 4,
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    marginBottom: 14,
+    gap: 12,
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   wizardMessageText: {
-    fontSize: 12,
-    color: staticColors.white,
-    fontFamily: fonts.bold,
+    fontSize: 13,
+    fontFamily: fonts.medium,
     flex: 1,
+    lineHeight: 18,
   },
   sectionCard: {
-    padding: 10,
+    padding: 14,
     marginBottom: 8,
-    borderRadius: 18,
+    borderRadius: 14,
+    borderWidth: 1,
     backgroundColor: staticColors.white,
+  },
+  sectionKicker: {
+    fontFamily: fonts.semiBold,
+    fontSize: 11,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+    marginBottom: 2,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
-    marginTop: 12,
-    gap: 10,
+    marginBottom: 12,
+    marginTop: 4,
+    gap: 12,
   },
   sectionIconWrapper: {
     width: 32,
@@ -1007,19 +1199,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionTitle: {
-    fontFamily: fonts.extraBold,
-    fontSize: 15,
-    color: staticColors.text,
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    letterSpacing: -0.2,
   },
   inputContainer: {
     marginBottom: 10,
   },
   label: {
     fontFamily: fonts.semiBold,
-    fontSize: 14,
-    color: '#333333',
+    fontSize: 13,
     marginBottom: 6,
-    marginLeft: 4,
+    marginLeft: 2,
   },
   input: {
     backgroundColor: '#F3F4F6',
@@ -1074,12 +1265,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    gap: 5,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 6,
   },
   pillText: {
     fontFamily: fonts.medium,
@@ -1130,8 +1319,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   imageActionText: {
-    fontFamily: fonts.bold,
-    fontSize: 14,
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
   },
   imagePreviewScroll: {
     marginTop: 10,
@@ -1197,8 +1386,129 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: staticColors.borderLight,
-    marginVertical: 4,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    marginVertical: 16,
+  },
+  stepperContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  stepItem: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flex: 1,
+  },
+  stepCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  stepNumber: {
+    fontSize: 12,
+    fontFamily: fonts.bold,
+  },
+  stepLabel: {
+    fontSize: 11,
+    marginLeft: 8,
+    maxWidth: 56,
+  },
+  stepLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth * 2,
+    minHeight: 2,
+    marginHorizontal: 6,
+    borderRadius: 1,
+  },
+  wizardIconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modernInput: {
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    borderWidth: 1,
+  },
+  modernTextArea: {
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    borderWidth: 1,
+    minHeight: 120,
+  },
+  modernImageBtn: {
+    flex: 1,
+    height: 56,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  urgencyGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  urgencyCard: {
+    flex: 1,
+    minHeight: 76,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 4,
+  },
+  urgencyCardLabel: {
+    fontSize: 12,
+    fontFamily: fonts.medium,
+  },
+  btnRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+  },
+  backBtn: {
+    flex: 1,
+  },
+  flexBtn: {
+    flex: 2,
+  },
+  nextBtn: {
+    marginTop: 20,
+  },
+  modernBudgetWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+  },
+  modernBudgetInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontFamily: fonts.semiBold,
+    fontSize: 17,
+  },
+  currencyText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
   },
   // Success Modal Styles
   modalOverlay: {

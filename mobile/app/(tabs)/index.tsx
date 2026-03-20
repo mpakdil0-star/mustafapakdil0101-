@@ -23,22 +23,21 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 // --- Premium Service Category Component ---
-const ServiceCategoryItem = ({ cat, index, onPress, styles }: any) => {
+const ServiceCategoryItem = ({ cat, index, onPress, styles, colors }: any) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.sequence([
-      Animated.delay(index * 80), // Staggered entry
+      Animated.delay(index * 60),
       Animated.spring(scaleAnim, {
         toValue: 1,
-        friction: 6,
-        tension: 40,
+        friction: 7,
+        tension: 50,
         useNativeDriver: true,
       }),
     ]).start();
   }, []);
 
-  // Map category ID to 3D image asset
   const getCategoryImage = (id: string) => {
     switch (id) {
       case 'elektrik': return require('../../assets/images/categories/electric.png');
@@ -53,29 +52,26 @@ const ServiceCategoryItem = ({ cat, index, onPress, styles }: any) => {
   return (
     <Animated.View style={{ width: '18%', transform: [{ scale: scaleAnim }] }}>
       <TouchableOpacity
-        style={[styles.serviceCategoryCard, { shadowColor: cat.colors[0] }]}
+        style={[styles.serviceCategoryCard, { shadowColor: cat.colors[0] + '30', borderColor: colors.borderLight }]}
         onPress={() => onPress(cat.id)}
-        activeOpacity={0.85}
+        activeOpacity={0.88}
       >
-        <View style={styles.serviceCategoryIconBg}>
-          {/* Fallback Icon (Z-index 1) - Shows if 3D image is missing or transparent */}
+        <View style={[styles.serviceCategoryIconBg, { backgroundColor: cat.colors[0] + '08' }]}>
           <View style={StyleSheet.absoluteFill}>
             <LinearGradient
-              colors={[`${cat.colors[0]}15`, `${cat.colors[1]}25`]}
-              style={[StyleSheet.absoluteFill, { borderRadius: 20, justifyContent: 'center', alignItems: 'center' }]}
+              colors={[`${cat.colors[0]}12`, `${cat.colors[1]}18`]}
+              style={[StyleSheet.absoluteFill, { borderRadius: 18, justifyContent: 'center', alignItems: 'center' }]}
             >
-              <Ionicons name={cat.icon} size={28} color={cat.colors[0]} />
+              <Ionicons name={cat.icon} size={26} color={cat.colors[0]} />
             </LinearGradient>
           </View>
-
-          {/* 3D Image Layer (Z-index 2) */}
           <Image
             source={getCategoryImage(cat.id)}
             style={styles.serviceCategoryImage}
             resizeMode="contain"
           />
         </View>
-        <Text style={styles.serviceCategoryName} numberOfLines={2}>{cat.name}</Text>
+        <Text style={[styles.serviceCategoryName, { color: colors.text }]} numberOfLines={2}>{cat.name}</Text>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -538,9 +534,9 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={[styles.container, { backgroundColor: colors.backgroundLight }]}>
       <ScrollView
-        style={styles.container}
+        style={{ flex: 1 }}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
@@ -849,12 +845,9 @@ export default function HomeScreen() {
         {
           !isElectrician && (
             <View style={styles.section}>
-              <View style={styles.sectionHeaderMatch}>
-                <View style={styles.purpleIndicator} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.matchSectionTitle}>Ne Lazım?</Text>
-                  <Text style={styles.matchSectionSubtitle}>Hizmet türünü seçin</Text>
-                </View>
+              <View style={styles.sectionBlock}>
+                <Text style={[styles.sectionKicker, { color: colors.textLight }]}>Hizmet Seçimi</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Ne lazım?</Text>
               </View>
 
               <View style={styles.serviceCategoryGrid}>
@@ -865,6 +858,7 @@ export default function HomeScreen() {
                     index={index}
                     onPress={(id: string) => handleActionWithAuth('/jobs/create', { serviceCategory: id })}
                     styles={styles}
+                    colors={colors}
                   />
                 ))}
               </View>
@@ -872,16 +866,17 @@ export default function HomeScreen() {
           )
         }
 
-        {/* Popüler Hizmetler Section (Citizen Only) - Minimal/Outline Style */}
         {
           !isElectrician && (
             <View style={styles.section}>
-              <View style={styles.sectionHeaderMatch}>
-                <View style={styles.purpleIndicator} />
-                <Text style={styles.matchSectionTitle}>Popüler Hizmetler</Text>
-                <TouchableOpacity onPress={() => router.push('/categories')}>
-                  <Text style={styles.seeAllMatch}>Tümü</Text>
-                </TouchableOpacity>
+              <View style={styles.sectionBlock}>
+                <Text style={[styles.sectionKicker, { color: colors.textLight }]}>Popüler</Text>
+                <View style={styles.sectionHeaderRow}>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Hızlı erişim</Text>
+                  <TouchableOpacity onPress={() => router.push('/categories')}>
+                    <Text style={[styles.seeAll, { color: colors.primary }]}>Tümü</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <ScrollView
@@ -890,21 +885,22 @@ export default function HomeScreen() {
                 contentContainerStyle={styles.categoryScroller}
               >
                 {[
-                  { id: 'avize-montaj', name: 'Avize Montajı', icon: 'bulb-outline' },
-                  { id: 'kapi-acma', name: 'Kapı Açma', icon: 'lock-open-outline' },
-                  { id: 'klima-montaj', name: 'Klima Montaj', icon: 'snow-outline' },
-                  { id: 'tikaniklik', name: 'Tıkanıklık Açma', icon: 'water-outline' },
-                  { id: 'buzdolabi', name: 'Buzdolabı Tamiri', icon: 'cube-outline' },
+                  { id: 'avize-montaj', name: 'Avize Montajı', icon: 'bulb-outline', color: colors.primary },
+                  { id: 'kapi-acma', name: 'Kapı Açma', icon: 'lock-open-outline', color: '#F59E0B' },
+                  { id: 'klima-montaj', name: 'Klima Montaj', icon: 'snow-outline', color: '#3B82F6' },
+                  { id: 'tikaniklik', name: 'Tıkanıklık Açma', icon: 'water-outline', color: '#0284C7' },
+                  { id: 'buzdolabi', name: 'Buzdolabı Tamiri', icon: 'cube-outline', color: '#16A34A' },
                 ].map((cat, idx) => (
                   <TouchableOpacity
                     key={idx}
                     style={styles.categoryItemMatch}
                     onPress={() => handleActionWithAuth('/jobs/create', { category: cat.name })}
+                    activeOpacity={0.85}
                   >
-                    <View style={styles.categoryIconCircleMinimal}>
-                      <Ionicons name={cat.icon as any} size={22} color="#7C3AED" />
+                    <View style={[styles.categoryIconCircleMinimal, { backgroundColor: cat.color + '12', borderColor: cat.color + '20' }]}>
+                      <Ionicons name={cat.icon as any} size={20} color={cat.color} />
                     </View>
-                    <Text style={styles.categoryLabelMatch}>{cat.name}</Text>
+                    <Text style={[styles.categoryLabelMatch, { color: colors.text }]}>{cat.name}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -913,19 +909,20 @@ export default function HomeScreen() {
         }
 
 
-        {/* Öne Çıkan Ustalar Section (Match Image) */}
         {
           !isElectrician && (
             <View style={styles.section}>
-              <View style={styles.sectionHeaderMatch}>
-                <View style={styles.purpleIndicator} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.matchSectionTitle}>Öne Çıkan Ustalar</Text>
-                  <Text style={styles.matchSectionSubtitle}>En yüksek puanlı ve güvenilir uzmanlar</Text>
+              <View style={styles.sectionBlock}>
+                <Text style={[styles.sectionKicker, { color: colors.textLight }]}>Öne Çıkan</Text>
+                <View style={styles.sectionHeaderRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Ustalar</Text>
+                    <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>En yüksek puanlı ve güvenilir uzmanlar</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => router.push('/electricians')}>
+                    <Text style={[styles.seeAll, { color: colors.primary }]}>Tümü</Text>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity onPress={() => router.push('/electricians')}>
-                  <Text style={styles.seeAllMatch}>Tümü</Text>
-                </TouchableOpacity>
               </View>
 
               <View style={styles.featuredVerticalList}>
@@ -1241,10 +1238,9 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
   },
   content: {
-    paddingBottom: 180, // Increased for ACİL USTA button clearance
+    paddingBottom: 180,
   },
   premiumHeaderContainer: {
     borderBottomLeftRadius: 32,
@@ -1398,55 +1394,31 @@ const styles = StyleSheet.create({
     backgroundColor: '#F59E0B', // Orange
     borderRadius: 4,
   },
-  sectionHeaderMatch: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+  sectionBlock: {
+    marginBottom: 12,
+    marginTop: 2,
   },
-  purpleIndicator: {
-    width: 4,
-    height: 20,
-    borderRadius: 2,
-    backgroundColor: '#7C3AED',
-    marginRight: 10,
-  },
-  matchSectionTitle: {
-    flex: 1,
-    fontFamily: fonts.bold,
-    fontSize: 18,
-    color: staticColors.black,
-  },
-  seeAllMatch: {
-    fontFamily: fonts.bold,
-    fontSize: 14,
-    color: '#7C3AED',
+  sectionKicker: {
+    fontFamily: fonts.semiBold,
+    fontSize: 11,
+    letterSpacing: 0.4,
+    marginBottom: 3,
+    textTransform: 'uppercase',
   },
   categoryScroller: {
-    paddingRight: 20,
+    paddingRight: 16,
+    gap: 12,
   },
   categoryItemMatch: {
     alignItems: 'center',
-    marginRight: 20,
-    width: 70,
-  },
-  categoryIconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+    width: 76,
   },
   categoryLabelMatch: {
-    fontFamily: fonts.medium,
+    fontFamily: fonts.semiBold,
     fontSize: 11,
-    color: '#475569',
     textAlign: 'center',
+    lineHeight: 14,
+    marginTop: 2,
   },
   fullEmergencyButton: {
     width: '100%',
@@ -2105,12 +2077,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: staticColors.white,
   },
-  matchSectionSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: '#94A3B8',
-    marginTop: 2,
-  },
   featuredVerticalList: {
     gap: 4,
     marginTop: 6,
@@ -2278,39 +2244,38 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 4,
   },
-  // Service Category Grid Styles (NEW)
   serviceCategoryGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
-    paddingHorizontal: 8, // Yanlardan daha az boşluk bırakarak ikonlara yer açtık
+    marginTop: 6,
+    paddingHorizontal: 4,
+    gap: 6,
   },
   serviceCategoryCard: {
     width: '100%',
-    aspectRatio: 0.58,
+    aspectRatio: 0.62,
     backgroundColor: staticColors.white,
-    borderRadius: 22, // More rounded for squircle effect
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 2,
-    // Enhanced shadow for premium squircle look
+    paddingVertical: 12,
+    paddingHorizontal: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.04)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 5,
+    borderWidth: 1.5,
   },
   serviceCategoryIconBg: {
-    width: 60, // Resimler için biraz daha genişlettik
-    height: 60,
-    borderRadius: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 6,
-    backgroundColor: '#F8FAFC', // Çok hafif gri arka plan resimler için
+    marginBottom: 8,
+    position: 'relative',
+    overflow: 'hidden',
   },
   serviceCategoryImage: {
     width: '100%',
@@ -2318,21 +2283,19 @@ const styles = StyleSheet.create({
   },
   serviceCategoryName: {
     fontFamily: fonts.semiBold,
-    fontSize: 10,
-    color: staticColors.text,
+    fontSize: 11,
     textAlign: 'center',
     width: '100%',
+    lineHeight: 14,
+    paddingHorizontal: 2,
   },
-  // Minimal outline icon style for Popüler Hizmetler
   categoryIconCircleMinimal: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(139, 92, 246, 0.1)', // Light purple (Lavender 10%)
+    width: 52,
+    height: 52,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.15)', // Subtle purple border
+    borderWidth: 1.5,
   },
 });
