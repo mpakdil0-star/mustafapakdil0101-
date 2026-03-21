@@ -96,9 +96,12 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
 
     return (
         <View style={styles.container}>
-            <View style={styles.addressBox}>
-                <View style={[styles.iconCircleSmall, { backgroundColor: colors.primary + '15' }]}>
-                    <Ionicons name="location" size={20} color={colors.primary} />
+            <View style={[
+                styles.addressBox, 
+                addressPreview !== 'Konum seçiliyor...' && { borderColor: colors.primary + '60', borderWidth: 1.5, backgroundColor: colors.primary + '03' }
+            ]}>
+                <View style={[styles.iconCircleSmall, { backgroundColor: addressPreview !== 'Konum seçiliyor...' ? colors.primary + '20' : colors.primary + '15' }]}>
+                    <Ionicons name="location" size={18} color={colors.primary} />
                 </View>
                 <View style={{ flex: 1, marginLeft: 10 }}>
                     <Text style={styles.addressLabel}>Belirlenen Konum</Text>
@@ -107,7 +110,10 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
                     </Text>
                 </View>
                 <TouchableOpacity
-                    style={[styles.refreshButton, { backgroundColor: colors.primary + '10' }]}
+                    style={[
+                        styles.refreshButton, 
+                        { backgroundColor: colors.primary + (addressPreview !== 'Konum seçiliyor...' ? '15' : '10') }
+                    ]}
                     onPress={requestLocation}
                     disabled={isLoading}
                 >

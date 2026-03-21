@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   placeholder: {
-    color: colors.textLight,
+    color: colors.textSecondary,
   },
   disabledText: {
     color: colors.textSecondary,
@@ -210,9 +210,10 @@ const styles = StyleSheet.create({
     marginRight: spacing.xs,
   },
   arrow: {
-    fontSize: 12,
-    color: colors.textSecondary,
+    fontSize: 10,
+    color: colors.primary,
     marginLeft: spacing.sm,
+    opacity: 0.8,
   },
   errorText: {
     ...typography.caption,

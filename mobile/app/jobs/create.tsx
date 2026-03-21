@@ -84,6 +84,18 @@ const getPlaceholdersByCategory = (categoryId: string) => {
   }
 };
 
+const getCategoryImage = (id: string | undefined) => {
+  if (!id) return null;
+  switch (id) {
+    case 'elektrik': return require('../../assets/images/categories/electric.png');
+    case 'cilingir': return require('../../assets/images/categories/locksmith_3d_clean.png');
+    case 'klima': return require('../../assets/images/categories/ac_3d_clean.png');
+    case 'beyaz-esya': return require('../../assets/images/categories/appliances_3d_clean.png');
+    case 'tesisat': return require('../../assets/images/categories/plumbing.png');
+    default: return null;
+  }
+};
+
 export default function CreateJobScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -645,22 +657,23 @@ export default function CreateJobScreen() {
 
           {currentStep === 1 && (
             <View>
-              <Card variant="glass" style={[styles.sectionCard, { borderColor: colors.border }]}>
-                <View style={styles.sectionHeader}>
-                  <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12' }]}>
-                    <Ionicons name="create-outline" size={18} color={colors.primary} />
+              <Card variant="glass" style={[styles.sectionCard, { borderColor: colors.border, paddingVertical: 10, paddingHorizontal: 10 }]}>
+                <View style={[styles.sectionHeader, { marginBottom: 6 }]}>
+                  <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12', width: 28, height: 28 }]}>
+                    <Ionicons name="create-outline" size={16} color={colors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.sectionKicker, { color: colors.textLight }]}>Adım 1</Text>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Hizmet tanımı</Text>
+                    <Text style={[styles.sectionKicker, { color: colors.textLight, fontSize: 8 }]}>Adım 1</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16 }]}>Hizmet Tanımı</Text>
                   </View>
                 </View>
 
-                <View style={styles.inputContainer}>
-                  <Text style={[styles.label, { color: colors.textSecondary }]}>İlan başlığı</Text>
+                <View style={[styles.inputContainer, { marginBottom: 10 }]}>
+                  <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 4 }]}>İlan Başlığı</Text>
                   <TextInput
                     style={[
                       styles.modernInput,
+                      { height: 44, paddingVertical: 8 },
                       errors.title && { borderColor: staticColors.error, borderWidth: 1.5 },
                       {
                         backgroundColor: colors.surfaceElevated,
@@ -674,7 +687,7 @@ export default function CreateJobScreen() {
                       setTitle(text);
                       if (errors.title) setErrors({ ...errors, title: '' });
                     }}
-                    placeholderTextColor={colors.textLight}
+                    placeholderTextColor={colors.textSecondary}
                     autoCorrect={false}
                     spellCheck={false}
                     autoCapitalize="sentences"
@@ -682,18 +695,18 @@ export default function CreateJobScreen() {
                   {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
                 </View>
 
-                <View style={styles.divider} />
+                <View style={[styles.divider, { marginVertical: 8 }]} />
 
-                <View style={styles.inputContainer}>
-                  <View style={styles.sectionHeaderNoMargin}>
-                    <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12' }]}>
-                      <Ionicons name="list-outline" size={17} color={colors.primary} />
+                <View style={[styles.inputContainer, { marginBottom: 8 }]}>
+                  <View style={[styles.sectionHeaderNoMargin, { marginBottom: 4 }]}>
+                    <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12', width: 26, height: 26 }]}>
+                      <Ionicons name="list-outline" size={14} color={colors.primary} />
                     </View>
-                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 15 }]}>Kategori</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14 }]}>Kategori</Text>
                   </View>
 
-                  <Text style={[styles.label, { marginTop: 16, color: colors.textSecondary }]}>Hizmet grubu</Text>
-                  <View style={styles.pillContainer}>
+                  <Text style={[styles.label, { marginTop: 8, marginBottom: 4, color: colors.textSecondary }]}>Hizmet grubu</Text>
+                  <View style={[styles.pillContainer, { rowGap: 8 }]}>
                     {SERVICE_CATEGORIES.map((svc) => {
                       const selected = serviceCategory === svc.id;
                       return (
@@ -701,7 +714,7 @@ export default function CreateJobScreen() {
                           key={svc.id}
                           style={[
                             styles.pill,
-                            { borderColor: colors.border, backgroundColor: colors.surfaceElevated },
+                            { paddingVertical: 8, borderColor: colors.border, backgroundColor: colors.surfaceElevated },
                             selected && {
                               backgroundColor: svc.colors[0] + '14',
                               borderColor: svc.colors[0],
@@ -713,15 +726,23 @@ export default function CreateJobScreen() {
                             if (errors.category) setErrors({ ...errors, category: '' });
                           }}
                         >
-                          <Ionicons
-                            name={svc.icon as any}
-                            size={18}
-                            color={selected ? svc.colors[0] : colors.textSecondary}
-                          />
+                          {getCategoryImage(svc.id) ? (
+                            <Image
+                              source={getCategoryImage(svc.id)}
+                              style={styles.pillImage}
+                              resizeMode="contain"
+                            />
+                          ) : (
+                            <Ionicons
+                              name={svc.icon as any}
+                              size={16}
+                              color={selected ? svc.colors[0] : colors.textSecondary}
+                            />
+                          )}
                           <Text
                             style={[
                               styles.pillText,
-                              { color: colors.textSecondary },
+                              { fontSize: 13, color: colors.textSecondary },
                               selected && { color: svc.colors[0], fontFamily: fonts.bold },
                             ]}
                           >
@@ -733,8 +754,8 @@ export default function CreateJobScreen() {
                   </View>
 
                   {serviceCategory && (
-                    <View style={{ marginTop: 16 }}>
-                      <Text style={[styles.label, { color: colors.textSecondary }]}>Alt branş</Text>
+                    <View style={{ marginTop: 8 }}>
+                      <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 4 }]}>Alt branş</Text>
                       <Picker
                         placeholder="Alt branş seçiniz"
                         value={category}
@@ -744,7 +765,13 @@ export default function CreateJobScreen() {
                           if (errors.category) setErrors({ ...errors, category: '' });
                         }}
                         error={errors.category}
-                        icon={<Ionicons name="construct-outline" size={20} color={colors.primary} />}
+                        icon={
+                          <Ionicons
+                            name={SERVICE_CATEGORIES.find((s) => s.id === serviceCategory)?.icon as any || "list-outline"}
+                            size={18}
+                            color={colors.primary}
+                          />
+                        }
                       />
                     </View>
                   )}
@@ -753,7 +780,7 @@ export default function CreateJobScreen() {
                 <Button
                   title="Devam Et"
                   onPress={nextStep}
-                  style={[styles.nextBtn, { height: 46 }]}
+                  style={[styles.nextBtn, { height: 44, marginTop: 10 }]}
                   icon={<Ionicons name="arrow-forward" size={18} color={staticColors.white} />}
                 />
               </Card>
@@ -768,8 +795,8 @@ export default function CreateJobScreen() {
                     <Ionicons name="reader-outline" size={18} color={colors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.sectionKicker, { color: colors.textLight }]}>Adım 2</Text>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Detay ve görseller</Text>
+                    <Text style={[styles.sectionKicker, { color: colors.textLight, fontSize: 8 }]}>Adım 2</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 18 }]}>Detay ve görseller</Text>
                   </View>
                 </View>
 
@@ -794,7 +821,7 @@ export default function CreateJobScreen() {
                     multiline
                     numberOfLines={4}
                     textAlignVertical="top"
-                    placeholderTextColor={colors.textLight}
+                    placeholderTextColor={colors.textSecondary}
                     autoCorrect={false}
                     spellCheck={false}
                     autoCapitalize="sentences"
@@ -806,14 +833,14 @@ export default function CreateJobScreen() {
                   <Text style={[styles.label, { color: colors.textSecondary }]}>Fotoğraf (isteğe bağlı)</Text>
                   <View style={styles.imageButtons}>
                     <TouchableOpacity
-                      style={[styles.modernImageBtn, { borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}
+                      style={[styles.modernImageBtn, { borderColor: colors.border, backgroundColor: colors.primary + '08' }]}
                       onPress={handleTakePhoto}
                     >
                       <Ionicons name="camera-outline" size={22} color={colors.primary} />
                       <Text style={[styles.imageActionText, { color: colors.text }]}>Kamera</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={[styles.modernImageBtn, { borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}
+                      style={[styles.modernImageBtn, { borderColor: colors.border, backgroundColor: colors.primary + '08' }]}
                       onPress={handlePickImage}
                     >
                       <Ionicons name="images-outline" size={22} color={colors.primary} />
@@ -853,14 +880,14 @@ export default function CreateJobScreen() {
                           { borderColor: colors.border, backgroundColor: colors.surfaceElevated },
                           urgencyLevel === level.value && {
                             borderColor: level.color,
-                            backgroundColor: level.color + '0D',
+                            backgroundColor: level.color + '1A',
                           },
                         ]}
                         onPress={() => setUrgencyLevel(level.value as any)}
                       >
                         <Ionicons
                           name={level.icon as any}
-                          size={24}
+                          size={20}
                           color={urgencyLevel === level.value ? level.color : colors.textLight}
                         />
                         <Text
@@ -877,20 +904,25 @@ export default function CreateJobScreen() {
                   </View>
                 </View>
 
-                <View style={styles.btnRow}>
-                  <Button
-                    title="Geri"
-                    variant="outline"
-                    onPress={prevStep}
-                    style={[styles.backBtn, { height: 46 }]}
-                    icon={<Ionicons name="arrow-back" size={18} color={colors.primary} />}
-                  />
-                  <Button
-                    title="Devam Et"
-                    onPress={nextStep}
-                    style={[styles.flexBtn, { height: 46 }]}
-                    icon={<Ionicons name="arrow-forward" size={18} color={staticColors.white} />}
-                  />
+                <View style={[styles.btnRow, { marginTop: 16 }]}>
+                  <View style={styles.backBtnWrapper}>
+                    <Button
+                      title="Geri"
+                      variant="outline"
+                      onPress={prevStep}
+                      fullWidth
+                      style={{ height: 46, borderColor: colors.border }}
+                    />
+                  </View>
+                  <View style={styles.flexBtnWrapper}>
+                    <Button
+                      title="Devam Et"
+                      onPress={nextStep}
+                      fullWidth
+                      style={{ height: 46 }}
+                      icon={<Ionicons name="arrow-forward" size={18} color={staticColors.white} />}
+                    />
+                  </View>
                 </View>
               </Card>
             </View>
@@ -899,14 +931,14 @@ export default function CreateJobScreen() {
 
           {currentStep === 3 && (
             <View>
-              <Card variant="glass" style={[styles.sectionCard, { borderColor: colors.border, paddingVertical: 12 }]}>
-                <View style={[styles.sectionHeader, { marginBottom: 8 }]}>
-                  <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12', width: 30, height: 30 }]}>
-                    <Ionicons name="location-outline" size={16} color={colors.primary} />
+              <Card variant="glass" style={[styles.sectionCard, { borderColor: colors.border, paddingVertical: 8, paddingHorizontal: 10 }]}>
+                <View style={[styles.sectionHeader, { marginBottom: 4 }]}>
+                  <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12', width: 26, height: 26 }]}>
+                    <Ionicons name="location-outline" size={14} color={colors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.sectionKicker, { color: colors.textLight, fontSize: 8 }]}>Adım 3</Text>
-                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 15 }]}>Konum</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16 }]}>Konum</Text>
                   </View>
                 </View>
 
@@ -922,9 +954,9 @@ export default function CreateJobScreen() {
                   }}
                 />
 
-                <View style={[styles.row, { marginTop: 8 }]}>
+                <View style={[styles.row, { marginTop: 4, marginBottom: 0 }]}>
                   <View style={{ flex: 1, marginRight: 8 }}>
-                    <Text style={[styles.label, { color: colors.textSecondary }]}>Şehir</Text>
+                    <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 4 }]}>Şehir</Text>
                     <Picker
                       value={city}
                       options={CITY_NAMES}
@@ -933,7 +965,7 @@ export default function CreateJobScreen() {
                     />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.label, { color: colors.textSecondary }]}>İlçe</Text>
+                    <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 4 }]}>İlçe</Text>
                     <Picker
                       value={district}
                       options={districtOptions}
@@ -944,8 +976,8 @@ export default function CreateJobScreen() {
                   </View>
                 </View>
 
-                <View style={{ marginTop: 6 }}>
-                  <Text style={[styles.label, { color: colors.textSecondary }]}>Mahalle</Text>
+                <View style={{ marginTop: 2 }}>
+                  <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 4 }]}>Mahalle</Text>
                   <Picker
                     value={neighborhood}
                     options={neighborhoodOptions.length > 0 ? neighborhoodOptions : (district ? ['Merkez'] : [])}
@@ -955,12 +987,12 @@ export default function CreateJobScreen() {
                   />
                 </View>
 
-                <View style={[styles.inputContainer, { marginTop: 8, marginBottom: 8 }]}>
-                  <Text style={[styles.label, { color: colors.textSecondary }]}>Açık adres / tarif</Text>
+                <View style={[styles.inputContainer, { marginTop: 4, marginBottom: 4 }]}>
+                  <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 4 }]}>Açık adres / tarif</Text>
                   <TextInput
                     style={[
                       styles.modernTextArea,
-                      { minHeight: 60, height: 60, paddingVertical: 8 },
+                      { minHeight: 48, height: 48, paddingVertical: 4 },
                       errors.address && { borderColor: staticColors.error, borderWidth: 1.5 },
                       {
                         backgroundColor: colors.surfaceElevated,
@@ -969,7 +1001,7 @@ export default function CreateJobScreen() {
                       },
                     ]}
                     placeholder="Sokak, bina no, kat ve varsa tarif..."
-                    placeholderTextColor={colors.textLight}
+                    placeholderTextColor={colors.textSecondary}
                     value={address}
                     onChangeText={(text) => {
                       setAddress(text);
@@ -981,18 +1013,18 @@ export default function CreateJobScreen() {
                   {errors.address && <Text style={styles.errorText}>{errors.address}</Text>}
                 </View>
 
-                <View style={[styles.inputContainer, { marginBottom: 4 }]}>
+                <View style={[styles.inputContainer, { marginBottom: 0 }]}>
                   <View style={[styles.sectionHeaderNoMargin, { gap: 6 }]}>
-                    <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12', width: 28, height: 28 }]}>
-                      <Ionicons name="wallet-outline" size={15} color={colors.primary} />
+                    <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12', width: 24, height: 24 }]}>
+                      <Ionicons name="wallet-outline" size={14} color={colors.primary} />
                     </View>
-                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14 }]}>Tahmini bütçe (isteğe bağlı)</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 13 }]}>Tahmini bütçe (isteğe bağlı)</Text>
                   </View>
-                  <View style={[styles.modernBudgetWrapper, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, marginTop: 6, paddingVertical: 0 }]}>
+                  <View style={[styles.modernBudgetWrapper, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, marginTop: 4, paddingVertical: 0, height: 40 }]}>
                     <TextInput
-                      style={[styles.modernBudgetInput, { color: colors.text, paddingVertical: 6, fontSize: 16 }]}
-                      placeholder="0"
-                      placeholderTextColor={colors.textLight}
+                      style={[styles.modernBudgetInput, { color: colors.text, paddingVertical: 0, fontSize: 16, height: 40 }]}
+                      placeholder="Örn: 500"
+                      placeholderTextColor={colors.textSecondary}
                       keyboardType="numeric"
                       value={estimatedBudget}
                       onChangeText={(text) => setEstimatedBudget(text.replace(/[^0-9.]/g, ''))}
@@ -1001,28 +1033,33 @@ export default function CreateJobScreen() {
                   </View>
                 </View>
 
-                <View style={styles.btnRow}>
-                  <Button
-                    title="Geri"
-                    variant="outline"
-                    onPress={prevStep}
-                    style={[styles.backBtn, { height: 44 }]}
-                    icon={<Ionicons name="arrow-back" size={16} color={colors.primary} />}
-                  />
-                  <Button
-                    title={isLoading ? 'Gönderiliyor...' : 'İlanı Yayınla'}
-                    onPress={handleSubmit}
-                    loading={isLoading}
-                    variant="success"
-                    style={[styles.flexBtn, { height: 44 }]}
-                    icon={<Ionicons name="checkmark-circle" size={16} color={staticColors.white} />}
-                  />
+                <View style={[styles.btnRow, { marginTop: 10 }]}>
+                  <View style={styles.backBtnWrapper}>
+                    <Button
+                      title="Geri"
+                      variant="outline"
+                      onPress={prevStep}
+                      fullWidth
+                      style={{ height: 42, borderColor: colors.border }}
+                    />
+                  </View>
+                  <View style={styles.flexBtnWrapper}>
+                    <Button
+                      title={isLoading ? 'Gönderiliyor...' : 'İlanı Yayınla'}
+                      onPress={handleSubmit}
+                      loading={isLoading}
+                      variant="success"
+                      fullWidth
+                      style={{ height: 42 }}
+                      icon={<Ionicons name="checkmark-circle" size={16} color={staticColors.white} />}
+                    />
+                  </View>
                 </View>
               </Card>
             </View>
           )}
 
-          <Text style={[styles.finalNote, { color: colors.textLight }]}>
+          <Text style={[styles.finalNote, { color: colors.text }]}>
             İlan yayınlandığında bölgenizdeki ustalara bildirim gönderilir.
           </Text>
         </ScrollView>
@@ -1169,7 +1206,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   stepNumber: {
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: fonts.bold,
   },
   stepLabelText: {
@@ -1262,7 +1299,7 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: fonts.bold,
     fontSize: 13,
-    marginBottom: 6,
+    marginBottom: 10,
     marginLeft: 2,
   },
   modernInput: {
@@ -1292,16 +1329,17 @@ const styles = StyleSheet.create({
   pillContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 10,
+    justifyContent: 'space-between',
+    rowGap: 10,
+    marginTop: 0,
     marginBottom: 6,
   },
   pill: {
-    width: '48%',
+    width: '48.2%',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1.5,
     gap: 8,
@@ -1310,6 +1348,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontSize: 12,
   },
+  pillImage: {
+    width: 24,
+    height: 24,
+    zIndex: 2,
+  },
   urgencyGrid: {
     flexDirection: 'row',
     gap: 10,
@@ -1317,10 +1360,10 @@ const styles = StyleSheet.create({
   },
   urgencyCard: {
     flex: 1,
-    minHeight: 68,
-    paddingVertical: 8,
-    borderRadius: 16,
-    borderWidth: 2,
+    height: 52,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 4,
@@ -1334,11 +1377,11 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 16,
   },
-  backBtn: {
+  backBtnWrapper: {
     flex: 1,
   },
-  flexBtn: {
-    flex: 2,
+  flexBtnWrapper: {
+    flex: 2.2,
   },
   nextBtn: {
     marginTop: 16,
