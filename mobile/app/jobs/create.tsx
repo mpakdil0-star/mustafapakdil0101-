@@ -1024,7 +1024,7 @@ export default function CreateJobScreen() {
                     <TextInput
                       style={[styles.modernBudgetInput, { color: colors.text, paddingVertical: 0, fontSize: 16, height: 40 }]}
                       placeholder="Örn: 500"
-                      placeholderTextColor={colors.textSecondary}
+                      placeholderTextColor={colors.textLight}
                       keyboardType="numeric"
                       value={estimatedBudget}
                       onChangeText={(text) => setEstimatedBudget(text.replace(/[^0-9.]/g, ''))}
