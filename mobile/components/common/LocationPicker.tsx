@@ -32,7 +32,12 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     const [isLoading, setIsLoading] = useState(false);
     const [alertVisible, setAlertVisible] = useState(false);
 
-    const updateLocation = async (lat: number, lng: number) => {
+    const updateLocation = async (latitude: any, longitude: any) => {
+        const lat = Number(latitude);
+        const lng = Number(longitude);
+
+        if (isNaN(lat) || isNaN(lng)) return;
+
         setIsLoading(true);
         setSelectedLocation({ latitude: lat, longitude: lng });
 

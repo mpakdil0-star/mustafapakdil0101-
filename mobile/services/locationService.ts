@@ -99,13 +99,21 @@ export const locationService = {
      */
     async reverseGeocode(latitude: number, longitude: number): Promise<LocationData | null> {
         try {
+            const lat = Number(latitude);
+            const lng = Number(longitude);
+
+            if (isNaN(lat) || isNaN(lng)) {
+                console.error('Invalid coordinates for reverse geocoding:', { latitude, longitude });
+                return null;
+            }
+
             // Some platforms require permission even for reverse geocoding
             const { status } = await Location.getForegroundPermissionsAsync();
             if (status !== 'granted') {
                 return null;
             }
 
-            const results = await Location.reverseGeocodeAsync({ latitude, longitude });
+            const results = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
 
             if (results.length > 0) {
                 const item = results[0];
