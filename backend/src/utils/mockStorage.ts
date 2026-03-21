@@ -345,6 +345,7 @@ export const mockStorage = {
         if (data.marketingAllowed !== undefined) store.marketingAllowed = data.marketingAllowed;
         if (data.emoNumber !== undefined) store.emoNumber = data.emoNumber;
         if (data.smmNumber !== undefined) store.smmNumber = data.smmNumber;
+        if (data.isAuthorizedEngineer !== undefined) store.isAuthorizedEngineer = data.isAuthorizedEngineer;
         saveToDisk();
         return store;
     },

@@ -112,7 +112,8 @@ function serveMockResponse(req: Request, res: Response, city: any, latNum: any, 
                 experienceYears: experienceYears,
                 bio: rawData.bio || '',
                 verificationStatus: user.isVerified ? 'VERIFIED' : 'PENDING',
-                isAvailable: true
+                isAvailable: true,
+                isAuthorizedEngineer: rawData.isAuthorizedEngineer || false
             },
             locations: userLocations
         });
@@ -1058,7 +1059,8 @@ export const getElectricians = async (req: Request, res: Response, next: NextFun
                             experienceYears: true,
                             bio: true,
                             verificationStatus: true,
-                            isAvailable: true
+                            isAvailable: true,
+                            isAuthorizedEngineer: true
                         }
                     },
                     locations: {
@@ -1213,6 +1215,7 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
                         verificationStatus: (mockData.isVerified === true) ? 'VERIFIED' : 'PENDING',
                         completedJobsCount: mockData.completedJobsCount || 0,
                         responseTimeAvg: 2,
+                        isAuthorizedEngineer: mockData.isAuthorizedEngineer || false,
                         serviceCategory: mockData.serviceCategory || (mockData.specialties.some((s: string) => s.toLowerCase().includes('klima')) ? 'klima' : 'elektrik')
                     },
                     locations: userLocations,
