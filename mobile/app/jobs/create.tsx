@@ -731,48 +731,19 @@ export default function CreateJobScreen() {
                   </View>
 
                   {serviceCategory && (
-                    <>
-                      <Text style={[styles.label, { marginTop: 16, color: colors.textSecondary }]}>Alt branş</Text>
-                      <View style={styles.pillContainer}>
-                        {getSubCategoriesByParent(serviceCategory).map((cat) => {
-                          const selected = category === cat.name;
-                          return (
-                            <TouchableOpacity
-                              key={cat.id}
-                              style={[
-                                styles.pill,
-                                { borderColor: colors.border, backgroundColor: colors.surfaceElevated },
-                                selected && {
-                                  backgroundColor: cat.colors[0] + '14',
-                                  borderColor: cat.colors[0],
-                                },
-                              ]}
-                              onPress={() => {
-                                setCategory(cat.name);
-                                if (errors.category) setErrors({ ...errors, category: '' });
-                              }}
-                            >
-                              <Ionicons
-                                name={cat.icon as any}
-                                size={14}
-                                color={selected ? cat.colors[0] : colors.textSecondary}
-                              />
-                              <Text
-                                style={[
-                                  styles.pillText,
-                                  { color: colors.textSecondary },
-                                  selected && { color: cat.colors[0], fontFamily: fonts.semiBold },
-                                ]}
-                              >
-                                {cat.name}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    </>
+                    <Picker
+                      label="Alt branş"
+                      value={category}
+                      options={getSubCategoriesByParent(serviceCategory).map((cat) => cat.name)}
+                      onValueChange={(val) => {
+                        setCategory(val);
+                        if (errors.category) setErrors({ ...errors, category: '' });
+                      }}
+                      placeholder="Alt branş seçiniz"
+                      error={errors.category}
+                      icon={<Ionicons name="construct-outline" size={20} color={colors.primary} />}
+                    />
                   )}
-                  {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
                 </View>
 
                 <Button
