@@ -150,7 +150,10 @@ export default function ElectricianDetailScreen() {
                             responseTimeAvg: mockItem.responseTime,
                             completedJobsCount: mockItem.completedJobs,
                             verificationStatus: mockItem.isVerified ? 'VERIFIED' : 'PENDING',
-                            serviceCategory: (mockItem as any).category || 'elektrik'
+                            serviceCategory: (mockItem as any).category || 'elektrik',
+                            isAuthorizedEngineer: (mockItem as any).isEngineer || false,
+                            emoNumber: (mockItem as any).emoNumber || '12345',
+                            smmNumber: (mockItem as any).smmNumber || 'SMM-2024-001'
                         },
                         locations: [{ city: mockItem.city, district: mockItem.location.split(',')[0] }],
                         reviewsReceived: mockItem.latestReview ? [{
@@ -305,8 +308,10 @@ export default function ElectricianDetailScreen() {
                             <TouchableOpacity
                                 style={{ marginTop: 8 }}
                                 onPress={() => showAlert(
-                                    "Onaylı Usta",
-                                    "Bu ustanın mesleki belgeleri ve kimliği platformumuz tarafından doğrulanmıştır. Güvenle hizmet alabilirsiniz.",
+                                    profile.isAuthorizedEngineer ? "Yetkili Mühendis" : "Onaylı Usta",
+                                    profile.isAuthorizedEngineer
+                                        ? "Bu usta, elektrik projeleri çizimi ve onayı için resmi EMO ve SMM belgelerine sahip bir mühendistir."
+                                        : "Bu ustanın mesleki belgeleri ve kimliği platformumuz tarafından doğrulanmıştır. Güvenle hizmet alabilirsiniz.",
                                     "success"
                                 )}
                                 activeOpacity={0.7}
@@ -314,7 +319,9 @@ export default function ElectricianDetailScreen() {
                                 <VerificationBadge
                                     status={profile.verificationStatus || "APPROVED"}
                                     licenseVerified={true}
+                                    isEngineer={!!profile.isAuthorizedEngineer}
                                     size="small"
+                                    showLabel={true}
                                 />
                             </TouchableOpacity>
                         )}
@@ -407,6 +414,31 @@ export default function ElectricianDetailScreen() {
 
 
 
+
+            {/* Engineer Certificates */}
+            {profile.isAuthorizedEngineer && (
+                <Card style={[styles.sectionCard, { borderColor: '#3B82F6', borderWidth: 1, backgroundColor: '#EFF6FF' }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                        <Ionicons name="ribbon" size={24} color="#2563EB" />
+                        <Text style={[styles.sectionTitle, { color: '#1E40AF', marginBottom: 0, marginLeft: 8, fontSize: 16 }]}>Yetki Belgeleri</Text>
+                    </View>
+                    <View style={styles.certRow}>
+                        <View style={styles.certItem}>
+                            <Text style={styles.certLabel}>EMO Sicil No</Text>
+                            <Text style={styles.certValue}>{profile.emoNumber || '-'}</Text>
+                        </View>
+                        <View style={styles.certDivider} />
+                        <View style={styles.certItem}>
+                            <Text style={styles.certLabel}>SMM Belge No</Text>
+                            <Text style={styles.certValue}>{profile.smmNumber || '-'}</Text>
+                        </View>
+                    </View>
+                    <View style={styles.certFooter}>
+                        <Ionicons name="checkmark-circle" size={16} color="#059669" />
+                        <Text style={styles.certFooterText}>Resmi projeler için imza yetkisi doğrulanmıştır</Text>
+                    </View>
+                </Card>
+            )}
 
             {/* Services */}
             <Card style={styles.sectionCard}>
@@ -804,9 +836,50 @@ const styles = StyleSheet.create({
         backgroundColor: colors.backgroundLight,
     },
     loadingText: {
-        marginTop: spacing.md,
+        marginTop: spacing.sm,
         fontFamily: fonts.medium,
         color: colors.textSecondary,
+    },
+    certRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+    },
+    certItem: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    certLabel: {
+        fontFamily: fonts.regular,
+        fontSize: 12,
+        color: '#64748B',
+        marginBottom: 4,
+    },
+    certValue: {
+        fontFamily: fonts.bold,
+        fontSize: 15,
+        color: '#1E293B',
+    },
+    certDivider: {
+        width: 1,
+        height: '80%',
+        backgroundColor: '#CBD5E1',
+        marginHorizontal: 8,
+    },
+    certFooter: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#DBEAFE',
+        gap: 6,
+    },
+    certFooterText: {
+        fontFamily: fonts.medium,
+        fontSize: 12,
+        color: '#059669',
     },
     avatarImage: {
         width: '100%',

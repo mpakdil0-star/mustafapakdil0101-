@@ -742,6 +742,8 @@ export const getVerificationStatus = async (req: Request, res: Response, next: N
                     verificationDocuments: true,
                     licenseNumber: true,
                     licenseVerified: true,
+                    emoNumber: true,
+                    smmNumber: true,
                 },
             });
 
@@ -764,6 +766,8 @@ export const getVerificationStatus = async (req: Request, res: Response, next: N
                     status: effectiveStatus,
                     licenseNumber: profile.licenseNumber,
                     licenseVerified: profile.licenseVerified,
+                    emoNumber: (profile as any).emoNumber || null,
+                    smmNumber: (profile as any).smmNumber || null,
                     documentType: documents?.documentType || null,
                     documentUrl: documents?.documentUrl || null,
                     submittedAt: documents?.submittedAt || null,
@@ -791,7 +795,9 @@ export const getVerificationStatus = async (req: Request, res: Response, next: N
                     status: mockData.verificationStatus || null,
                     documentType: mockData.documentType || null,
                     submittedAt: mockData.submittedAt || null,
-                    licenseNumber: mockData.phone ? 'TEST-LICENSE' : null
+                    licenseNumber: mockData.licenseNumber || null,
+                    emoNumber: mockData.emoNumber || null,
+                    smmNumber: mockData.smmNumber || null
                 },
             });
         }
@@ -805,7 +811,16 @@ export const submitVerification = async (req: Request, res: Response, next: Next
     try {
         const user = (req as any).user;
         const userId = user.id;
-        const { documentType, licenseNumber, documentImage } = req.body;
+        const { documentType, licenseNumber, emoNumber, smmNumber, documentImage } = req.body;
+
+        console.log('🔍 VERIFICATION SUBMIT DEBUG:', {
+            userId,
+            documentType,
+            licenseNumber,
+            emoNumber,
+            smmNumber,
+            hasImage: !!documentImage
+        });
 
         // Only electricians can submit verification
         if (user.userType !== 'ELECTRICIAN') {
@@ -816,7 +831,7 @@ export const submitVerification = async (req: Request, res: Response, next: Next
         }
 
         // Validation
-        if (!documentType || !licenseNumber) {
+        if (!documentType || (!licenseNumber && documentType !== 'YETKILI_MUHENDIS')) {
             return res.status(400).json({
                 success: false,
                 error: { message: 'Belge türü ve lisans numarası gereklidir' },
@@ -865,6 +880,8 @@ export const submitVerification = async (req: Request, res: Response, next: Next
                 where: { userId },
                 data: {
                     licenseNumber: licenseNumber,
+                    emoNumber: emoNumber,
+                    smmNumber: smmNumber,
                     verificationStatus: 'PENDING',
                     verificationDocuments: {
                         documentType,
@@ -888,7 +905,10 @@ export const submitVerification = async (req: Request, res: Response, next: Next
                 verificationStatus: 'PENDING',
                 documentType,
                 submittedAt: new Date().toISOString(),
-                documentUrl
+                documentUrl: documentUrl || 'mock-doc-url',
+                licenseNumber: licenseNumber || null,
+                emoNumber: emoNumber || null,
+                smmNumber: smmNumber || null
             });
 
             // Mock success for testing

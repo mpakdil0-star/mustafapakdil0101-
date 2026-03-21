@@ -389,8 +389,76 @@ export default function JobDetailScreen() {
 
           <View style={styles.divider} />
 
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Açıklama</Text>
-          <Text style={styles.description}>{jobData.description}</Text>
+          {/* TEKNİK KEŞİF ÖZETİ (SADECE ELEKTRİK PROJE) */}
+          {(() => {
+            if (!jobData.description?.includes('📐 ELEKTRİK PROJE DETAYLARI')) return null;
+
+            const lines = jobData.description.split('\n');
+            const details: { label: string; value: string; icon: any }[] = [];
+
+            lines.forEach((line: string) => {
+              if (line.startsWith('• ')) {
+                const [label, value] = line.substring(2).split(': ');
+                if (label && value) {
+                  let icon: any = 'information-circle-outline';
+                  if (label.includes('Yapı')) icon = 'business-outline';
+                  if (label.includes('Alan')) icon = 'expand-outline';
+                  if (label.includes('Kat')) icon = 'layers-outline';
+                  if (label.includes('Oda')) icon = 'apps-outline';
+                  if (label.includes('Amaç')) icon = 'flag-outline';
+                  if (label.includes('Mimari')) icon = 'document-text-outline';
+                  if (label.includes('Onay')) icon = 'shield-checkmark-outline';
+                  if (label.includes('Sistem')) icon = 'hardware-chip-outline';
+
+                  details.push({ label: label.trim(), value: value.trim(), icon });
+                }
+              }
+            });
+
+            const noteIndex = jobData.description.indexOf('📝 MÜŞTERİ NOTU:');
+            const clientNote = noteIndex !== -1 ? jobData.description.substring(noteIndex + 17).trim() : jobData.description;
+
+            return (
+              <View style={styles.projectDetailsSection}>
+                <LinearGradient
+                  colors={[colors.primary + '0A', colors.primary + '05']}
+                  style={styles.projectDetailsCard}
+                >
+                  <View style={styles.projectHeader}>
+                    <Ionicons name="construct-outline" size={18} color={colors.primary} />
+                    <Text style={[styles.projectTitle, { color: colors.text }]}>Teknik Keşif Özeti</Text>
+                  </View>
+
+                  <View style={styles.projectGrid}>
+                    {details.map((item, idx) => (
+                      <View key={idx} style={styles.projectItem}>
+                        <View style={[styles.projectIconBox, { backgroundColor: colors.primary + '12' }]}>
+                          <Ionicons name={item.icon} size={14} color={colors.primary} />
+                        </View>
+                        <View style={styles.projectTextInfo}>
+                          <Text style={[styles.projectItemLabel, { color: colors.textSecondary }]}>{item.label}</Text>
+                          <Text style={[styles.projectItemValue, { color: colors.text }]}>{item.value}</Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                </LinearGradient>
+
+                <View style={styles.clientNoteBox}>
+                  <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 8 }]}>Müşteri Açıklaması</Text>
+                  <Text style={[styles.description, { fontStyle: 'italic', color: colors.textSecondary }]}>"{clientNote}"</Text>
+                </View>
+              </View>
+            );
+          })()}
+
+          {/* NORMAL AÇIKLAMA (Eğer proje değilse) */}
+          {!jobData.description?.includes('📐 ELEKTRİK PROJE DETAYLARI') && (
+            <>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Açıklama</Text>
+              <Text style={styles.description}>{jobData.description}</Text>
+            </>
+          )}
 
           {jobData.status === 'CANCELLED' && jobData.cancellationReason && (
             <View style={[styles.cancelReasonBox, { backgroundColor: staticColors.error + '10', borderColor: staticColors.error + '20' }]}>
@@ -439,7 +507,18 @@ export default function JobDetailScreen() {
                     </TouchableOpacity>
                     <View style={styles.bidInfo}>
                       <Text style={[styles.bidName, { color: colors.text }]}>{bid.electrician?.fullName}</Text>
-                      <VerificationBadge status={bid.electrician?.electricianProfile?.verificationStatus} size="small" />
+                      <View style={styles.bidBadgeRow}>
+                        <VerificationBadge 
+                          status={bid.electrician?.electricianProfile?.verificationStatus} 
+                          isEngineer={bid.electrician?.electricianProfile?.isAuthorizedEngineer}
+                          size="small" 
+                        />
+                        {bid.electrician?.electricianProfile?.isAuthorizedEngineer && (
+                          <View style={styles.engineerSmallLabel}>
+                            <Text style={styles.engineerSmallLabelText}>Yetkili Mühendis</Text>
+                          </View>
+                        )}
+                      </View>
                     </View>
                     <View style={[styles.bidPriceBox, { backgroundColor: colors.primary + '10' }]}>
                       <Text style={[styles.bidPrice, { color: colors.primary }]}>{(parseFloat(bid.amount.toString()) || 0).toFixed(0)} ₺</Text>
@@ -527,7 +606,18 @@ export default function JobDetailScreen() {
                   </TouchableOpacity>
                   <View style={styles.bidInfo}>
                     <Text style={[styles.bidName, { color: colors.text }]}>{bid.electrician?.fullName}</Text>
-                    <VerificationBadge status={bid.electrician?.electricianProfile?.verificationStatus} size="small" />
+                    <View style={styles.bidBadgeRow}>
+                      <VerificationBadge 
+                        status={bid.electrician?.electricianProfile?.verificationStatus} 
+                        isEngineer={bid.electrician?.electricianProfile?.isAuthorizedEngineer}
+                        size="small" 
+                      />
+                      {bid.electrician?.electricianProfile?.isAuthorizedEngineer && (
+                        <View style={styles.engineerSmallLabel}>
+                          <Text style={styles.engineerSmallLabelText}>Yetkili Mühendis</Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
                   <View style={[styles.bidPriceBox, { backgroundColor: colors.primary + '10' }]}>
                     <Text style={[styles.bidPrice, { color: colors.primary }]}>{(parseFloat(bid.amount.toString()) || 0).toFixed(0)} ₺</Text>
@@ -1220,5 +1310,86 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontFamily: fonts.bold,
+  },
+  // Proje Detay Stilleri
+  projectDetailsSection: {
+    marginVertical: 4,
+  },
+  projectDetailsCard: {
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.1)',
+  },
+  projectHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(59, 130, 246, 0.05)',
+    paddingBottom: 8,
+  },
+  projectTitle: {
+    fontSize: 16,
+    fontFamily: fonts.extraBold,
+  },
+  projectGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  projectItem: {
+    width: '48%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  projectIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  projectTextInfo: {
+    flex: 1,
+  },
+  projectItemLabel: {
+    fontSize: 10,
+    fontFamily: fonts.medium,
+    textTransform: 'uppercase',
+    letterSpacing: 0.2,
+  },
+  projectItemValue: {
+    fontSize: 12,
+    fontFamily: fonts.bold,
+  },
+  clientNoteBox: {
+    marginTop: 8,
+    paddingLeft: 4,
+    borderLeftWidth: 3,
+    borderLeftColor: '#CBD5E1',
+  },
+  bidBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+  },
+  engineerSmallLabel: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: '#DBEAFE',
+  },
+  engineerSmallLabelText: {
+    fontSize: 9,
+    fontFamily: fonts.bold,
+    color: '#2563EB',
   },
 });

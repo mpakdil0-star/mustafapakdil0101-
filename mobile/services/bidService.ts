@@ -30,6 +30,7 @@ export interface Bid {
       verificationStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
       licenseVerified?: boolean;
       licenseNumber?: string;
+      isAuthorizedEngineer?: boolean;
     };
   };
   jobPost?: {

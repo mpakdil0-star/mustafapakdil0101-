@@ -96,6 +96,33 @@ const getCategoryImage = (id: string | undefined) => {
   }
 };
 
+const BUILDING_TYPES = [
+  { value: 'daire', label: 'Daire / Apartman' },
+  { value: 'villa', label: 'Müstakil Ev / Villa' },
+  { value: 'ticari', label: 'Ofis / İş Merkezi' },
+  { value: 'sanayi', label: 'Fabrika / Sanayi Yapısı' },
+  { value: 'diger', label: 'Diğer' },
+];
+
+const PROJECT_PURPOSES = [
+  { value: 'yeni', label: 'Yeni Yapı Ruhsatı' },
+  { value: 'tadilat', label: 'Tadilat / Revizyon' },
+  { value: 'guc-artirimi', label: 'Güç Artırımı / Abone' },
+];
+
+const WEAK_CURRENT_SYSTEMS = [
+  { id: 'data', label: 'İnternet / Data', icon: 'globe-outline' },
+  { id: 'kamera', label: 'Güvenlik Kamerası', icon: 'videocam-outline' },
+  { id: 'yangin', label: 'Yangın Alarmı', icon: 'flame-outline' },
+  { id: 'tv', label: 'TV / Uydu Sistemi', icon: 'tv-outline' },
+];
+
+const MODERN_SYSTEMS = [
+  { id: 'akilli-ev', label: 'Akıllı Ev Altyapısı', icon: 'home-outline' },
+  { id: 'e-sarj', label: 'E-Şarj İstasyonu', icon: 'flash-outline' },
+  { id: 'ges', label: 'Güneş Paneli (GES)', icon: 'sunny-outline' },
+];
+
 export default function CreateJobScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -123,10 +150,23 @@ export default function CreateJobScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 3;
+  const isProjectCategory = category === 'Elektrik Proje Çizimi';
+  const totalSteps = isProjectCategory ? 5 : 3;
   const scrollViewRef = useRef<ScrollView>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdJobId, setCreatedJobId] = useState<string | null>(null);
+
+  // Elektrik Proje Çizimi Özel Alanları State'leri
+  const [projectBuildingType, setProjectBuildingType] = useState('');
+  const [projectArea, setProjectArea] = useState('');
+  const [projectFloors, setProjectFloors] = useState('');
+  const [projectRoomsPerFloor, setProjectRoomsPerFloor] = useState('');
+  const [projectPurpose, setProjectPurpose] = useState('');
+  const [projectHasArchitecturePlan, setProjectHasArchitecturePlan] = useState<boolean | null>(null);
+  const [projectNeedsApproval, setProjectNeedsApproval] = useState<boolean | null>(null);
+  const [projectSpecialSystems, setProjectSpecialSystems] = useState<string[]>([]);
+  const [projectWeakCurrentSystems, setProjectWeakCurrentSystems] = useState<string[]>([]);
+  const [projectModernSystems, setProjectModernSystems] = useState<string[]>([]);
 
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -483,9 +523,35 @@ export default function CreateJobScreen() {
     }
 
     try {
+      let finalDescription = description.trim();
+
+      if (isProjectCategory) {
+        const selectedPurpose = PROJECT_PURPOSES.find(p => p.value === projectPurpose)?.label;
+        const selectedType = BUILDING_TYPES.find(b => b.value === projectBuildingType)?.label;
+        const allSystems = [...projectSpecialSystems, ...projectWeakCurrentSystems, ...projectModernSystems];
+        const systemLabels = allSystems.map(id => {
+          const found = [...WEAK_CURRENT_SYSTEMS, ...MODERN_SYSTEMS, { id: 'asansör', label: 'Asansör' }, { id: 'sanayi', label: 'Sanayi Makineleri' }].find(s => s.id === id);
+          return found ? found.label : id;
+        }).join(', ');
+
+        finalDescription = `📐 ELEKTRİK PROJE DETAYLARI\n` +
+          `--------------------------------\n` +
+          `• Yapı Tipi: ${selectedType || 'Belirtilmedi'}\n` +
+          `• Toplam Alan: ${projectArea} m²\n` +
+          `• Kat Sayısı: ${projectFloors || '1'}\n` +
+          `• Oda/Bölüm Sayısı: ${projectRoomsPerFloor || '-'}\n` +
+          `• Proje Amacı: ${selectedPurpose || 'Yeni Yapı'}\n` +
+          `• Mimari Plan: ${projectHasArchitecturePlan ? 'Mevcut (DWG/PDF)' : 'Yok (Rölöve Gerekli)'}\n` +
+          `• Resmi Onay: ${projectNeedsApproval ? 'Mühendis Takip Edecek' : 'Müşteri Takip Edecek'}\n` +
+          `• Ek Sistemler: ${systemLabels || 'Standart'}\n` +
+          `--------------------------------\n\n` +
+          `📝 MÜŞTERİ NOTU:\n` +
+          description.trim();
+      }
+
       const jobData = {
         title: title.trim(),
-        description: description.trim(),
+        description: finalDescription,
         serviceCategory, // Ana hizmet kategorisi (elektrik, cilingir, klima, etc.)
         category,
         subcategory: subcategory.trim() || undefined,
@@ -545,6 +611,32 @@ export default function CreateJobScreen() {
         setErrors({ ...errors, category: 'Kategori seçiniz' });
         return;
       }
+    } else if (isProjectCategory) {
+      // Elektrik Proje Çizimi Özel Adımları Doğrulaması
+      if (currentStep === 2) {
+        if (!projectBuildingType) {
+          showAlert('Eksik Bilgi', 'Lütfen bina tipini seçiniz', 'warning');
+          return;
+        }
+        if (!projectArea || isNaN(parseFloat(projectArea))) {
+          showAlert('Eksik Bilgi', 'Lütfen geçerli bir inşaat alanı (m²) giriniz', 'warning');
+          return;
+        }
+      } else if (currentStep === 3) {
+        if (!projectPurpose) {
+          showAlert('Eksik Bilgi', 'Lütfen projenin amacını seçiniz', 'warning');
+          return;
+        }
+        if (projectHasArchitecturePlan === null) {
+          showAlert('Eksik Bilgi', 'Mimari plan durumunu belirtiniz', 'warning');
+          return;
+        }
+      } else if (currentStep === 4) {
+        if (!description.trim() || description.trim().length < 10) {
+          setErrors({ ...errors, description: 'Lütfen teknik detaylar için en az 10 karakter açıklama yazın' });
+          return;
+        }
+      }
     } else if (currentStep === 2) {
       if (!description.trim()) {
         setErrors({ ...errors, description: 'Açıklama boş bırakılamaz' });
@@ -557,8 +649,11 @@ export default function CreateJobScreen() {
     }
 
     setErrors({});
-    setCurrentStep(prev => Math.min(prev + 1, totalSteps));
-    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    setCurrentStep(prev => {
+      const next = Math.min(prev + 1, totalSteps);
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      return next;
+    });
   };
 
   const prevStep = () => {
@@ -566,50 +661,72 @@ export default function CreateJobScreen() {
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   };
 
-  const renderStepIndicator = () => (
-    <View style={[styles.stepperContainer, { backgroundColor: colors.surface }]}>
-      {[1, 2, 3].map((step) => {
-        const isActive = currentStep === step;
-        const isCompleted = currentStep > step;
-        
-        return (
-          <View key={step} style={styles.stepItem}>
-            <View style={styles.stepIconContainer}>
-              <View style={[
-                styles.stepCircle,
-                isActive ? { backgroundColor: colors.primary, transform: [{ scale: 1.1 }] } : 
-                isCompleted ? { backgroundColor: '#10B981' } :
-                { backgroundColor: colors.surfaceElevated, borderWidth: 1.5, borderColor: colors.border }
-              ]}>
-                {isCompleted ? (
-                  <Ionicons name="checkmark-sharp" size={14} color="#FFF" />
-                ) : (
+  const renderStepIndicator = () => {
+    const steps = isProjectCategory ? [1, 2, 3, 4, 5] : [1, 2, 3];
+    const getStepLabel = (step: number) => {
+      if (isProjectCategory) {
+        switch (step) {
+          case 1: return 'Giriş';
+          case 2: return 'Yapı';
+          case 3: return 'Amaç';
+          case 4: return 'Detay';
+          case 5: return 'Konum';
+          default: return '';
+        }
+      }
+      return step === 1 ? 'Giriş' : step === 2 ? 'Detay' : 'Konum';
+    };
+
+    return (
+      <View style={[styles.stepperContainer, { backgroundColor: colors.surface }]}>
+        {steps.map((step) => {
+          const isActive = currentStep === step;
+          const isCompleted = currentStep > step;
+
+          return (
+            <View key={step} style={styles.stepItem}>
+              <View style={styles.stepIconContainer}>
+                <View style={[
+                  styles.stepCircle,
+                  isActive ? { backgroundColor: colors.primary, transform: [{ scale: 1.1 }] } :
+                    isCompleted ? { backgroundColor: '#10B981' } :
+                      { backgroundColor: colors.surfaceElevated, borderWidth: 1.5, borderColor: colors.border }
+                ]}>
+                  {isCompleted ? (
+                    <Ionicons name="checkmark-sharp" size={12} color="#FFF" />
+                  ) : (
+                    <Text style={[
+                      styles.stepNumber,
+                      { fontSize: 10 },
+                      isActive ? { color: '#FFF' } : { color: colors.textSecondary }
+                    ]}>
+                      {step}
+                    </Text>
+                  )}
+                </View>
+                {/* Metin etiketini sadece aktif adımda veya büyük ekranlarda gösterelim ki sığsın */}
+                {(isActive || !isProjectCategory) && (
                   <Text style={[
-                    styles.stepNumber, 
-                    isActive ? { color: '#FFF' } : { color: colors.textSecondary }
+                    styles.stepLabelText,
+                    { fontSize: 9 },
+                    isActive ? { color: colors.text, fontFamily: fonts.bold } : { color: colors.textLight }
                   ]}>
-                    {step}
+                    {getStepLabel(step)}
                   </Text>
                 )}
               </View>
-              <Text style={[
-                styles.stepLabelText,
-                isActive ? { color: colors.text, fontFamily: fonts.bold } : { color: colors.textLight }
-              ]}>
-                {step === 1 ? 'Özet' : step === 2 ? 'Detay' : 'Konum'}
-              </Text>
+              {step < steps.length && (
+                <View style={[
+                  styles.stepLine,
+                  { backgroundColor: isCompleted ? '#10B981' : colors.border }
+                ]} />
+              )}
             </View>
-            {step < 3 && (
-              <View style={[
-                styles.stepLine,
-                { backgroundColor: isCompleted ? '#10B981' : colors.border }
-              ]} />
-            )}
-          </View>
-        );
-      })}
-    </View>
-  );
+          );
+        })}
+      </View>
+    );
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.backgroundLight }]}>
@@ -655,6 +772,7 @@ export default function CreateJobScreen() {
             </View>
           )}
 
+          {/* ADIM 1: TEMEL BİLGİLER (ORTAK) */}
           {currentStep === 1 && (
             <View>
               <Card variant="glass" style={[styles.sectionCard, { borderColor: colors.border, paddingVertical: 10, paddingHorizontal: 10 }]}>
@@ -787,7 +905,147 @@ export default function CreateJobScreen() {
             </View>
           )}
 
-          {currentStep === 2 && (
+          {/* ADIM 2: PROJE YAPI BİLGİLERİ (SADECE PROJE) */}
+          {isProjectCategory && currentStep === 2 && (
+            <View>
+              <Card variant="glass" style={[styles.sectionCard, { borderColor: colors.border }]}>
+                <View style={styles.sectionHeader}>
+                  <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12' }]}>
+                    <Ionicons name="business-outline" size={18} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.sectionKicker, { color: colors.textLight, fontSize: 8 }]}>Adım 2</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 18 }]}>Yapı Bilgileri</Text>
+                  </View>
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Yapı Tipi</Text>
+                  <View style={styles.pillContainer}>
+                    {BUILDING_TYPES.map((type) => (
+                      <TouchableOpacity
+                        key={type.value}
+                        style={[
+                          styles.pill,
+                          { borderColor: colors.border, backgroundColor: colors.surfaceElevated },
+                          projectBuildingType === type.value && { borderColor: colors.primary, backgroundColor: colors.primary + '0A' }
+                        ]}
+                        onPress={() => setProjectBuildingType(type.value)}
+                      >
+                        <Text style={[styles.pillText, { color: projectBuildingType === type.value ? colors.primary : colors.textSecondary }]}>
+                          {type.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                <View style={styles.row}>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={[styles.label, { color: colors.textSecondary }]}>Toplam m²</Text>
+                    <TextInput
+                      style={[styles.modernInput, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, color: colors.text }]}
+                      placeholder="Örn: 250"
+                      keyboardType="numeric"
+                      value={projectArea}
+                      onChangeText={setProjectArea}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.label, { color: colors.textSecondary }]}>Kat Sayısı</Text>
+                    <TextInput
+                      style={[styles.modernInput, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, color: colors.text }]}
+                      placeholder="Örn: 2"
+                      keyboardType="numeric"
+                      value={projectFloors}
+                      onChangeText={setProjectFloors}
+                    />
+                  </View>
+                </View>
+
+                <View style={[styles.btnRow, { marginTop: 24 }]}>
+                  <View style={styles.backBtnWrapper}>
+                    <Button title="Geri" variant="outline" onPress={prevStep} fullWidth style={{ borderColor: colors.border }} />
+                  </View>
+                  <View style={styles.flexBtnWrapper}>
+                    <Button title="Devam Et" onPress={nextStep} fullWidth icon={<Ionicons name="arrow-forward" size={18} color="#FFF" />} />
+                  </View>
+                </View>
+              </Card>
+            </View>
+          )}
+
+          {/* ADIM 3: PROJE AMACI VE SİSTEMLER (SADECE PROJE) */}
+          {isProjectCategory && currentStep === 3 && (
+            <View>
+              <Card variant="glass" style={[styles.sectionCard, { borderColor: colors.border }]}>
+                <View style={styles.sectionHeader}>
+                  <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12' }]}>
+                    <Ionicons name="options-outline" size={18} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.sectionKicker, { color: colors.textLight, fontSize: 8 }]}>Adım 3</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 18 }]}>Proje Amacı ve Teknik</Text>
+                  </View>
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Hangi amaçla çiziliyor?</Text>
+                  <View style={styles.pillContainer}>
+                    {PROJECT_PURPOSES.map((p) => (
+                      <TouchableOpacity
+                        key={p.value}
+                        style={[
+                          styles.pill,
+                          { borderColor: colors.border, backgroundColor: colors.surfaceElevated, width: '100%' },
+                          projectPurpose === p.value && { borderColor: colors.primary, backgroundColor: colors.primary + '0A' }
+                        ]}
+                        onPress={() => setProjectPurpose(p.value)}
+                      >
+                        <Text style={[styles.pillText, { color: projectPurpose === p.value ? colors.primary : colors.textSecondary }]}>
+                          {p.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Mimari planınız var mı?</Text>
+                  <View style={styles.urgencyGrid}>
+                    <TouchableOpacity
+                      style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, borderColor: projectHasArchitecturePlan === true ? colors.primary : colors.border }]}
+                      onPress={() => setProjectHasArchitecturePlan(true)}
+                    >
+                      <Ionicons name="document-attach-outline" size={20} color={projectHasArchitecturePlan === true ? colors.primary : colors.textLight} />
+                      <Text style={[styles.urgencyCardLabel, projectHasArchitecturePlan === true && { color: colors.primary }]}>Evet, Var</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, borderColor: projectHasArchitecturePlan === false ? colors.primary : colors.border }]}
+                      onPress={() => setProjectHasArchitecturePlan(false)}
+                    >
+                      <Ionicons name="pencil-outline" size={20} color={projectHasArchitecturePlan === false ? colors.primary : colors.textLight} />
+                      <Text style={[styles.urgencyCardLabel, projectHasArchitecturePlan === false && { color: colors.primary }]}>Yok (Rölöve)</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={[styles.btnRow, { marginTop: 16 }]}>
+                  <View style={styles.backBtnWrapper}>
+                    <Button title="Geri" variant="outline" onPress={prevStep} fullWidth style={{ borderColor: colors.border }} />
+                  </View>
+                  <View style={styles.flexBtnWrapper}>
+                    <Button title="Devam Et" onPress={nextStep} fullWidth icon={<Ionicons name="arrow-forward" size={18} color="#FFF" />} />
+                  </View>
+                </View>
+              </Card>
+            </View>
+          )}
+
+          {/* ADIM 4: DETAY VE GÖRSELLER (ORTAK AMA FARKLI STEP NO) */}
+          {(isProjectCategory ? currentStep === 4 : currentStep === 2) && (
             <View>
               <Card variant="glass" style={[styles.sectionCard, { borderColor: colors.border }]}>
                 <View style={styles.sectionHeader}>
@@ -795,10 +1053,61 @@ export default function CreateJobScreen() {
                     <Ionicons name="reader-outline" size={18} color={colors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.sectionKicker, { color: colors.textLight, fontSize: 8 }]}>Adım 2</Text>
+                    <Text style={[styles.sectionKicker, { color: colors.textLight, fontSize: 8 }]}>Adım {isProjectCategory ? '4' : '2'}</Text>
                     <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 18 }]}>Detay ve görseller</Text>
                   </View>
                 </View>
+
+                {isProjectCategory && (
+                  <View style={{ marginBottom: 20 }}>
+                    <Text style={[styles.label, { color: colors.textSecondary }]}>Donanım / Ek Sistemler</Text>
+                    <View style={styles.pillContainer}>
+                      {[...WEAK_CURRENT_SYSTEMS, ...MODERN_SYSTEMS].map((sys) => {
+                        const isSelected = [...projectWeakCurrentSystems, ...projectModernSystems].includes(sys.id);
+                        return (
+                          <TouchableOpacity
+                            key={sys.id}
+                            style={[
+                              styles.pill,
+                              { borderColor: colors.border, backgroundColor: colors.surfaceElevated },
+                              isSelected && { borderColor: colors.primary, backgroundColor: colors.primary + '0A' }
+                            ]}
+                            onPress={() => {
+                              if (isSelected) {
+                                setProjectWeakCurrentSystems(projectWeakCurrentSystems.filter(i => i !== sys.id));
+                                setProjectModernSystems(projectModernSystems.filter(i => i !== sys.id));
+                              } else {
+                                if (WEAK_CURRENT_SYSTEMS.some(i => i.id === sys.id)) setProjectWeakCurrentSystems([...projectWeakCurrentSystems, sys.id]);
+                                else setProjectModernSystems([...projectModernSystems, sys.id]);
+                              }
+                            }}
+                          >
+                            <Ionicons name={sys.icon as any} size={14} color={isSelected ? colors.primary : colors.textLight} />
+                            <Text style={[styles.pillText, { fontSize: 11, color: isSelected ? colors.primary : colors.textSecondary }]}>
+                              {sys.label}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                    <View style={styles.divider} />
+                    <Text style={[styles.label, { color: colors.textSecondary }]}>Resmi Onay Takibi Kimde?</Text>
+                    <View style={styles.urgencyGrid}>
+                      <TouchableOpacity
+                        style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, borderColor: projectNeedsApproval === true ? colors.primary : colors.border }]}
+                        onPress={() => setProjectNeedsApproval(true)}
+                      >
+                        <Text style={[styles.urgencyCardLabel, { textAlign: 'center' }, projectNeedsApproval === true && { color: colors.primary }]}>Mühendis (Hepsi Dahil)</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, borderColor: projectNeedsApproval === false ? colors.primary : colors.border }]}
+                        onPress={() => setProjectNeedsApproval(false)}
+                      >
+                        <Text style={[styles.urgencyCardLabel, { textAlign: 'center' }, projectNeedsApproval === false && { color: colors.primary }]}>Müşteri (Sadece Çizim)</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
 
                 <View style={styles.inputContainer}>
                   <Text style={[styles.label, { color: colors.textSecondary }]}>Açıklama</Text>
@@ -830,7 +1139,7 @@ export default function CreateJobScreen() {
                 </View>
 
                 <View style={styles.inputContainer}>
-                  <Text style={[styles.label, { color: colors.textSecondary }]}>Fotoğraf (isteğe bağlı)</Text>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Fotoğraf / Plan Dosyası</Text>
                   <View style={styles.imageButtons}>
                     <TouchableOpacity
                       style={[styles.modernImageBtn, { borderColor: colors.border, backgroundColor: colors.primary + '08' }]}
@@ -844,7 +1153,7 @@ export default function CreateJobScreen() {
                       onPress={handlePickImage}
                     >
                       <Ionicons name="images-outline" size={22} color={colors.primary} />
-                      <Text style={[styles.imageActionText, { color: colors.text }]}>Galeri</Text>
+                      <Text style={[styles.imageActionText, { color: colors.text }]}>Dosya Seç</Text>
                     </TouchableOpacity>
                   </View>
 
@@ -906,30 +1215,18 @@ export default function CreateJobScreen() {
 
                 <View style={[styles.btnRow, { marginTop: 16 }]}>
                   <View style={styles.backBtnWrapper}>
-                    <Button
-                      title="Geri"
-                      variant="outline"
-                      onPress={prevStep}
-                      fullWidth
-                      style={{ height: 46, borderColor: colors.border }}
-                    />
+                    <Button title="Geri" variant="outline" onPress={prevStep} fullWidth style={{ borderColor: colors.border }} />
                   </View>
                   <View style={styles.flexBtnWrapper}>
-                    <Button
-                      title="Devam Et"
-                      onPress={nextStep}
-                      fullWidth
-                      style={{ height: 46 }}
-                      icon={<Ionicons name="arrow-forward" size={18} color={staticColors.white} />}
-                    />
+                    <Button title="Devam Et" onPress={nextStep} fullWidth style={{ height: 46 }} icon={<Ionicons name="arrow-forward" size={18} color="#FFF" />} />
                   </View>
                 </View>
               </Card>
             </View>
           )}
 
-
-          {currentStep === 3 && (
+          {/* ADIM 5 (PROJE) VEYA 3 (NORMAL): KONUM VE BÜTÇE */}
+          {(isProjectCategory ? currentStep === 5 : currentStep === 3) && (
             <View>
               <Card variant="glass" style={[styles.sectionCard, { borderColor: colors.border, paddingVertical: 8, paddingHorizontal: 10 }]}>
                 <View style={[styles.sectionHeader, { marginBottom: 4 }]}>
@@ -937,7 +1234,7 @@ export default function CreateJobScreen() {
                     <Ionicons name="location-outline" size={14} color={colors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.sectionKicker, { color: colors.textLight, fontSize: 8 }]}>Adım 3</Text>
+                    <Text style={[styles.sectionKicker, { color: colors.textLight, fontSize: 8 }]}>Adım {isProjectCategory ? '5' : '3'}</Text>
                     <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16 }]}>Konum</Text>
                   </View>
                 </View>

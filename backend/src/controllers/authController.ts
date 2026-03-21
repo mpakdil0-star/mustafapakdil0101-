@@ -110,6 +110,7 @@ export const registerController = async (
           userType: userType, // Explicitly save userType
           acceptedLegalVersion,
           marketingAllowed: !!marketingAllowed,
+          specialties: userType === 'ELECTRICIAN' ? ['Arıza Onarım'] : [], // Default specialty for new electricians
         });
 
         const tokens = generateTokens({ id: mockUserId, email, userType });

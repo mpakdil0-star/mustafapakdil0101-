@@ -10,13 +10,15 @@ interface VerificationBadgeProps {
     licenseVerified?: boolean;
     size?: 'small' | 'medium' | 'large';
     showLabel?: boolean;
+    isEngineer?: boolean;
 }
 
 export function VerificationBadge({
     status,
     licenseVerified = false,
     size = 'medium',
-    showLabel = false
+    showLabel = false,
+    isEngineer = false
 }: VerificationBadgeProps) {
     const shimAnim = useRef(new Animated.Value(-1)).current;
 
@@ -49,6 +51,7 @@ export function VerificationBadge({
         styles.label,
         size === 'small' && styles.labelSmall,
         size === 'large' && styles.labelLarge,
+        isEngineer && { color: '#2563EB' } // Indigo color for engineer text
     ];
 
     const translateX = shimAnim.interpolate({
@@ -62,10 +65,13 @@ export function VerificationBadge({
         size === 'large' && styles.containerLarge,
     ];
 
+    const colors_gold = ['#FFD700', '#DAA520', '#FFD700'] as const;
+    const colors_engineer = ['#3B82F6', '#2563EB', '#1D4ED8'] as const;
+
     return (
         <View style={containerStyle}>
             <LinearGradient
-                colors={['#FFD700', '#DAA520', '#FFD700']} // Gold palette
+                colors={isEngineer ? colors_engineer : colors_gold}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={[
@@ -85,10 +91,10 @@ export function VerificationBadge({
                         style={StyleSheet.absoluteFill}
                     />
                 </Animated.View>
-                <Ionicons name="shield-checkmark" size={iconSize} color={colors.white} />
+                <Ionicons name={isEngineer ? "ribbon" : "shield-checkmark"} size={iconSize} color={colors.white} />
             </LinearGradient>
             {showLabel && (
-                <Text style={labelStyle}>Onaylı</Text>
+                <Text style={labelStyle}>{isEngineer ? 'Yetkili Mühendis' : 'Onaylı Usta'}</Text>
             )}
         </View>
     );

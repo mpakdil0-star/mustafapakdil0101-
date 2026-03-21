@@ -168,7 +168,10 @@ model ElectricianProfile {
   bio                   String?
   experienceYears       Int                @default(0) @map("experience_years")
   licenseNumber         String?            @map("license_number")
+  emoNumber             String?            @map("emo_number")
+  smmNumber             String?            @map("smm_number")
   licenseVerified       Boolean            @default(false) @map("license_verified")
+  isAuthorizedEngineer  Boolean            @default(false) @map("is_authorized_engineer")
   serviceAreas          Json?              @map("service_areas")
   specialties           String[]           @default([])
   ratingAverage         Decimal            @default(0) @map("rating_average") @db.Decimal(3, 2)

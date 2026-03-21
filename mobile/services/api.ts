@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { API_BASE_URL } from '../constants/api';
+import { API_BASE_URL, API_ENDPOINTS } from '../constants/api';
 
 const API_TOKEN_KEY = 'auth_token';
 const API_REFRESH_TOKEN_KEY = 'refresh_token';
@@ -62,6 +62,7 @@ class ApiService {
         const isAuthEndpoint = url.includes('/auth/login') ||
           url.includes('/auth/register') ||
           url.includes('/auth/refresh-token') ||
+          url.includes('/auth/logout') ||
           url.includes('/auth/me');
 
         const isPublicEndpoint = url.includes('/jobs') &&
@@ -100,7 +101,7 @@ class ApiService {
               return Promise.reject(error);
             }
 
-            const response = await axios.post(`${API_BASE_URL}auth/refresh-token`, {
+            const response = await axios.post(`${API_BASE_URL}${API_ENDPOINTS.REFRESH_TOKEN}`, {
               refreshToken,
             }, {
               headers: {

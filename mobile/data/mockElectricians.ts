@@ -21,6 +21,9 @@ export interface MockElectrician {
         user: string;
         comment: string;
     };
+    isEngineer?: boolean;
+    emoNumber?: string;
+    smmNumber?: string;
 }
 
 export const MOCK_ELECTRICIANS: MockElectrician[] = [
@@ -213,6 +216,29 @@ export const MOCK_ELECTRICIANS: MockElectrician[] = [
         services: ['Arıza', 'Montaj', 'Bakım'],
         completedJobs: 90,
         responseTime: '20 dk',
+    },
+    {
+        id: '10',
+        name: 'Murat Engin (Mühendis)',
+        rating: 5.0,
+        reviewCount: 45,
+        specialty: 'Elektrik Proje Çizimi',
+        isVerified: true,
+        isEngineer: true,
+        emoNumber: '45678',
+        smmNumber: 'SMM-2024-045',
+        location: 'Beşiktaş, İstanbul',
+        city: 'İstanbul',
+        experience: '15 yıl',
+        imageUrl: 'https://randomuser.me/api/portraits/men/10.jpg',
+        about: 'Resmi imza yetkili elektrik mühendisi. EMO ve SMM belgelerim mevcuttur. Bina elektrik projeleri, trafo projeleri ve resmi onay süreçlerinde hizmet vermekteyim.',
+        services: ['Elektrik Proje Çizimi', 'Resmi Onay Süreçleri', 'Trafo Projeleri', 'Yüksek Gerilim İşletme Sorumluluğu'],
+        completedJobs: 120,
+        responseTime: '4 saat',
+        latestReview: {
+            user: 'Arda S.',
+            comment: 'Proje aşamasında çok yardımcı oldu, süreci çok iyi biliyor.'
+        }
     },
 ];
 

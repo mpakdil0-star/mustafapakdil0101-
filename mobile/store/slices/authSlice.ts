@@ -235,6 +235,17 @@ const authSlice = createSlice({
         state.token = null;
         state.isAuthenticated = false;
         state.error = null;
+        state.requiredLegalVersion = null;
+        state.guestRole = null;
+      })
+      .addCase(logout.rejected, (state) => {
+        // Clear state anyway even if server request fails
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        state.error = null;
+        state.requiredLegalVersion = null;
+        state.guestRole = null;
       });
   },
 });

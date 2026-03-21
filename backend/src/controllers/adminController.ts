@@ -43,8 +43,6 @@ const hasValidDocument = (docs: any): boolean => {
 export const getAllVerifications = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const user = (req as any).user;
-
-        // Extra check just in case, though middleware handles it
         if (user.userType !== 'ADMIN') {
             return res.status(403).json({
                 success: false,
@@ -52,76 +50,77 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
             });
         }
 
-        // FAST PATH: Mock results for testing if DB is down
+        // Helper to map either mock or prisma profile to a standard VerificationRequest
+        const mapToVerificationRequest = (u: any): any => {
+            // Highly robust extraction for all naming conventions
+            const emo = u.emoNumber || u.emo_number || u.electricianProfile?.emoNumber || u.electricianProfile?.emo_number;
+            const smm = u.smmNumber || u.smm_number || u.electricianProfile?.smmNumber || u.electricianProfile?.smm_number;
+            const license = u.licenseNumber || u.license_number || u.electricianProfile?.licenseNumber || u.electricianProfile?.license_number;
+            
+            // Normalize documents - prioritize nested verificationDocuments object
+            const rawDocs = u.verificationDocuments || u.electricianProfile?.verificationDocuments;
+            const docs = {
+                documentType: rawDocs?.documentType || u.documentType || u.electricianProfile?.documentType || 'BELİRTİLMEMİŞ',
+                documentUrl: rawDocs?.documentUrl || u.documentUrl || u.electricianProfile?.documentUrl || '',
+                submittedAt: rawDocs?.submittedAt || u.submittedAt || u.electricianProfile?.submittedAt || new Date().toISOString()
+            };
+
+            // User mapping
+            const userData = {
+                id: u.user?.id || u.id || u.userId,
+                fullName: u.user?.fullName || u.fullName || 'İsimsiz Kullanıcı',
+                email: u.user?.email || u.email || 'Email yok',
+                phone: u.user?.phone || u.phone || 'Telefon yok',
+            };
+
+            return {
+                userId: u.userId || u.id,
+                verificationStatus: u.verificationStatus || u.verification_status || 'PENDING',
+                serviceCategory: u.serviceCategory || u.electricianProfile?.serviceCategory || 'elektrik',
+                licenseNumber: license || 'Girilmemiş',
+                emoNumber: emo || 'Girilmemiş',
+                smmNumber: smm || 'Girilmemiş',
+                verificationDocuments: docs,
+                user: userData
+            };
+        };
+
+        // Decision logic: Mock or Prisma
         if (!isDatabaseAvailable || user.id.startsWith('mock-')) {
             const allUsers = mockStorage.getAllUsers();
-            const pendingMocks = allUsers
-                .filter(u => {
-                    return u.userType === 'ELECTRICIAN' && 
-                           u.verificationStatus === 'PENDING' && 
-                           hasValidDocument(u.electricianProfile?.verificationDocuments);
-                })
-                .map(u => ({
-                    userId: u.id,
-                    verificationStatus: 'PENDING',
-                    verificationDocuments: u.electricianProfile?.verificationDocuments,
-                    serviceCategory: u.electricianProfile?.serviceCategory,
-                    user: {
-                        id: u.id,
-                        fullName: u.fullName,
-                        email: u.email,
-                        phone: u.phone
-                    }
-                }));
+            const requests = allUsers
+                .filter((u: any) => u.userType === 'ELECTRICIAN' && 
+                       (u.verificationStatus === 'PENDING' || u.verificationStatus === 'NONE' || !u.verificationStatus))
+                .map(mapToVerificationRequest)
+                .filter((r: any) => hasValidDocument(r.verificationDocuments));
 
-            return res.json({
-                success: true,
-                data: pendingMocks
-            });
+            return res.json({ success: true, data: requests });
         }
 
+        // Real Database Path (Prisma)
         try {
             const pendingProfiles = await prisma.electricianProfile.findMany({
-                where: {
-                    verificationStatus: 'PENDING' as any,
-                    user: { deletedAt: null },
-                    NOT: {
-                        verificationDocuments: {
-                            equals: null as any
-                        }
-                    }
-                },
-                include: {
-                    user: {
-                        select: {
-                            id: true,
-                            fullName: true,
-                            email: true,
-                            phone: true,
-                        }
-                    }
-                },
-                orderBy: {
-                    updatedAt: 'desc'
-                }
+                where: { verificationStatus: 'PENDING' },
+                include: { user: true },
+                orderBy: { updatedAt: 'desc' }
             });
 
-            // Filter out profiles with no document URL in JS to be safe with JSON structure
-            const filteredProfiles = pendingProfiles.filter(p => hasValidDocument(p.verificationDocuments));
+            const requests = pendingProfiles.map(mapToVerificationRequest)
+                .filter((r: any) => hasValidDocument(r.verificationDocuments));
 
-            res.json({
-                success: true,
-                data: filteredProfiles,
-            });
+            return res.json({ success: true, data: requests });
         } catch (dbErr: any) {
-            console.error('Database error in getAllVerifications:', dbErr.message);
-            res.json({
-                success: true,
-                data: [] 
-            });
+            console.error('Database query error in getAllVerifications:', dbErr.message);
+            // Fallback to mock in case of DB query failure
+            const allUsers = mockStorage.getAllUsers();
+            const requests = allUsers
+                .filter((u: any) => u.userType === 'ELECTRICIAN' && u.verificationStatus === 'PENDING')
+                .map(mapToVerificationRequest);
+            
+            return res.json({ success: true, data: requests });
         }
     } catch (error) {
-        console.error('Error in getAllVerifications:', error);
+        console.error('General error in getAllVerifications:', error);
         next(error);
     }
 };
@@ -153,9 +152,24 @@ export const processVerification = async (req: Request, res: Response, next: Nex
         if (!isDatabaseAvailable || adminUser.id.startsWith('mock-')) {
             console.warn('⚠️ processVerification: DB down, updating mockStorage');
 
+            const userStore = mockStorage.get(targetUserId);
+            const isEngineer = userStore?.documentType === 'YETKILI_MUHENDIS' && status === 'VERIFIED';
+
+            let newSpecialties = [...(userStore?.specialties || [])];
+            if (isEngineer) {
+                if (!newSpecialties.includes('Yetkili Mühendis')) {
+                    newSpecialties.unshift('Yetkili Mühendis');
+                }
+                if (!newSpecialties.includes('Elektrik Proje Çizimi')) {
+                    newSpecialties.push('Elektrik Proje Çizimi');
+                }
+            }
+
             mockStorage.updateProfile(targetUserId, {
                 verificationStatus: status,
-                isVerified: status === 'VERIFIED'
+                isVerified: status === 'VERIFIED',
+                isAuthorizedEngineer: isEngineer,
+                specialties: newSpecialties
             });
 
             // Award 5 bonus credits for first-time verification as promised
@@ -184,12 +198,25 @@ export const processVerification = async (req: Request, res: Response, next: Nex
             }
 
             const verificationDocuments: any = currentProfile.verificationDocuments || {};
+            const isEngineer = verificationDocuments?.documentType === 'YETKILI_MUHENDIS' && status === 'VERIFIED';
+
+            let newSpecialties = [...(currentProfile.specialties || [])];
+            if (isEngineer) {
+                if (!newSpecialties.includes('Yetkili Mühendis')) {
+                    newSpecialties.unshift('Yetkili Mühendis');
+                }
+                if (!newSpecialties.includes('Elektrik Proje Çizimi')) {
+                    newSpecialties.push('Elektrik Proje Çizimi');
+                }
+            }
 
             const updatedProfile = await prisma.electricianProfile.update({
                 where: { userId: targetUserId },
                 data: {
                     verificationStatus: status as any,
                     licenseVerified: status === 'VERIFIED',
+                    isAuthorizedEngineer: isEngineer,
+                    specialties: newSpecialties,
                     verificationDocuments: {
                         ...verificationDocuments,
                         reviewedAt: new Date().toISOString(),

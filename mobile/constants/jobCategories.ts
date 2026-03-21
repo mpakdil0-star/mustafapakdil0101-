@@ -15,6 +15,7 @@ export interface JobCategory {
 
 // ⚡ ELEKTRİK ALT KATEGORİLERİ
 export const ELEKTRIK_CATEGORIES: JobCategory[] = [
+    { id: 'elektrik-proje', name: 'Elektrik Proje Çizimi', icon: 'document-text', colors: ['#3B82F6', '#1E3A8A'], parentCategory: 'elektrik' },
     { id: 'elektrik-tesisat', name: 'Elektrik Tesisatı', icon: 'flash', colors: ['#A78BFA', '#7C3AED'], parentCategory: 'elektrik' },
     { id: 'elektrik-tamir', name: 'Elektrik Tamiri', icon: 'hammer', colors: ['#F87171', '#DC2626'], parentCategory: 'elektrik' },
     { id: 'aydinlatma', name: 'Aydınlatma', icon: 'bulb', colors: ['#FBBF24', '#D97706'], parentCategory: 'elektrik' },

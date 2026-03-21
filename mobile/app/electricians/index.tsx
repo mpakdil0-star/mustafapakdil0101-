@@ -34,12 +34,38 @@ const deg2rad = (deg: number) => {
     return deg * (Math.PI / 180);
 };
 
+interface FilterChipProps {
+    label: string;
+    active: boolean;
+    onPress: () => void;
+    icon?: string;
+}
+
+const FilterChip = ({ label, active, onPress, icon }: FilterChipProps) => (
+    <TouchableOpacity
+        style={[
+            styles.selectableFilterChip,
+            active && styles.selectableFilterChipActive
+        ]}
+        onPress={onPress}
+    >
+        {icon && <Ionicons name={icon as any} size={14} color={active ? colors.white : colors.primary} />}
+        <Text style={[
+            styles.selectableFilterChipText,
+            active && styles.selectableFilterChipTextActive
+        ]}>{label}</Text>
+    </TouchableOpacity>
+);
+
 export default function ElectriciansListScreen() {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCity, setSelectedCity] = useState('');
     const [selectedDistrict, setSelectedDistrict] = useState('');
-    const [activeFilter, setActiveFilter] = useState<string | null>(null);
+    const [activeFilters, setActiveFilters] = useState({
+        sortBy: null as string | null,
+        isEngineerOnly: false
+    });
     const [isCityModalVisible, setIsCityModalVisible] = useState(false);
 
     const [alertConfig, setAlertConfig] = useState<{
@@ -109,7 +135,8 @@ export default function ElectriciansListScreen() {
         const combinedData = [
             ...MOCK_ELECTRICIANS.map(m => ({
                 ...m,
-                profileImageUrl: m.imageUrl // Mock verilerdeki imageUrl'i profileImageUrl'e çevir
+                profileImageUrl: m.imageUrl,
+                isAuthorizedEngineer: (m as any).isAuthorizedEngineer || false
             })),
             ...electricians.map(e => ({
                 id: e.id,
@@ -118,6 +145,7 @@ export default function ElectriciansListScreen() {
                 reviewCount: e.electricianProfile?.totalReviews || 0,
                 specialty: e.electricianProfile?.specialties?.[0] || 'Genel Hizmet',
                 isVerified: e.isVerified === true && e.electricianProfile?.verificationStatus === 'VERIFIED',
+                isAuthorizedEngineer: e.electricianProfile?.isAuthorizedEngineer || false,
                 location: e.locations?.[0] ? `${e.locations[0].district}, ${e.locations[0].city}` : 'Konum Belirtilmedi',
                 city: e.locations?.[0]?.city || 'Diğer',
                 experience: `${e.electricianProfile?.experienceYears || 0} Yıl`,
@@ -149,13 +177,14 @@ export default function ElectriciansListScreen() {
             const matchesDistrict = !selectedDistrict ||
                 elec.location.toLowerCase().includes(selectedDistrict.toLowerCase());
 
-            const matchesAvailable = activeFilter === 'available' ? (elec as any).isAvailable : true;
+            const matchesAvailable = activeFilters.sortBy === 'available' ? (elec as any).isAvailable : true;
+            const matchesEngineer = activeFilters.isEngineerOnly ? (elec as any).isAuthorizedEngineer : true;
 
-            return matchesSearch && matchesCity && matchesDistrict && matchesAvailable;
+            return matchesSearch && matchesCity && matchesDistrict && matchesAvailable && matchesEngineer;
         });
 
         // Sıralama Mantığı
-        if (activeFilter === 'near') {
+        if (activeFilters.sortBy === 'near') {
             if (userLocations.length > 0) {
                 const defaultLoc = userLocations.find((l: any) => l.isDefault) || userLocations[0];
                 const userCity = defaultLoc.city;
@@ -176,12 +205,12 @@ export default function ElectriciansListScreen() {
             } else {
                 showAlert('Adres Bulunamadı', 'Konum bazlı arama için lütfen profilinize bir adres ekleyin.', 'warning');
             }
-        } else if (activeFilter === 'popular') {
+        } else if (activeFilters.sortBy === 'popular') {
             result = [...result].sort((a, b) => b.reviewCount - a.reviewCount);
         }
 
         return result;
-    }, [searchQuery, selectedCity, selectedDistrict, activeFilter, electricians, userLocations]);
+    }, [searchQuery, selectedCity, selectedDistrict, activeFilters, electricians, userLocations]);
 
     return (
         <View style={styles.container}>
@@ -221,8 +250,8 @@ export default function ElectriciansListScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {/* Show Active City/District Chips */}
-                {(selectedCity || selectedDistrict) && (
+                {/* Show Active City/District/Special Chips */}
+                {(selectedCity || selectedDistrict || activeFilters.isEngineerOnly) && (
                     <View style={styles.activeFilters}>
                         {selectedCity && selectedCity !== 'Tümü' && (
                             <View style={styles.filterChip}>
@@ -240,6 +269,14 @@ export default function ElectriciansListScreen() {
                                 </TouchableOpacity>
                             </View>
                         )}
+                        {activeFilters.isEngineerOnly && (
+                            <View style={[styles.filterChip, { marginLeft: 8 }]}>
+                                <Text style={styles.filterChipText}>Yetkili Mühendis</Text>
+                                <TouchableOpacity onPress={() => setActiveFilters(prev => ({ ...prev, isEngineerOnly: false }))}>
+                                    <Ionicons name="close" size={14} color={colors.primary} />
+                                </TouchableOpacity>
+                            </View>
+                        )}
                     </View>
                 )}
 
@@ -250,14 +287,26 @@ export default function ElectriciansListScreen() {
                     contentContainerStyle={styles.quickFiltersContainer}
                 >
                     <TouchableOpacity
-                        style={[styles.quickFilterChip, activeFilter === 'near' && styles.quickFilterChipActive]}
-                        onPress={() => setActiveFilter(activeFilter === 'near' ? null : 'near')}
+                        style={[styles.quickFilterChip, activeFilters.sortBy === 'near' && styles.quickFilterChipActive]}
+                        onPress={() => setActiveFilters(prev => ({ ...prev, sortBy: prev.sortBy === 'near' ? null : 'near' }))}
                     >
-                        <Ionicons name="location" size={14} color={activeFilter === 'near' ? colors.white : colors.primary} />
-                        <Text style={[styles.quickFilterText, activeFilter === 'near' && styles.quickFilterTextActive]}>En Yakın</Text>
+                        <Ionicons name="location" size={14} color={activeFilters.sortBy === 'near' ? colors.white : colors.primary} />
+                        <Text style={[styles.quickFilterText, activeFilters.sortBy === 'near' && styles.quickFilterTextActive]}>En Yakın</Text>
                     </TouchableOpacity>
 
+                    <TouchableOpacity
+                        style={[styles.quickFilterChip, activeFilters.sortBy === 'popular' && styles.quickFilterChipActive]}
+                        onPress={() => setActiveFilters(prev => ({ ...prev, sortBy: prev.sortBy === 'popular' ? null : 'popular' }))}
+                    >
+                        <Ionicons name="star" size={14} color={activeFilters.sortBy === 'popular' ? colors.white : colors.primary} />
+                        <Text style={[styles.quickFilterText, activeFilters.sortBy === 'popular' && styles.quickFilterTextActive]}>Popüler</Text>
+                    </TouchableOpacity>
 
+                    <FilterChip
+                        label="Yetkili Mühendis"
+                        active={activeFilters.isEngineerOnly}
+                        onPress={() => setActiveFilters(prev => ({ ...prev, isEngineerOnly: !prev.isEngineerOnly }))}
+                    />
                 </ScrollView>
             </View>
 
@@ -358,7 +407,17 @@ export default function ElectriciansListScreen() {
 
                                 <View style={styles.mainInfo}>
                                     <View style={styles.topRow}>
-                                        <Text style={styles.name} numberOfLines={1}>{electrician.name}</Text>
+                                        <View style={styles.nameContainer}>
+                                            <Text style={styles.name} numberOfLines={1}>{electrician.name}</Text>
+                                            {electrician.isAuthorizedEngineer && (
+                                                <View style={styles.engineerBadge}>
+                                                    <View style={styles.engineerBadgeInner}>
+                                                        <Ionicons name="ribbon" size={10} color={colors.white} />
+                                                        <Text style={styles.engineerBadgeText}>MÜHENDİS</Text>
+                                                    </View>
+                                                </View>
+                                            )}
+                                        </View>
                                         <View style={styles.ratingBox}>
                                             <Ionicons name="star" size={12} color="#F59E0B" />
                                             <Text style={styles.ratingVal}>
@@ -415,7 +474,7 @@ export default function ElectriciansListScreen() {
                         </View>
                         <Text style={styles.emptyTitle}>Usta Bulunamadı</Text>
                         <Text style={styles.emptyDesc}>Arama kriterlerinizi veya filtreleri değiştirerek tekrar deneyebilirsiniz.</Text>
-                        <TouchableOpacity style={styles.resetBtn} onPress={() => { setSearchQuery(''); setSelectedCity('Tümü'); setActiveFilter(null); }}>
+                        <TouchableOpacity style={styles.resetBtn} onPress={() => { setSearchQuery(''); setSelectedCity('Tümü'); setActiveFilters({ sortBy: null, isEngineerOnly: false }); }}>
                             <Text style={styles.resetBtnText}>Filtreleri Temizle</Text>
                         </TouchableOpacity>
                     </View>
@@ -763,5 +822,53 @@ const styles = StyleSheet.create({
     },
     modalCloseBtn: {
         padding: 4,
+    },
+    selectableFilterChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+        marginRight: 8,
+        marginBottom: 8,
+        gap: 6,
+    },
+    selectableFilterChipActive: {
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
+    },
+    selectableFilterChipText: {
+        fontFamily: fonts.medium,
+        fontSize: 14,
+        color: colors.textSecondary,
+    },
+    selectableFilterChipTextActive: {
+        color: colors.white,
+    },
+    nameContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+        gap: 6,
+    },
+    engineerBadge: {
+        backgroundColor: '#2563EB',
+        borderRadius: 4,
+        overflow: 'hidden',
+    },
+    engineerBadgeInner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 4,
+        paddingVertical: 1,
+        gap: 2,
+    },
+    engineerBadgeText: {
+        color: colors.white,
+        fontSize: 8,
+        fontFamily: fonts.bold,
     },
 });

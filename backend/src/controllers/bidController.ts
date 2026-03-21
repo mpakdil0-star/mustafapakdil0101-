@@ -241,6 +241,9 @@ export const createBidController = async (
                 verificationStatus: userStore?.verificationStatus || 'APPROVED',
                 licenseVerified: true,
                 licenseNumber: 'MOCK-LIC-12345',
+                isAuthorizedEngineer: userStore?.isAuthorizedEngineer || false,
+                emoNumber: userStore?.emoNumber,
+                smmNumber: userStore?.smmNumber,
               },
             },
             jobPost: job ? {
@@ -494,6 +497,9 @@ export const getJobBidsController = async (
                 electricianProfile: {
                   ...bid.electrician?.electricianProfile,
                   verificationStatus: electricianData?.verificationStatus || bid.electrician?.electricianProfile?.verificationStatus || 'PENDING',
+                  isAuthorizedEngineer: electricianData?.isAuthorizedEngineer || false,
+                  emoNumber: electricianData?.emoNumber,
+                  smmNumber: electricianData?.smmNumber,
                 },
               },
             };

@@ -26,13 +26,15 @@ import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { useAppSelector } from '../../hooks/redux';
 import api from '../../services/api';
 
-type DocumentType = 'MYK_BELGESI' | 'ELEKTRIK_USTASI' | 'ODA_KAYIT';
+type DocumentType = 'MYK_BELGESI' | 'ELEKTRIK_USTASI' | 'ODA_KAYIT' | 'YETKILI_MUHENDIS';
 type VerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED' | null;
 
 interface VerificationData {
     status: VerificationStatus;
     documentType?: DocumentType;
     licenseNumber?: string;
+    emoNumber?: string;
+    smmNumber?: string;
     documentUrl?: string;
     submittedAt?: string;
     reviewedAt?: string;
@@ -60,6 +62,8 @@ export default function VerificationScreen() {
     const [verificationData, setVerificationData] = useState<VerificationData>({ status: null });
     const [selectedType, setSelectedType] = useState<DocumentType>('ELEKTRIK_USTASI');
     const [licenseNumber, setLicenseNumber] = useState('');
+    const [emoNumber, setEmoNumber] = useState('');
+    const [smmNumber, setSmmNumber] = useState('');
     const [documentImage, setDocumentImage] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,10 +73,11 @@ export default function VerificationScreen() {
     const serviceCategory = user?.electricianProfile?.serviceCategory || 'elektrik';
 
     const documentTypes = [
-        { value: 'ELEKTRIK_USTASI' as DocumentType, label: getServiceDocumentLabel(serviceCategory) },
-        { value: 'MYK_BELGESI' as DocumentType, label: 'MYK Yeterlilik Belgesi' },
-        { value: 'ODA_KAYIT' as DocumentType, label: 'Oda Kayıt Belgesi' },
-    ];
+        { value: 'ELEKTRIK_USTASI' as DocumentType, label: getServiceDocumentLabel(serviceCategory), icon: 'construct' },
+        { value: 'YETKILI_MUHENDIS' as DocumentType, label: 'Yetkili Mühendis (EMO/SMM)', icon: 'ribbon', hidden: serviceCategory !== 'elektrik' },
+        { value: 'MYK_BELGESI' as DocumentType, label: 'MYK Yeterlilik Belgesi', icon: 'medal' },
+        { value: 'ODA_KAYIT' as DocumentType, label: 'Oda Kayıt Belgesi', icon: 'business' },
+    ].filter(t => !t.hidden);
 
     const [alertConfig, setAlertConfig] = useState<{
         visible: boolean;
@@ -100,6 +105,12 @@ export default function VerificationScreen() {
                 }
                 if (response.data.data.licenseNumber) {
                     setLicenseNumber(response.data.data.licenseNumber);
+                }
+                if (response.data.data.emoNumber) {
+                    setEmoNumber(response.data.data.emoNumber);
+                }
+                if (response.data.data.smmNumber) {
+                    setSmmNumber(response.data.data.smmNumber);
                 }
             }
         } catch (error) {
@@ -135,7 +146,7 @@ export default function VerificationScreen() {
             if (status !== 'granted') {
                 showAlert('İzin Gerekli', 'Kamera izni vermeniz gerekiyor', 'warning');
                 return;
-            }
+              }
 
             const result = await ImagePicker.launchCameraAsync({
                 allowsEditing: true,
@@ -159,11 +170,20 @@ export default function VerificationScreen() {
             return;
         }
 
+        if (selectedType === 'YETKILI_MUHENDIS') {
+            if (!emoNumber.trim() || !smmNumber.trim()) {
+                showAlert('Eksik Bilgi', 'Mühendis yetkilendirmesi için EMO Sicil No ve SMM Belge No zorunludur.', 'warning');
+                return;
+            }
+        }
+
         setIsSubmitting(true);
         try {
             const response = await api.post('/users/verification', {
                 documentType: selectedType,
                 licenseNumber: licenseNumber.trim() || 'BELGE_GÖRSELİ',
+                emoNumber: emoNumber.trim(),
+                smmNumber: smmNumber.trim(),
                 documentImage: documentImage,
             });
 
@@ -177,6 +197,8 @@ export default function VerificationScreen() {
                 status: 'PENDING',
                 documentType: selectedType,
                 licenseNumber: licenseNumber,
+                emoNumber: emoNumber,
+                smmNumber: smmNumber,
                 submittedAt: new Date().toISOString(),
             });
             setShowSuccessModal(true);
@@ -223,8 +245,22 @@ export default function VerificationScreen() {
                         <View style={styles.summaryContainer}>
                             <View style={styles.summaryRow}>
                                 <Text style={styles.summaryLabel}>Belge Türü</Text>
-                                <Text style={styles.summaryValue}>{documentTypes.find(d => d.value === verificationData.documentType)?.label}</Text>
+                                <Text style={styles.summaryValue}>
+                                    {verificationData.documentType === 'YETKILI_MUHENDIS' ? 'Yetkili Mühendis (EMO/SMM)' : documentTypes.find(d => d.value === verificationData.documentType)?.label}
+                                </Text>
                             </View>
+                            {verificationData.emoNumber && (
+                                <View style={styles.summaryRow}>
+                                    <Text style={styles.summaryLabel}>EMO Sicil No</Text>
+                                    <Text style={styles.summaryValue}>{verificationData.emoNumber}</Text>
+                                </View>
+                            )}
+                            {verificationData.smmNumber && (
+                                <View style={styles.summaryRow}>
+                                    <Text style={styles.summaryLabel}>SMM Belge No</Text>
+                                    <Text style={styles.summaryValue}>{verificationData.smmNumber}</Text>
+                                </View>
+                            )}
                             <View style={styles.summaryRow}>
                                 <Text style={styles.summaryLabel}>Gönderim Tarihi</Text>
                                 <Text style={styles.summaryValue}>{verificationData.submittedAt ? new Date(verificationData.submittedAt).toLocaleDateString('tr-TR') : '-'}</Text>
@@ -260,8 +296,12 @@ export default function VerificationScreen() {
 
                 <Card style={styles.formCard}>
                     {/* 1. Belge Türü */}
-                    <Text style={styles.inputLabel}>Belge Türünü Seçin</Text>
-                    <Text style={styles.helperText}>Aşağıdaki belgelerden <Text style={styles.boldText}>sadece birini</Text> seçip yüklemeniz yeterlidir.</Text>
+                    <Text style={styles.inputLabel}>Doğrulama Yöntemi</Text>
+                    <Text style={styles.helperText}>
+                        {selectedType === 'YETKILI_MUHENDIS'
+                            ? 'Elektrik Proje Çizimi yetkisi için EMO ve SMM belgelerinizi yüklemelisiniz.'
+                            : 'Onaylı Usta rozeti için ustalık veya mesleki yeterlilik belgenizi yükleyin.'}
+                    </Text>
                     <View style={styles.typeGrid}>
                         {documentTypes.map((type) => (
                             <TouchableOpacity
@@ -269,23 +309,50 @@ export default function VerificationScreen() {
                                 style={[styles.typeItem, selectedType === type.value && styles.typeItemSelected]}
                                 onPress={() => setSelectedType(type.value)}
                             >
-                                <View style={[styles.radio, selectedType === type.value && { borderColor: colors.primary }]}>
-                                    {selectedType === type.value && <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />}
-                                </View>
-                                <Text style={[styles.typeText, selectedType === type.value && { color: colors.primary, fontFamily: fonts.bold }]}>
+                                <Ionicons
+                                    name={(type as any).icon}
+                                    size={18}
+                                    color={selectedType === type.value ? colors.primary : staticColors.textLight}
+                                    style={{ marginRight: 10 }}
+                                />
+                                <Text style={[styles.typeText, { flex: 1 }, selectedType === type.value && { color: colors.primary, fontFamily: fonts.bold }]}>
                                     {type.label}
                                 </Text>
+                                <View style={[styles.radio, selectedType === type.value && { borderColor: colors.primary, marginRight: 0 }]}>
+                                    {selectedType === type.value && <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />}
+                                </View>
                             </TouchableOpacity>
                         ))}
                     </View>
 
-                    {/* 2. Fotoğraf Yükleme */}
-                    <Text style={styles.inputLabel}>Belge Fotoğrafı</Text>
+                    {/* 2. Mühendis Özel Alanları */}
+                    {selectedType === 'YETKILI_MUHENDIS' && (
+                        <View style={{ marginBottom: 20 }}>
+                            <Text style={styles.inputLabel}>EMO Sicil No</Text>
+                            <Input
+                                placeholder="Örn: 12345"
+                                value={emoNumber}
+                                onChangeText={setEmoNumber}
+                                keyboardType="numeric"
+                                containerStyle={{ marginBottom: 12 }}
+                            />
+                            <Text style={styles.inputLabel}>SMM Belge No</Text>
+                            <Input
+                                placeholder="Örn: SMM-2024-001"
+                                value={smmNumber}
+                                onChangeText={setSmmNumber}
+                                containerStyle={{ marginBottom: 0 }}
+                            />
+                        </View>
+                    )}
+
+                    {/* 3. Fotoğraf Yükleme */}
+                    <Text style={styles.inputLabel}>{selectedType === 'YETKILI_MUHENDIS' ? 'Belge / Kimlik Görseli' : 'Belge Fotoğrafı'}</Text>
                     {documentImage ? (
                         <View style={styles.imageBox}>
                             <Image source={{ uri: documentImage }} style={styles.previewImage} />
                             <TouchableOpacity style={styles.removeBtn} onPress={() => setDocumentImage(null)}>
-                                <Ionicons name="close" size={24} color={colors.white} />
+                                <Ionicons name="close" size={24} color={staticColors.white} />
                             </TouchableOpacity>
                         </View>
                     ) : (
@@ -301,15 +368,19 @@ export default function VerificationScreen() {
                         </View>
                     )}
 
-                    {/* 3. Belge No (Opsiyonel) */}
-                    <View style={styles.divider} />
-                    <Text style={styles.inputLabel}>Belge Numarası <Text style={styles.optional}>(İsteğe Bağlı)</Text></Text>
-                    <Input
-                        placeholder="Örn: 12345ABC"
-                        value={licenseNumber}
-                        onChangeText={setLicenseNumber}
-                        containerStyle={styles.input}
-                    />
+                    {/* 4. Belge No (Sadece usta belgeleri için) */}
+                    {selectedType !== 'YETKILI_MUHENDIS' && (
+                        <>
+                            <View style={styles.divider} />
+                            <Text style={styles.inputLabel}>Belge Numarası <Text style={styles.optional}>(İsteğe Bağlı)</Text></Text>
+                            <Input
+                                placeholder="Örn: 12345ABC"
+                                value={licenseNumber}
+                                onChangeText={setLicenseNumber}
+                                containerStyle={styles.input}
+                            />
+                        </>
+                    )}
                 </Card>
 
                 <Button

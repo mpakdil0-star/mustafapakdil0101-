@@ -23,6 +23,7 @@ import { authService } from '../../services/authService';
 // Uzmanlık alanları listesi - Kategorilere göre
 const SPECIALTIES_BY_CATEGORY: Record<string, { id: string; label: string; icon: string }[]> = {
     elektrik: [
+        { id: 'projeCizimi', label: 'Elektrik Proje Çizimi', icon: 'document-text-outline' },
         { id: 'arizaOnarim', label: 'Arıza Onarım', icon: 'build-outline' },
         { id: 'tesisatYenileme', label: 'Tesisat Yenileme', icon: 'construct-outline' },
         { id: 'prizAnahtar', label: 'Priz/Anahtar Montajı', icon: 'radio-outline' },

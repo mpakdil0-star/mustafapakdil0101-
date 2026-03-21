@@ -27,6 +27,9 @@ import { getFileUrl } from '../../constants/api';
 interface VerificationRequest {
     userId: string;
     serviceCategory?: string; // Added service category
+    licenseNumber?: string;   // Added license number
+    emoNumber?: string;       // Added EMO number
+    smmNumber?: string;       // Added SMM number
     user: {
         id: string;
         fullName: string;
@@ -57,6 +60,7 @@ const getServiceDocumentLabel = (category: string = 'elektrik') => {
 };
 
 const getDocumentDisplayLabel = (type: string, category?: string) => {
+    if (type === 'YETKILI_MUHENDIS') return 'Yetkili Mühendis (EMO/SMM)';
     if (type === 'ELEKTRIK_USTASI') return getServiceDocumentLabel(category);
     if (type === 'MYK_BELGESI') return 'MYK Yeterlilik Belgesi';
     if (type === 'ODA_KAYIT') return 'Oda Kayıt Belgesi';
@@ -146,11 +150,35 @@ export default function AdminVerificationsScreen() {
                     <Text style={styles.userEmail}>{item.user.email}</Text>
                     <Text style={styles.userPhone}>{item.user.phone || 'Telefon yok'}</Text>
                 </View>
-                <View style={[styles.badge, { backgroundColor: colors.primary + '10' }]}>
-                    <Text style={[styles.badgeText, { color: colors.primary }]}>
+                <View style={[styles.badge, { backgroundColor: item.verificationDocuments?.documentType === 'YETKILI_MUHENDIS' ? '#EFF6FF' : (colors.primary + '10') }]}>
+                    <Text style={[styles.badgeText, { color: item.verificationDocuments?.documentType === 'YETKILI_MUHENDIS' ? '#2563EB' : colors.primary }]}>
                         {getDocumentDisplayLabel(item.verificationDocuments?.documentType || 'Belge Türü Yok', item.serviceCategory)}
                     </Text>
                 </View>
+            </View>
+
+            {/* Belge Numaraları / Lisans Bilgileri */}
+            <View style={[
+                styles.numbersRow,
+                item.verificationDocuments?.documentType === 'YETKILI_MUHENDIS' && styles.engineerNumbersRow
+            ]}>
+                <View style={[styles.numberItem, { borderRightWidth: 1, borderRightColor: '#E2E8F0' }]}>
+                    <Text style={styles.numberLabel}>Kurum/Lisans No</Text>
+                    <Text style={styles.numberValue}>{item.licenseNumber || 'Girilmemiş'}</Text>
+                </View>
+
+                {item.verificationDocuments?.documentType === 'YETKILI_MUHENDIS' && (
+                    <>
+                        <View style={[styles.numberItem, { borderRightWidth: 1, borderRightColor: '#E2E8F0', paddingLeft: 10 }]}>
+                            <Text style={styles.numberLabel}>EMO No</Text>
+                            <Text style={styles.numberValue}>{item.emoNumber || 'Girilmemiş'}</Text>
+                        </View>
+                        <View style={[styles.numberItem, { paddingLeft: 10 }]}>
+                            <Text style={styles.numberLabel}>SMM No</Text>
+                            <Text style={styles.numberValue}>{item.smmNumber || 'Girilmemiş'}</Text>
+                        </View>
+                    </>
+                )}
             </View>
 
             {item.verificationDocuments?.documentUrl ? (
@@ -312,6 +340,30 @@ const styles = StyleSheet.create({
     badgeText: {
         fontSize: 10,
         fontFamily: fonts.bold,
+    },
+    numbersRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 12,
+        marginBottom: 16,
+        padding: 12,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 8,
+    },
+    numberItem: {
+        minWidth: '30%',
+    },
+    numberLabel: {
+        fontFamily: fonts.medium,
+        fontSize: 10,
+        color: staticColors.textSecondary,
+        textTransform: 'uppercase',
+    },
+    numberValue: {
+        fontFamily: fonts.bold,
+        fontSize: 13,
+        color: staticColors.text,
+        marginTop: 2,
     },
     imageContainer: {
         width: '100%',

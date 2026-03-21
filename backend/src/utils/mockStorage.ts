@@ -25,12 +25,16 @@ interface MockUserStore {
         city?: string;
         district?: string;
         bio?: string;
+        licenseNumber?: string;
         completedJobsCount?: number;
         locations?: any[];
         serviceCategory?: string;
         pushToken?: string | null;
         acceptedLegalVersion?: string; // Last accepted version (e.g. 'v1.0')
         marketingAllowed?: boolean;    // Marketing opt-in status
+        emoNumber?: string;
+        smmNumber?: string;
+        isAuthorizedEngineer?: boolean;
     }
 }
 
@@ -257,7 +261,19 @@ export const mockStorage = {
             };
             saveToDisk();
         }
-        return mockStore[userId];
+        const user = mockStore[userId];
+
+        // Ensure isAuthorizedEngineer is consistent based on documentType and verificationStatus
+        if (user.documentType === 'YETKILI_MUHENDIS' && user.verificationStatus === 'VERIFIED') {
+            user.isAuthorizedEngineer = true;
+        } else {
+            // If conditions are not met, ensure it's not true unless explicitly set otherwise
+            if (user.isAuthorizedEngineer === true) {
+                user.isAuthorizedEngineer = false;
+            }
+        }
+
+        return user;
     },
 
     clearPushTokenFromOthers: (pushToken: string, currentUserId: string) => {
@@ -288,6 +304,7 @@ export const mockStorage = {
         documentType?: string,
         submittedAt?: string,
         documentUrl?: string | null,
+        licenseNumber?: string,
         passwordHash?: string,
         city?: string,
         district?: string,
@@ -297,7 +314,10 @@ export const mockStorage = {
         userType?: string,  // Added: Store userType directly
         pushToken?: string | null, // Added: Push notification token
         acceptedLegalVersion?: string,
-        marketingAllowed?: boolean
+        marketingAllowed?: boolean,
+        emoNumber?: string,
+        smmNumber?: string,
+        isAuthorizedEngineer?: boolean
     }) => {
         const store = mockStorage.get(userId);
         if (data.passwordHash !== undefined) store.passwordHash = data.passwordHash;
@@ -313,6 +333,7 @@ export const mockStorage = {
         if (data.documentType !== undefined) store.documentType = data.documentType;
         if (data.submittedAt !== undefined) store.submittedAt = data.submittedAt;
         if (data.documentUrl !== undefined) store.documentUrl = data.documentUrl || undefined;
+        if (data.licenseNumber !== undefined) store.licenseNumber = data.licenseNumber;
         if (data.city !== undefined) store.city = data.city;
         if (data.district !== undefined) store.district = data.district;
         if (data.locations !== undefined) store.locations = data.locations;
@@ -322,6 +343,8 @@ export const mockStorage = {
         if (data.pushToken !== undefined) store.pushToken = data.pushToken;  // Save push token
         if (data.acceptedLegalVersion !== undefined) store.acceptedLegalVersion = data.acceptedLegalVersion;
         if (data.marketingAllowed !== undefined) store.marketingAllowed = data.marketingAllowed;
+        if (data.emoNumber !== undefined) store.emoNumber = data.emoNumber;
+        if (data.smmNumber !== undefined) store.smmNumber = data.smmNumber;
         saveToDisk();
         return store;
     },
@@ -358,6 +381,10 @@ export const mockStorage = {
             verificationStatus: store.verificationStatus || null,
             documentType: store.documentType || null,
             submittedAt: store.submittedAt || null,
+            emoNumber: store.emoNumber || null,
+            smmNumber: store.smmNumber || null,
+            licenseNumber: store.licenseNumber || null, // Added licenseNumber at root
+            isAuthorizedEngineer: store.documentType === 'YETKILI_MUHENDIS' && store.verificationStatus === 'VERIFIED',
             acceptedLegalVersion: store.acceptedLegalVersion || null,
             marketingAllowed: store.marketingAllowed || false,
             serviceCategory: store.serviceCategory || null,
@@ -369,6 +396,10 @@ export const mockStorage = {
                 creditBalance: store.creditBalance,
                 isAvailable: true,
                 verificationStatus: store.verificationStatus || null,
+                isAuthorizedEngineer: store.documentType === 'YETKILI_MUHENDIS' && store.verificationStatus === 'VERIFIED',
+                licenseNumber: store.licenseNumber || null,
+                emoNumber: store.emoNumber || null,
+                smmNumber: store.smmNumber || null,
                 verificationDocuments: {
                     documentType: store.documentType || null,
                     documentUrl: store.documentUrl ?? undefined,
