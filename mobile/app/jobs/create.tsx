@@ -555,46 +555,47 @@ export default function CreateJobScreen() {
   };
 
   const renderStepIndicator = () => (
-    <View style={[styles.stepperContainer, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-      {[1, 2, 3].map((step) => (
-        <View key={step} style={styles.stepItem}>
-          <View style={[
-            styles.stepCircle,
-            currentStep >= step
-              ? { backgroundColor: colors.primary, borderWidth: 0 }
-              : { backgroundColor: colors.borderLight, borderWidth: 1, borderColor: colors.border },
-          ]}>
-            {currentStep > step ? (
-              <Ionicons name="checkmark" size={14} color={staticColors.white} />
-            ) : (
-              <Text style={[styles.stepNumber, currentStep >= step ? { color: staticColors.white } : { color: colors.textLight }]}>
-                {step}
+    <View style={[styles.stepperContainer, { backgroundColor: colors.surface }]}>
+      {[1, 2, 3].map((step) => {
+        const isActive = currentStep === step;
+        const isCompleted = currentStep > step;
+        
+        return (
+          <View key={step} style={styles.stepItem}>
+            <View style={styles.stepIconContainer}>
+              <View style={[
+                styles.stepCircle,
+                isActive ? { backgroundColor: colors.primary, transform: [{ scale: 1.1 }] } : 
+                isCompleted ? { backgroundColor: '#10B981' } :
+                { backgroundColor: colors.surfaceElevated, borderWidth: 1.5, borderColor: colors.border }
+              ]}>
+                {isCompleted ? (
+                  <Ionicons name="checkmark-sharp" size={14} color="#FFF" />
+                ) : (
+                  <Text style={[
+                    styles.stepNumber, 
+                    isActive ? { color: '#FFF' } : { color: colors.textSecondary }
+                  ]}>
+                    {step}
+                  </Text>
+                )}
+              </View>
+              <Text style={[
+                styles.stepLabelText,
+                isActive ? { color: colors.text, fontFamily: fonts.bold } : { color: colors.textLight }
+              ]}>
+                {step === 1 ? 'Özet' : step === 2 ? 'Detay' : 'Konum'}
               </Text>
+            </View>
+            {step < 3 && (
+              <View style={[
+                styles.stepLine,
+                { backgroundColor: isCompleted ? '#10B981' : colors.border }
+              ]} />
             )}
           </View>
-          <Text
-            style={[
-              styles.stepLabel,
-              currentStep === step
-                ? { color: colors.text, fontFamily: fonts.semiBold }
-                : currentStep > step
-                  ? { color: colors.textSecondary, fontFamily: fonts.medium }
-                  : { color: colors.textLight, fontFamily: fonts.medium },
-            ]}
-            numberOfLines={1}
-          >
-            {step === 1 ? 'Özet' : step === 2 ? 'Detay' : 'Konum'}
-          </Text>
-          {step < 3 && (
-            <View
-              style={[
-                styles.stepLine,
-                currentStep > step ? { backgroundColor: colors.primary + '55' } : { backgroundColor: colors.border },
-              ]}
-            />
-          )}
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 
@@ -619,25 +620,26 @@ export default function CreateJobScreen() {
         >
           {renderStepIndicator()}
 
-          {/* AI Wizard Notification */}
+          {/* AI Wizard Notification - Premium Enhanced */}
           {wizardDraft && (
-            <View
-              style={[
-                styles.wizardMessage,
-                {
-                  backgroundColor: colors.surfaceElevated,
-                  borderColor: colors.border,
-                  shadowColor: colors.shadow,
-                },
-              ]}
-            >
-              <View style={[styles.wizardIconBg, { backgroundColor: colors.primary + '12' }]}>
-                <Ionicons name="sparkles" size={15} color={colors.primary} />
-              </View>
-              <Text style={[styles.wizardMessageText, { color: colors.text }]}>
-                {wizardDraft.category ? `Öneri: kategori "${wizardDraft.category}" olarak ayarlandı. ` : ''}
-                {wizardDraft.urgency === 'HIGH' ? 'Aciliyet yüksek olarak işaretlendi.' : ''}
-              </Text>
+            <View style={[styles.wizardWrapper, { shadowColor: colors.primary }]}>
+              <LinearGradient
+                colors={[colors.primary + '18', colors.primary + '0A']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.wizardMessage, { borderColor: colors.primary + '25' }]}
+              >
+                <View style={[styles.wizardIconBg, { backgroundColor: colors.primary }]}>
+                  <Ionicons name="sparkles" size={16} color="#FFF" />
+                </View>
+                <View style={styles.wizardTextContainer}>
+                  <Text style={[styles.wizardLabelText, { color: colors.primary }]}>AI AKILLI YARDIMCI</Text>
+                  <Text style={[styles.wizardMessageText, { color: colors.text }]}>
+                    {wizardDraft.category ? `İlanınızı analiz ettim ve kategoriye "${wizardDraft.category}" olarak atadım. ` : ''}
+                    {wizardDraft.urgency === 'HIGH' ? 'Durumu oldukça acil olarak belirledim.' : ''}
+                  </Text>
+                </View>
+              </LinearGradient>
             </View>
           )}
 
@@ -690,7 +692,7 @@ export default function CreateJobScreen() {
                     <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 15 }]}>Kategori</Text>
                   </View>
 
-                  <Text style={[styles.label, { marginTop: 12, color: colors.textSecondary }]}>Hizmet grubu</Text>
+                  <Text style={[styles.label, { marginTop: 16, color: colors.textSecondary }]}>Hizmet grubu</Text>
                   <View style={styles.pillContainer}>
                     {SERVICE_CATEGORIES.map((svc) => {
                       const selected = serviceCategory === svc.id;
@@ -713,14 +715,14 @@ export default function CreateJobScreen() {
                         >
                           <Ionicons
                             name={svc.icon as any}
-                            size={14}
+                            size={18}
                             color={selected ? svc.colors[0] : colors.textSecondary}
                           />
                           <Text
                             style={[
                               styles.pillText,
                               { color: colors.textSecondary },
-                              selected && { color: svc.colors[0], fontFamily: fonts.semiBold },
+                              selected && { color: svc.colors[0], fontFamily: fonts.bold },
                             ]}
                           >
                             {svc.name}
@@ -731,25 +733,27 @@ export default function CreateJobScreen() {
                   </View>
 
                   {serviceCategory && (
-                    <Picker
-                      label="Alt branş"
-                      value={category}
-                      options={getSubCategoriesByParent(serviceCategory).map((cat) => cat.name)}
-                      onValueChange={(val) => {
-                        setCategory(val);
-                        if (errors.category) setErrors({ ...errors, category: '' });
-                      }}
-                      placeholder="Alt branş seçiniz"
-                      error={errors.category}
-                      icon={<Ionicons name="construct-outline" size={20} color={colors.primary} />}
-                    />
+                    <View style={{ marginTop: 16 }}>
+                      <Text style={[styles.label, { color: colors.textSecondary }]}>Alt branş</Text>
+                      <Picker
+                        placeholder="Alt branş seçiniz"
+                        value={category}
+                        options={getSubCategoriesByParent(serviceCategory).map((cat) => cat.name)}
+                        onValueChange={(val) => {
+                          setCategory(val);
+                          if (errors.category) setErrors({ ...errors, category: '' });
+                        }}
+                        error={errors.category}
+                        icon={<Ionicons name="construct-outline" size={20} color={colors.primary} />}
+                      />
+                    </View>
                   )}
                 </View>
 
                 <Button
                   title="Devam Et"
                   onPress={nextStep}
-                  style={styles.nextBtn}
+                  style={[styles.nextBtn, { height: 46 }]}
                   icon={<Ionicons name="arrow-forward" size={18} color={staticColors.white} />}
                 />
               </Card>
@@ -834,7 +838,12 @@ export default function CreateJobScreen() {
                 <View style={styles.divider} />
 
                 <View style={styles.inputContainer}>
-                  <Text style={[styles.label, { color: colors.textSecondary }]}>Öncelik</Text>
+                  <View style={styles.sectionHeaderNoMargin}>
+                    <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12' }]}>
+                      <Ionicons name="flash-outline" size={17} color={colors.primary} />
+                    </View>
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16 }]}>Öncelik</Text>
+                  </View>
                   <View style={styles.urgencyGrid}>
                     {URGENCY_LEVELS.map((level) => (
                       <TouchableOpacity
@@ -851,14 +860,14 @@ export default function CreateJobScreen() {
                       >
                         <Ionicons
                           name={level.icon as any}
-                          size={22}
+                          size={24}
                           color={urgencyLevel === level.value ? level.color : colors.textLight}
                         />
                         <Text
                           style={[
                             styles.urgencyCardLabel,
                             { color: colors.textSecondary },
-                            urgencyLevel === level.value && { color: level.color, fontFamily: fonts.semiBold },
+                            urgencyLevel === level.value && { color: level.color, fontFamily: fonts.bold },
                           ]}
                         >
                           {level.label}
@@ -873,13 +882,13 @@ export default function CreateJobScreen() {
                     title="Geri"
                     variant="outline"
                     onPress={prevStep}
-                    style={styles.backBtn}
+                    style={[styles.backBtn, { height: 46 }]}
                     icon={<Ionicons name="arrow-back" size={18} color={colors.primary} />}
                   />
                   <Button
                     title="Devam Et"
                     onPress={nextStep}
-                    style={styles.flexBtn}
+                    style={[styles.flexBtn, { height: 46 }]}
                     icon={<Ionicons name="arrow-forward" size={18} color={staticColors.white} />}
                   />
                 </View>
@@ -890,14 +899,14 @@ export default function CreateJobScreen() {
 
           {currentStep === 3 && (
             <View>
-              <Card variant="glass" style={[styles.sectionCard, { borderColor: colors.border }]}>
-                <View style={styles.sectionHeader}>
-                  <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12' }]}>
-                    <Ionicons name="location-outline" size={18} color={colors.primary} />
+              <Card variant="glass" style={[styles.sectionCard, { borderColor: colors.border, paddingVertical: 12 }]}>
+                <View style={[styles.sectionHeader, { marginBottom: 8 }]}>
+                  <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12', width: 30, height: 30 }]}>
+                    <Ionicons name="location-outline" size={16} color={colors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.sectionKicker, { color: colors.textLight }]}>Adım 3</Text>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Konum</Text>
+                    <Text style={[styles.sectionKicker, { color: colors.textLight, fontSize: 8 }]}>Adım 3</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 15 }]}>Konum</Text>
                   </View>
                 </View>
 
@@ -913,10 +922,10 @@ export default function CreateJobScreen() {
                   }}
                 />
 
-                <View style={styles.row}>
+                <View style={[styles.row, { marginTop: 8 }]}>
                   <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={[styles.label, { color: colors.textSecondary }]}>Şehir</Text>
                     <Picker
-                      label="Şehir"
                       value={city}
                       options={CITY_NAMES}
                       onValueChange={setCity}
@@ -924,8 +933,8 @@ export default function CreateJobScreen() {
                     />
                   </View>
                   <View style={{ flex: 1 }}>
+                    <Text style={[styles.label, { color: colors.textSecondary }]}>İlçe</Text>
                     <Picker
-                      label="İlçe"
                       value={district}
                       options={districtOptions}
                       onValueChange={setDistrict}
@@ -935,21 +944,23 @@ export default function CreateJobScreen() {
                   </View>
                 </View>
 
-                <Picker
-                  label="Mahalle"
-                  value={neighborhood}
-                  options={neighborhoodOptions.length > 0 ? neighborhoodOptions : (district ? ['Merkez'] : [])}
-                  onValueChange={setNeighborhood}
-                  error={errors.neighborhood}
-                  disabled={!district}
-                />
+                <View style={{ marginTop: 6 }}>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Mahalle</Text>
+                  <Picker
+                    value={neighborhood}
+                    options={neighborhoodOptions.length > 0 ? neighborhoodOptions : (district ? ['Merkez'] : [])}
+                    onValueChange={setNeighborhood}
+                    error={errors.neighborhood}
+                    disabled={!district}
+                  />
+                </View>
 
-                <View style={styles.inputContainer}>
+                <View style={[styles.inputContainer, { marginTop: 8, marginBottom: 8 }]}>
                   <Text style={[styles.label, { color: colors.textSecondary }]}>Açık adres / tarif</Text>
                   <TextInput
                     style={[
                       styles.modernTextArea,
-                      { minHeight: 88, height: 88 },
+                      { minHeight: 60, height: 60, paddingVertical: 8 },
                       errors.address && { borderColor: staticColors.error, borderWidth: 1.5 },
                       {
                         backgroundColor: colors.surfaceElevated,
@@ -970,18 +981,23 @@ export default function CreateJobScreen() {
                   {errors.address && <Text style={styles.errorText}>{errors.address}</Text>}
                 </View>
 
-                <View style={styles.inputContainer}>
-                  <Text style={[styles.label, { color: colors.textSecondary }]}>Tahmini bütçe (₺, isteğe bağlı)</Text>
-                  <View style={[styles.modernBudgetWrapper, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
+                <View style={[styles.inputContainer, { marginBottom: 4 }]}>
+                  <View style={[styles.sectionHeaderNoMargin, { gap: 6 }]}>
+                    <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12', width: 28, height: 28 }]}>
+                      <Ionicons name="wallet-outline" size={15} color={colors.primary} />
+                    </View>
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14 }]}>Tahmini bütçe (isteğe bağlı)</Text>
+                  </View>
+                  <View style={[styles.modernBudgetWrapper, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, marginTop: 6, paddingVertical: 0 }]}>
                     <TextInput
-                      style={[styles.modernBudgetInput, { color: colors.text }]}
+                      style={[styles.modernBudgetInput, { color: colors.text, paddingVertical: 6, fontSize: 16 }]}
                       placeholder="0"
                       placeholderTextColor={colors.textLight}
                       keyboardType="numeric"
                       value={estimatedBudget}
                       onChangeText={(text) => setEstimatedBudget(text.replace(/[^0-9.]/g, ''))}
                     />
-                    <Text style={[styles.currencyText, { color: colors.textSecondary }]}>₺</Text>
+                    <Text style={[styles.currencyText, { color: colors.primary, fontSize: 14 }]}>₺</Text>
                   </View>
                 </View>
 
@@ -990,15 +1006,16 @@ export default function CreateJobScreen() {
                     title="Geri"
                     variant="outline"
                     onPress={prevStep}
-                    style={styles.backBtn}
-                    icon={<Ionicons name="arrow-back" size={18} color={colors.primary} />}
+                    style={[styles.backBtn, { height: 44 }]}
+                    icon={<Ionicons name="arrow-back" size={16} color={colors.primary} />}
                   />
                   <Button
                     title={isLoading ? 'Gönderiliyor...' : 'İlanı Yayınla'}
                     onPress={handleSubmit}
                     loading={isLoading}
-                    style={styles.flexBtn}
-                    icon={<Ionicons name="checkmark-circle" size={18} color={staticColors.white} />}
+                    variant="success"
+                    style={[styles.flexBtn, { height: 44 }]}
+                    icon={<Ionicons name="checkmark-circle" size={16} color={staticColors.white} />}
                   />
                 </View>
               </Card>
@@ -1118,284 +1135,68 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 10,
-    paddingBottom: 30,
-  },
-  wizardMessage: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    marginBottom: 14,
-    gap: 12,
-    borderWidth: 1,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  wizardMessageText: {
-    fontSize: 13,
-    fontFamily: fonts.medium,
-    flex: 1,
-    lineHeight: 18,
-  },
-  sectionCard: {
-    padding: 14,
-    marginBottom: 8,
-    borderRadius: 14,
-    borderWidth: 1,
-    backgroundColor: staticColors.white,
-  },
-  sectionKicker: {
-    fontFamily: fonts.semiBold,
-    fontSize: 11,
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
-    marginBottom: 2,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    marginTop: 4,
-    gap: 12,
-  },
-  sectionIconWrapper: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    letterSpacing: -0.2,
-  },
-  inputContainer: {
-    marginBottom: 10,
-  },
-  label: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    marginBottom: 6,
-    marginLeft: 2,
-  },
-  input: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: staticColors.text,
-    borderWidth: 0,
-  },
-  inputError: {
-    borderColor: staticColors.error,
-  },
-  textArea: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: staticColors.text,
-    borderWidth: 0,
-    height: 72,
-  },
-  textAreaSmall: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: staticColors.text,
-    borderWidth: 0,
-    height: 48,
-  },
-  errorText: {
-    color: staticColors.error,
-    fontSize: 11,
-    marginTop: 2,
-    marginLeft: 4,
-    fontFamily: fonts.medium,
-  },
-  pillContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    gap: 6,
-  },
-  pillText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: staticColors.textSecondary,
-  },
-  urgencyRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 4,
-  },
-  urgencyPill: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    gap: 4,
-  },
-  urgencyPillText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: staticColors.textSecondary,
-  },
-  row: {
-    flexDirection: 'row',
-    marginBottom: 6,
-  },
-  imageButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  imageActionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F5F6FA',
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderRadius: 14,
-    borderColor: 'rgba(139, 92, 246, 0.3)',
-    padding: 10,
-    gap: 6,
-  },
-  imageActionText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-  },
-  imagePreviewScroll: {
-    marginTop: 10,
-  },
-  imagePreviewWrapper: {
-    position: 'relative',
-    marginRight: 12,
-  },
-  previewImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
-  },
-  removeImgBtn: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    backgroundColor: staticColors.white,
-    borderRadius: 10,
-  },
-  budgetInputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F6FA',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
-    paddingHorizontal: 12,
-  },
-  budgetIcon: {
-    marginRight: 8,
-  },
-  budgetInput: {
-    flex: 1,
-    paddingVertical: 11,
-    paddingRight: 10,
-    fontFamily: fonts.bold,
-    fontSize: 14,
-    color: staticColors.text,
-  },
-  submitBtn: {
-    marginTop: 14,
-    height: 52,
-    borderRadius: 16,
-    shadowColor: staticColors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  finalNote: {
-    textAlign: 'center',
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    color: staticColors.textLight,
-    marginTop: 10,
-    lineHeight: 16,
-  },
-  sectionHeaderNoMargin: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    marginVertical: 16,
+    padding: 12,
+    paddingBottom: 32,
   },
   stepperContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 20,
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 3,
   },
   stepItem: {
-    alignItems: 'center',
     flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
+  stepIconContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
   stepCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1,
+    zIndex: 2,
   },
   stepNumber: {
     fontSize: 12,
     fontFamily: fonts.bold,
   },
-  stepLabel: {
+  stepLabelText: {
     fontSize: 11,
     marginLeft: 8,
-    maxWidth: 56,
+    fontFamily: fonts.medium,
   },
   stepLine: {
     flex: 1,
-    height: StyleSheet.hairlineWidth * 2,
-    minHeight: 2,
-    marginHorizontal: 6,
+    height: 1.5,
+    marginHorizontal: 8,
     borderRadius: 1,
+  },
+  wizardWrapper: {
+    marginBottom: 14,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  wizardMessage: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 12,
   },
   wizardIconBg: {
     width: 32,
@@ -1404,56 +1205,134 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modernInput: {
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontFamily: fonts.medium,
-    fontSize: 15,
-    borderWidth: 1,
-  },
-  modernTextArea: {
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontFamily: fonts.medium,
-    fontSize: 15,
-    borderWidth: 1,
-    minHeight: 120,
-  },
-  modernImageBtn: {
+  wizardTextContainer: {
     flex: 1,
-    height: 56,
-    borderRadius: 12,
+  },
+  wizardLabelText: {
+    fontSize: 9,
+    fontFamily: fonts.extraBold,
+    letterSpacing: 1.2,
+    marginBottom: 1,
+  },
+  wizardMessageText: {
+    fontSize: 12,
+    fontFamily: fonts.medium,
+    lineHeight: 16,
+  },
+  sectionCard: {
+    padding: 16,
+    marginBottom: 10,
+    borderRadius: 24,
     borderWidth: 1,
-    borderStyle: 'dashed',
+    backgroundColor: staticColors.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  sectionKicker: {
+    fontFamily: fonts.extraBold,
+    fontSize: 9,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 10,
+  },
+  sectionIconWrapper: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  sectionTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    letterSpacing: -0.3,
+  },
+  inputContainer: {
+    marginBottom: 14,
+  },
+  label: {
+    fontFamily: fonts.bold,
+    fontSize: 13,
+    marginBottom: 6,
+    marginLeft: 2,
+  },
+  modernInput: {
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    borderWidth: 1.5,
+  },
+  modernTextArea: {
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    borderWidth: 1.5,
+    minHeight: 100,
+  },
+  errorText: {
+    color: staticColors.error,
+    fontSize: 11,
+    marginTop: 4,
+    marginLeft: 6,
+    fontFamily: fonts.bold,
+  },
+  pillContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  pill: {
+    width: '48%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1.5,
     gap: 8,
+  },
+  pillText: {
+    fontFamily: fonts.bold,
+    fontSize: 12,
   },
   urgencyGrid: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
+    marginTop: 4,
   },
   urgencyCard: {
     flex: 1,
-    minHeight: 76,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1.5,
+    minHeight: 68,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 4,
   },
   urgencyCardLabel: {
     fontSize: 12,
-    fontFamily: fonts.medium,
+    fontFamily: fonts.bold,
   },
   btnRow: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 20,
+    marginTop: 16,
   },
   backBtn: {
     flex: 1,
@@ -1462,24 +1341,89 @@ const styles = StyleSheet.create({
     flex: 2,
   },
   nextBtn: {
-    marginTop: 20,
+    marginTop: 16,
   },
   modernBudgetWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 14,
+    borderWidth: 1.5,
     paddingHorizontal: 14,
   },
   modernBudgetInput: {
     flex: 1,
-    paddingVertical: 12,
-    fontFamily: fonts.semiBold,
-    fontSize: 17,
+    paddingVertical: 10,
+    fontFamily: fonts.extraBold,
+    fontSize: 18,
   },
   currencyText: {
-    fontFamily: fonts.semiBold,
+    fontFamily: fonts.extraBold,
     fontSize: 16,
+  },
+  imageButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 4,
+  },
+  modernImageBtn: {
+    flex: 1,
+    height: 52,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  imageActionText: {
+    fontFamily: fonts.bold,
+    fontSize: 13,
+  },
+  imagePreviewScroll: {
+    marginTop: 12,
+  },
+  imagePreviewWrapper: {
+    position: 'relative',
+    marginRight: 12,
+  },
+  previewImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 14,
+  },
+  removeImgBtn: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: staticColors.white,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  divider: {
+    height: 1.5,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    marginVertical: 16,
+  },
+  finalNote: {
+    textAlign: 'center',
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    marginTop: 12,
+    lineHeight: 16,
+  },
+  row: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  sectionHeaderNoMargin: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   // Success Modal Styles
   modalOverlay: {
@@ -1487,70 +1431,70 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(15, 23, 42, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: 20,
   },
   successModal: {
     width: '100%',
-    borderRadius: 32,
-    padding: 32,
+    borderRadius: 28,
+    padding: 28,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.5)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.2,
-    shadowRadius: 30,
-    elevation: 20,
+    shadowOpacity: 0.15,
+    shadowRadius: 25,
+    elevation: 15,
   },
   successIconWrapper: {
-    width: 100,
-    height: 100,
+    width: 84,
+    height: 84,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   successIconGlow: {
     position: 'absolute',
-    width: 80,
-    height: 80,
+    width: 64,
+    height: 64,
     backgroundColor: '#10B981',
-    borderRadius: 40,
-    opacity: 0.25,
-    transform: [{ scale: 1.5 }],
+    borderRadius: 32,
+    opacity: 0.2,
+    transform: [{ scale: 1.4 }],
   },
   successIconBox: {
-    width: 72,
-    height: 72,
-    borderRadius: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
   },
   successTitle: {
     fontFamily: fonts.extraBold,
-    fontSize: 26,
+    fontSize: 22,
     color: staticColors.text,
-    marginBottom: 10,
+    marginBottom: 8,
     textAlign: 'center',
   },
   successMessage: {
     fontFamily: fonts.medium,
-    fontSize: 15,
+    fontSize: 14,
     color: staticColors.textSecondary,
     textAlign: 'center',
-    lineHeight: 23,
-    marginBottom: 28,
-    paddingHorizontal: 10,
+    lineHeight: 20,
+    marginBottom: 24,
+    paddingHorizontal: 8,
   },
   successBtnGroup: {
     flexDirection: 'row',
     width: '100%',
-    gap: 12,
+    gap: 10,
   },
   successSecondaryBtn: {
     flex: 1,
-    height: 52,
-    borderRadius: 16,
+    height: 46,
+    borderRadius: 14,
     backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1559,18 +1503,18 @@ const styles = StyleSheet.create({
   },
   successSecondaryBtnText: {
     fontFamily: fonts.bold,
-    fontSize: 14,
+    fontSize: 13,
     color: staticColors.textSecondary,
   },
   successPrimaryBtn: {
     flex: 1.5,
-    height: 52,
-    borderRadius: 16,
+    height: 46,
+    borderRadius: 14,
     overflow: 'hidden',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
   },
   successPrimaryBtnGradient: {
     flex: 1,
@@ -1580,7 +1524,7 @@ const styles = StyleSheet.create({
   },
   successPrimaryBtnText: {
     fontFamily: fonts.bold,
-    fontSize: 14,
+    fontSize: 13,
     color: staticColors.white,
   },
 });
