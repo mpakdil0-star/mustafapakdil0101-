@@ -295,18 +295,12 @@ export default function ElectriciansListScreen() {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={[styles.quickFilterChip, activeFilters.sortBy === 'popular' && styles.quickFilterChipActive]}
-                        onPress={() => setActiveFilters(prev => ({ ...prev, sortBy: prev.sortBy === 'popular' ? null : 'popular' }))}
-                    >
-                        <Ionicons name="star" size={14} color={activeFilters.sortBy === 'popular' ? colors.white : colors.primary} />
-                        <Text style={[styles.quickFilterText, activeFilters.sortBy === 'popular' && styles.quickFilterTextActive]}>Popüler</Text>
-                    </TouchableOpacity>
-
-                    <FilterChip
-                        label="Yetkili Mühendis"
-                        active={activeFilters.isEngineerOnly}
+                        style={[styles.quickFilterChip, activeFilters.isEngineerOnly && styles.quickFilterChipActive]}
                         onPress={() => setActiveFilters(prev => ({ ...prev, isEngineerOnly: !prev.isEngineerOnly }))}
-                    />
+                    >
+                        <Ionicons name="ribbon" size={14} color={activeFilters.isEngineerOnly ? colors.white : colors.primary} />
+                        <Text style={[styles.quickFilterText, activeFilters.isEngineerOnly && styles.quickFilterTextActive]}>Yetkili Mühendis</Text>
+                    </TouchableOpacity>
                 </ScrollView>
             </View>
 
