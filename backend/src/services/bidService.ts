@@ -197,47 +197,48 @@ export const bidService = {
 
       // Notify citizen (job owner)
       try {
+        const citizenId = ((bid as any).jobPost as any).citizenId;
         const citizen = await prisma.user.findUnique({
-          where: { id: ((bid as any).jobPost as any).citizenId },
-          select: { id: true, pushToken: true }
+          where: { id: citizenId },
+          select: { id: true, pushToken: true, fullName: true }
         });
 
         console.log(`\n🔔 ===== BID NOTIFICATION DEBUG =====`);
-        console.log(`   Citizen ID: ${jobPost.citizenId}`);
+        console.log(`   Citizen ID: ${citizenId}`);
         console.log(`   Citizen found: ${!!citizen}`);
         console.log(`   Citizen pushToken: ${citizen?.pushToken || 'NULL/EMPTY'}`);
         console.log(`   Bid ID: ${(bid as any).id}`);
-        console.log(`   Bid Amount: ${(bid as any).amount}`);
         console.log(`   Electrician: ${(bid as any).electrician.fullName}`);
         console.log(`   Job Title: ${jobPost.title}`);
 
         if (citizen) {
+          const electricianName = (bid as any).electrician.fullName || 'Bir usta';
+          const bidAmount = (bid as any).amount;
+          const jobTitle = jobPost.title || 'ilanınız';
+
           const notifPayload = {
             id: `bid-notif-${Date.now()}`,
             type: 'bid_received',
             jobId: jobPostId,
             jobPostId: jobPostId,
-            jobTitle: jobPost.title,
+            jobTitle: jobTitle,
             bidId: (bid as any).id,
-            amount: (bid as any).amount,
-            electricianName: (bid as any).electrician.fullName,
+            amount: bidAmount,
+            electricianName: electricianName,
             title: 'Yeni Teklif Aldınız! 💰',
-            message: `${(bid as any).electrician.fullName} "${jobPost.title}" ilanınıza ${(bid as any).amount}₺ teklif verdi.`,
+            message: `${electricianName} "${jobTitle}" ilanınıza ${bidAmount}₺ teklif verdi.`,
             isRead: false,
             createdAt: new Date().toISOString(),
             relatedId: jobPostId,
             relatedType: 'JOB'
           };
 
-          // 1. Send 'bid_received' event (listened by onBidNotification handler)
-          console.log(`   📢 Sending socket 'bid_received' to user:${citizen.id}`);
+          // 1. Send socket events
+          console.log(`   📢 Sending socket 'bid_received' and 'notification' to user:${citizen.id}`);
           notifyUser(citizen.id, 'bid_received', notifPayload);
-
-          // 2. ALSO Send 'notification' event (listened by onNotification handler in _layout.tsx)
-          console.log(`   📢 Sending socket 'notification' to user:${citizen.id}`);
           notifyUser(citizen.id, 'notification', notifPayload);
 
-          // 3. Save Notification to DB
+          // 2. Save Notification to DB
           if (isDatabaseAvailable) {
             console.log(`   💾 Saving notification to DB...`);
             await prisma.notification.create({
@@ -245,7 +246,7 @@ export const bidService = {
                 userId: citizen.id,
                 type: 'new_bid',
                 title: 'Yeni Teklif!',
-                message: `"${jobPost.title}" ilanınız için ${(bid as any).electrician.fullName} tarafından ${(bid as any).amount}₺ tutarında bir teklif verildi.`,
+                message: `"${jobTitle}" ilanınız için ${electricianName} tarafından ${bidAmount}₺ tutarında bir teklif verildi.`,
                 relatedType: 'JOB',
                 relatedId: jobPostId,
               }
@@ -253,21 +254,21 @@ export const bidService = {
             console.log(`   ✅ DB notification saved`);
           }
 
-          // 4. Send Push Notification
+          // 3. Send Push Notification
           if (citizen.pushToken) {
-            console.log(`   📲 Sending PUSH to citizen ${citizen.id} (token: ${citizen.pushToken.substring(0, 20)}...)`);
-            await pushNotificationService.sendNotification({
+            console.log(`   📲 Attempting PUSH to citizen ${citizen.id}`);
+            pushNotificationService.sendNotification({
               to: citizen.pushToken,
               title: 'Yeni Teklif Aldınız! 💰',
-              body: `${(bid as any).electrician.fullName} "${jobPost.title}" ilanınıza ${(bid as any).amount}₺ teklif verdi.`,
-              data: { jobId: jobPostId, type: 'bid_received' }
+              body: `${electricianName} "${jobTitle}" ilanınıza ${bidAmount}₺ teklif verdi.`,
+              data: { jobId: jobPostId, type: 'bid_received' },
+              sound: 'default'
+            }).catch(err => {
+              console.error(`   ❌ PUSH delivery failed:`, err);
             });
-            console.log(`   ✅ PUSH sent successfully`);
           } else {
             console.warn(`   ⚠️ Citizen has NO pushToken! Push notification SKIPPED.`);
           }
-        } else {
-          console.warn(`   ⚠️ Citizen NOT FOUND in database! citizenId: ${jobPost.citizenId}`);
         }
         console.log(`🔔 ===== END BID NOTIFICATION DEBUG =====\n`);
       } catch (notifyError) {
