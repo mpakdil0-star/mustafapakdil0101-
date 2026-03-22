@@ -856,13 +856,13 @@ export default function HomeScreen() {
                   onPress={() => handleActionWithAuth('/jobs/create', { category: 'Elektrik Proje Çizimi', serviceCategory: 'elektrik' })}
                 >
                   <LinearGradient
-                    colors={['#1E3A8A', '#2563EB']} // Deep Sapphire to Vibrant Blue
+                    colors={['#A78BFA', '#7C3AED']} // Matches Electric Category
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.headerProjectGradient}
                   >
                     <View style={styles.headerProjectIconWrapper}>
-                      <Ionicons name="star" size={10} color="#F59E0B" />
+                      <Ionicons name="flash" size={10} color="#FBBF24" />
                     </View>
                     <Text style={styles.headerProjectText}>Elektrik Proje Çizimi</Text>
                     <Ionicons name="chevron-forward" size={12} color="rgba(255,255,255,0.7)" />
@@ -2436,7 +2436,7 @@ const styles = StyleSheet.create({
   headerProjectAction: {
     borderRadius: 30,
     overflow: 'hidden',
-    shadowColor: '#1E40AF',
+    shadowColor: '#7C3AED', // Match Purple Glow
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 10,
