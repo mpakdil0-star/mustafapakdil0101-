@@ -151,9 +151,9 @@ export default function ElectricianDetailScreen() {
                             completedJobsCount: mockItem.completedJobs,
                             verificationStatus: mockItem.isVerified ? 'VERIFIED' : 'PENDING',
                             serviceCategory: (mockItem as any).category || 'elektrik',
-                            isAuthorizedEngineer: (mockItem as any).isEngineer || false,
-                            emoNumber: (mockItem as any).emoNumber || '12345',
-                            smmNumber: (mockItem as any).smmNumber || 'SMM-2024-001'
+                            isAuthorizedEngineer: true,
+                            emoNumber: '45678',
+                            smmNumber: 'SMM-2024-045'
                         },
                         locations: [{ city: mockItem.city, district: mockItem.location.split(',')[0] }],
                         reviewsReceived: mockItem.latestReview ? [{
@@ -330,7 +330,7 @@ export default function ElectricianDetailScreen() {
                         <View style={styles.nameRow}>
                             <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginRight: 8 }}>
                                 <Text style={styles.name}>
-                                    {electrician.fullName}
+                                    {electrician.fullName}{profile.isAuthorizedEngineer ? ' (Mühendis)' : ''}
                                 </Text>
 
                                 {profile.isAuthorizedEngineer && (
@@ -426,27 +426,27 @@ export default function ElectricianDetailScreen() {
 
             {/* Engineer Certificates */}
             {profile.isAuthorizedEngineer && (
-                <Card style={[styles.sectionCard, { borderColor: '#3B82F6', borderWidth: 1, backgroundColor: '#EFF6FF' }]}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-                        <Ionicons name="ribbon" size={24} color="#2563EB" />
-                        <Text style={[styles.sectionTitle, { color: '#1E40AF', marginBottom: 0, marginLeft: 8, fontSize: 16 }]}>Yetki Belgeleri</Text>
+                <View style={[styles.sectionCard, { borderColor: '#DBEAFE', borderWidth: 1, backgroundColor: '#EFF6FF', paddingVertical: 20 }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, justifyContent: 'center' }}>
+                        <Ionicons name="ribbon" size={24} color="#3B82F6" />
+                        <Text style={[styles.sectionTitle, { color: '#1E40AF', marginBottom: 0, marginLeft: 10, fontSize: 18, fontFamily: fonts.bold }]}>Yetki Belgeleri</Text>
                     </View>
                     <View style={styles.certRow}>
                         <View style={styles.certItem}>
                             <Text style={styles.certLabel}>EMO Sicil No</Text>
-                            <Text style={styles.certValue}>{profile.emoNumber || '-'}</Text>
+                            <Text style={[styles.certValue, { fontSize: 20 }]}>{profile.emoNumber || '-'}</Text>
                         </View>
                         <View style={styles.certDivider} />
                         <View style={styles.certItem}>
                             <Text style={styles.certLabel}>SMM Belge No</Text>
-                            <Text style={styles.certValue}>{profile.smmNumber || '-'}</Text>
+                            <Text style={[styles.certValue, { fontSize: 20 }]}>{profile.smmNumber || '-'}</Text>
                         </View>
                     </View>
-                    <View style={styles.certFooter}>
-                        <Ionicons name="checkmark-circle" size={16} color="#059669" />
-                        <Text style={styles.certFooterText}>Resmi projeler için imza yetkisi doğrulanmıştır</Text>
+                    <View style={[styles.certFooter, { borderTopColor: '#DBEAFE' }]}>
+                        <Ionicons name="checkmark-circle" size={18} color="#059669" />
+                        <Text style={[styles.certFooterText, { fontSize: 13, fontFamily: fonts.semiBold }]}>Resmi projeler için imza yetkisi doğrulanmıştır</Text>
                     </View>
-                </Card>
+                </View>
             )}
 
             {/* Services */}

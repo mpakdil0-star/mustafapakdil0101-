@@ -1060,7 +1060,9 @@ export const getElectricians = async (req: Request, res: Response, next: NextFun
                             bio: true,
                             verificationStatus: true,
                             isAvailable: true,
-                            isAuthorizedEngineer: true
+                            isAuthorizedEngineer: true,
+                            emoNumber: true,
+                            smmNumber: true
                         }
                     },
                     locations: {
@@ -1262,7 +1264,10 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
                         verificationStatus: true,
                         completedJobsCount: true,
                         responseTimeAvg: true,
-                        serviceCategory: true
+                        serviceCategory: true,
+                        emoNumber: true,
+                        smmNumber: true,
+                        isAuthorizedEngineer: true
                     }
                 },
                 locations: {
