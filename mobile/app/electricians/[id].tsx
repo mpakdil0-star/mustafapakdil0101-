@@ -333,6 +333,15 @@ export default function ElectricianDetailScreen() {
                                     {electrician.fullName}
                                 </Text>
 
+                                {profile.isAuthorizedEngineer && (
+                                    <View style={styles.engineerBadge}>
+                                        <View style={styles.engineerBadgeInner}>
+                                            <Ionicons name="ribbon" size={10} color={colors.white} />
+                                            <Text style={styles.engineerBadgeText}>MÜHENDİS</Text>
+                                        </View>
+                                    </View>
+                                )}
+
                                 <View style={[styles.serviceBadge, { backgroundColor: badgeColor + '20' }]}>
                                     <Text style={[styles.serviceBadgeText, { color: badgeColor }]}>
                                         {serviceName}
@@ -1091,4 +1100,23 @@ const styles = StyleSheet.create({
         color: colors.white,
     },
 
+    engineerBadge: {
+        marginLeft: 6,
+        paddingVertical: 2,
+    },
+    engineerBadgeInner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#3B82F6',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        gap: 3,
+    },
+    engineerBadgeText: {
+        color: 'white',
+        fontSize: 10,
+        fontFamily: fonts.bold,
+        textTransform: 'uppercase',
+    },
 });
