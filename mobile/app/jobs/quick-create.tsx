@@ -35,6 +35,7 @@ import {
 } from '../../constants/locations';
 import LocationPicker from '../../components/common/LocationPicker';
 import { Picker } from '../../components/common/Picker';
+import { getSubCategoriesByParent, JobCategory } from '../../constants/jobCategories';
 
 const EMERGENCY_TYPES = [
     { id: 'elektrik', label: 'Elektrik', color: '#7C3AED', icon: 'flash' },
@@ -90,6 +91,7 @@ export default function QuickCreateScreen() {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [createdJobId, setCreatedJobId] = useState<string | null>(null);
     const [photoLoading, setPhotoLoading] = useState(false);
+    const [selectedSubCategory, setSelectedSubCategory] = useState<JobCategory | null>(null);
 
     const [alertConfig, setAlertConfig] = useState<{
         visible: boolean;
@@ -208,11 +210,13 @@ export default function QuickCreateScreen() {
         }
 
         const typeInfo = EMERGENCY_TYPES.find(t => t.id === selectedType);
+        const finalTitle = `🚨 ACİL: ${selectedSubCategory ? selectedSubCategory.name : typeInfo?.label}`;
+        
         try {
             const jobData = {
-                title: `🚨 ACİL: ${typeInfo?.label}`,
+                title: finalTitle,
                 description: description.trim(),
-                category: getCategoryFromType(selectedType!),
+                category: selectedSubCategory ? selectedSubCategory.name : getCategoryFromType(selectedType!),
                 location: {
                     address, city, district, neighborhood: neighborhood || undefined,
                     latitude: coords?.latitude || 41.0082,
@@ -301,7 +305,10 @@ export default function QuickCreateScreen() {
                                         isSelected && { borderColor: type.color, backgroundColor: type.color + '08' },
                                     ]}
                                     activeOpacity={0.85}
-                                    onPress={() => setSelectedType(type.id)}
+                                    onPress={() => {
+                                        setSelectedType(type.id);
+                                        setSelectedSubCategory(null); // Reset sub-category on main category change
+                                    }}
                                 >
                                     <View style={[styles.typeIconBox, { backgroundColor: type.color + '14' }]}>
                                         <Image source={getCategoryImage(type.id)} style={styles.type3dImage} resizeMode="contain" />
@@ -321,6 +328,56 @@ export default function QuickCreateScreen() {
                             );
                         })}
                     </ScrollView>
+
+                    {/* Sub-category Bubbles */}
+                    {selectedType && (
+                        <View style={styles.subCategoryContainer}>
+                            <Text style={[styles.subCategoryHeading, { color: colors.textSecondary }]}>
+                                {selectedType === 'elektrik' ? 'Hangi konuda proje veya detaylı servis lazım?' : 'Hızlı detay seçin (opsiyonel)'}
+                            </Text>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.subCategoryScrollContent}
+                            >
+                                {getSubCategoriesByParent(selectedType).map((sub) => {
+                                    const isSubSelected = selectedSubCategory?.id === sub.id;
+                                    return (
+                                        <TouchableOpacity
+                                            key={sub.id}
+                                            style={[
+                                                styles.subCategoryChip,
+                                                { borderColor: colors.border },
+                                                isSubSelected && {
+                                                    backgroundColor: sub.colors ? sub.colors[0] : colors.primary,
+                                                    borderColor: sub.colors ? sub.colors[0] : colors.primary
+                                                }
+                                            ]}
+                                            onPress={() => setSelectedSubCategory(isSubSelected ? null : sub)}
+                                        >
+                                            {sub.icon && (
+                                                <Ionicons
+                                                    name={sub.icon as any}
+                                                    size={14}
+                                                    color={isSubSelected ? colors.white : colors.textSecondary}
+                                                    style={{ marginRight: 6 }}
+                                                />
+                                            )}
+                                            <Text
+                                                style={[
+                                                    styles.subCategoryText,
+                                                    { color: colors.textSecondary },
+                                                    isSubSelected && { color: colors.white, fontFamily: fonts.bold }
+                                                ]}
+                                            >
+                                                {sub.name}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+                        </View>
+                    )}
 
                     <View style={[styles.sectionBlock, styles.sectionBlockTight]}>
                         <Text style={[styles.sectionKicker, { color: colors.textLight }]}>2 · Konum</Text>
@@ -551,4 +608,32 @@ const styles = StyleSheet.create({
     iconCircle: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center' },
     successTitle: { fontFamily: fonts.extraBold, fontSize: 24, color: '#FFF', marginBottom: 8 },
     successMessage: { fontFamily: fonts.medium, fontSize: 14, color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginBottom: 24 },
+    subCategoryContainer: {
+        marginBottom: 16,
+        marginTop: 4,
+        paddingHorizontal: 4,
+    },
+    subCategoryHeading: {
+        fontFamily: fonts.semiBold,
+        fontSize: 12,
+        marginBottom: 10,
+        marginLeft: 4,
+    },
+    subCategoryScrollContent: {
+        paddingRight: 20,
+        gap: 8,
+    },
+    subCategoryChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        backgroundColor: '#FFF',
+    },
+    subCategoryText: {
+        fontFamily: fonts.medium,
+        fontSize: 12,
+    },
 });
