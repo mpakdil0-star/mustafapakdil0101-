@@ -45,6 +45,33 @@ const EMERGENCY_TYPES = [
     { id: 'klima', label: 'Klima', color: '#2563EB', icon: 'snow' },
 ];
 
+const BUILDING_TYPES = [
+    { value: 'daire', label: 'Daire / Apartman' },
+    { value: 'villa', label: 'Müstakil Ev / Villa' },
+    { value: 'ticari', label: 'Ofis / İş Merkezi' },
+    { value: 'sanayi', label: 'Fabrika / Sanayi Yapısı' },
+    { value: 'diger', label: 'Diğer' },
+];
+
+const PROJECT_PURPOSES = [
+    { value: 'yeni', label: 'Yeni Yapı Ruhsatı' },
+    { value: 'tadilat', label: 'Tadilat / Revizyon' },
+    { value: 'guc-artirimi', label: 'Güç Artırımı / Abone' },
+];
+
+const WEAK_CURRENT_SYSTEMS = [
+    { id: 'data', label: 'İnternet / Data', icon: 'globe-outline' },
+    { id: 'kamera', label: 'Güvenlik Kamerası', icon: 'videocam-outline' },
+    { id: 'yangin', label: 'Yangın Alarmı', icon: 'flame-outline' },
+    { id: 'tv', label: 'TV / Uydu Sistemi', icon: 'tv-outline' },
+];
+
+const MODERN_SYSTEMS = [
+    { id: 'akilli-ev', label: 'Akıllı Ev Altyapısı', icon: 'home-outline' },
+    { id: 'e-sarj', label: 'E-Şarj İstasyonu', icon: 'flash-outline' },
+    { id: 'ges', label: 'Güneş Paneli (GES)', icon: 'sunny-outline' },
+];
+
 const getDescriptionPlaceholder = (type: string | null): string => {
     switch (type) {
         case 'elektrik': return 'Örnek: Mutfak prizleri çalışmıyor, sigorta attı...';
@@ -92,6 +119,22 @@ export default function QuickCreateScreen() {
     const [createdJobId, setCreatedJobId] = useState<string | null>(null);
     const [photoLoading, setPhotoLoading] = useState(false);
     const [selectedSubCategory, setSelectedSubCategory] = useState<JobCategory | null>(null);
+
+    // Project specific states
+    const [projectBuildingType, setProjectBuildingType] = useState('');
+    const [projectArea, setProjectArea] = useState('');
+    const [projectFloors, setProjectFloors] = useState('');
+    const [projectPurpose, setProjectPurpose] = useState('');
+    const [projectHasArchitecturePlan, setProjectHasArchitecturePlan] = useState<boolean | null>(null);
+    const [projectRoomsPerFloor, setProjectRoomsPerFloor] = useState('');
+    const [projectWeakCurrentSystems, setProjectWeakCurrentSystems] = useState<string[]>([]);
+    const [projectModernSystems, setProjectModernSystems] = useState<string[]>([]);
+    const [projectNeedsApproval, setProjectNeedsApproval] = useState<boolean | null>(null);
+    const [infoModal, setInfoModal] = useState<{ visible: boolean; title: string; desc: string }>({ visible: false, title: '', desc: '' });
+
+    const showInfoTip = (title: string, desc: string) => {
+        setInfoModal({ visible: true, title, desc });
+    };
 
     const [alertConfig, setAlertConfig] = useState<{
         visible: boolean;
@@ -227,6 +270,32 @@ export default function QuickCreateScreen() {
                 serviceCategory: selectedType || undefined,
             };
 
+            // Enhance description for projects
+            if (selectedSubCategory?.id === 'elektrik-proje') {
+                const selectedPurpose = PROJECT_PURPOSES.find(p => p.value === projectPurpose)?.label;
+                const selectedTypeLabel = BUILDING_TYPES.find(b => b.value === projectBuildingType)?.label;
+                const allSystems = [...projectWeakCurrentSystems, ...projectModernSystems];
+                const systemLabels = allSystems.map(id => {
+                    const found = [...WEAK_CURRENT_SYSTEMS, ...MODERN_SYSTEMS].find(s => s.id === id);
+                    return found ? found.label : id;
+                }).join(', ');
+                
+                jobData.description = 
+                    `📐 ELEKTRİK PROJE DETAYLARI\n` +
+                    `--------------------------------\n` +
+                    `• Yapı Tipi: ${selectedTypeLabel || 'Belirtilmedi'}\n` +
+                    `• Toplam Alan: ${projectArea || '-'} m²\n` +
+                    `• Kat Sayısı: ${projectFloors || '1'}\n` +
+                    `• Oda/Bölüm Sayısı: ${projectRoomsPerFloor || '-'}\n` +
+                    `• Proje Amacı: ${selectedPurpose || 'Yeni Yapı'}\n` +
+                    `• Mimari Plan: ${projectHasArchitecturePlan === true ? 'Mevcut (DWG/PDF)' : projectHasArchitecturePlan === false ? 'Yok (Rölöve Gerekli)' : 'Belirtilmedi'}\n` +
+                    `• Resmi Onay: ${projectNeedsApproval === true ? 'Mühendis Takip Edecek' : projectNeedsApproval === false ? 'Müşteri Takip Edecek' : 'Belirtilmedi'}\n` +
+                    `• Ek Sistemler: ${systemLabels || 'Standart'}\n` +
+                    `--------------------------------\n\n` +
+                    `📝 MÜŞTERİ NOTU:\n` +
+                    description.trim();
+            }
+
             const newJob = await dispatch(createJob(jobData)).unwrap();
             setCreatedJobId(newJob.id);
             dispatch(fetchJobs({ status: 'OPEN', limit: 20 }));
@@ -342,12 +411,33 @@ export default function QuickCreateScreen() {
                             >
                                 {getSubCategoriesByParent(selectedType).map((sub) => {
                                     const isSubSelected = selectedSubCategory?.id === sub.id;
+                                    const isProject = sub.id === 'elektrik-proje';
+
+                                    if (isProject && isSubSelected) {
+                                        return (
+                                            <TouchableOpacity key={sub.id} onPress={() => setSelectedSubCategory(null)} activeOpacity={0.9}>
+                                                <LinearGradient
+                                                    colors={['#2563EB', '#1E40AF']}
+                                                    start={{ x: 0, y: 0 }}
+                                                    end={{ x: 1, y: 1 }}
+                                                    style={[styles.subCategoryChip, { borderWidth: 0, elevation: 6, shadowColor: '#2563EB', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }]}
+                                                >
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                        <Ionicons name={sub.icon as any} size={14} color="#FFF" style={{ marginRight: 6 }} />
+                                                        <Text style={[styles.subCategoryText, { color: '#FFF', fontFamily: fonts.bold }]}>{sub.name}</Text>
+                                                    </View>
+                                                </LinearGradient>
+                                            </TouchableOpacity>
+                                        );
+                                    }
+
                                     return (
                                         <TouchableOpacity
                                             key={sub.id}
                                             style={[
                                                 styles.subCategoryChip,
-                                                { borderColor: colors.border },
+                                                { borderColor: isProject ? '#3B82F6' : colors.border },
+                                                isProject && !isSubSelected && { borderStyle: 'dashed', borderWidth: 1.5, backgroundColor: '#EFF6FF' },
                                                 isSubSelected && {
                                                     backgroundColor: sub.colors ? sub.colors[0] : colors.primary,
                                                     borderColor: sub.colors ? sub.colors[0] : colors.primary
@@ -359,14 +449,14 @@ export default function QuickCreateScreen() {
                                                 <Ionicons
                                                     name={sub.icon as any}
                                                     size={14}
-                                                    color={isSubSelected ? colors.white : colors.textSecondary}
+                                                    color={isSubSelected ? colors.white : (isProject ? '#2563EB' : colors.textSecondary)}
                                                     style={{ marginRight: 6 }}
                                                 />
                                             )}
                                             <Text
                                                 style={[
                                                     styles.subCategoryText,
-                                                    { color: colors.textSecondary },
+                                                    { color: isProject ? '#1E40AF' : colors.textSecondary },
                                                     isSubSelected && { color: colors.white, fontFamily: fonts.bold }
                                                 ]}
                                             >
@@ -377,6 +467,173 @@ export default function QuickCreateScreen() {
                                 })}
                             </ScrollView>
                         </View>
+                    )}
+
+                    {/* Conditional Project Form */}
+                    {selectedSubCategory?.id === 'elektrik-proje' && (
+                        <Card variant="default" style={[styles.mainCard, { borderLeftWidth: 4, borderLeftColor: '#3B82F6', backgroundColor: '#F0F9FF', padding: 16 }]}>
+                            <View style={{ marginBottom: 16 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                                    <View style={{backgroundColor: '#3B82F6', borderRadius: 6, padding: 4, marginRight: 8}}>
+                                        <Ionicons name="document-text" size={14} color="#FFF" />
+                                    </View>
+                                    <Text style={{ fontFamily: fonts.bold, fontSize: 14, color: '#1E40AF' }}>Proje Teknik Bilgileri</Text>
+                                </View>
+                                <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: '#64748B', lineHeight: 18 }}>
+                                    Hızlı teklif alabilmek için proje detaylarını belirtin.
+                                </Text>
+                            </View>
+
+                            <View style={styles.row}>
+                                <View style={{ flex: 1.5, marginRight: 8 }}>
+                                    <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 4, fontSize: 12 }]}>Yapı Tipi</Text>
+                                    <Picker 
+                                        value={projectBuildingType} 
+                                        options={BUILDING_TYPES.map(b => b.label)} 
+                                        onValueChange={(val) => {
+                                            const found = BUILDING_TYPES.find(b => b.label === val);
+                                            if (found) setProjectBuildingType(found.value);
+                                        }} 
+                                    />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 4, fontSize: 12 }]}>Alan (m²)</Text>
+                                    <TextInput
+                                        style={[styles.smallInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}
+                                        placeholder=" m²"
+                                        value={projectArea}
+                                        onChangeText={setProjectArea}
+                                        keyboardType="numeric"
+                                    />
+                                </View>
+                            </View>
+
+                            <View style={[styles.row, { marginTop: 12 }]}>
+                                <View style={{ flex: 1.5, marginRight: 8 }}>
+                                    <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 4, fontSize: 12 }]}>Proje Amacı</Text>
+                                    <Picker 
+                                        value={PROJECT_PURPOSES.find(p => p.value === projectPurpose)?.label || ''} 
+                                        options={PROJECT_PURPOSES.map(p => p.label)} 
+                                        onValueChange={(val) => {
+                                            const found = PROJECT_PURPOSES.find(p => p.label === val);
+                                            if (found) setProjectPurpose(found.value);
+                                        }} 
+                                    />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 4, fontSize: 12 }]}>Kat</Text>
+                                            <TextInput
+                                                style={[styles.smallInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}
+                                                placeholder="Kat"
+                                                value={projectFloors}
+                                                onChangeText={setProjectFloors}
+                                                keyboardType="numeric"
+                                            />
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 4, fontSize: 12 }]}>Oda</Text>
+                                            <TextInput
+                                                style={[styles.smallInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}
+                                                placeholder="Oda"
+                                                value={projectRoomsPerFloor}
+                                                onChangeText={setProjectRoomsPerFloor}
+                                                keyboardType="numeric"
+                                            />
+                                        </View>
+                                    </View>
+                                </View>
+                            </View>
+
+                            <View style={{ marginTop: 16 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                                    <Text style={[styles.label, { color: colors.textSecondary, fontSize: 12, marginBottom: 0 }]}>Ek Sistemler (Zayıf Akım/Modern)</Text>
+                                    <TouchableOpacity onPress={() => showInfoTip('Ek Sistemler Nedir?', 'İnternet, Güvenlik, Yangın Alarmı gibi altyapıların projeleridir. Modern binalar için yasal zorunluluk veya konfor standartıdır.')} style={{ marginLeft: 6 }}>
+                                        <Ionicons name="help-circle-outline" size={16} color={colors.primary} />
+                                    </TouchableOpacity>
+                                </View>
+                                <View style={styles.pillContainer}>
+                                    {[...WEAK_CURRENT_SYSTEMS, ...MODERN_SYSTEMS].map((sys) => {
+                                        const isSelected = [...projectWeakCurrentSystems, ...projectModernSystems].includes(sys.id);
+                                        return (
+                                            <TouchableOpacity
+                                                key={sys.id}
+                                                style={[
+                                                    styles.pill,
+                                                    { borderColor: colors.border, backgroundColor: colors.surfaceElevated },
+                                                    isSelected && { borderColor: colors.primary, backgroundColor: colors.primary + '0A' }
+                                                ]}
+                                                onPress={() => {
+                                                    if (isSelected) {
+                                                        setProjectWeakCurrentSystems(projectWeakCurrentSystems.filter(i => i !== sys.id));
+                                                        setProjectModernSystems(projectModernSystems.filter(i => i !== sys.id));
+                                                    } else {
+                                                        if (WEAK_CURRENT_SYSTEMS.some(i => i.id === sys.id)) setProjectWeakCurrentSystems([...projectWeakCurrentSystems, sys.id]);
+                                                        else setProjectModernSystems([...projectModernSystems, sys.id]);
+                                                    }
+                                                }}
+                                            >
+                                                <Ionicons name={sys.icon as any} size={14} color={isSelected ? colors.primary : colors.textLight} />
+                                                <Text style={[styles.pillText, { fontSize: 11, color: isSelected ? colors.primary : colors.textSecondary }]}>
+                                                    {sys.label}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </View>
+                            </View>
+
+                            <View style={{ marginTop: 16 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                                    <Text style={[styles.label, { color: colors.textSecondary, fontSize: 12, marginBottom: 0 }]}>Resmi Onay Takibi Kimde?</Text>
+                                    <TouchableOpacity onPress={() => showInfoTip('Resmi Onay Nedir?', 'Projenin TEDAŞ veya ilgili elektrik dağıtım şirketi tarafından onaylanması sürecidir. Bu süreci mühendisin takip etmesi işleri hızlandırır.')} style={{ marginLeft: 6 }}>
+                                        <Ionicons name="help-circle-outline" size={16} color={colors.primary} />
+                                    </TouchableOpacity>
+                                </View>
+                                <View style={styles.choiceRow}>
+                                    <TouchableOpacity 
+                                        activeOpacity={0.7}
+                                        style={[styles.choiceBtn, projectNeedsApproval === true && styles.choiceBtnActive]}
+                                        onPress={() => setProjectNeedsApproval(true)}
+                                    >
+                                        <Text style={[styles.choiceBtnText, projectNeedsApproval === true && styles.choiceBtnTextActive]}>Mühendis</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity 
+                                        activeOpacity={0.7}
+                                        style={[styles.choiceBtn, projectNeedsApproval === false && styles.choiceBtnActive]}
+                                        onPress={() => setProjectNeedsApproval(false)}
+                                    >
+                                        <Text style={[styles.choiceBtnText, projectNeedsApproval === false && styles.choiceBtnTextActive]}>Müşteri</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            <View style={{ marginTop: 16 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                                    <Text style={[styles.label, { color: colors.textSecondary, fontSize: 12, marginBottom: 0 }]}>Mimari planınız var mı?</Text>
+                                    <TouchableOpacity onPress={() => showInfoTip('Mimari Plan Nedir?', 'Proje çiziminin temelidir. Eğer DWG veya PDF formatında planınız yoksa, mühendisin yerinde rölöve (ölçüm) alması gerekir.')} style={{ marginLeft: 6 }}>
+                                        <Ionicons name="help-circle-outline" size={16} color={colors.primary} />
+                                    </TouchableOpacity>
+                                </View>
+                                <View style={styles.choiceRow}>
+                                    <TouchableOpacity 
+                                        activeOpacity={0.7}
+                                        style={[styles.choiceBtn, projectHasArchitecturePlan === true && styles.choiceBtnActive]}
+                                        onPress={() => setProjectHasArchitecturePlan(true)}
+                                    >
+                                        <Text style={[styles.choiceBtnText, projectHasArchitecturePlan === true && styles.choiceBtnTextActive]}>Evet, Var</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity 
+                                        activeOpacity={0.7}
+                                        style={[styles.choiceBtn, projectHasArchitecturePlan === false && styles.choiceBtnActive]}
+                                        onPress={() => setProjectHasArchitecturePlan(false)}
+                                    >
+                                        <Text style={[styles.choiceBtnText, projectHasArchitecturePlan === false && styles.choiceBtnTextActive]}>Yok (Rölöve)</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </Card>
                     )}
 
                     <View style={[styles.sectionBlock, styles.sectionBlockTight]}>
@@ -522,6 +779,23 @@ export default function QuickCreateScreen() {
             </Modal>
 
             <PremiumAlert visible={alertConfig.visible} title={alertConfig.title} message={alertConfig.message} type={alertConfig.type} buttons={alertConfig.buttons} onClose={() => setAlertConfig({ ...alertConfig, visible: false })} />
+            
+            <Modal visible={infoModal.visible} transparent animationType="fade">
+                <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.4)' }]}>
+                    <View style={{ width: '85%', backgroundColor: '#FFF', borderRadius: 20, padding: 24, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 10 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                            <View style={{ backgroundColor: colors.primary + '15', padding: 8, borderRadius: 12, marginRight: 12 }}>
+                                <Ionicons name="information-circle" size={24} color={colors.primary} />
+                            </View>
+                            <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: '#1E293B' }}>{infoModal.title}</Text>
+                        </View>
+                        <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: '#64748B', lineHeight: 22, marginBottom: 24 }}>
+                            {infoModal.desc}
+                        </Text>
+                        <Button title="Anladım" onPress={() => setInfoModal({ ...infoModal, visible: false })} variant="primary" fullWidth />
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -635,5 +909,63 @@ const styles = StyleSheet.create({
     subCategoryText: {
         fontFamily: fonts.medium,
         fontSize: 12,
+    },
+    smallInput: {
+        height: 40,
+        borderRadius: 8,
+        borderWidth: 1,
+        paddingHorizontal: 10,
+        fontFamily: fonts.medium,
+        fontSize: 13,
+    },
+    choiceRow: {
+        flexDirection: 'row',
+        marginTop: 8,
+        gap: 12,
+    },
+    choiceBtn: {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 10,
+        borderWidth: 1.5,
+        borderColor: '#E2E8F0',
+        backgroundColor: '#FFF',
+        alignItems: 'center',
+    },
+    choiceBtnActive: {
+        borderColor: '#3B82F6',
+        backgroundColor: '#EFF6FF',
+    },
+    choiceBtnText: {
+        fontFamily: fonts.semiBold,
+        fontSize: 12,
+        color: '#64748B',
+    },
+    choiceBtnTextActive: {
+        color: '#3B82F6',
+    },
+    label: {
+        fontFamily: fonts.semiBold,
+        fontSize: 13,
+        marginBottom: 6,
+    },
+    pillContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginTop: 4,
+    },
+    pill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 20,
+        borderWidth: 1.5,
+        gap: 4,
+    },
+    pillText: {
+        fontFamily: fonts.semiBold,
+        fontSize: 11,
     },
 });

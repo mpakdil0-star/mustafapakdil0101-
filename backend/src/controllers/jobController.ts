@@ -232,9 +232,13 @@ export const createJobController = async (
         }
 
         // 2. Iterate users for Mock Notifications and Push Notifications
-        const electricians = Object.entries(allUsers).filter(([id, data]: [string, any]) => data.userType === 'ELECTRICIAN');
+        const isProjectJob = jobData.category === 'Elektrik Proje Çizimi';
+        const electricians = Object.entries(allUsers).filter(([id, data]: [string, any]) => {
+          // Notify ALL electricians in the region for all types of electrical jobs
+          return data.userType === 'ELECTRICIAN' || data.userType === 'ADMIN';
+        });
 
-        console.log(`📡 Sending notifications. Job: ${jobServiceCategory}, City: ${targetCity}, Creator: ${req.user.id}`);
+        console.log(`📡 Sending notifications. Job: ${jobServiceCategory}, Type: ${jobData.category}, Creator: ${req.user.id}`);
         console.log(`👥 Found ${electricians.length} total mock electricians`);
 
         const validPushTokens: string[] = [];
@@ -248,18 +252,17 @@ export const createJobController = async (
           const ustaServiceCategory = userData.serviceCategory;
           const serviceCategoryMatch = ustaServiceCategory && jobServiceCategory && ustaServiceCategory === jobServiceCategory;
 
+          // For projects, we also allow general electricians who are verified to see it if they match service category
           if (!serviceCategoryMatch) {
             return;
           }
 
           // RELAXED LOCATION MATCH:
-          // 1. If usta has no locations defined, assume they want to see all jobs in their main 'city'
-          // 2. If usta has locations, check for a match
           const hasNoLocationsSet = !userData.locations || userData.locations.length === 0;
           const simpleCityMatch = hasNoLocationsSet && userData.city?.toLowerCase() === targetCity?.toLowerCase();
 
           const hasExplicitLocationMatch = userData.locations?.some((loc: any) =>
-            loc.isActive !== false && // Only match active addresses
+            loc.isActive !== false && 
             loc.city?.toLowerCase() === targetCity?.toLowerCase() &&
             (
               !targetDistrict ||
@@ -273,15 +276,17 @@ export const createJobController = async (
           const isMatch = simpleCityMatch || hasExplicitLocationMatch;
 
           if (isMatch) {
-            console.log(`   ✅ MATCH FOUND for ${userId} (${userData.email}). SimpleCity: ${simpleCityMatch}, Explicit: ${hasExplicitLocationMatch}`);
+            console.log(`   ✅ ${isProjectJob ? 'VIP ' : ''}MATCH FOUND for ${userId} (${userData.email})`);
 
             // Internal Mock Notification
             const notification = {
               id: `mock-notif-${Date.now()}-${userId}`,
               userId,
               type: 'new_job_available',
-              title: 'Yeni İş İlanı! ⚡',
-              message: `Bölgenizde yeni ilan verildi: ${jobData.title}`,
+              title: isProjectJob ? '📐 Yeni Proje İlanı (VIP) 🏗️' : 'Yeni İş İlanı! ⚡',
+              message: isProjectJob 
+                ? `Uzmanlık alanınızda yeni bir proje çizim ilanı var: ${jobData.title}`
+                : `Bölgenizde yeni ilan verildi: ${jobData.title}`,
               isRead: false,
               relatedId: mockJob.id,
               relatedType: 'JOB',
@@ -301,8 +306,6 @@ export const createJobController = async (
             // PUSH NOTIFICATION COLLECT
             if (userData.pushToken) {
               validPushTokens.push(userData.pushToken);
-            } else {
-              console.log(`      ⚠️ No push token for ${userId}`);
             }
           }
         });
@@ -313,8 +316,10 @@ export const createJobController = async (
           const pushNotificationService = require('../services/pushNotificationService').default;
           pushNotificationService.sendNotification({
             to: validPushTokens,
-            title: 'Yeni İş İlanı! ⚡',
-            body: `Bölgenizde yeni ilan verildi: ${jobData.title}`,
+            title: isProjectJob ? '📐 Yeni Proje İlanı (VIP) 🏗️' : 'Yeni İş İlanı! ⚡',
+            body: isProjectJob 
+              ? `Uzmanlık alanınızda yeni bir proje çizim ilanı var: ${jobData.title}`
+              : `Bölgenizde yeni ilan verildi: ${jobData.title}`,
             data: { jobId: mockJob.id, type: 'new_job_available' }
           }).catch((err: any) => console.error('      ❌ Push Notification Error:', err));
         }

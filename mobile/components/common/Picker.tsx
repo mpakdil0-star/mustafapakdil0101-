@@ -132,20 +132,39 @@ export const Picker: React.FC<PickerProps> = ({
                   style={[
                     styles.optionItem,
                     value === item && styles.optionItemSelected,
+                    item === 'Elektrik Proje Çizimi' && styles.projectOptionItem
                   ]}
                   onPress={() => {
                     onValueChange(item);
                     setModalVisible(false);
                   }}
                 >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      value === item && styles.optionTextSelected,
-                    ]}
-                  >
-                    {item}
-                  </Text>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      {item === 'Elektrik Proje Çizimi' && (
+                        <View style={{ backgroundColor: '#2563EB', padding: 4, borderRadius: 6, marginRight: 8 }}>
+                          <Ionicons name="pencil-outline" size={14} color="#FFF" />
+                        </View>
+                      )}
+                      <Text
+                        style={[
+                          styles.optionText,
+                          value === item && styles.optionTextSelected,
+                          item === 'Elektrik Proje Çizimi' && styles.projectOptionText
+                        ]}
+                      >
+                        {item}
+                      </Text>
+                      {item === 'Elektrik Proje Çizimi' && (
+                        <View style={{ backgroundColor: '#DBEAFE', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 8 }}>
+                           <Text style={{ fontSize: 9, fontFamily: fonts.bold, color: '#1E40AF' }}>MÜHENDİS</Text>
+                        </View>
+                      )}
+                    </View>
+                    {item === 'Elektrik Proje Çizimi' && (
+                      <Text style={{ fontSize: 11, color: '#64748B', marginTop: 2, fontFamily: fonts.medium }}>Mühendislik Onay & Teknik Dosya</Text>
+                    )}
+                  </View>
                   {value === item && <Text style={styles.checkmark}>✓</Text>}
                 </TouchableOpacity>
               )}
@@ -305,5 +324,14 @@ const styles = StyleSheet.create({
   emptyText: {
     ...typography.body2,
     color: colors.textSecondary,
+  },
+  projectOptionItem: {
+    backgroundColor: '#EFF6FF',
+    borderLeftWidth: 4,
+    borderLeftColor: '#3B82F6',
+  },
+  projectOptionText: {
+    color: '#1E40AF',
+    fontWeight: 'bold',
   },
 });

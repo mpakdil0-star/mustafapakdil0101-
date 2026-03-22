@@ -845,9 +845,29 @@ export default function HomeScreen() {
         {
           !isElectrician && (
             <View style={styles.section}>
-              <View style={styles.sectionBlock}>
-                <Text style={[styles.sectionKicker, { color: colors.textLight }]}>Hizmet Seçimi</Text>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Ne lazım?</Text>
+              <View style={styles.sectionHeaderRow}>
+                <View style={styles.sectionTitleContainer}>
+                  <Text style={[styles.sectionKicker, { color: colors.textLight }]}>Hizmet Seçimi</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Ne lazım?</Text>
+                </View>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={styles.headerProjectAction}
+                  onPress={() => handleActionWithAuth('/jobs/create', { category: 'Elektrik Proje Çizimi', serviceCategory: 'elektrik' })}
+                >
+                  <LinearGradient
+                    colors={['#1E3A8A', '#2563EB']} // Deep Sapphire to Vibrant Blue
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.headerProjectGradient}
+                  >
+                    <View style={styles.headerProjectIconWrapper}>
+                      <Ionicons name="star" size={10} color="#F59E0B" />
+                    </View>
+                    <Text style={styles.headerProjectText}>Elektrik Proje Çizimi</Text>
+                    <Ionicons name="chevron-forward" size={12} color="rgba(255,255,255,0.7)" />
+                  </LinearGradient>
+                </TouchableOpacity>
               </View>
 
               <View style={styles.serviceCategoryGrid}>
@@ -865,6 +885,8 @@ export default function HomeScreen() {
             </View>
           )
         }
+
+
 
         {
           !isElectrician && (
@@ -1750,6 +1772,118 @@ const styles = StyleSheet.create({
   sectionTitleContainer: {
     flex: 1,
   },
+  premiumProjectCard: {
+    borderRadius: 20,
+    padding: 14,
+    overflow: 'hidden',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 6,
+    marginVertical: 4,
+  },
+  premiumCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 2,
+  },
+  premiumCardTextCol: {
+    flex: 1,
+  },
+  premiumBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 6,
+    gap: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  premiumBadgeText: {
+    color: '#FFF',
+    fontSize: 8,
+    fontFamily: fonts.extraBold,
+    letterSpacing: 0.5,
+  },
+  premiumCardTitle: {
+    color: '#FFF',
+    fontSize: 17,
+    fontFamily: fonts.bold,
+    marginBottom: 2,
+  },
+  premiumCardDesc: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 11,
+    fontFamily: fonts.medium,
+    lineHeight: 15,
+  },
+  premiumCardAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
+    gap: 4,
+  },
+  premiumActionText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontFamily: fonts.bold,
+  },
+  premiumCardIconCol: {
+    marginLeft: 10,
+  },
+  premiumIconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  premiumIconBadge: {
+    position: 'absolute',
+    bottom: -5,
+    right: -5,
+    backgroundColor: '#FFF',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  premiumCardCircle1: {
+    position: 'absolute',
+    top: -20,
+    right: -20,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  premiumCardCircle2: {
+    position: 'absolute',
+    bottom: -30,
+    left: -10,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
   sectionTitle: {
     fontFamily: fonts.bold,
     fontSize: 18,
@@ -2297,5 +2431,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
     borderWidth: 1.5,
+  },
+  // Header Project Button Styles
+  headerProjectAction: {
+    borderRadius: 30,
+    overflow: 'hidden',
+    shadowColor: '#1E40AF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+    marginTop: 8,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  headerProjectGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    gap: 5,
+  },
+  headerProjectIconWrapper: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    padding: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  headerProjectText: {
+    color: '#FFF',
+    fontSize: 10.5,
+    fontFamily: fonts.extraBold,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
 });

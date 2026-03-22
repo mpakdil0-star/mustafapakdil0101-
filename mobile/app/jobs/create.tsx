@@ -167,6 +167,11 @@ export default function CreateJobScreen() {
   const [projectSpecialSystems, setProjectSpecialSystems] = useState<string[]>([]);
   const [projectWeakCurrentSystems, setProjectWeakCurrentSystems] = useState<string[]>([]);
   const [projectModernSystems, setProjectModernSystems] = useState<string[]>([]);
+  const [infoModal, setInfoModal] = useState<{ visible: boolean; title: string; desc: string }>({ visible: false, title: '', desc: '' });
+
+  const showInfoTip = (title: string, desc: string) => {
+    setInfoModal({ visible: true, title, desc });
+  };
 
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -225,15 +230,20 @@ export default function CreateJobScreen() {
     if (params.serviceCategory && typeof params.serviceCategory === 'string') {
       setServiceCategory(params.serviceCategory);
     }
-    // Handle category param (legacy)
+    
+    // Handle category param 
     if (params.category && typeof params.category === 'string') {
       const catName = params.category;
-      const foundCat = JOB_CATEGORIES.find(cat => cat.name === catName);
-      if (foundCat) {
-        setServiceCategory(foundCat.parentCategory);
-        setCategory(catName);
-      } else if (JOB_CATEGORIES.some(cat => cat.name === catName)) {
-        setCategory(catName);
+      setCategory(catName);
+      
+      // If it's the premium project category, ensure serviceCategory is 'elektrik'
+      if (catName === 'Elektrik Proje Çizimi') {
+        setServiceCategory('elektrik');
+      } else {
+        const foundCat = JOB_CATEGORIES.find(cat => cat.name === catName);
+        if (foundCat) {
+          setServiceCategory(foundCat.parentCategory);
+        }
       }
     }
   }, [params.category, params.serviceCategory]);
@@ -1013,7 +1023,12 @@ export default function CreateJobScreen() {
                 <View style={styles.divider} />
 
                 <View style={styles.inputContainer}>
-                  <Text style={[styles.label, { color: colors.textSecondary }]}>Mimari planınız var mı?</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 0 }]}>Mimari planınız var mı?</Text>
+                    <TouchableOpacity onPress={() => showInfoTip('Mimari Plan Nedir?', 'Proje çiziminin temelidir. Eğer DWG veya PDF formatında planınız yoksa, mühendisin yerinde rölöve (ölçüm) alması gerekir.')} style={{ marginLeft: 6 }}>
+                        <Ionicons name="help-circle-outline" size={16} color={colors.primary} />
+                    </TouchableOpacity>
+                  </View>
                   <View style={styles.urgencyGrid}>
                     <TouchableOpacity
                       style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, borderColor: projectHasArchitecturePlan === true ? colors.primary : colors.border }]}
@@ -1060,7 +1075,12 @@ export default function CreateJobScreen() {
 
                 {isProjectCategory && (
                   <View style={{ marginBottom: 20 }}>
-                    <Text style={[styles.label, { color: colors.textSecondary }]}>Donanım / Ek Sistemler</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                        <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 0 }]}>Donanım / Ek Sistemler</Text>
+                        <TouchableOpacity onPress={() => showInfoTip('Ek Sistemler Nedir?', 'İnternet, Güvenlik, Yangın Alarmı gibi altyapıların projeleridir. Modern binalar için yasal zorunluluk veya konfor standartıdır.')} style={{ marginLeft: 6 }}>
+                            <Ionicons name="help-circle-outline" size={16} color={colors.primary} />
+                        </TouchableOpacity>
+                    </View>
                     <View style={styles.pillContainer}>
                       {[...WEAK_CURRENT_SYSTEMS, ...MODERN_SYSTEMS].map((sys) => {
                         const isSelected = [...projectWeakCurrentSystems, ...projectModernSystems].includes(sys.id);
@@ -1091,7 +1111,12 @@ export default function CreateJobScreen() {
                       })}
                     </View>
                     <View style={styles.divider} />
-                    <Text style={[styles.label, { color: colors.textSecondary }]}>Resmi Onay Takibi Kimde?</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                        <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 0 }]}>Resmi Onay Takibi Kimde?</Text>
+                        <TouchableOpacity onPress={() => showInfoTip('Resmi Onay Nedir?', 'Projenin TEDAŞ veya ilgili elektrik dağıtım şirketi tarafından onaylanması sürecidir. Bu süreci mühendisin takip etmesi işleri hızlandırır.')} style={{ marginLeft: 6 }}>
+                            <Ionicons name="help-circle-outline" size={16} color={colors.primary} />
+                        </TouchableOpacity>
+                    </View>
                     <View style={styles.urgencyGrid}>
                       <TouchableOpacity
                         style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, borderColor: projectNeedsApproval === true ? colors.primary : colors.border }]}
@@ -1456,6 +1481,23 @@ export default function CreateJobScreen() {
           buttons={alertConfig.buttons}
           onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
         />
+
+        <Modal visible={infoModal.visible} transparent animationType="fade">
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+            <View style={{ width: '100%', backgroundColor: staticColors.white, borderRadius: 24, padding: 24, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                <View style={{ backgroundColor: colors.primary + '15', padding: 8, borderRadius: 12, marginRight: 12 }}>
+                  <Ionicons name="information-circle" size={24} color={colors.primary} />
+                </View>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: staticColors.text }}>{infoModal.title}</Text>
+              </View>
+              <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: staticColors.textSecondary, lineHeight: 22, marginBottom: 24 }}>
+                {infoModal.desc}
+              </Text>
+              <Button title="Anladım" onPress={() => setInfoModal({ ...infoModal, visible: false })} variant="primary" fullWidth />
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </View>
   );
