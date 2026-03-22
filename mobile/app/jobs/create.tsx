@@ -49,7 +49,15 @@ const URGENCY_LEVELS = [
 ];
 
 // Kategoriye göre dinamik placeholder metinleri
-const getPlaceholdersByCategory = (categoryId: string) => {
+const getPlaceholdersByCategory = (categoryId: string, subCategory?: string) => {
+  // Elektrik Proje Çizimi için özel placeholder metinleri
+  if (subCategory === 'Elektrik Proje Çizimi') {
+    return {
+      title: 'Örn: 2 Katlı Müstakil Ev Elektrik Proje Çizimi',
+      description: 'Yeni yapılacak 250m2 müstakil evimiz için belediye/ruhsat onaylı elektrik uygulama projesi çizilecek. Mimari plan DWG olarak mevcut.'
+    };
+  }
+
   switch (categoryId) {
     case 'elektrik':
       return {
@@ -809,7 +817,7 @@ export default function CreateJobScreen() {
                         color: colors.text,
                       },
                     ]}
-                    placeholder={getPlaceholdersByCategory(serviceCategory).title}
+                    placeholder={getPlaceholdersByCategory(serviceCategory, category).title}
                     value={title}
                     onChangeText={(text) => {
                       setTitle(text);
@@ -1146,7 +1154,7 @@ export default function CreateJobScreen() {
                         color: colors.text,
                       },
                     ]}
-                    placeholder={getPlaceholdersByCategory(serviceCategory).description}
+                    placeholder={getPlaceholdersByCategory(serviceCategory, category).description}
                     value={description}
                     onChangeText={(text) => {
                       setDescription(text);
