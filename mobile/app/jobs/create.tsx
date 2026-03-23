@@ -503,6 +503,10 @@ export default function CreateJobScreen() {
       validationErrors.push('• Bütçe geçerli bir sayı olmalı');
     }
 
+    if (isProjectCategory && projectHasArchitecturePlan === true && images.length === 0) {
+      validationErrors.push('• Mimari planınız olduğunu belirttiniz. Lütfen ilanınıza planın bir fotoğrafını veya ekran görüntüsünü (aşağıdaki fotoğraf ekleme bölümünden) ekleyiniz.');
+    }
+
     // If there are validation errors, show them in a popup
     if (validationErrors.length > 0) {
       // Also set inline errors for visual feedback

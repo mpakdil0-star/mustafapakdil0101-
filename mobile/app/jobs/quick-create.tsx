@@ -249,6 +249,10 @@ export default function QuickCreateScreen() {
         if (!address || address.trim().length < 10) validationErrors.push('• Adres en az 10 karakter olmalı');
         if (!description || description.trim().length < 10) validationErrors.push('• Sorun açıklaması en az 10 karakter olmalı');
 
+        if (selectedSubCategory?.id === 'elektrik-proje' && projectHasArchitecturePlan === true && images.length === 0) {
+            validationErrors.push('• Mimari planı fotoğraf veya ekran görüntüsü olarak yüklemeniz zorunludur (aşağıdaki fotoğraf yükleme alanından).');
+        }
+
         if (validationErrors.length > 0) {
             showAlert('Eksik Bilgiler', 'Lütfen kontrol edin:\n\n' + validationErrors.join('\n'), 'warning');
             return;
@@ -665,6 +669,14 @@ export default function QuickCreateScreen() {
                                         <Text style={[styles.choiceBtnText, projectHasArchitecturePlan === false && styles.choiceBtnTextActive]}>Yok (Rölöve)</Text>
                                     </TouchableOpacity>
                                 </View>
+                                {projectHasArchitecturePlan === true && (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, backgroundColor: '#EF4444' + '10', padding: 8, borderRadius: 8 }}>
+                                        <Ionicons name="warning-outline" size={14} color="#EF4444" style={{ marginRight: 6 }} />
+                                        <Text style={{ fontFamily: fonts.medium, fontSize: 11, color: '#EF4444', flex: 1 }}>
+                                            Planı olduğunu belirtenlerin, aşağıdan planın en az bir fotoğrafını eklemesi zorunludur.
+                                        </Text>
+                                    </View>
+                                )}
                             </View>
                         </Card>
                     )}
