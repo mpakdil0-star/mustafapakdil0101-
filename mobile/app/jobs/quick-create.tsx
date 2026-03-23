@@ -72,7 +72,12 @@ const MODERN_SYSTEMS = [
     { id: 'ges', label: 'Güneş Paneli (GES)', icon: 'sunny-outline' },
 ];
 
-const getDescriptionPlaceholder = (type: string | null): string => {
+const getDescriptionPlaceholder = (type: string | null, subCategoryId?: string): string => {
+    // Elektrik Proje Çizimi için özel placeholder
+    if (subCategoryId === 'elektrik-proje') {
+        return 'Örn: 2 Katlı müstakil ev projesi, 200m2, mimari plan hazır. Belediye onayı dahil teklif bekliyoruz...';
+    }
+
     switch (type) {
         case 'elektrik': return 'Örnek: Mutfak prizleri çalışmıyor, sigorta attı...';
         case 'tesisat': return 'Örnek: Lavabodan su akıyor, acil tamir lazım...';
@@ -747,7 +752,7 @@ export default function QuickCreateScreen() {
                     <Card variant="default" style={styles.mainCard}>
                         <TextInput
                             style={[styles.textArea, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}
-                            placeholder={getDescriptionPlaceholder(selectedType)}
+                            placeholder={getDescriptionPlaceholder(selectedType, selectedSubCategory?.id)}
                             value={description}
                             onChangeText={setDescription}
                             multiline
