@@ -562,6 +562,7 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
                     experienceYears: u.electricianProfile?.experienceYears || 0,
                     serviceCategory: u.electricianProfile?.serviceCategory || null,
                     completedJobsCount: Number(u.electricianProfile?.completedJobsCount || 0),
+                    isAuthorizedEngineer: u.electricianProfile?.isAuthorizedEngineer || false,
                     locations: u.locations || []
                 };
             });

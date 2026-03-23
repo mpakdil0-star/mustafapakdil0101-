@@ -22,6 +22,7 @@ interface User {
     verificationStatus?: string;
     completedJobsCount?: number;
     serviceCategory?: string;
+    isAuthorizedEngineer?: boolean;
     locations?: { city: string; district?: string }[];
     pushStatus?: 'ACTIVE' | 'PENDING' | 'DISABLED';
 }
@@ -231,6 +232,13 @@ export default function AdminUsersScreen() {
                             {item.userType === 'ELECTRICIAN' ? 'Usta' : 'Vatandaş'}
                         </Text>
                     </View>
+                    {item.isAuthorizedEngineer && (
+                        <View style={[styles.userTypeBadge, { backgroundColor: '#8B5CF615', marginTop: 4 }]}>
+                            <Text style={[styles.userTypeText, { color: '#8B5CF6' }]}>
+                                Yetkili Müh
+                            </Text>
+                        </View>
+                    )}
                 </View>
             </View>
 
