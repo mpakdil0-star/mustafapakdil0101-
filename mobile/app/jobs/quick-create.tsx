@@ -73,13 +73,47 @@ const MODERN_SYSTEMS = [
 ];
 
 const getDescriptionPlaceholder = (type: string | null, subCategoryId?: string): string => {
-    // Elektrik Proje Çizimi için özel placeholder
-    if (subCategoryId === 'elektrik-proje') {
-        return 'Örn: 2 Katlı müstakil ev projesi, 200m2, mimari plan hazır. Belediye onayı dahil teklif bekliyoruz...';
-    }
+    // Elektrik
+    if (subCategoryId === 'elektrik-proje') return 'Örn: 2 Katlı müstakil ev projesi, 200m2, mimari plan hazır. Belediye onayı dahil teklif bekliyoruz...';
+    if (subCategoryId === 'elektrik-tesisat') return 'Örn: Evin salon ve mutfağındaki eski kablolar değişecek, yeni priz hatları çekilecek...';
+    if (subCategoryId === 'elektrik-tamir') return 'Örn: Çamaşır makinesi çalışınca sigorta atıyor, mutfaktan yanık kokusu geldi...';
+    if (subCategoryId === 'aydinlatma') return 'Örn: Salona 2 adet avize takılacak, asma tavana şerit LED çekilecek...';
+    if (subCategoryId === 'priz-anahtar') return 'Örn: 3 adet priz yerinden çıktı, yatak odasına 2 adet yeni priz çekilmesi gerekiyor...';
+    if (subCategoryId === 'elektrik-panosu') return 'Örn: Apartman girişindeki panoda şalterler eski, kablolar düzensiz. Yenilenmesi gerekiyor...';
+    if (subCategoryId === 'kablo-cekimi') return 'Örn: Modemden arka odaya dışarıdan veya kanaldan ethernet kablosu çekilecek...';
+    if (subCategoryId === 'uydu-sistemleri') return 'Örn: Çanak antende sinyal yok, lnb değişimi veya yön ayarı yapılması lazım...';
+    if (subCategoryId === 'elektrik-kontrol') return 'Örn: Yeni taşındığım evin elektrik tesisatında kaçak var mı kontrol edilmesini istiyorum...';
+
+    // Çilingir
+    if (subCategoryId === 'kapi-acma') return 'Örn: Çelik kapı çekili durumda kilitli değil, anahtar evin içinde unuttum...';
+    if (subCategoryId === 'kilit-degisimi') return 'Örn: Yeni eve taşındım, üst ve alt kilit göbeklerinin (barel) yenilenmesini istiyorum...';
+    if (subCategoryId === 'anahtar-kopyalama') return 'Örn: Apartman kapısı için 3 adet manyetik çip/göstergeç kopyalanmasını istiyorum...';
+    if (subCategoryId === 'kasa-acma') return 'Örn: Elektronik dijital kasanın pili bitti veya şifresini unuttum, zararsız açılması lazım...';
+    if (subCategoryId === 'oto-cilingir') return 'Örn: 2015 model aracımın bagajında anahtarı unuttum, kapılar otomatik kilitlendi...';
+
+    // Klima
+    if (subCategoryId === 'klima-montaj') return 'Örn: Yeni aldığım klimanın yatak odasına kurulumu yapılacak, dış motor balkon duvarına asılacak...';
+    if (subCategoryId === 'klima-bakim') return 'Örn: Klimanın filtreleri temizlenecek, genel performansı incelenecek ve koku giderici sıkılacak...';
+    if (subCategoryId === 'klima-tamir') return 'Örn: Klimayı açtığımda sadece fan çalışıyor, soğuk hava üflemiyor. Işıkları yanıp sönüyor...';
+    if (subCategoryId === 'gaz-dolumu') return 'Örn: Cihaz soğutmuyor, servis daha önce gazın bittiğini söyledi. Yeniden gaz şarjı gerekiyor...';
+    if (subCategoryId === 'klima-temizlik') return 'Örn: Klimadan kötü koku geliyor, içinin ilaçlı suyla profesyonel şekilde yıkanmasını istiyorum...';
+
+    // Beyaz Eşya
+    if (subCategoryId === 'camasir-makinesi') return 'Örn: Program bitmesine rağmen içinde su kaldı, kapağı açılmıyor, altından su damlatıyor...';
+    if (subCategoryId === 'bulasik-makinesi') return 'Örn: Bardaklar çizik ve lekeli çıkıyor, deterjanı tam eritmeden programı bitiriyor...';
+    if (subCategoryId === 'buzdolabi') return 'Örn: Buzluk donduruyor fakat alt bölmedeki yiyecekler bozulmaya başladı, motor sürekli çalışıyor...';
+    if (subCategoryId === 'firin-ocak') return 'Örn: Ankastre fırının sadece üst rezistansı çalışıyor, keklerin altı hamur kalıyor...';
+    if (subCategoryId === 'kurutma-makinesi') return 'Örn: 2 saatlik program bitmesine rağmen çamaşırlar tam kurumuyor, sıcaklık vermiyor...';
+
+    // Tesisat
+    if (subCategoryId === 'tikaniklik') return 'Örn: Mutfak lavabosundan su gitmiyor, sular geri taşıyor. Makine ile açılması lazım...';
+    if (subCategoryId === 'su-kacagi') return 'Örn: Banyonun alt katındaki komşunun tavanında sararma ve damlama var, kaçağın cihazla bulunması lazım...';
+    if (subCategoryId === 'musluk-batarya') return 'Örn: Lavabo çeşmesi dipten su kaçırıyor, yeni batarya aldım sadece montajı yapılacak...';
+    if (subCategoryId === 'petek-kombi') return 'Örn: Kombi çalışıyor ama peteklerin alt kısmı soğuk kalıyor. Makineli petek temizliği istiyorum...';
+    if (subCategoryId === 'tuvalet-lavabo') return 'Örn: Klozetin sifonu sürekli içeriye su akıtıyor, şamandıra bozuk, yenisi takılacak...';
 
     switch (type) {
-        case 'elektrik': return 'Örnek: Mutfak prizleri çalışmıyor, sigorta attı...';
+        case 'elektrik': return 'Örnek: Mutfak prizleri çalışmıyor, sigorta attı, vb...';
         case 'tesisat': return 'Örnek: Lavabodan su akıyor, acil tamir lazım...';
         case 'cilingir': return 'Örnek: Anahtar içeride kaldı, kapı kilitli...';
         case 'beyaz-esya': return 'Örnek: Çamaşır makinesi su boşaltmıyor...';

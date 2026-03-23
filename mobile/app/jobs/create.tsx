@@ -50,12 +50,77 @@ const URGENCY_LEVELS = [
 
 // Kategoriye göre dinamik placeholder metinleri
 const getPlaceholdersByCategory = (categoryId: string, subCategory?: string) => {
-  // Elektrik Proje Çizimi için özel placeholder metinleri
+  // Elektrik
   if (subCategory === 'Elektrik Proje Çizimi') {
-    return {
-      title: 'Örn: 2 Katlı Müstakil Ev Elektrik Proje Çizimi',
-      description: 'Yeni yapılacak 250m2 müstakil evimiz için belediye/ruhsat onaylı elektrik uygulama projesi çizilecek. Mimari plan DWG olarak mevcut.'
-    };
+    return { title: 'Örn: 2 Katlı Müstakil Ev Elektrik Proje Çizimi', description: 'Yeni yapılacak 250m2 müstakil evimiz için belediye/ruhsat onaylı elektrik uygulama projesi çizilecek. Mimari plan DWG olarak mevcut.' };
+  } else if (subCategory === 'Elektrik Tesisatı') {
+    return { title: 'Örn: Salon ve mutfak yeni tesisat çekimi', description: 'Örn: Evin salon ve mutfağındaki eski kablolar değişecek, yeni priz hatları çekilecek...' };
+  } else if (subCategory === 'Elektrik Tamiri') {
+    return { title: 'Örn: Sigorta sürekli atıyor', description: 'Örn: Çamaşır makinesi çalışınca sigorta atıyor, mutfaktan yanık kokusu geldi...' };
+  } else if (subCategory === 'Aydınlatma') {
+    return { title: 'Örn: Avize montajı ve LED döşeme', description: 'Örn: Salona 2 adet avize takılacak, asma tavana şerit LED çekilecek...' };
+  } else if (subCategory === 'Priz ve Anahtar') {
+    return { title: 'Örn: Priz değişimi ve ilave', description: 'Örn: 3 adet priz yerinden çıktı, yatak odasına 2 adet yeni priz çekilmesi gerekiyor...' };
+  } else if (subCategory === 'Elektrik Panosu') {
+    return { title: 'Örn: Bina panosu yenileme', description: 'Örn: Apartman girişindeki panoda şalterler eski, kablolar düzensiz. Yenilenmesi gerekiyor...' };
+  } else if (subCategory === 'Kablo Çekimi') {
+    return { title: 'Örn: Anten/Ağ kablosu çekimi', description: 'Örn: Modemden arka odaya dışarıdan veya kanaldan ethernet kablosu çekilecek...' };
+  } else if (subCategory === 'Uydu Sistemleri') {
+    return { title: 'Örn: Merkezi sistem çanak ayarı', description: 'Örn: Çanak antende sinyal yok, lnb değişimi veya yön ayarı yapılması lazım...' };
+  } else if (subCategory === 'Elektrik Kontrolü') {
+    return { title: 'Örn: Genel tesisat kontrolü', description: 'Örn: Yeni taşındığım evin elektrik tesisatında kaçak var mı kontrol edilmesini istiyorum...' };
+  }
+
+  // Çilingir
+  if (subCategory === 'Kapı Açma') {
+    return { title: 'Örn: Kapıda kaldım, anahtar içeride', description: 'Örn: Çelik kapı çekili durumda kilitli değil, anahtar evin içinde unuttum...' };
+  } else if (subCategory === 'Kilit Değişimi') {
+    return { title: 'Örn: Çelik kapı kilit göbeği değişimi', description: 'Örn: Yeni eve taşındım, üst ve alt kilit göbeklerinin (barel) yenilenmesini istiyorum...' };
+  } else if (subCategory === 'Anahtar Kopyalama') {
+    return { title: 'Örn: Bina giriş göstergeç kopyalama', description: 'Örn: Apartman kapısı için 3 adet manyetik çip/göstergeç kopyalanmasını istiyorum...' };
+  } else if (subCategory === 'Kasa Açma') {
+    return { title: 'Örn: Çelik kasa şifresi unutuldu', description: 'Örn: Elektronik dijital kasanın pili bitti veya şifresini unuttum, zararsız açılması lazım...' };
+  } else if (subCategory === 'Oto Çilingir') {
+    return { title: 'Örn: Araç anahtarı bagajda kaldı', description: 'Örn: 2015 model aracımın bagajında anahtarı unuttum, kapılar otomatik kilitlendi...' };
+  }
+
+  // Klima
+  if (subCategory === 'Klima Montaj') {
+    return { title: 'Örn: 12000 BTU klima montajı', description: 'Örn: Yeni aldığım klimanın yatak odasına kurulumu yapılacak, dış motor balkon duvarına asılacak...' };
+  } else if (subCategory === 'Klima Bakım') {
+    return { title: 'Örn: Yıllık periyodik bakım', description: 'Örn: Klimanın filtreleri temizlenecek, genel performansı incelenecek ve koku giderici sıkılacak...' };
+  } else if (subCategory === 'Klima Tamir') {
+    return { title: 'Örn: Klima soğutmuyor', description: 'Örn: Klimayı açtığımda sadece fan çalışıyor, soğuk hava üflemiyor. Işıkları yanıp sönüyor...' };
+  } else if (subCategory === 'Gaz Dolumu') {
+    return { title: 'Örn: Klima gaz basımı', description: 'Örn: Cihaz soğutmuyor, servis daha önce gazın bittiğini söyledi. Yeniden gaz şarjı gerekiyor...' };
+  } else if (subCategory === 'Klima Temizliği') {
+    return { title: 'Örn: Detaylı iç ünite yıkama', description: 'Örn: Klimadan kötü koku geliyor, içinin ilaçlı suyla profesyonel şekilde yıkanmasını istiyorum...' };
+  }
+
+  // Beyaz Eşya
+  if (subCategory === 'Çamaşır Makinesi') {
+    return { title: 'Örn: Makine su boşaltmıyor', description: 'Örn: Program bitmesine rağmen içinde su kaldı, kapağı açılmıyor, altından su damlatıyor...' };
+  } else if (subCategory === 'Bulaşık Makinesi') {
+    return { title: 'Örn: Bulaşıklar kirli çıkıyor', description: 'Örn: Bardaklar çizik ve lekeli çıkıyor, deterjanı tam eritmeden programı bitiriyor...' };
+  } else if (subCategory === 'Buzdolabı') {
+    return { title: 'Örn: Alt kısım soğutmuyor', description: 'Örn: Buzluk donduruyor fakat alt bölmedeki yiyecekler bozulmaya başladı, motor sürekli çalışıyor...' };
+  } else if (subCategory === 'Fırın/Ocak') {
+    return { title: 'Örn: Fırın altı pişirmiyor', description: 'Örn: Ankastre fırının sadece üst rezistansı çalışıyor, keklerin altı hamur kalıyor...' };
+  } else if (subCategory === 'Kurutma Makinesi') {
+    return { title: 'Örn: Çamaşırlar nemli çıkıyor', description: 'Örn: 2 saatlik program bitmesine rağmen çamaşırlar tam kurumuyor, sıcaklık vermiyor...' };
+  }
+
+  // Tesisat
+  if (subCategory === 'Tıkanıklık Açma') {
+    return { title: 'Örn: Mutfak gideri tıkandı', description: 'Örn: Mutfak lavabosundan su gitmiyor, sular geri taşıyor. Makine ile açılması lazım...' };
+  } else if (subCategory === 'Su Kaçağı') {
+    return { title: 'Örn: Alt kata su damlıyor', description: 'Örn: Banyonun alt katındaki komşunun tavanında sararma ve damlama var, kaçağın cihazla bulunması lazım...' };
+  } else if (subCategory === 'Musluk/Batarya') {
+    return { title: 'Örn: Banyo bataryası değişimi', description: 'Örn: Lavabo çeşmesi dipten su kaçırıyor, yeni batarya aldım sadece montajı yapılacak...' };
+  } else if (subCategory === 'Petek/Kombi') {
+    return { title: 'Örn: Petek temizliği ve hava alma', description: 'Örn: Kombi çalışıyor ama peteklerin alt kısmı soğuk kalıyor. Makineli petek temizliği istiyorum...' };
+  } else if (subCategory === 'Tuvalet/Lavabo') {
+    return { title: 'Örn: Klozet iç takımı değişimi', description: 'Örn: Klozetin sifonu sürekli içeriye su akıtıyor, şamandıra bozuk, yenisi takılacak...' };
   }
 
   switch (categoryId) {
