@@ -167,6 +167,7 @@ export default function CreateJobScreen() {
   // Elektrik Proje Çizimi Özel Alanları State'leri
   const [projectBuildingType, setProjectBuildingType] = useState('');
   const [projectArea, setProjectArea] = useState('');
+  const [projectInstalledPower, setProjectInstalledPower] = useState('');
   const [projectFloors, setProjectFloors] = useState('');
   const [projectRoomsPerFloor, setProjectRoomsPerFloor] = useState('');
   const [projectPurpose, setProjectPurpose] = useState('');
@@ -556,6 +557,7 @@ export default function CreateJobScreen() {
           `--------------------------------\n` +
           `• Yapı Tipi: ${selectedType || 'Belirtilmedi'}\n` +
           `• Toplam Alan: ${projectArea} m²\n` +
+          `• Kurulu Güç: ${projectInstalledPower ? projectInstalledPower + ' kW' : 'Belirtilmedi'}\n` +
           `• Kat Sayısı: ${projectFloors || '1'}\n` +
           `• Oda/Bölüm Sayısı: ${projectRoomsPerFloor || '-'}\n` +
           `• Proje Amacı: ${selectedPurpose || 'Yeni Yapı'}\n` +
@@ -977,6 +979,19 @@ export default function CreateJobScreen() {
                       keyboardType="numeric"
                       value={projectFloors}
                       onChangeText={setProjectFloors}
+                    />
+                  </View>
+                </View>
+
+                <View style={[styles.row, { marginTop: 12 }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.label, { color: colors.textSecondary }]}>Kurulu Güç (kW)</Text>
+                    <TextInput
+                      style={[styles.modernInput, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, color: colors.text }]}
+                      placeholder="Örn: 15"
+                      keyboardType="numeric"
+                      value={projectInstalledPower}
+                      onChangeText={setProjectInstalledPower}
                     />
                   </View>
                 </View>

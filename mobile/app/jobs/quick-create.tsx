@@ -123,6 +123,7 @@ export default function QuickCreateScreen() {
     // Project specific states
     const [projectBuildingType, setProjectBuildingType] = useState('');
     const [projectArea, setProjectArea] = useState('');
+    const [projectInstalledPower, setProjectInstalledPower] = useState('');
     const [projectFloors, setProjectFloors] = useState('');
     const [projectPurpose, setProjectPurpose] = useState('');
     const [projectHasArchitecturePlan, setProjectHasArchitecturePlan] = useState<boolean | null>(null);
@@ -285,6 +286,7 @@ export default function QuickCreateScreen() {
                     `--------------------------------\n` +
                     `• Yapı Tipi: ${selectedTypeLabel || 'Belirtilmedi'}\n` +
                     `• Toplam Alan: ${projectArea || '-'} m²\n` +
+                    `• Kurulu Güç: ${projectInstalledPower ? projectInstalledPower + ' kW' : 'Belirtilmedi'}\n` +
                     `• Kat Sayısı: ${projectFloors || '1'}\n` +
                     `• Oda/Bölüm Sayısı: ${projectRoomsPerFloor || '-'}\n` +
                     `• Proje Amacı: ${selectedPurpose || 'Yeni Yapı'}\n` +
@@ -543,6 +545,19 @@ export default function QuickCreateScreen() {
                                             />
                                         </View>
                                     </View>
+                                </View>
+                            </View>
+
+                            <View style={[styles.row, { marginTop: 12 }]}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 4, fontSize: 12 }]}>Kurulu Güç (kW)</Text>
+                                    <TextInput
+                                        style={[styles.smallInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}
+                                        placeholder="Örn: 15"
+                                        keyboardType="numeric"
+                                        value={projectInstalledPower}
+                                        onChangeText={setProjectInstalledPower}
+                                    />
                                 </View>
                             </View>
 
