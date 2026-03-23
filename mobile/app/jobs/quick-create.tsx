@@ -122,6 +122,7 @@ export default function QuickCreateScreen() {
 
     // Project specific states
     const [projectBuildingType, setProjectBuildingType] = useState('');
+    const [projectOtherBuildingType, setProjectOtherBuildingType] = useState('');
     const [projectArea, setProjectArea] = useState('');
     const [projectInstalledPower, setProjectInstalledPower] = useState('');
     const [projectFloors, setProjectFloors] = useState('');
@@ -274,7 +275,10 @@ export default function QuickCreateScreen() {
             // Enhance description for projects
             if (selectedSubCategory?.id === 'elektrik-proje') {
                 const selectedPurpose = PROJECT_PURPOSES.find(p => p.value === projectPurpose)?.label;
-                const selectedTypeLabel = BUILDING_TYPES.find(b => b.value === projectBuildingType)?.label;
+                let selectedTypeLabel = BUILDING_TYPES.find(b => b.value === projectBuildingType)?.label;
+                if (projectBuildingType === 'diger' && projectOtherBuildingType.trim()) {
+                    selectedTypeLabel += ` (${projectOtherBuildingType.trim()})`;
+                }
                 const allSystems = [...projectWeakCurrentSystems, ...projectModernSystems];
                 const systemLabels = allSystems.map(id => {
                     const found = [...WEAK_CURRENT_SYSTEMS, ...MODERN_SYSTEMS].find(s => s.id === id);
@@ -509,6 +513,20 @@ export default function QuickCreateScreen() {
                                     />
                                 </View>
                             </View>
+
+                            {projectBuildingType === 'diger' && (
+                                <View style={[styles.row, { marginTop: 8 }]}>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 4, fontSize: 12 }]}>Diğer Yapı Tipi</Text>
+                                        <TextInput
+                                            style={[styles.smallInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}
+                                            placeholder="Lütfen açıklayınız"
+                                            value={projectOtherBuildingType}
+                                            onChangeText={setProjectOtherBuildingType}
+                                        />
+                                    </View>
+                                </View>
+                            )}
 
                             <View style={[styles.row, { marginTop: 12 }]}>
                                 <View style={{ flex: 1.5, marginRight: 8 }}>

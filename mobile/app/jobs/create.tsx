@@ -166,6 +166,7 @@ export default function CreateJobScreen() {
 
   // Elektrik Proje Çizimi Özel Alanları State'leri
   const [projectBuildingType, setProjectBuildingType] = useState('');
+  const [projectOtherBuildingType, setProjectOtherBuildingType] = useState('');
   const [projectArea, setProjectArea] = useState('');
   const [projectInstalledPower, setProjectInstalledPower] = useState('');
   const [projectFloors, setProjectFloors] = useState('');
@@ -546,7 +547,10 @@ export default function CreateJobScreen() {
 
       if (isProjectCategory) {
         const selectedPurpose = PROJECT_PURPOSES.find(p => p.value === projectPurpose)?.label;
-        const selectedType = BUILDING_TYPES.find(b => b.value === projectBuildingType)?.label;
+        let selectedType = BUILDING_TYPES.find(b => b.value === projectBuildingType)?.label;
+        if (projectBuildingType === 'diger' && projectOtherBuildingType.trim()) {
+          selectedType += ` (${projectOtherBuildingType.trim()})`;
+        }
         const allSystems = [...projectSpecialSystems, ...projectWeakCurrentSystems, ...projectModernSystems];
         const systemLabels = allSystems.map(id => {
           const found = [...WEAK_CURRENT_SYSTEMS, ...MODERN_SYSTEMS, { id: 'asansör', label: 'Asansör' }, { id: 'sanayi', label: 'Sanayi Makineleri' }].find(s => s.id === id);
@@ -958,6 +962,14 @@ export default function CreateJobScreen() {
                       </TouchableOpacity>
                     ))}
                   </View>
+                  {projectBuildingType === 'diger' && (
+                    <TextInput
+                      style={[styles.modernInput, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, color: colors.text, marginTop: 12 }]}
+                      placeholder="Lütfen yapı tipini açıklayınız"
+                      value={projectOtherBuildingType}
+                      onChangeText={setProjectOtherBuildingType}
+                    />
+                  )}
                 </View>
 
                 <View style={styles.row}>
