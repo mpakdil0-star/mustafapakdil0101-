@@ -13,42 +13,74 @@ type LegalType = 'terms' | 'kvkk';
 const CONTENT = {
     terms: {
         title: 'Kullanım Koşulları',
-        lastUpdate: '25 Aralık 2024',
-        text: `1. Hizmet Şartları
-İş Bitir uygulamasını kullanarak, bu sayfada yer alan tüm şartları kabul etmiş sayılırsınız. Uygulamamız üzerinden verilen hizmetler, ustalar ile müşterileri bir araya getiren bir platformdur.
+        lastUpdate: '25 Mart 2026',
+        text: `1. Taraflar ve Sözleşmenin Kabulü
+İşbu Kullanım Koşulları, İş Bitir uygulamasını cihazına indiren veya kullanan tüm kullanıcılar (Hizmet Alan "Vatandaş" ve Hizmet Veren "Usta") ile İş Bitir yönetimi arasında akdedilmiştir. Uygulamayı kullanarak bu koşulları peşinen kabul etmiş olursunuz.
 
-2. Hizmet Kapsamı
-İş Bitir, hizmet veren ve alan arasındaki anlaşmazlıklardan, iş kalitesinden veya ödeme süreçlerinden doğrudan sorumlu değildir. Platformumuz sadece bir "buluşturma" hizmeti sunar.
+2. Yaş Sınırı
+İş Bitir platformunu kullanarak bir iş ilanı açmak veya ustalık hizmeti verebilmek için en az 18 yaşında (reşit) olmanız gerekmektedir. 18 yaşından küçüklerin platformu kullandığının tespiti halinde hesapları derhal kapatılır.
 
-3. Kullanıcı Sorumlulukları
-Kullanıcılar, kayıt sırasında verdikleri bilgilerin doğruluğundan sorumludur. Yanıltıcı bilgi veren veya platformu kötüye kullanan hesaplar askıya alınabilir.
+3. Platformun "Aracı" Rolü ve Sorumluluk Sınırı
+- İş Bitir; yalnızca hizmet almak isteyenler ile hizmet veren ustaları/uzmanları dijital ortamda bir araya getiren bağımsız bir aracı platformdur.
+- Platform, uygulama üzerinden anlaşılan işlerin kalitesini, zamanında yapılmasını, ustaların yeterliliğini veya taraflar arasındaki fiziki/maddi anlaşmazlıkları garanti etmez.
+- İşe ait maddi ve bedensel zararlardan, işçilik kusurlarından İş Bitir veya geliştiricileri hiçbir şekilde hukuki ve cezai olarak sorumlu tutulamaz. Tüm hukuki sorumluluk hizmeti veren Usta ile hizmeti alan Vatandaş arasındaki anlaşmaya dayanır.
 
-4. Ödemeler ve Krediler
-Ustalar, teklif verebilmek için uygulama içi kredi satın almalıdır. Satın alınan krediler, platform içi kullanım içindir ve nakde çevrilemez.
+4. Kullanıcı Yükümlülükleri
+- Vatandaş (Müşteri): Platformda yanıltıcı bilgilerle veya ustaları oyalama amaçlı sahte iş ilanları oluşturamaz. Açtığı ilandaki iş tanımını ve adresini doğru belirtmek zorundadır.
+- Usta (Hizmet Veren): Platforma ibraz ettiği tüm belgelerin (ustalık, diploma, kimlik vb.) gerçek ve kendine ait olduğunu taahhüt eder. Müşterilere karşı nezaket kurallarına ve mesleki standartlara uymakla yükümlüdür.
 
-5. Değişiklik Hakları
-İş Bitir, bu kullanım koşullarını dilediği zaman güncelleme hakkını saklı tutar.`
+5. Krediler, Ödemeler ve İade Politikası
+- Ustaların platform üzerinden yayımlanan işlere teklif verebilmesi için "Kredi" sistemini kullanması gerekmektedir.
+- Satın alınan krediler sadece platform içinde kullanım (teklif verme vs.) içindir. Uygulama dışında başka bir para birimine, nakde dönüştürülemez ve başkasına devredilemez.
+- Krediler teklif verme esnasında harcanır. Ancak, bir müşteri (Vatandaş) talebini/ilanını iptal ederse, o ilana teklif vermek için kredi harcamış olan tüm ustaların kredileri sistem tarafından otomatik olarak hesaplarına iade edilir.
+- Bunun dışında (müşterinin ilanı iptal etmemesi durumu hariç), kullanılmış ve harcanmış kredilerin iadesi yapılmaz.
+- Hiç harcanmamış dijital kredi paketleri, ilgili uygulama marketi itiraz süreçleri veya yerel tüketici hakları kapsamında iade talebine konu edilebilir.
+
+6. Hesabın Kapatılması ve Askıya Alınması
+Kullanıcılar platformu herhangi bir dolandırıcılık, istismar, spam veya topluluk kurallarına aykırı kullandıklarında İş Bitir, önceden haber vermeksizin kullanıcının hesabını kalıcı olarak bloke etme, ilanlarını silme ve kredilerini iptal etme hakkını saklı tutar.
+
+7. Sözleşme Değişiklikleri
+İş Bitir yönetimi işbu Kullanım Koşulları belgesinde zaman zaman değişiklik yapabilir. Yapılan düzenlemeler Uygulama içerisinde yayınlandığı andan itibaren tüm kullanıcılar için geçerli olur.
+
+8. Uyuşmazlıkların Çözümü
+İşbu sözleşmenin uygulanmasından ve yorumlanmasından doğacak her türlü ihtilaflarda Türkiye Cumhuriyeti yasaları uygulanacak olup, İstanbul Mahkemeleri ve İcra Daireleri yetkili olacaktır.`
     },
     kvkk: {
         title: 'KVKK ve Veri Politikası',
-        lastUpdate: '25 Aralık 2024',
+        lastUpdate: '25 Mart 2026',
         text: `1. Veri Sorumlusu
-6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, verileriniz İş Bitir tarafından işlenmektedir.
+İş Bitir ("Uygulama" veya "Biz"), kullanıcıların ("Siz") kişisel verilerini 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") ve ilgili mevzuata uygun olarak işlemektedir. Bu metin, verilerinizin nasıl toplandığını, kullanıldığını ve korunduğunu açıklar.
 
-2. İşlenen Veriler
-Uygulamayı kullanırken paylaştığınız ad-soyad, telefon numarası, konum bilgisi ve ustalık belgeleri, size hizmet sunabilmek adına güvenli sunucularımızda saklanır.
+2. Toplanan Kişisel Verileriniz
+Size hizmet sunabilmek amacıyla aşağıdaki verileri toplamaktayız:
+- Kimlik ve İletişim Verileri: Ad, soyad, telefon numarası, e-posta adresi.
+- Hizmet Veren (Usta) Verileri: Ustalık belgesi, EMO/SMM numarası, uzmanlık alanları, iş geçmişi.
+- Konum Verileri: Uygulama, iş ilanlarının doğru şekilde eşleşebilmesi (yakındaki ustaları veya işleri bulabilmeniz) amacıyla, izin vermeniz halinde anlık (foreground) GPS konum bilginizi toplar.
+- Cihaz ve Kullanım Verileri: IP adresi, cihaz modeli, işletim sistemi sürümü, Push bildirim token'ları.
 
-3. Veri İşleme Amaçları
-Verileriniz şu amaçlarla kullanılır:
-- İlanların doğru bölgedeki ustalara ulaştırılması.
-- Güvenli bir iletişim ortamı sağlanması.
-- Uygulama içi iyileştirmelerin yapılması.
+3. Verilerin İşlenme Amaçları
+Kişisel verileriniz aşağıdaki amaçlarla işlenmektedir:
+- Platform üzerinden hizmet alan ve hizmet vereni (usta) bir araya getirmek,
+- Kullanıcı hesaplarının oluşturulması ve kimlik doğrulaması (güvenlik),
+- Şikayetlerin yönetilmesi ve uygulamanın iyileştirilmesi,
+- Anlık bildirimler (Push Notifications) yoluyla iş gelişmelerinden sizi haberdar etmek,
+- Yasal mercilerden talep gelmesi halinde hukuki yükümlülüklerimizi yerine getirmek.
 
-4. Veri Paylaşımı
-Kişisel verileriniz, yasal zorunluluklar hariç, üçüncü taraflarla reklam veya pazarlama amacıyla paylaşılmaz. Sadece onayladığınız iş süreçlerinde, ilgili usta veya müşteri ile sınırlı bilgiler paylaşılır.
+4. Konum Verilerinin Kullanımı (Önemli)
+İş Bitir uygulamasının temel işlevi, belirli bir adresteki elektrik, tesisat vb. sorunlarını o bölgeye en yakın ustalarla buluşturmaktır.
+- Konum veriniz sadece siz izin verdiğinizde ve uygulamayı aktif olarak kullandığınızda işlenir.
+- Arka planda (background) gizli konum takibi yapılmaz.
 
-5. Haklarınız
-KVKK kapsamında, verilerinizin silinmesini, güncellenmesini veya işlenip işlenmediğini öğrenme hakkına sahipsiniz. Bunun için destek@isbitir.com üzerinden bize ulaşabilirsiniz.`
+5. Veri Paylaşımı ve Üçüncü Taraflar
+Kişisel verileriniz hiçbir şekilde reklam, pazarlama veya ticari amaçlarla satılmaz. Sadece aşağıdaki durumlarda paylaşılır:
+- İşin yapılabilmesi için; hizmet alan kişinin iletişim bilgileri ve adresi, sadece ilana onay verilen/anlaşılan Usta ile paylaşılır.
+- Teknik servis sağlayıcıları (örn: Bulut sunucu sağlayıcıları, bildirim servisleri - Expo/Google FCM) ile verilerin güvenle barındırılması amaçlı paylaşım.
+
+6. Veri Saklama ve Hesap Silme İşlemleri
+Verileriniz, hesabınız aktif olduğu sürece ve yasal zamanaşımı süreleri boyunca saklanır. Uygulama içerisindeki "Profil > Hesabı Sil" butonunu kullanarak veya destek@isbitir.com adresine e-posta göndererek hesabınızın ve size ait tüm kayıtların sistemimizden tamamen silinmesini talep edebilirsiniz. Silme talebiniz 30 gün içinde yasal yükümlülükler dışındaki tüm verileri kapsayacak şekilde gerçekleştirilir.
+
+7. Kullanıcı Haklarınız (KVKK Madde 11)
+Kanun kapsamında; verilerinizin işlenip işlenmediğini öğrenme, işlenme amacını bilme, eksik/yanlışsa düzelttirme ve silinmesini talep etme hakkınız bulunmaktadır.`
     }
 };
 
