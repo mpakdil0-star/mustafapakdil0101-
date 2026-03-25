@@ -234,42 +234,34 @@ export default function ElectriciansListScreen() {
                             </TouchableOpacity>
                         )}
                     </View>
-
-                    <TouchableOpacity
-                        style={[
-                            styles.filterBtn,
-                            selectedCity && selectedCity !== 'Tümü' && styles.filterBtnActive
-                        ]}
-                        onPress={() => setIsCityModalVisible(true)}
-                    >
-                        <Ionicons
-                            name="location-outline"
-                            size={20}
-                            color={selectedCity && selectedCity !== 'Tümü' ? colors.white : colors.primary}
-                        />
-                    </TouchableOpacity>
+                    <View style={{ alignItems: 'center' }}>
+                        <TouchableOpacity
+                            style={[
+                                styles.filterBtn,
+                                selectedCity && selectedCity !== 'Tümü' && styles.filterBtnActive
+                            ]}
+                            onPress={() => setIsCityModalVisible(true)}
+                        >
+                            <Ionicons
+                                name="location-outline"
+                                size={20}
+                                color={selectedCity && selectedCity !== 'Tümü' ? colors.white : colors.primary}
+                            />
+                        </TouchableOpacity>
+                        {selectedCity && selectedCity !== 'Tümü' && (
+                            <Text style={styles.selectedCityLabel} numberOfLines={1}>{selectedCity}</Text>
+                        )}
+                    </View>
                 </View>
 
-                {/* Show Active City/District/Special Chips */}
-                {(selectedCity || selectedDistrict || activeFilters.isEngineerOnly) && (
+                {/* Show Active District/Special Chips */}
+                {(selectedDistrict || activeFilters.isEngineerOnly) && (
                     <View style={styles.activeFilters}>
-                        {selectedCity && selectedCity !== 'Tümü' && (
-                            <View style={styles.filterChip}>
-                                <Ionicons name="location-sharp" size={12} color={colors.primary} />
-                                <Text style={styles.filterChipText}>{selectedCity}</Text>
-                                <TouchableOpacity 
-                                    onPress={() => { setSelectedCity('Tümü'); setSelectedDistrict(''); }}
-                                    style={styles.filterChipClose}
-                                >
-                                    <Ionicons name="close-circle" size={16} color={colors.primary} />
-                                </TouchableOpacity>
-                            </View>
-                        )}
                         {selectedDistrict && (
-                            <View style={[styles.filterChip, { marginLeft: 8 }]}>
+                            <View style={[styles.filterChip, { marginLeft: 0 }]}>
                                 <Ionicons name="navigate-circle" size={12} color={colors.primary} />
                                 <Text style={styles.filterChipText}>{selectedDistrict}</Text>
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     onPress={() => setSelectedDistrict('')}
                                     style={styles.filterChipClose}
                                 >
@@ -278,10 +270,10 @@ export default function ElectriciansListScreen() {
                             </View>
                         )}
                         {activeFilters.isEngineerOnly && (
-                            <View style={[styles.filterChip, { marginLeft: 8 }]}>
+                            <View style={[styles.filterChip, { marginLeft: selectedDistrict ? 8 : 0 }]}>
                                 <Ionicons name="ribbon-sharp" size={12} color={colors.primary} />
                                 <Text style={styles.filterChipText}>Yetkili Mühendis</Text>
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     onPress={() => setActiveFilters(prev => ({ ...prev, isEngineerOnly: false }))}
                                     style={styles.filterChipClose}
                                 >
@@ -561,14 +553,7 @@ const styles = StyleSheet.create({
         paddingRight: 6,
         paddingVertical: 6,
         borderRadius: 12,
-        borderWidth: 1,
-        borderColor: colors.primary + '20',
         gap: 6,
-        elevation: 1,
-        shadowColor: colors.primary,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
     },
     filterChipText: {
         fontFamily: fonts.bold,
@@ -578,6 +563,14 @@ const styles = StyleSheet.create({
     },
     filterChipClose: {
         marginLeft: 2,
+    },
+    selectedCityLabel: {
+        fontFamily: fonts.bold,
+        fontSize: 10,
+        color: colors.primary,
+        marginTop: 4,
+        textAlign: 'center',
+        maxWidth: 60,
     },
     quickFiltersContainer: {
         gap: spacing.sm,
