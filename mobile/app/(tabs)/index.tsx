@@ -932,7 +932,7 @@ export default function HomeScreen() {
                       }
                     ]}
                   >
-                    <Ionicons name="flash" size={22} color="#FFFFFF" />
+                    <Ionicons name="document-text" size={22} color="#FFFFFF" />
                   </Animated.View>
                   <Text style={[styles.categoryLabelMatch, { color: '#7C3AED', fontFamily: fonts.extraBold, fontSize: 13 }]}>Proje Çizimi</Text>
                 </TouchableOpacity>
