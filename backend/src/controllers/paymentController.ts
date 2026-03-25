@@ -74,6 +74,28 @@ export const verifyAndGrantPurchase = async (req: AuthRequest, res: Response, ne
         const userId = req.user.id;
         const appPackageName = packageName || 'com.isbitir.app';
 
+        // 🛡️ REPEAT PREVENTION: Check if this purchaseToken was already processed
+        if (isDatabaseAvailable) {
+            const existingPurchase = await prisma.credit.findFirst({
+                where: { relatedId: purchaseToken }
+            });
+            if (existingPurchase) {
+                console.log(`⚠️ Mükerrer ödeme engellendi: ${purchaseToken} for user ${userId}`);
+                return res.json({
+                    success: true,
+                    message: 'Bu satın alma daha önce hesabınıza tanımlanmış.',
+                    data: { alreadyProcessed: true }
+                });
+            }
+        } else if (mockStorage.isTokenProcessed(purchaseToken)) {
+            console.log(`⚠️ Mükerrer ödeme engellendi (MOCK): ${purchaseToken} for user ${userId}`);
+            return res.json({
+                success: true,
+                message: 'Bu satın alma daha önce hesabınıza tanımlanmış.',
+                data: { alreadyProcessed: true }
+            });
+        }
+
         // Google Play API ile doğrulama
         const publisher = getAndroidPublisher();
 
@@ -144,7 +166,8 @@ export const verifyAndGrantPurchase = async (req: AuthRequest, res: Response, ne
                     amount: creditInfo.credits,
                     transactionType: 'PURCHASE',
                     description: `${creditInfo.credits} kredi satın alındı (${creditInfo.name})`,
-                    balanceAfter: newBalance
+                    balanceAfter: newBalance,
+                    relatedId: purchaseToken // Store token for duplicate prevention
                 }
             });
 
@@ -159,13 +182,15 @@ export const verifyAndGrantPurchase = async (req: AuthRequest, res: Response, ne
         } else {
             // Mock mod
             const mockData = mockStorage.addCredits(userId, creditInfo.credits);
+            mockStorage.markTokenProcessed(purchaseToken); // Mark token as used
 
             mockTransactionStorage.addTransaction({
                 userId,
                 amount: creditInfo.credits,
                 transactionType: 'PURCHASE',
                 description: `${creditInfo.credits} kredi satın alındı (${creditInfo.name})`,
-                balanceAfter: mockData.creditBalance
+                balanceAfter: mockData.creditBalance,
+                relatedId: purchaseToken // Store for consistency
             });
 
             return res.json({

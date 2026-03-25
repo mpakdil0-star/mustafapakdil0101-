@@ -175,8 +175,22 @@ if (fs.existsSync(CONSENT_FILE)) {
     }
 }
 
+const TICKETS_FILE = path.join(DATA_DIR, 'mock_tickets.json');
+const TOKENS_FILE = path.join(DATA_DIR, 'processed_tokens.json');
+
 const saveLegalToDisk = () => fs.writeFileSync(LEGAL_FILE, JSON.stringify(legalDocuments, null, 2), 'utf8');
 const saveConsentsToDisk = () => fs.writeFileSync(CONSENT_FILE, JSON.stringify(userConsents, null, 2), 'utf8');
+
+// Processed payment tokens to prevent duplicates
+let processedTokens: string[] = [];
+if (fs.existsSync(TOKENS_FILE)) {
+    try {
+        processedTokens = JSON.parse(fs.readFileSync(TOKENS_FILE, 'utf8'));
+    } catch (e) {
+        processedTokens = [];
+    }
+}
+const saveTokensToDisk = () => fs.writeFileSync(TOKENS_FILE, JSON.stringify(processedTokens, null, 2), 'utf8');
 
 // Initialize demo accounts for testing (can be removed after testing)
 const initDemoAccounts = () => {
@@ -447,6 +461,15 @@ export const mockStorage = {
             const userType = id.endsWith('-ADMIN') ? 'ADMIN' : (id.endsWith('-ELECTRICIAN') ? 'ELECTRICIAN' : 'CITIZEN');
             return mockStorage.getFullUser(id, userType);
         });
+    },
+
+    isTokenProcessed: (token: string) => processedTokens.includes(token),
+    
+    markTokenProcessed: (token: string) => {
+        if (!processedTokens.includes(token)) {
+            processedTokens.push(token);
+            saveTokensToDisk();
+        }
     }
 };
 
@@ -583,6 +606,7 @@ interface MockTransaction {
     amount: number;
     transactionType: 'PURCHASE' | 'BID_SPENT' | 'REFUND' | 'BONUS';
     description: string;
+    relatedId?: string | null;
     balanceAfter: number;
     createdAt: string;
 }
@@ -726,7 +750,7 @@ interface MockSupportTicket {
     }>;
 }
 
-const TICKETS_FILE = path.join(DATA_DIR, 'mock_tickets.json');
+// Already loaded at the top: const TICKETS_FILE = path.join(DATA_DIR, 'mock_tickets.json');
 
 let mockTickets: MockSupportTicket[] = [];
 if (fs.existsSync(TICKETS_FILE)) {
