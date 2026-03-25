@@ -281,6 +281,7 @@ export default function QuickCreateScreen() {
     const handleSubmit = async () => {
         const validationErrors: string[] = [];
         if (!selectedType) validationErrors.push('• Arıza tipi seçilmedi');
+        if (selectedType && !selectedSubCategory) validationErrors.push('• Lütfen spesifik bir hizmet dalı seçin');
         if (!city) validationErrors.push('• Şehir seçilmedi');
         if (!district) validationErrors.push('• İlçe seçilmedi');
         if (!address || address.trim().length < 10) validationErrors.push('• Adres en az 10 karakter olmalı');
