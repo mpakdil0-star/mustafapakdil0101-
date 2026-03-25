@@ -18,12 +18,12 @@ export interface UserConsentPayload {
 }
 
 export const getLegalDocuments = async (): Promise<LegalDocument[]> => {
-    const response = await api.get('legal/texts');
+    const response = await api.get('/legal/texts');
     return response.data.data;
 };
 
 export const recordConsent = async (payload: UserConsentPayload) => {
-    const response = await api.post('legal/consent', payload);
+    const response = await api.post('/legal/consent', payload);
     return response.data;
 };
 

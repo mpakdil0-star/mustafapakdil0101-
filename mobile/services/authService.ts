@@ -135,10 +135,16 @@ export const authService = {
 
   async logout() {
     try {
-      // 1. Notify backend to clear push token
-      await apiClient.post('/auth/logout');
+      // 1. Notify backend only if we have a token
+      const token = await apiService.getToken();
+      if (token) {
+        await apiClient.post('/auth/logout');
+      }
     } catch (error) {
-      console.warn('Backend logout failed, clearing local tokens anyway:', error);
+      // Only log as warning if it's not a 401 (which is expected if token is already invalid)
+      if ((error as any).response?.status !== 401) {
+        console.warn('Backend logout failed:', error);
+      }
     }
 
     // 2. Disconnect socket to stop receiving events for this user
