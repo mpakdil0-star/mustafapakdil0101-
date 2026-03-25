@@ -97,7 +97,14 @@ export const FeaturedElectrician = ({
 
                 {/* Content - Right Side */}
                 <View style={styles.infoContent}>
-                    <Text style={styles.name} numberOfLines={1}>{name}</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                        <Text style={[styles.name, { flex: 1, marginBottom: 0, marginRight: 8 }]} numberOfLines={1}>{name}</Text>
+                        {specialty && (
+                            <View style={[styles.specialtyBadge, { backgroundColor: colors.primary + '15' }]}>
+                                <Text style={[styles.specialtyText, { color: colors.primary }]}>{specialty}</Text>
+                            </View>
+                        )}
+                    </View>
 
                     <View style={styles.ratingRow}>
                         <Text style={styles.ratingText}>{Number(rating || 0).toFixed(1)}</Text>
@@ -177,6 +184,15 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: staticColors.black,
         marginBottom: 2,
+    },
+    specialtyBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    specialtyText: {
+        fontFamily: fonts.bold,
+        fontSize: 10,
     },
     ratingRow: {
         flexDirection: 'row',
