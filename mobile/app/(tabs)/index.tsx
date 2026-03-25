@@ -78,6 +78,35 @@ const ServiceCategoryItem = ({ cat, index, onPress, styles, colors }: any) => {
 };
 
 
+// --- Usta Kategori Helper ---
+const getUstaCategory = (elec: any) => {
+  const cat = elec.serviceCategory || elec.electricianProfile?.serviceCategory;
+  if (cat === 'cilingir') return 'Çilingir';
+  if (cat === 'klima') return 'Klima';
+  if (cat === 'beyaz-esya') return 'Beyaz Eşya';
+  if (cat === 'tesisat') return 'Tesisat';
+  if (cat === 'elektrik') return 'Elektrik';
+
+  // Fallback: Check specialties array for keywords
+  const specs = elec.specialties || elec.electricianProfile?.specialties || [];
+  const specsStr = Array.isArray(specs) ? specs.join(' ').toLowerCase() : '';
+  
+  if (specsStr.includes('klima') || specsStr.includes('soğutma')) return 'Klima';
+  if (specsStr.includes('çilingir') || specsStr.includes('anahtar') || specsStr.includes('kilit')) return 'Çilingir';
+  if (specsStr.includes('beyaz eşya') || specsStr.includes('buzdolabı') || specsStr.includes('çamaşır')) return 'Beyaz Eşya';
+  if (specsStr.includes('tesisat') || specsStr.includes('su ') || specsStr.includes('musluk')) return 'Tesisat';
+  
+  // Last resort: if specialty exists as a string
+  const specialtyStr = (elec.specialty || '').toLowerCase();
+  if (specialtyStr.includes('klima')) return 'Klima';
+  if (specialtyStr.includes('çilingir')) return 'Çilingir';
+  if (specialtyStr.includes('beyaz eşya')) return 'Beyaz Eşya';
+  if (specialtyStr.includes('tesisat')) return 'Tesisat';
+
+  return 'Elektrik';
+};
+
+
 export default function HomeScreen() {
   const router = useRouter();
   const colors = useAppColors();
@@ -971,13 +1000,7 @@ export default function HomeScreen() {
                       name={elec.fullName || 'Usta'}
                       rating={elec.electricianProfile?.ratingAverage || elec.electricianProfile?.rating || 0}
                       reviewCount={elec.electricianProfile?.totalReviews || elec.electricianProfile?.reviewCount || 0}
-                      specialty={
-                        elec.electricianProfile?.serviceCategory === 'cilingir' ? 'Çilingir' :
-                        elec.electricianProfile?.serviceCategory === 'klima' ? 'Klima' :
-                        elec.electricianProfile?.serviceCategory === 'beyaz-esya' ? 'Beyaz Eşya' :
-                        elec.electricianProfile?.serviceCategory === 'tesisat' ? 'Tesisat' :
-                        'Elektrik'
-                      }
+                      specialty={getUstaCategory(elec)}
                       isVerified={elec.isVerified === true && elec.electricianProfile?.verificationStatus === 'VERIFIED'}
                       imageUrl={elec.profileImageUrl ? getFileUrl(elec.profileImageUrl) || undefined : undefined}
                       location={elec.locations?.[0] ? `${elec.locations[0].district || ''}, ${elec.locations[0].city || ''}`.replace(/^, /, '').replace(/, $/, '') || 'Türkiye' : 'Türkiye'}
@@ -993,7 +1016,7 @@ export default function HomeScreen() {
                       name={elec.name}
                       rating={elec.rating}
                       reviewCount={elec.reviewCount}
-                      specialty={elec.specialty}
+                      specialty={getUstaCategory(elec)}
                       isVerified={elec.isVerified}
                       imageUrl={elec.imageUrl}
                       location={elec.location}

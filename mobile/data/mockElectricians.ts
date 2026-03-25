@@ -24,21 +24,23 @@ export interface MockElectrician {
     isEngineer?: boolean;
     emoNumber?: string;
     smmNumber?: string;
+    serviceCategory?: string;
 }
 
 export const MOCK_ELECTRICIANS: MockElectrician[] = [
     {
         id: '1',
-        name: 'Ahmet Yılmaz',
+        name: 'Ahmet',
         rating: 4.8,
         reviewCount: 124,
-        specialty: 'Elektrik Tesisatı',
+        specialty: 'Klima Uzmanı',
+        serviceCategory: 'klima',
         isVerified: true,
-        location: 'Kadıköy, İstanbul',
-        city: 'İstanbul',
+        location: 'Çukurova, Adana',
+        city: 'Adana',
         experience: '12 yıl',
         imageUrl: 'https://randomuser.me/api/portraits/men/1.jpg',
-        about: 'Elektrik tesisatı konusunda 12 yıllık deneyime sahip, sertifikalı elektrik ustası. Konut ve işyeri elektrik işlerinde uzmanım.',
+        about: 'Klima montaj ve bakımında uzmanım. Çukurova bölgesindeyim.',
         services: [
             'Elektrik Tesisatı Kurulumu',
             'Arıza Tespiti ve Onarım',
@@ -54,13 +56,14 @@ export const MOCK_ELECTRICIANS: MockElectrician[] = [
     },
     {
         id: '2',
-        name: 'Mehmet Demir',
+        name: 'Veli',
         rating: 4.9,
         reviewCount: 89,
-        specialty: 'Avize & Aydınlatma',
+        specialty: 'Elektrik & Tesisat',
+        serviceCategory: 'elektrik',
         isVerified: true,
-        location: 'Üsküdar, İstanbul',
-        city: 'İstanbul',
+        location: 'Çukurova, Adana',
+        city: 'Adana',
         experience: '8 yıl',
         imageUrl: 'https://randomuser.me/api/portraits/men/2.jpg',
         about: 'Avize montajı ve aydınlatma sistemleri konusunda uzman elektrikçi. Özel dekoratif aydınlatma çözümleri sunuyorum.',
@@ -79,13 +82,14 @@ export const MOCK_ELECTRICIANS: MockElectrician[] = [
     },
     {
         id: '3',
-        name: 'Ayşe Kaya',
+        name: 'Tuğçe',
         rating: 4.7,
-        reviewCount: 56,
-        specialty: 'Tamirat & Tadilat',
-        isVerified: false,
-        location: 'Çankaya, Ankara',
-        city: 'Ankara',
+        reviewCount: 24,
+        specialty: 'Elektrik & Aydınlatma',
+        serviceCategory: 'elektrik',
+        isVerified: true,
+        location: 'Çukurova, Adana',
+        city: 'Adana',
         experience: '5 yıl',
         imageUrl: 'https://randomuser.me/api/portraits/women/3.jpg',
         about: 'Elektrik tamirat ve tadilat işlerinde deneyimli elektrikçi. Hızlı ve güvenilir hizmet sunuyorum.',

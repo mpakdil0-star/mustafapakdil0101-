@@ -144,11 +144,20 @@ export default function ElectriciansListScreen() {
                 rating: Number(e.electricianProfile?.ratingAverage) || 0,
                 reviewCount: e.electricianProfile?.totalReviews || 0,
                 specialty: (() => {
-                    const cat = e.electricianProfile?.serviceCategory;
+                    const cat = e.serviceCategory || e.electricianProfile?.serviceCategory;
                     if (cat === 'cilingir') return 'Çilingir';
                     if (cat === 'klima') return 'Klima';
                     if (cat === 'beyaz-esya') return 'Beyaz Eşya';
                     if (cat === 'tesisat') return 'Tesisat';
+                    if (cat === 'elektrik') return 'Elektrik';
+
+                    const specs = e.specialties || e.electricianProfile?.specialties || [];
+                    const specsStr = Array.isArray(specs) ? specs.join(' ').toLowerCase() : '';
+                    if (specsStr.includes('klima')) return 'Klima';
+                    if (specsStr.includes('çilingir') || specsStr.includes('anahtar')) return 'Çilingir';
+                    if (specsStr.includes('beyaz eşya') || specsStr.includes('buzdolabı')) return 'Beyaz Eşya';
+                    if (specsStr.includes('tesisat') || specsStr.includes('su ')) return 'Tesisat';
+                    
                     return 'Elektrik';
                 })(),
                 isVerified: e.isVerified === true && e.electricianProfile?.verificationStatus === 'VERIFIED',
