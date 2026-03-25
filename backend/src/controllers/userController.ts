@@ -64,8 +64,8 @@ function serveMockResponse(req: Request, res: Response, city: any, latNum: any, 
     console.log(`📋 Found ${allMockUsers.length} users in mockStorage`);
 
     for (const user of allMockUsers) {
-        // Skip if already in static mocks or not an electrician
-        if (user.id.startsWith('mock-elec-') || user.userType !== 'ELECTRICIAN') {
+        // Skip if already in static mocks, not an electrician, or suspended (inactive)
+        if (user.id.startsWith('mock-elec-') || user.userType !== 'ELECTRICIAN' || user.isActive === false) {
             continue;
         }
 
@@ -1039,6 +1039,7 @@ export const getElectricians = async (req: Request, res: Response, next: NextFun
             results = await prisma.user.findMany({
                 where: {
                     userType: 'ELECTRICIAN',
+                    isActive: true, // List only active electricians
                     fullName: query ? { contains: String(query), mode: 'insensitive' } : undefined,
                     electricianProfile: {
                         specialties: specialty ? { has: String(specialty) } : undefined
