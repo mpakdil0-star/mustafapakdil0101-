@@ -934,7 +934,7 @@ export default function HomeScreen() {
                   >
                     <Ionicons name="document-text" size={22} color="#FFFFFF" />
                   </Animated.View>
-                  <Text style={[styles.categoryLabelMatch, { color: '#7C3AED', fontFamily: fonts.extraBold, fontSize: 13 }]}>Proje Çizimi</Text>
+                  <Text style={[styles.categoryLabelMatch, { color: '#7C3AED', fontFamily: fonts.extraBold, fontSize: 11.5, textAlign: 'center', lineHeight: 14 }]}>Elektrik{"\n"}Proje</Text>
                 </TouchableOpacity>
 
                 {[
