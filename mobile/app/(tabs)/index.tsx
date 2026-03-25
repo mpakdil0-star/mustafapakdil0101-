@@ -916,7 +916,7 @@ export default function HomeScreen() {
                       styles.categoryIconCircleMinimal,
                       {
                         borderWidth: 1.5,
-                        backgroundColor: '#7C3AED12', // Subtle purple background
+                        backgroundColor: '#7C3AED', // Vurgulu Marka Rengi - Tam Dolu Mor
                         borderColor: borderColorAnim.interpolate({
                           inputRange: [0, 0.25, 0.5, 0.75, 1],
                           outputRange: ['#7C3AED', '#EC4899', '#3B82F6', '#10B981', '#7C3AED']
@@ -925,24 +925,24 @@ export default function HomeScreen() {
                           inputRange: [0, 0.25, 0.5, 0.75, 1],
                           outputRange: ['#7C3AED', '#EC4899', '#3B82F6', '#10B981', '#7C3AED']
                         }),
-                        shadowOffset: { width: 0, height: 0 },
-                        shadowOpacity: 0.8,
-                        shadowRadius: 6,
-                        elevation: 5,
+                        shadowOffset: { width: 0, height: 4 }, // Add slight projection shadow
+                        shadowOpacity: 0.6,
+                        shadowRadius: 8,
+                        elevation: 6,
                       }
                     ]}
                   >
-                    <Ionicons name="flash" size={20} color="#7C3AED" />
+                    <Ionicons name="flash" size={22} color="#FFFFFF" />
                   </Animated.View>
-                  <Text style={[styles.categoryLabelMatch, { color: colors.text, fontFamily: fonts.bold }]}>Proje Çizimi</Text>
+                  <Text style={[styles.categoryLabelMatch, { color: '#7C3AED', fontFamily: fonts.extraBold, fontSize: 13 }]}>Proje Çizimi</Text>
                 </TouchableOpacity>
 
                 {[
-                  { id: 'avize-montaj', name: 'Avize Montajı', icon: 'bulb-outline', color: colors.primary },
-                  { id: 'kapi-acma', name: 'Kapı Açma', icon: 'lock-open-outline', color: '#F59E0B' },
-                  { id: 'klima-montaj', name: 'Klima Montaj', icon: 'snow-outline', color: '#3B82F6' },
-                  { id: 'tikaniklik', name: 'Tıkanıklık Açma', icon: 'water-outline', color: '#0284C7' },
-                  { id: 'buzdolabi', name: 'Buzdolabı Tamiri', icon: 'cube-outline', color: '#16A34A' },
+                  { id: 'avize-montaj', name: 'Avize Montajı', icon: 'bulb', color: colors.primary }, // filled
+                  { id: 'kapi-acma', name: 'Kapı Açma', icon: 'lock-open', color: '#F59E0B' }, // filled
+                  { id: 'klima-montaj', name: 'Klima Montaj', icon: 'snow', color: '#3B82F6' }, // filled
+                  { id: 'tikaniklik', name: 'Tıkanıklık Açma', icon: 'water', color: '#0284C7' }, // filled
+                  { id: 'buzdolabi', name: 'Buzdolabı Tamiri', icon: 'cube', color: '#16A34A' }, // filled
                 ].map((cat, idx) => (
                   <TouchableOpacity
                     key={idx}
@@ -950,10 +950,10 @@ export default function HomeScreen() {
                     onPress={() => handleActionWithAuth('/jobs/create', { category: cat.name })}
                     activeOpacity={0.85}
                   >
-                    <View style={[styles.categoryIconCircleMinimal, { backgroundColor: cat.color + '12', borderColor: cat.color + '20' }]}>
-                      <Ionicons name={cat.icon as any} size={20} color={cat.color} />
+                    <View style={[styles.categoryIconCircleMinimal, { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }]}>
+                      <Ionicons name={cat.icon as any} size={22} color={cat.color} />
                     </View>
-                    <Text style={[styles.categoryLabelMatch, { color: colors.text }]}>{cat.name}</Text>
+                    <Text style={[styles.categoryLabelMatch, { color: colors.textSecondary }]}>{cat.name}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
