@@ -81,19 +81,32 @@ export const verifyAndGrantPurchase = async (req: AuthRequest, res: Response, ne
             });
             if (existingPurchase) {
                 console.log(`⚠️ Mükerrer ödeme engellendi: ${purchaseToken} for user ${userId}`);
+                
+                // Bakiyeyi de ekleyelim ki frontend UI güncelleyebilsin
+                const profile = await prisma.electricianProfile.findUnique({ where: { userId } });
+                
                 return res.json({
                     success: true,
                     message: 'Bu satın alma daha önce hesabınıza tanımlanmış.',
-                    data: { alreadyProcessed: true }
+                    data: { 
+                        alreadyProcessed: true,
+                        newBalance: profile?.creditBalance || 0 
+                    }
                 });
             }
-        } else if (mockStorage.isTokenProcessed(purchaseToken)) {
-            console.log(`⚠️ Mükerrer ödeme engellendi (MOCK): ${purchaseToken} for user ${userId}`);
-            return res.json({
-                success: true,
-                message: 'Bu satın alma daha önce hesabınıza tanımlanmış.',
-                data: { alreadyProcessed: true }
-            });
+        } else {
+            const mockProfile = mockStorage.get(userId);
+            if (mockStorage.isTokenProcessed(purchaseToken)) {
+                console.log(`⚠️ Mükerrer ödeme engellendi (MOCK): ${purchaseToken} for user ${userId}`);
+                return res.json({
+                    success: true,
+                    message: 'Bu satın alma daha önce hesabınıza tanımlanmış.',
+                    data: { 
+                        alreadyProcessed: true,
+                        newBalance: mockProfile?.creditBalance || 0
+                    }
+                });
+            }
         }
 
         // Google Play API ile doğrulama

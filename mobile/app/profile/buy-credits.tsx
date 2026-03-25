@@ -116,154 +116,179 @@ export default function BuyCreditsScreen() {
         message: ''
     });
 
-    // IAP bağlantısını kur ve ürünleri çek
-    useEffect(() => {
-        let purchaseUpdateSubscription: any;
-        let purchaseErrorSubscription: any;
+    // IAP bağlantısı ve hata yönetimi için abonelikler
+    const purchaseUpdateSubscription = useRef<any>(null);
+    const purchaseErrorSubscription = useRef<any>(null);
 
-        const setupIAP = async () => {
-            try {
-                setLoading(true);
+    const setupIAP = async () => {
+        try {
+            setLoading(true);
 
-                if (isExpoGo || !ExpoIap) {
-                    console.log('IAP modülü pasif (Expo Go veya Modül bulunamadı), fallback paketler yükleniyor');
-                    await loadFallbackPackages();
-                    setLoading(false);
-                    // Animasyonları başlat ki paketler görünür olsun
-                    Animated.parallel([
-                        Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-                        Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
-                    ]).start();
-                    return;
-                }
-
-                // Google Play Billing bağlantısı
-                const connected = await ExpoIap.initConnection();
-                setIapConnected(connected);
-
-                if (connected) {
-                    // Google Play'den ürün bilgilerini çek
-                    const products = await ExpoIap.fetchProducts({
-                        skus: PRODUCT_IDS,
-                        type: 'in-app',
-                    });
-
-                    if (products && products.length > 0) {
-                        const mappedPackages: CreditPackage[] = products.map((product: any) => {
-                            const info = PACKAGE_INFO[product.id] || { name: product.id, credits: 0, color: '#94A3B8' };
-                            return {
-                                id: product.id,
-                                name: info.name,
-                                credits: info.credits,
-                                price: product.price || 0,
-                                displayPrice: product.displayPrice || `${product.price || 0} ₺`,
-                                color: info.color,
-                                isPopular: info.isPopular,
-                            };
-                        });
-
-                        // Kredi miktarına göre sırala
-                        mappedPackages.sort((a, b) => a.credits - b.credits);
-                        setPackages(mappedPackages);
-
-                        const popular = mappedPackages.find(p => p.isPopular);
-                        if (popular) setSelectedPkg(popular.id);
-                    } else {
-                        // Eğer ürünler henüz Google Play Console'da tanımlanmadıysa fallback
-                        console.warn('Google Play ürünleri bulunamadı, fallback kullanılıyor');
-                        await loadFallbackPackages();
-                    }
-                } else {
-                    console.warn('IAP bağlantısı kurulamadı, fallback kullanılıyor');
-                    await loadFallbackPackages();
-                }
-
-                // Purchase listener - satın alma tamamlandığında
-                purchaseUpdateSubscription = ExpoIap.purchaseUpdatedListener(async (purchase: any) => {
-                    console.log('🎉 Satın alma başarılı:', purchase.productId);
-
-                    try {
-                        // Backend'e doğrulama gönder
-                        const response = await api.post('/payments/verify-purchase', {
-                            productId: purchase.productId,
-                            purchaseToken: purchase.purchaseToken,
-                            packageName: 'com.isbitir.app',
-                        });
-
-                        if (response.data.success) {
-                            // İşlemi tamamla (consume)
-                            await ExpoIap.finishTransaction({
-                                purchase,
-                                isConsumable: true,
-                            });
-
-                            const newBalance = response.data.data.newBalance;
-                            if (typeof newBalance === 'number') {
-                                dispatch(updateCreditBalance(newBalance));
-                            }
-                            await dispatch(getMe());
-
-                            setAlertConfig({
-                                visible: true,
-                                type: 'success',
-                                title: 'Harika! 🚀',
-                                message: 'Kredileriniz cüzdanınıza başarıyla eklendi. Şimdi yeni işlere teklif verebilirsiniz.',
-                                buttons: [{
-                                    text: 'Tamam',
-                                    onPress: () => {
-                                        setAlertConfig(prev => ({ ...prev, visible: false }));
-                                        router.back();
-                                    }
-                                }]
-                            });
-                        }
-                    } catch (error: any) {
-                        console.error('Backend doğrulama hatası:', error);
-                        setAlertConfig({
-                            visible: true,
-                            type: 'error',
-                            title: 'Doğrulama Hatası',
-                            message: 'Ödeme alındı ancak kredi yükleme sırasında bir hata oluştu. Lütfen destek ile iletişime geçin.'
-                        });
-                    } finally {
-                        setProcessing(false);
-                    }
-                });
-
-                // Hata listener
-                purchaseErrorSubscription = ExpoIap.purchaseErrorListener((error: any) => {
-                    console.warn('Satın alma hatası:', error);
-                    setProcessing(false);
-
-                    // Kullanıcı iptal etti — sessizce geç
-                    if (error.code === 'user-cancelled') return;
-
-                    setAlertConfig({
-                        visible: true,
-                        type: 'error',
-                        title: 'Ödeme Başarısız',
-                        message: error.message || 'İşlem sırasında bir hata oluştu. Lütfen tekrar deneyin.'
-                    });
-                });
-
+            if (isExpoGo || !ExpoIap) {
+                console.log('IAP modülü pasif (Expo Go veya Modül bulunamadı), fallback paketler yükleniyor');
+                await loadFallbackPackages();
+                setLoading(false);
+                // Animasyonları başlat
                 Animated.parallel([
                     Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
                     Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
                 ]).start();
-
-            } catch (error) {
-                console.error('IAP kurulum hatası:', error);
-                await loadFallbackPackages();
-            } finally {
-                setLoading(false);
+                return;
             }
-        };
 
+            // Google Play Billing bağlantısı
+            const connected = await ExpoIap.initConnection();
+            setIapConnected(connected);
+
+            if (connected) {
+                const products = await ExpoIap.getProducts({ skus: Object.keys(PACKAGE_INFO) });
+
+                if (products && products.length > 0) {
+                    const mappedPackages: CreditPackage[] = products.map((product: any) => {
+                        const info = PACKAGE_INFO[product.id] || { name: product.id, credits: 0, color: '#94A3B8' };
+                        return {
+                            id: product.id,
+                            name: info.name,
+                            credits: info.credits,
+                            price: product.price || 0,
+                            displayPrice: product.displayPrice || `${product.price || 0} ₺`,
+                            color: info.color,
+                            isPopular: info.isPopular,
+                        };
+                    });
+
+                    mappedPackages.sort((a, b) => a.credits - b.credits);
+                    setPackages(mappedPackages);
+                    const popular = mappedPackages.find(p => p.isPopular);
+                    if (popular) setSelectedPkg(popular.id);
+
+                    // 🔍 KRİTİK: Askıda kalan (tüketilmemiş) ödemeleri kurtar
+                    console.log('🔍 Askıda kalan ödemeler kontrol ediliyor...');
+                    const available = await ExpoIap.getAvailablePurchases();
+                    if (available && available.length > 0) {
+                        console.log(`✅ ${available.length} adet bekleyen ödeme bulundu. Kurtarılıyor...`);
+                        let recoveredAny = false;
+                        for (const p of available) {
+                            try {
+                                const verifyRes = await api.post('/payments/verify-purchase', {
+                                    productId: p.productId,
+                                    purchaseToken: p.purchaseToken,
+                                    packageName: 'com.isbitir.app',
+                                });
+
+                                if (verifyRes.data.success || verifyRes.data.data?.alreadyProcessed) {
+                                    await ExpoIap.finishTransaction({ purchase: p, isConsumable: true });
+                                    recoveredAny = true;
+                                    console.log(`🛠️ Bekleyen ödeme başarıyla kurtarıldı: ${p.productId}`);
+                                }
+                            } catch (error) {
+                                console.error('Kurtarma işlemi sırasında hata:', error);
+                            }
+                        }
+                        if (recoveredAny) dispatch(getMe());
+                    }
+
+                } else {
+                    await loadFallbackPackages();
+                }
+            } else {
+                await loadFallbackPackages();
+            }
+
+            // Animasyonları başlat
+            Animated.parallel([
+                Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+                Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+            ]).start();
+
+        } catch (error) {
+            console.error('IAP kurulum hatası:', error);
+            await loadFallbackPackages();
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // IAP listener'larını kur
+    useEffect(() => {
         setupIAP();
 
+        // Başarılı Satın Alma Dinleyicisi
+        purchaseUpdateSubscription.current = ExpoIap?.purchaseUpdatedListener(async (purchase: any) => {
+            console.log('🎉 Satın alma işlemi güncellendi:', purchase.productId);
+            try {
+                setProcessing(true);
+                const response = await api.post('/payments/verify-purchase', {
+                    productId: purchase.productId,
+                    purchaseToken: purchase.purchaseToken,
+                    packageName: 'com.isbitir.app',
+                });
+
+                if (response.data.success) {
+                    await ExpoIap.finishTransaction({ purchase, isConsumable: true });
+                    const newBalance = response.data.data?.newBalance;
+                    
+                    if (typeof newBalance === 'number') {
+                        dispatch(updateCreditBalance(newBalance));
+                    }
+                    await dispatch(getMe());
+
+                    // Mükerrer bir bildirimse (alreadyProcessed), kullanıcıyı bekletmeden sessizce bitir
+                    if (response.data.data?.alreadyProcessed) {
+                        setProcessing(false);
+                        return;
+                    }
+
+                    setAlertConfig({
+                        visible: true,
+                        type: 'success',
+                        title: 'Harika! 🚀',
+                        message: 'Kredileriniz cüzdanınıza başarıyla eklendi.',
+                        buttons: [{ text: 'Tamam', onPress: () => { setAlertConfig(prev => ({ ...prev, visible: false })); router.back(); } }]
+                    });
+                }
+            } catch (error: any) {
+                console.error('Doğrulama hatası:', error);
+                setAlertConfig({
+                    visible: true,
+                    type: 'error',
+                    title: 'Sistem Hatası',
+                    message: 'Ödeme başarılı oldu ancak krediler yüklenirken bir sorun çıktı. Lütfen birazdan tekrar "Kredi Yükle" sayfasına girin, işleminiz otomatik tamamlanacaktır.'
+                });
+            } finally {
+                setProcessing(false);
+            }
+        });
+
+        // Hata Dinleyicisi
+        purchaseErrorSubscription.current = ExpoIap?.purchaseErrorListener((error: any) => {
+            console.warn('IAP Hatası:', error);
+            setProcessing(false);
+            if (error.code === 'user-cancelled') return;
+            
+            // 'Already owned' hatası için özel mesaj
+            if (error?.message?.includes('already owned') || error?.code === 7) {
+                setAlertConfig({
+                    visible: true,
+                    type: 'info',
+                    title: 'Bekleyen İşlem',
+                    message: 'Bu paket için bekleyen bir ödemeniz var. Şimdi sistem bunu kontrol edip kredinizi tanımlayacak.',
+                    buttons: [{ text: 'Kredimi Yükle', onPress: async () => { setAlertConfig(prev => ({ ...prev, visible: false })); setProcessing(true); await setupIAP(); } }]
+                });
+                return;
+            }
+
+            setAlertConfig({
+                visible: true,
+                type: 'error',
+                title: 'Ödeme Başarısız',
+                message: error.message || 'İşlem sırasında bir hata oluştu.'
+            });
+        });
+
         return () => {
-            purchaseUpdateSubscription?.remove();
-            purchaseErrorSubscription?.remove();
+            purchaseUpdateSubscription.current?.remove();
+            purchaseErrorSubscription.current?.remove();
             if (ExpoIap) ExpoIap.endConnection();
         };
     }, []);
@@ -369,6 +394,30 @@ export default function BuyCreditsScreen() {
         } catch (error: any) {
             console.error('Satın alma hatası:', error);
             setProcessing(false);
+
+            // 🛠️ 'Item already owned' Hatası Kurtarma (Google Play)
+            const isAlreadyOwned = error?.message?.includes('already owned') || 
+                                 error?.code === 7 || 
+                                 error?.code === 'E_USER_CANCELLED_WITH_PENDING_PURCHASE';
+
+            if (isAlreadyOwned) {
+                setAlertConfig({
+                    visible: true,
+                    type: 'info',
+                    title: 'İşlem Kontrolü',
+                    message: 'Bu paket için bekleyen bir ödemeniz bulundu. Şimdi krediniz kontrol edilip hesabınıza tanımlanacak.',
+                    buttons: [{
+                        text: 'Kredimi Yükle',
+                        onPress: async () => {
+                            setAlertConfig(prev => ({ ...prev, visible: false }));
+                            setProcessing(true);
+                            // Bekleyen ödemeleri temizleyen kurulumu tekrar çalıştır
+                            await setupIAP();
+                        }
+                    }]
+                });
+                return;
+            }
 
             // Kullanıcı iptal ettiğinde hata gösterme
             if (error?.code === 'user-cancelled' || error?.message?.includes('cancel')) return;
