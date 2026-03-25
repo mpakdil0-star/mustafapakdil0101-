@@ -971,7 +971,13 @@ export default function HomeScreen() {
                       name={elec.fullName || 'Usta'}
                       rating={elec.electricianProfile?.ratingAverage || elec.electricianProfile?.rating || 0}
                       reviewCount={elec.electricianProfile?.totalReviews || elec.electricianProfile?.reviewCount || 0}
-                      specialty={elec.electricianProfile?.specialties?.[0] || 'Genel Elektrik'}
+                      specialty={
+                        elec.electricianProfile?.serviceCategory === 'cilingir' ? 'Çilingir' :
+                        elec.electricianProfile?.serviceCategory === 'klima' ? 'Klima' :
+                        elec.electricianProfile?.serviceCategory === 'beyaz-esya' ? 'Beyaz Eşya' :
+                        elec.electricianProfile?.serviceCategory === 'tesisat' ? 'Tesisat' :
+                        'Elektrik'
+                      }
                       isVerified={elec.isVerified === true && elec.electricianProfile?.verificationStatus === 'VERIFIED'}
                       imageUrl={elec.profileImageUrl ? getFileUrl(elec.profileImageUrl) || undefined : undefined}
                       location={elec.locations?.[0] ? `${elec.locations[0].district || ''}, ${elec.locations[0].city || ''}`.replace(/^, /, '').replace(/, $/, '') || 'Türkiye' : 'Türkiye'}

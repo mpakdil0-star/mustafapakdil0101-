@@ -143,7 +143,14 @@ export default function ElectriciansListScreen() {
                 name: e.fullName,
                 rating: Number(e.electricianProfile?.ratingAverage) || 0,
                 reviewCount: e.electricianProfile?.totalReviews || 0,
-                specialty: e.electricianProfile?.specialties?.[0] || 'Genel Hizmet',
+                specialty: (() => {
+                    const cat = e.electricianProfile?.serviceCategory;
+                    if (cat === 'cilingir') return 'Çilingir';
+                    if (cat === 'klima') return 'Klima';
+                    if (cat === 'beyaz-esya') return 'Beyaz Eşya';
+                    if (cat === 'tesisat') return 'Tesisat';
+                    return 'Elektrik';
+                })(),
                 isVerified: e.isVerified === true && e.electricianProfile?.verificationStatus === 'VERIFIED',
                 isAuthorizedEngineer: e.electricianProfile?.isAuthorizedEngineer || false,
                 location: e.locations?.[0] ? `${e.locations[0].district}, ${e.locations[0].city}` : 'Konum Belirtilmedi',
