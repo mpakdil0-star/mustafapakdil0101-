@@ -41,10 +41,10 @@ const { width } = Dimensions.get('window');
 
 // Google Play Console'da tanımlanan ürün ID'leri
 const PRODUCT_IDS = [
-    'credit_pack_10',
-    'credit_pack_35',
-    'credit_pack_75',
-    'credit_pack_175',
+    'pkg_10',
+    'pkg_35',
+    'pkg_75',
+    'pkg_175',
 ];
 
 interface CreditPackage {
@@ -58,24 +58,24 @@ interface CreditPackage {
 }
 
 const PACKAGE_ICONS: Record<string, string> = {
-    'credit_pack_10': 'rocket-outline',
-    'credit_pack_35': 'trending-up-outline',
-    'credit_pack_75': 'diamond-outline',
-    'credit_pack_175': 'trophy-outline',
+    'pkg_10': 'rocket-outline',
+    'pkg_35': 'trending-up-outline',
+    'pkg_75': 'diamond-outline',
+    'pkg_175': 'trophy-outline',
 };
 
 const PACKAGE_DESCRIPTIONS: Record<string, string> = {
-    'credit_pack_10': 'İlk adım için ideal',
-    'credit_pack_35': 'Düzenli iş yapanlar için',
-    'credit_pack_75': 'En çok tercih edilen',
-    'credit_pack_175': 'Maksimum tasarruf',
+    'pkg_10': 'İlk adım için ideal',
+    'pkg_35': 'Düzenli iş yapanlar için',
+    'pkg_75': 'En çok tercih edilen',
+    'pkg_175': 'Maksimum tasarruf',
 };
 
 const PACKAGE_INFO: Record<string, { name: string; credits: number; color: string; isPopular?: boolean }> = {
-    'credit_pack_10': { name: 'Hızlı Başlangıç', credits: 10, color: '#3B82F6' },
-    'credit_pack_35': { name: 'Gelişim Paketi', credits: 35, color: '#94A3B8' },
-    'credit_pack_75': { name: 'Eko-Avantaj', credits: 75, color: '#F59E0B', isPopular: true },
-    'credit_pack_175': { name: 'Usta Paketi', credits: 175, color: '#8B5CF6' },
+    'pkg_10': { name: 'Hızlı Başlangıç', credits: 10, color: '#3B82F6' },
+    'pkg_35': { name: 'Gelişim Paketi', credits: 35, color: '#94A3B8' },
+    'pkg_75': { name: 'Eko-Avantaj', credits: 75, color: '#F59E0B', isPopular: true },
+    'pkg_175': { name: 'Usta Paketi', credits: 175, color: '#8B5CF6' },
 };
 
 const getPerCredit = (pkg: CreditPackage) => {

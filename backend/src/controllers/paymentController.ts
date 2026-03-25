@@ -7,10 +7,10 @@ import { google } from 'googleapis';
 
 // Google Play product ID → kredi eşlemesi
 const PRODUCT_CREDIT_MAP: Record<string, { credits: number; price: number; name: string }> = {
-    'credit_pack_10': { credits: 10, price: 189, name: 'Hızlı Başlangıç' },
-    'credit_pack_35': { credits: 35, price: 489, name: 'Gelişim Paketi' },
-    'credit_pack_75': { credits: 75, price: 889, name: 'Eko-Avantaj' },
-    'credit_pack_175': { credits: 175, price: 1489, name: 'Usta Paketi' },
+    'pkg_10': { credits: 10, price: 189, name: 'Hızlı Başlangıç' },
+    'pkg_35': { credits: 35, price: 489, name: 'Gelişim Paketi' },
+    'pkg_75': { credits: 75, price: 889, name: 'Eko-Avantaj' },
+    'pkg_175': { credits: 175, price: 1489, name: 'Usta Paketi' },
 };
 
 // Google Play Developer API client (lazy init)
@@ -43,10 +43,10 @@ const getAndroidPublisher = () => {
 export const getCreditPackages = async (req: AuthRequest, res: Response) => {
     // Backend'deki paket bilgilerini döndür (Google Play fiyatları frontend'den gelecek)
     const packages = [
-        { id: 'credit_pack_10', name: 'Hızlı Başlangıç', credits: 10, price: 189, color: '#3B82F6' },
-        { id: 'credit_pack_35', name: 'Gelişim Paketi', credits: 35, price: 489, color: '#94A3B8' },
-        { id: 'credit_pack_75', name: 'Eko-Avantaj', credits: 75, price: 889, color: '#F59E0B', isPopular: true },
-        { id: 'credit_pack_175', name: 'Usta Paketi', credits: 175, price: 1489, color: '#8B5CF6' },
+        { id: 'pkg_10', name: 'Hızlı Başlangıç', credits: 10, price: 189, color: '#3B82F6' },
+        { id: 'pkg_35', name: 'Gelişim Paketi', credits: 35, price: 489, color: '#94A3B8' },
+        { id: 'pkg_75', name: 'Eko-Avantaj', credits: 75, price: 889, color: '#F59E0B', isPopular: true },
+        { id: 'pkg_175', name: 'Usta Paketi', credits: 175, price: 1489, color: '#8B5CF6' },
     ];
 
     res.json({ success: true, data: packages });
