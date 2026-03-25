@@ -24,12 +24,20 @@ import api from '../../services/api';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { getMe, updateCreditBalance } from '../../store/slices/authSlice';
 
+import Constants, { AppOwnership } from 'expo-constants';
+
 // Google Play IAP - dinamik import (Expo Go'da native modül yok)
 let ExpoIap: any = null;
-try {
-    ExpoIap = require('expo-iap');
-} catch (e) {
-    console.warn('⚠️ expo-iap native modülü bulunamadı (Expo Go?). Mock mod kullanılacak.');
+const isExpoGo = Constants.appOwnership === AppOwnership.Expo;
+
+if (!isExpoGo) {
+    try {
+        ExpoIap = require('expo-iap');
+    } catch (e) {
+        console.warn('⚠️ expo-iap native modülü bulunamadı. Mock mod kullanılacak.');
+    }
+} else {
+    console.log('ℹ️ Expo Go tespit edildi. IAP devre dışı bırakıldı (Mock mod aktif).');
 }
 
 const { width } = Dimensions.get('window');
@@ -117,8 +125,8 @@ export default function BuyCreditsScreen() {
             try {
                 setLoading(true);
 
-                if (!ExpoIap) {
-                    console.warn('IAP modülü yok, fallback kullanılıyor');
+                if (isExpoGo || !ExpoIap) {
+                    console.log('IAP modülü pasif (Expo Go veya Modül bulunamadı), fallback paketler yükleniyor');
                     await loadFallbackPackages();
                     setLoading(false);
                     return;
