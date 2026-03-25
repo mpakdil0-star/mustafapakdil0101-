@@ -240,8 +240,7 @@ export default function QuickCreateScreen() {
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
             if (status !== 'granted') return;
             const result = await ImagePicker.launchCameraAsync({
-                allowsEditing: true,
-                aspect: [4, 3],
+                allowsEditing: false,
                 quality: 0.4,
                 base64: true,
             });
@@ -262,8 +261,7 @@ export default function QuickCreateScreen() {
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
-                aspect: [4, 3],
+                allowsEditing: false,
                 quality: 0.4,
                 base64: true,
             });

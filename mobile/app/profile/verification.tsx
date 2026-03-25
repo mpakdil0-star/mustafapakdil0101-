@@ -125,8 +125,7 @@ export default function VerificationScreen() {
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
-                aspect: [4, 3],
+                allowsEditing: false,
                 quality: 0.7,
                 base64: true,
             });
@@ -149,8 +148,7 @@ export default function VerificationScreen() {
               }
 
             const result = await ImagePicker.launchCameraAsync({
-                allowsEditing: true,
-                aspect: [4, 3],
+                allowsEditing: false,
                 quality: 0.7,
                 base64: true,
             });
