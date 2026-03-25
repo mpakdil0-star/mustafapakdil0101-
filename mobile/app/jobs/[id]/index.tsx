@@ -1071,7 +1071,7 @@ const styles = StyleSheet.create({
   assignedSection: { marginTop: 8 },
   completeBtn: { marginTop: 10, height: 54, borderRadius: 16 },
   reviewModalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.85)', justifyContent: 'flex-end' },
-  reviewModalContent: { borderTopLeftRadius: 36, borderTopRightRadius: 36, padding: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 24, borderTopWidth: 1.5, borderTopColor: 'rgba(255,255,255,0.1)' },
+  reviewModalContent: { borderTopLeftRadius: 36, borderTopRightRadius: 36, padding: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 48, borderTopWidth: 1.5, borderTopColor: 'rgba(255,255,255,0.1)' },
   modalScrollIndicator: { width: 40, height: 4, backgroundColor: '#E2E8F0', borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
   reviewModalTitle: { fontSize: 24, fontFamily: fonts.extraBold, textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
   reviewModalSubtitle: { fontSize: 14, fontFamily: fonts.medium, textAlign: 'center', marginBottom: 30 },
