@@ -14,6 +14,7 @@ export interface RegisterData {
   serviceCategory?: string; // Profession category: 'elektrik' | 'cilingir' | 'klima' | 'beyaz-esya' | 'tesisat'
   acceptedLegalVersion?: string;
   marketingAllowed?: boolean;
+  ipAddress?: string;
 }
 
 export interface LoginData {
@@ -187,35 +188,40 @@ export const register = async (data: RegisterData) => {
     });
 
     // Record formal consent in UserConsent table/mock
-    const acceptedVersion = data.acceptedLegalVersion || 'v1.0';
+    const acceptedVersion = data.acceptedLegalVersion || '25 Mart 2026 Tarihli Sözleşme';
     if (!isDatabaseAvailable) {
       const { mockStorage } = require('../utils/mockStorage');
-      mockStorage.addConsent({
-        userId: user.id,
-        documentType: 'KVKK',
-        documentVersion: acceptedVersion,
-        action: 'ACCEPTED'
-      });
-      mockStorage.addConsent({
-        userId: user.id,
-        documentType: 'TERMS',
-        documentVersion: acceptedVersion,
-        action: 'ACCEPTED'
-      });
-      if (data.marketingAllowed) {
+      if (mockStorage.addConsent) {
         mockStorage.addConsent({
           userId: user.id,
-          documentType: 'MARKETING',
+          documentType: 'KVKK',
           documentVersion: acceptedVersion,
-          action: 'ACCEPTED'
+          action: 'ACCEPTED',
+          ipAddress: data.ipAddress
         });
+        mockStorage.addConsent({
+          userId: user.id,
+          documentType: 'TERMS',
+          documentVersion: acceptedVersion,
+          action: 'ACCEPTED',
+          ipAddress: data.ipAddress
+        });
+        if (data.marketingAllowed) {
+          mockStorage.addConsent({
+            userId: user.id,
+            documentType: 'MARKETING',
+            documentVersion: acceptedVersion,
+            action: 'ACCEPTED',
+            ipAddress: data.ipAddress
+          });
+        }
       }
     } else {
       await prisma.userConsent.createMany({
         data: [
-          { userId: user.id, documentType: 'KVKK', documentVersion: acceptedVersion, action: 'ACCEPTED' },
-          { userId: user.id, documentType: 'TERMS', documentVersion: acceptedVersion, action: 'ACCEPTED' },
-          ...(data.marketingAllowed ? [{ userId: user.id, documentType: 'MARKETING', documentVersion: acceptedVersion, action: 'ACCEPTED' }] : [])
+          { userId: user.id, documentType: 'KVKK', documentVersion: acceptedVersion, action: 'ACCEPTED', ipAddress: data.ipAddress },
+          { userId: user.id, documentType: 'TERMS', documentVersion: acceptedVersion, action: 'ACCEPTED', ipAddress: data.ipAddress },
+          ...(data.marketingAllowed ? [{ userId: user.id, documentType: 'MARKETING', documentVersion: acceptedVersion, action: 'ACCEPTED', ipAddress: data.ipAddress }] : [])
         ]
       });
     }

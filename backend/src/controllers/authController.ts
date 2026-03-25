@@ -41,6 +41,7 @@ export const registerController = async (
 ) => {
   try {
     const { email, password, fullName, phone, userType, serviceCategory, acceptedLegalVersion, marketingAllowed } = req.body;
+    const ipAddress = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || 'unknown') as string;
 
     if (!email || !password || !fullName || !userType || !phone) {
       throw new ValidationError('Missing required fields');
@@ -54,6 +55,9 @@ export const registerController = async (
         phone,
         userType,
         serviceCategory, // Pass serviceCategory to register service
+        acceptedLegalVersion,
+        marketingAllowed,
+        ipAddress,
       });
 
       res.status(201).json({

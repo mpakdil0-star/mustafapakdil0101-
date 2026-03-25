@@ -148,7 +148,7 @@ export default function RegisterScreen() {
           password,
           userType,
           serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined,
-          acceptedLegalVersion: 'v1.0', // Mandatory checkbox or notice
+          acceptedLegalVersion: '25 Mart 2026 Tarihli Sözleşme', // Mandatory audit log tracking version
           marketingAllowed,
           location: location ? {
             city: location.city,
@@ -373,41 +373,22 @@ export default function RegisterScreen() {
               <View style={styles.legalSection}>
                 <TouchableOpacity
                   style={styles.legalCheckboxContainer}
-                  onPress={() => setTermsAccepted(!termsAccepted)}
+                  onPress={() => {
+                    const val = !termsAccepted;
+                    setTermsAccepted(val);
+                    setKvkkAccepted(val);
+                    setMarketingAllowed(val); // Teknik olarak arka planda true yapıyoruz
+                  }}
                   activeOpacity={0.7}
                 >
                   <View style={[styles.checkbox, termsAccepted && { backgroundColor: accentColor, borderColor: accentColor }]}>
                     {termsAccepted && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
                   </View>
                   <Text style={styles.legalNoticeText}>
-                    <Text style={[styles.legalLink, { color: accentColor }]} onPress={(e) => { e.stopPropagation(); openLegalModal('terms'); }}>Kullanıcı Sözleşmesi</Text>'ni okudum ve kabul ediyorum.
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.legalCheckboxContainer}
-                  onPress={() => setKvkkAccepted(!kvkkAccepted)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.checkbox, kvkkAccepted && { backgroundColor: accentColor, borderColor: accentColor }]}>
-                    {kvkkAccepted && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
-                  </View>
-                  <Text style={styles.legalNoticeText}>
-                    <Text style={[styles.legalLink, { color: accentColor }]} onPress={(e) => { e.stopPropagation(); openLegalModal('kvkk'); }}>KVKK Aydınlatma Metni</Text>'ni okudum ve kabul ediyorum.
+                    <Text style={[styles.legalLink, { color: accentColor }]} onPress={(e) => { e.stopPropagation(); openLegalModal('terms'); }}>Kullanım Koşullarını</Text> ve <Text style={[styles.legalLink, { color: accentColor }]} onPress={(e) => { e.stopPropagation(); openLegalModal('kvkk'); }}>KVKK Politikasını</Text> okudum, onaylıyorum.
                   </Text>
                 </TouchableOpacity>
               </View>
-
-              <TouchableOpacity
-                style={styles.marketingContainer}
-                onPress={() => setMarketingAllowed(!marketingAllowed)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.checkbox, marketingAllowed && { backgroundColor: accentColor, borderColor: accentColor }]}>
-                  {marketingAllowed && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
-                </View>
-                <Text style={styles.marketingText}>Kampanya ve duyuruları e-posta/SMS yoluyla almayı kabul ediyorum.</Text>
-              </TouchableOpacity>
 
               {error && (
                 <View style={styles.errorContainer}>

@@ -24,6 +24,7 @@ const CONTENT = {
 - İş Bitir; yalnızca hizmet almak isteyenler ile hizmet veren ustaları/uzmanları dijital ortamda bir araya getiren bağımsız bir aracı platformdur.
 - Platform, uygulama üzerinden anlaşılan işlerin kalitesini, zamanında yapılmasını, ustaların yeterliliğini veya taraflar arasındaki fiziki/maddi anlaşmazlıkları garanti etmez.
 - İşe ait maddi ve bedensel zararlardan, işçilik kusurlarından İş Bitir veya geliştiricileri hiçbir şekilde hukuki ve cezai olarak sorumlu tutulamaz. Tüm hukuki sorumluluk hizmeti veren Usta ile hizmeti alan Vatandaş arasındaki anlaşmaya dayanır.
+- Tarafların birbirlerine karşı işlediği hakaret, tehdit, taciz, hırsızlık veya mala zarar verme gibi Türk Ceza Kanunu kapsamındaki eylemlerden İş Bitir sorumlu değildir. Platform, yalnızca adli makamların resmi talebi doğrultusunda elindeki kayıtları paylaşmakla yükümlüdür.
 
 4. Kullanıcı Yükümlülükleri
 - Vatandaş (Müşteri): Platformda yanıltıcı bilgilerle veya ustaları oyalama amaçlı sahte iş ilanları oluşturamaz. Açtığı ilandaki iş tanımını ve adresini doğru belirtmek zorundadır.
@@ -43,7 +44,13 @@ Kullanıcılar platformu herhangi bir dolandırıcılık, istismar, spam veya to
 İş Bitir yönetimi işbu Kullanım Koşulları belgesinde zaman zaman değişiklik yapabilir. Yapılan düzenlemeler Uygulama içerisinde yayınlandığı andan itibaren tüm kullanıcılar için geçerli olur.
 
 8. Uyuşmazlıkların Çözümü
-İşbu sözleşmenin uygulanmasından ve yorumlanmasından doğacak her türlü ihtilaflarda Türkiye Cumhuriyeti yasaları uygulanacak olup, İstanbul Mahkemeleri ve İcra Daireleri yetkili olacaktır.`
+İşbu sözleşmenin uygulanmasından ve yorumlanmasından doğacak her türlü ihtilaflarda Türkiye Cumhuriyeti yasaları uygulanacak olup, İstanbul Mahkemeleri ve İcra Daireleri yetkili olacaktır.
+
+9. Mali Sorumluluk ve Vergi
+İş Bitir, taraflar arasındaki hizmet bedeli tahsilatına veya ödeme süreçlerine aracılık etmez. Sunulan hizmete dair fatura/fiş düzenleme yükümlülüğü tamamen Hizmet Veren'e (Usta) aittir. Platform, doğabilecek vergi mükellefiyetlerinden sorumlu tutulamaz.
+
+10. Pazarlama ve Bildirim İzni
+Kullanıcı, işbu sözleşmeyi onaylayarak uygulama içindeki gelişmeler, yeni hizmetler ve avantajlı teklifler hakkında tarafına Push bildirim ve ticari elektronik ileti gönderilmesine açık rıza göstermiş sayılır.`
     },
     kvkk: {
         title: 'KVKK ve Veri Politikası',
@@ -77,7 +84,7 @@ Kişisel verileriniz hiçbir şekilde reklam, pazarlama veya ticari amaçlarla s
 - Teknik servis sağlayıcıları (örn: Bulut sunucu sağlayıcıları, bildirim servisleri - Expo/Google FCM) ile verilerin güvenle barındırılması amaçlı paylaşım.
 
 6. Veri Saklama ve Hesap Silme İşlemleri
-Verileriniz, hesabınız aktif olduğu sürece ve yasal zamanaşımı süreleri boyunca saklanır. Uygulama içerisindeki "Profil > Güvenlik > Hesabı Sil" butonunu kullanarak veya isbitir.destek@gmail.com adresine e-posta göndererek hesabınızın ve size ait tüm kayıtların sistemimizden tamamen silinmesini talep edebilirsiniz. Silme talebiniz 30 gün içinde yasal yükümlülükler dışındaki tüm verileri kapsayacak şekilde gerçekleştirilir.
+Verileriniz, hesabınız aktif olduğu sürece ve yasal zamanaşımı süreleri boyunca saklanır. Uygulama içerisindeki "Profil > Güvenlik > Hesabı Sil" butonunu kullanarak veya isbitir.destek@gmail.com adresine e-posta göndererek hesabınızın ve size ait tüm kayıtların sistemimizden tamamen silinmesini talep edebilirsiniz. Hesap silme talepleri 30 gün içinde sonuçlandırılır. Bu süre zarfında veriler, yasal saklama yükümlülükleri hariç olmak üzere anonim hale getirilerek sistemden temizlenir.
 
 7. Kullanıcı Haklarınız (KVKK Madde 11)
 Kanun kapsamında; verilerinizin işlenip işlenmediğini öğrenme, işlenme amacını bilme, eksik/yanlışsa düzelttirme ve silinmesini talep etme hakkınız bulunmaktadır.`
