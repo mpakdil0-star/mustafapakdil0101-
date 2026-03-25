@@ -24,18 +24,13 @@ import api from '../../services/api';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { getMe, updateCreditBalance } from '../../store/slices/authSlice';
 
-// Google Play IAP
-import {
-    initConnection,
-    endConnection,
-    fetchProducts,
-    requestPurchase,
-    finishTransaction,
-    purchaseUpdatedListener,
-    purchaseErrorListener,
-    type Purchase,
-    type Product,
-} from 'expo-iap';
+// Google Play IAP - dinamik import (Expo Go'da native modül yok)
+let ExpoIap: any = null;
+try {
+    ExpoIap = require('expo-iap');
+} catch (e) {
+    console.warn('⚠️ expo-iap native modülü bulunamadı (Expo Go?). Mock mod kullanılacak.');
+}
 
 const { width } = Dimensions.get('window');
 
@@ -122,13 +117,20 @@ export default function BuyCreditsScreen() {
             try {
                 setLoading(true);
 
+                if (!ExpoIap) {
+                    console.warn('IAP modülü yok, fallback kullanılıyor');
+                    await loadFallbackPackages();
+                    setLoading(false);
+                    return;
+                }
+
                 // Google Play Billing bağlantısı
-                const connected = await initConnection();
+                const connected = await ExpoIap.initConnection();
                 setIapConnected(connected);
 
                 if (connected) {
                     // Google Play'den ürün bilgilerini çek
-                    const products = await fetchProducts({
+                    const products = await ExpoIap.fetchProducts({
                         skus: PRODUCT_IDS,
                         type: 'in-app',
                     });
@@ -164,7 +166,7 @@ export default function BuyCreditsScreen() {
                 }
 
                 // Purchase listener - satın alma tamamlandığında
-                purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase: Purchase) => {
+                purchaseUpdateSubscription = ExpoIap.purchaseUpdatedListener(async (purchase: any) => {
                     console.log('🎉 Satın alma başarılı:', purchase.productId);
 
                     try {
@@ -177,7 +179,7 @@ export default function BuyCreditsScreen() {
 
                         if (response.data.success) {
                             // İşlemi tamamla (consume)
-                            await finishTransaction({
+                            await ExpoIap.finishTransaction({
                                 purchase,
                                 isConsumable: true,
                             });
@@ -216,7 +218,7 @@ export default function BuyCreditsScreen() {
                 });
 
                 // Hata listener
-                purchaseErrorSubscription = purchaseErrorListener((error: any) => {
+                purchaseErrorSubscription = ExpoIap.purchaseErrorListener((error: any) => {
                     console.warn('Satın alma hatası:', error);
                     setProcessing(false);
 
@@ -249,7 +251,7 @@ export default function BuyCreditsScreen() {
         return () => {
             purchaseUpdateSubscription?.remove();
             purchaseErrorSubscription?.remove();
-            endConnection();
+            if (ExpoIap) ExpoIap.endConnection();
         };
     }, []);
 
@@ -314,9 +316,9 @@ export default function BuyCreditsScreen() {
         try {
             setProcessing(true);
 
-            if (iapConnected) {
+            if (iapConnected && ExpoIap) {
                 // Google Play üzerinden satın alma
-                await requestPurchase({
+                await ExpoIap.requestPurchase({
                     request: {
                         google: { skus: [selectedPkg] },
                         apple: { sku: selectedPkg },
