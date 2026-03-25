@@ -124,7 +124,7 @@ Size hizmet sunabilmek amacıyla aşağıdaki verileri toplamaktayız:
 Kişisel verileriniz, yasal zorunluluklar hariç, üçüncü taraflarla reklam veya pazarlama amacıyla paylaşılmaz. Sadece onayladığınız iş süreçlerinde, ilgili usta veya müşteri ile sınırlı bilgiler paylaşılır.
 
 6. Veri Saklama ve Hesap Silme
-Verileriniz, hesabınız aktif olduğu sürece saklanır. Uygulama içerisindeki "Profil > Hesabı Sil" butonunu kullanarak veya isbitir.destek@gmail.com üzerinden hesabınızın ve size ait tüm kayıtların tamamen silinmesini talep edebilirsiniz.
+Verileriniz, hesabınız aktif olduğu sürece saklanır. Uygulama içerisindeki "Profil > Güvenlik > Hesabı Sil" butonunu kullanarak veya isbitir.destek@gmail.com üzerinden hesabınızın ve size ait tüm kayıtların tamamen silinmesini talep edebilirsiniz.
 
 7. Haklarınız
 KVKK Madde 11 uyarınca; verilerinizin işlenip işlenmediğini öğrenme, düzeltme veya silinmesini talep etme hakkınız bulunmaktadır.`;

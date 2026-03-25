@@ -77,7 +77,7 @@ Kişisel verileriniz hiçbir şekilde reklam, pazarlama veya ticari amaçlarla s
 - Teknik servis sağlayıcıları (örn: Bulut sunucu sağlayıcıları, bildirim servisleri - Expo/Google FCM) ile verilerin güvenle barındırılması amaçlı paylaşım.
 
 6. Veri Saklama ve Hesap Silme İşlemleri
-Verileriniz, hesabınız aktif olduğu sürece ve yasal zamanaşımı süreleri boyunca saklanır. Uygulama içerisindeki "Profil > Hesabı Sil" butonunu kullanarak veya isbitir.destek@gmail.com adresine e-posta göndererek hesabınızın ve size ait tüm kayıtların sistemimizden tamamen silinmesini talep edebilirsiniz. Silme talebiniz 30 gün içinde yasal yükümlülükler dışındaki tüm verileri kapsayacak şekilde gerçekleştirilir.
+Verileriniz, hesabınız aktif olduğu sürece ve yasal zamanaşımı süreleri boyunca saklanır. Uygulama içerisindeki "Profil > Güvenlik > Hesabı Sil" butonunu kullanarak veya isbitir.destek@gmail.com adresine e-posta göndererek hesabınızın ve size ait tüm kayıtların sistemimizden tamamen silinmesini talep edebilirsiniz. Silme talebiniz 30 gün içinde yasal yükümlülükler dışındaki tüm verileri kapsayacak şekilde gerçekleştirilir.
 
 7. Kullanıcı Haklarınız (KVKK Madde 11)
 Kanun kapsamında; verilerinizin işlenip işlenmediğini öğrenme, işlenme amacını bilme, eksik/yanlışsa düzelttirme ve silinmesini talep etme hakkınız bulunmaktadır.`
