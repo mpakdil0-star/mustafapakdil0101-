@@ -490,7 +490,9 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
         if (isDatabaseAvailable) {
             const whereClause: any = { deletedAt: null };
 
-            if (filterType && filterType !== 'ALL') {
+            if (filterType === 'ENGINEER') {
+                whereClause.electricianProfile = { is: { isAuthorizedEngineer: true } };
+            } else if (filterType && filterType !== 'ALL') {
                 whereClause.userType = filterType;
             }
 
@@ -602,7 +604,9 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
             };
         });
 
-        if (filterType && filterType !== 'ALL') {
+        if (filterType === 'ENGINEER') {
+            users = users.filter((u: any) => u.isAuthorizedEngineer === true);
+        } else if (filterType && filterType !== 'ALL') {
             users = users.filter(u => u.userType === filterType);
         }
 

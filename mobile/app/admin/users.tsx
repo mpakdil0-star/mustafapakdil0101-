@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, RefreshControl, Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, RefreshControl, Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
@@ -27,7 +27,7 @@ interface User {
     pushStatus?: 'ACTIVE' | 'PENDING' | 'DISABLED';
 }
 
-type FilterType = 'ALL' | 'CITIZEN' | 'ELECTRICIAN';
+type FilterType = 'ALL' | 'CITIZEN' | 'ELECTRICIAN' | 'ENGINEER';
 
 export default function AdminUsersScreen() {
     const router = useRouter();
@@ -338,9 +338,16 @@ export default function AdminUsersScreen() {
             </View>
 
             <View style={styles.filterRow}>
-                <FilterButton type="ALL" label="Tümü" />
-                <FilterButton type="CITIZEN" label="Vatandaş" />
-                <FilterButton type="ELECTRICIAN" label="Usta" />
+                <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false} 
+                    contentContainerStyle={styles.filterScroll}
+                >
+                    <FilterButton type="ALL" label="Tümü" />
+                    <FilterButton type="CITIZEN" label="Vatandaş" />
+                    <FilterButton type="ELECTRICIAN" label="Usta" />
+                    <FilterButton type="ENGINEER" label="Yetkili Müh" />
+                </ScrollView>
             </View>
 
             {loading && users.length === 0 ? (
@@ -460,9 +467,10 @@ const styles = StyleSheet.create({
         color: staticColors.text,
     },
     filterRow: {
-        flexDirection: 'row',
-        paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
+    },
+    filterScroll: {
+        paddingHorizontal: spacing.md,
         gap: 8,
     },
     filterBtn: {
