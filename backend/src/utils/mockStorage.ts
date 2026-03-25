@@ -129,18 +129,18 @@ if (fs.existsSync(LEGAL_FILE)) {
         {
             id: 'doc-kvkk-v1',
             type: 'KVKK',
-            version: 'v1.0',
-            title: 'KVKK Aydınlatma Metni',
-            content: 'Veri Sorumlusu: [ADINIZ SOYADINIZ]\\n\\n1. İŞLEME AMACI VE HUKUKİ SEBEP: Kişisel verileriniz, 6698 sayılı KVKK Madde 5/2-c uyarınca "bir sözleşmenin kurulması veya ifasıyla doğrudan doğruya ilgili olması" hukuki sebebine dayanarak; hizmet eşleştirme, hesap yönetimi ve platform güvenliği amaçlarıyla işlenmektedir.\\n2. İŞLENEN VERİLER: Kimlik (Ad-Soyad), İletişim (E-posta, Tel), Cihaz/İşlem Güvenliği (IP, Cihaz ID) ve Konum (İş ilanı/Usta bulma için).\\n3. VERİ AKTARIMI: Verileriniz, hizmetin sunulması için gerekli teknik altyapı sağlayıcıları (Expo, Firebase) ve bağımsız denetim/yasal zorunluluklar dışında 3. taraflara aktarılmaz.\\n4. SAKLAMA SÜRESİ: Kişisel verileriniz, yasal zamanaşımı süreleri ve platform kullanım süreniz boyunca saklanır.\\n5. HAKLARINIZ: KVKK Madde 11 uyarınca [E-POSTA ADRESİNİZ] üzerinden verilerinize erişme, düzeltme veya silme talebinde bulunabilirsiniz.',
+            version: 'v1.1',
+            title: 'KVKK ve Veri Politikası',
+            content: '1. Veri Sorumlusu\\nİş Bitir ("Uygulama" veya "Biz"), kullanıcıların kişisel verilerini 6698 sayılı KVKK ve ilgili mevzuata uygun olarak işlemektedir.\\n\\n2. Toplanan Kişisel Verileriniz\\nHizmet sunabilmek amacıyla; ad-soyad, telefon numarası ve e-posta bilgileriniz ile izin vermeniz durumunda aktif kullanım sırasındaki konum verileriniz işlenmektedir.\\n\\n3. Konum Verilerinin Kullanımı\\nİş Bitir, adres bazlı bir hizmet platformudur. Konum veriniz sadece siz izin verdiğinizde ve uygulamayı aktif olarak kullandığınızda, size en yakın ilanları/ustaları bulabilmeniz için işlenir. Arka planda gizli konum takibi yapılmaz.\\n\\n4. Veri Paylaşımı\\nKişisel verileriniz reklam veya pazarlama amacıyla 3. taraflarla paylaşılmaz. Sadece onayladığınız iş süreçlerinde, ilgili usta veya müşteri ile sınırlı bilgiler paylaşılır.\\n\\n5. Haklarınız ve Hesap Silme\\nKVKK kapsamında verilerinizin silinmesini talep etme hakkınız bulunmaktadır. Uygulama içerisindeki "Profil > Hesabı Sil" butonunu kullanarak tüm verilerinizin temizlenmesini talep edebilirsiniz.',
             isActive: true,
             updatedAt: new Date().toISOString()
         },
         {
             id: 'doc-terms-v1',
             type: 'TERMS',
-            version: 'v1.0',
-            title: 'Kullanıcı Sözleşmesi',
-            content: '1. TARAFLAR: İşbitir platformu, Geliştirici [ADINIZ SOYADINIZ] ile kullanıcı arasındadır.\\n2. YAŞ SINIRI: Platformu kullanabilmek için 18 yaşını doldurmuş olmanız gerekmektedir.\\n3. FİKRİ MÜLKİYET: Uygulamanın tasarımı, yazılım kodları, logosu ve tüm içeriği Geliştiriciye aittir; izinsiz kopyalanamaz.\\n4. SORUMLULUK REDDİ: Platform, kullanıcılar arasındaki iletişimi sağlayan bir köprüdür. Geliştirici; sunulan hizmetin kalitesi, gecikmesi veya taraflar arasındaki uyuşmazlıklardan maddi/manevi sorumlu tutulamaz.\\n5. HESAP FESHİ: Kullanım kurallarını ihlal eden veya platform güvenliğini tehdit eden hesaplar, Geliştirici tarafından önceden bildirim yapmaksızın kapatılabilir.\\n6. UYUŞMAZLIKLAR: İşbu sözleşmeden doğan uyuşmazlıklarda İstanbul (Çağlayan) Mahkemeleri ve İcra Daireleri yetkilidir.',
+            version: 'v1.1',
+            title: 'Kullanım Koşulları',
+            content: '1. Taraflar ve Kabul\\nİşbu Kullanım Koşulları, İş Bitir uygulamasını kullanan tüm taraflar ile yönetim arasında akdedilmiştir. Uygulamayı kullanarak bu koşulları kabul etmiş sayılırsınız.\\n\\n2. Platformun Rolü\\nİş Bitir; hizmet almak isteyenler ile hizmet veren ustaları bir araya getiren bağımsız bir aracı platformdur. İşin kalitesi, gecikmesi veya taraflar arasındaki uyuşmazlıklardan platform hukuki olarak sorumlu tutulamaz.\\n\\n3. Yaş Sınırı\\nPlatformda işlem yapabilmek için en az 18 yaşında (reşit) olmanız gerekmektedir.\\n\\n4. Krediler ve İade Politikası\\nUstaların teklif verirken harcadığı krediler dijital ürün kapsamındadır. Ancak, bir müşteri ilanı iptal ederse, o ilana teklif vermiş olan tüm ustaların kredileri sistem tarafından otomatik olarak hesaplarına iade edilir. Bunun dışında, harcanmış kredilerin iadesi yapılmaz.\\n\\n5. Hesap Feshi\\nKuralları ihlal eden veya topluluğa zarar veren hesaplar önceden haber verilmeksizin kalıcı olarak kapatılabilir.',
             isActive: true,
             updatedAt: new Date().toISOString()
         },
@@ -158,7 +158,7 @@ if (fs.existsSync(LEGAL_FILE)) {
             type: 'MARKETING',
             version: 'v1.0',
             title: 'Pazarlama İletişim Onayı',
-            content: 'Bu onayı vererek, İşbitir tarafından sunulan yeni özellikler, özel teklifler, indirimli kredi paketleri ve güncellemeler hakkında tarafınıza e-posta veya anlık bildirim yoluyla ticari elektronik ileti gönderilmesini kabul etmiş olursunuz. Onayınızı Profil/Ayarlar menüsünden dilediğiniz zaman kaldırabilirsiniz.',
+            content: 'Bu onayı vererek, İşbitir tarafından sunulan yeni özellikler, özel teklifler ve güncellemeler hakkında tarafınıza bildirim yoluyla ticari elektronik ileti gönderilmesini kabul etmiş olursunuz. Onayınızı Profil menüsünden dilediğiniz zaman kaldırabilirsiniz.',
             isActive: true,
             updatedAt: new Date().toISOString()
         }
