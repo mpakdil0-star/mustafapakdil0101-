@@ -129,6 +129,11 @@ export default function BuyCreditsScreen() {
                     console.log('IAP modülü pasif (Expo Go veya Modül bulunamadı), fallback paketler yükleniyor');
                     await loadFallbackPackages();
                     setLoading(false);
+                    // Animasyonları başlat ki paketler görünür olsun
+                    Animated.parallel([
+                        Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+                        Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+                    ]).start();
                     return;
                 }
 
