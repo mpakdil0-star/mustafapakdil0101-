@@ -911,30 +911,10 @@ export default function HomeScreen() {
                   onPress={() => handleActionWithAuth('/jobs/create', { category: 'Elektrik Proje Çizimi', serviceCategory: 'elektrik' })}
                   activeOpacity={0.85}
                 >
-                  <Animated.View
-                    style={[
-                      styles.categoryIconCircleMinimal,
-                      {
-                        borderWidth: 1.5,
-                        backgroundColor: '#7C3AED', // Vurgulu Marka Rengi - Tam Dolu Mor
-                        borderColor: borderColorAnim.interpolate({
-                          inputRange: [0, 0.25, 0.5, 0.75, 1],
-                          outputRange: ['#7C3AED', '#EC4899', '#3B82F6', '#10B981', '#7C3AED']
-                        }),
-                        shadowColor: borderColorAnim.interpolate({
-                          inputRange: [0, 0.25, 0.5, 0.75, 1],
-                          outputRange: ['#7C3AED', '#EC4899', '#3B82F6', '#10B981', '#7C3AED']
-                        }),
-                        shadowOffset: { width: 0, height: 4 }, // Add slight projection shadow
-                        shadowOpacity: 0.6,
-                        shadowRadius: 8,
-                        elevation: 6,
-                      }
-                    ]}
-                  >
-                    <Ionicons name="document-text" size={22} color="#FFFFFF" />
-                  </Animated.View>
-                  <Text style={[styles.categoryLabelMatch, { color: '#7C3AED', fontFamily: fonts.extraBold, fontSize: 11.5, textAlign: 'center', lineHeight: 14 }]}>Elektrik{"\n"}Proje</Text>
+                  <View style={[styles.categoryIconCircleMinimal, { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }]}>
+                    <Ionicons name="document-text" size={22} color="#7C3AED" />
+                  </View>
+                  <Text style={[styles.categoryLabelMatch, { color: colors.textSecondary }]}>Elektrik Proje</Text>
                 </TouchableOpacity>
 
                 {[
