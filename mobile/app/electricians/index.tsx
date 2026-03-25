@@ -131,10 +131,29 @@ export default function ElectriciansListScreen() {
     );
 
     const filteredElectricians = useMemo(() => {
-        // Mock data ve API verisini birleştir
+        // Helper: serviceCategory veya specialties içeriğinden ana kategori etiketini belirler
+        const resolveCategory = (item: any): string => {
+            const cat = item.serviceCategory || item.electricianProfile?.serviceCategory;
+            if (cat === 'cilingir') return 'Çilingir';
+            if (cat === 'klima') return 'Klima';
+            if (cat === 'beyaz-esya') return 'Beyaz Eşya';
+            if (cat === 'tesisat') return 'Tesisat';
+            if (cat === 'elektrik') return 'Elektrik';
+
+            const specs = item.specialties || item.electricianProfile?.specialties || item.services || [];
+            const specsStr = Array.isArray(specs) ? specs.join(' ').toLowerCase() : '';
+            if (specsStr.includes('klima') || specsStr.includes('soğutma') || specsStr.includes('isıtma')) return 'Klima';
+            if (specsStr.includes('anahtar') || specsStr.includes('kilit') || specsStr.includes('barel')) return 'Çilingir';
+            if (specsStr.includes('beyaz eşya') || specsStr.includes('buzdolabı') || specsStr.includes('çamaşır')) return 'Beyaz Eşya';
+            if (specsStr.includes('tesisat') || specsStr.includes('musluk') || specsStr.includes('boru')) return 'Tesisat';
+
+            return 'Elektrik';
+        };
+
         const combinedData = [
             ...MOCK_ELECTRICIANS.map(m => ({
                 ...m,
+                specialty: resolveCategory(m),
                 profileImageUrl: m.imageUrl,
                 isAuthorizedEngineer: (m as any).isAuthorizedEngineer || false
             })),
@@ -143,23 +162,7 @@ export default function ElectriciansListScreen() {
                 name: e.fullName,
                 rating: Number(e.electricianProfile?.ratingAverage) || 0,
                 reviewCount: e.electricianProfile?.totalReviews || 0,
-                specialty: (() => {
-                    const cat = e.serviceCategory || e.electricianProfile?.serviceCategory;
-                    if (cat === 'cilingir') return 'Çilingir';
-                    if (cat === 'klima') return 'Klima';
-                    if (cat === 'beyaz-esya') return 'Beyaz Eşya';
-                    if (cat === 'tesisat') return 'Tesisat';
-                    if (cat === 'elektrik') return 'Elektrik';
-
-                    const specs = e.specialties || e.electricianProfile?.specialties || [];
-                    const specsStr = Array.isArray(specs) ? specs.join(' ').toLowerCase() : '';
-                    if (specsStr.includes('klima')) return 'Klima';
-                    if (specsStr.includes('çilingir') || specsStr.includes('anahtar')) return 'Çilingir';
-                    if (specsStr.includes('beyaz eşya') || specsStr.includes('buzdolabı')) return 'Beyaz Eşya';
-                    if (specsStr.includes('tesisat') || specsStr.includes('su ')) return 'Tesisat';
-                    
-                    return 'Elektrik';
-                })(),
+                specialty: resolveCategory(e),
                 isVerified: e.isVerified === true && e.electricianProfile?.verificationStatus === 'VERIFIED',
                 isAuthorizedEngineer: e.electricianProfile?.isAuthorizedEngineer || false,
                 location: e.locations?.[0] ? `${e.locations[0].district}, ${e.locations[0].city}` : 'Konum Belirtilmedi',
