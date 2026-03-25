@@ -255,25 +255,37 @@ export default function ElectriciansListScreen() {
                     <View style={styles.activeFilters}>
                         {selectedCity && selectedCity !== 'Tümü' && (
                             <View style={styles.filterChip}>
+                                <Ionicons name="location-sharp" size={12} color={colors.primary} />
                                 <Text style={styles.filterChipText}>{selectedCity}</Text>
-                                <TouchableOpacity onPress={() => { setSelectedCity('Tümü'); setSelectedDistrict(''); }}>
-                                    <Ionicons name="close" size={14} color={colors.primary} />
+                                <TouchableOpacity 
+                                    onPress={() => { setSelectedCity('Tümü'); setSelectedDistrict(''); }}
+                                    style={styles.filterChipClose}
+                                >
+                                    <Ionicons name="close-circle" size={16} color={colors.primary} />
                                 </TouchableOpacity>
                             </View>
                         )}
                         {selectedDistrict && (
                             <View style={[styles.filterChip, { marginLeft: 8 }]}>
+                                <Ionicons name="navigate-circle" size={12} color={colors.primary} />
                                 <Text style={styles.filterChipText}>{selectedDistrict}</Text>
-                                <TouchableOpacity onPress={() => setSelectedDistrict('')}>
-                                    <Ionicons name="close" size={14} color={colors.primary} />
+                                <TouchableOpacity 
+                                    onPress={() => setSelectedDistrict('')}
+                                    style={styles.filterChipClose}
+                                >
+                                    <Ionicons name="close-circle" size={16} color={colors.primary} />
                                 </TouchableOpacity>
                             </View>
                         )}
                         {activeFilters.isEngineerOnly && (
                             <View style={[styles.filterChip, { marginLeft: 8 }]}>
+                                <Ionicons name="ribbon-sharp" size={12} color={colors.primary} />
                                 <Text style={styles.filterChipText}>Yetkili Mühendis</Text>
-                                <TouchableOpacity onPress={() => setActiveFilters(prev => ({ ...prev, isEngineerOnly: false }))}>
-                                    <Ionicons name="close" size={14} color={colors.primary} />
+                                <TouchableOpacity 
+                                    onPress={() => setActiveFilters(prev => ({ ...prev, isEngineerOnly: false }))}
+                                    style={styles.filterChipClose}
+                                >
+                                    <Ionicons name="close-circle" size={16} color={colors.primary} />
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -544,16 +556,28 @@ const styles = StyleSheet.create({
     filterChip: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: colors.primary + '15',
-        paddingHorizontal: spacing.sm,
-        paddingVertical: 4,
-        borderRadius: spacing.radius.md,
+        backgroundColor: colors.primary + '10',
+        paddingLeft: 10,
+        paddingRight: 6,
+        paddingVertical: 6,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: colors.primary + '20',
         gap: 6,
+        elevation: 1,
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
     },
     filterChipText: {
-        fontFamily: fonts.medium,
-        fontSize: 12,
+        fontFamily: fonts.bold,
+        fontSize: 13,
         color: colors.primary,
+        marginRight: 2,
+    },
+    filterChipClose: {
+        marginLeft: 2,
     },
     quickFiltersContainer: {
         gap: spacing.sm,
