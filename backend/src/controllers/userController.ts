@@ -1054,6 +1054,7 @@ export const getElectricians = async (req: Request, res: Response, next: NextFun
                     electricianProfile: {
                         select: {
                             specialties: true,
+                            serviceCategory: true,
                             ratingAverage: true,
                             totalReviews: true,
                             experienceYears: true,
