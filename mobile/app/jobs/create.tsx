@@ -566,8 +566,14 @@ export default function CreateJobScreen() {
       validationErrors.push('• Bütçe geçerli bir sayı olmalı');
     }
 
-    if (isProjectCategory && projectHasArchitecturePlan === true && images.length === 0) {
-      validationErrors.push('• Mimari planınız olduğunu belirttiniz. Lütfen ilanınıza planın bir fotoğrafını veya ekran görüntüsünü (aşağıdaki fotoğraf ekleme bölümünden) ekleyiniz.');
+    if (isProjectCategory) {
+      if (!projectBuildingType) validationErrors.push('• Proje için Yapı Tipi seçilmedi (Adım 2)');
+      if (!projectArea || projectArea.trim() === '') validationErrors.push('• Proje için Yapı Alanı (m²) girilmedi (Adım 2)');
+      if (!projectPurpose) validationErrors.push('• Proje Amacı seçilmedi (Adım 3)');
+      
+      if (projectHasArchitecturePlan === true && images.length === 0) {
+        validationErrors.push('• Mimari planınız olduğunu belirttiniz. Lütfen ilanınıza planın bir fotoğrafını ekleyiniz (Adım 4).');
+      }
     }
 
     // If there are validation errors, show them in a popup

@@ -288,8 +288,14 @@ export default function QuickCreateScreen() {
         if (!address || address.trim().length < 10) validationErrors.push('• Adres en az 10 karakter olmalı');
         if (!description || description.trim().length < 10) validationErrors.push('• Sorun açıklaması en az 10 karakter olmalı');
 
-        if (selectedSubCategory?.id === 'elektrik-proje' && projectHasArchitecturePlan === true && images.length === 0) {
-            validationErrors.push('• Mimari planı fotoğraf veya ekran görüntüsü olarak yüklemeniz zorunludur (aşağıdaki fotoğraf yükleme alanından).');
+        if (selectedSubCategory?.id === 'elektrik-proje') {
+            if (!projectBuildingType) validationErrors.push('• Proje için Yapı Tipi seçilmedi');
+            if (!projectArea || projectArea.trim() === '') validationErrors.push('• Proje için Toplam Alan (m²) girilmedi');
+            if (!projectPurpose) validationErrors.push('• Proje Amacı seçilmedi');
+            
+            if (projectHasArchitecturePlan === true && images.length === 0) {
+                validationErrors.push('• Mimari planı fotoğraf veya ekran görüntüsü olarak yüklemeniz zorunludur (aşağıdaki fotoğraf yükleme alanından).');
+            }
         }
 
         if (validationErrors.length > 0) {
