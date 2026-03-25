@@ -71,6 +71,12 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // Routes
 app.use('/api/v1', routes);
 
+// Public Legal HTML routes (Top level for easier Google Play submission)
+import legalRoutes from './routes/legalRoutes';
+app.use('/legal', legalRoutes); // For /legal/kvkk etc.
+app.get('/kvkk', (req, res) => res.redirect('/legal/kvkk'));
+app.get('/terms', (req, res) => res.redirect('/legal/terms'));
+
 app.get('/api/debug-ahmet', async (req, res) => {
   try {
     const ahmet = await prisma.user.findFirst({
