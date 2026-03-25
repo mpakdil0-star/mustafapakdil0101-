@@ -53,7 +53,8 @@
           "defaultChannel": "default",
           "enableBackgroundRemoteNotifications": true
         }
-      ]
+      ],
+      "expo-iap"
     ],
     "scheme": "isbitir",
     "platforms": [

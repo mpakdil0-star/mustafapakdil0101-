@@ -10,8 +10,11 @@ router.use(authenticate);
 // Kredi Paketlerini Listele
 router.get('/packages', paymentController.getCreditPackages);
 
-// Kredi Satın Al
+// Kredi Satın Al (Eski yöntem - admin kredi ekleme vb.)
 router.post('/purchase', paymentController.purchaseCredits);
+
+// Google Play IAP Doğrulama ve Kredi Yükleme
+router.post('/verify-purchase', paymentController.verifyAndGrantPurchase);
 
 // İşlem Geçmişi
 router.get('/history', paymentController.getTransactionHistory);

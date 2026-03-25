@@ -24,29 +24,58 @@ import api from '../../services/api';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { getMe, updateCreditBalance } from '../../store/slices/authSlice';
 
+// Google Play IAP
+import {
+    initConnection,
+    endConnection,
+    fetchProducts,
+    requestPurchase,
+    finishTransaction,
+    purchaseUpdatedListener,
+    purchaseErrorListener,
+    type Purchase,
+    type Product,
+} from 'expo-iap';
+
 const { width } = Dimensions.get('window');
+
+// Google Play Console'da tanımlanan ürün ID'leri
+const PRODUCT_IDS = [
+    'credit_pack_10',
+    'credit_pack_35',
+    'credit_pack_75',
+    'credit_pack_175',
+];
 
 interface CreditPackage {
     id: string;
     name: string;
     credits: number;
     price: number;
+    displayPrice: string;
     color: string;
     isPopular?: boolean;
 }
 
 const PACKAGE_ICONS: Record<string, string> = {
-    'pkg-10': 'rocket-outline',
-    'pkg-35': 'trending-up-outline',
-    'pkg-75': 'diamond-outline',
-    'pkg-175': 'trophy-outline',
+    'credit_pack_10': 'rocket-outline',
+    'credit_pack_35': 'trending-up-outline',
+    'credit_pack_75': 'diamond-outline',
+    'credit_pack_175': 'trophy-outline',
 };
 
 const PACKAGE_DESCRIPTIONS: Record<string, string> = {
-    'pkg-10': 'İlk adım için ideal',
-    'pkg-35': 'Düzenli iş yapanlar için',
-    'pkg-75': 'En çok tercih edilen',
-    'pkg-175': 'Maksimum tasarruf',
+    'credit_pack_10': 'İlk adım için ideal',
+    'credit_pack_35': 'Düzenli iş yapanlar için',
+    'credit_pack_75': 'En çok tercih edilen',
+    'credit_pack_175': 'Maksimum tasarruf',
+};
+
+const PACKAGE_INFO: Record<string, { name: string; credits: number; color: string; isPopular?: boolean }> = {
+    'credit_pack_10': { name: 'Hızlı Başlangıç', credits: 10, color: '#3B82F6' },
+    'credit_pack_35': { name: 'Gelişim Paketi', credits: 35, color: '#94A3B8' },
+    'credit_pack_75': { name: 'Eko-Avantaj', credits: 75, color: '#F59E0B', isPopular: true },
+    'credit_pack_175': { name: 'Usta Paketi', credits: 175, color: '#8B5CF6' },
 };
 
 const getPerCredit = (pkg: CreditPackage) => {
@@ -61,6 +90,7 @@ export default function BuyCreditsScreen() {
     const [processing, setProcessing] = useState(false);
     const [packages, setPackages] = useState<CreditPackage[]>([]);
     const [selectedPkg, setSelectedPkg] = useState<string | null>(null);
+    const [iapConnected, setIapConnected] = useState(false);
     const colors = useAppColors();
     const insets = useSafeAreaInsets();
     const currentBalance = user?.electricianProfile?.creditBalance || 0;
@@ -68,7 +98,6 @@ export default function BuyCreditsScreen() {
     // Animations
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(20)).current;
-    const selectedScale = useRef(new Animated.Value(1)).current;
 
     // Alert State
     const [alertConfig, setAlertConfig] = useState<{
@@ -84,48 +113,165 @@ export default function BuyCreditsScreen() {
         message: ''
     });
 
+    // IAP bağlantısını kur ve ürünleri çek
     useEffect(() => {
-        fetchPackages();
+        let purchaseUpdateSubscription: any;
+        let purchaseErrorSubscription: any;
+
+        const setupIAP = async () => {
+            try {
+                setLoading(true);
+
+                // Google Play Billing bağlantısı
+                const connected = await initConnection();
+                setIapConnected(connected);
+
+                if (connected) {
+                    // Google Play'den ürün bilgilerini çek
+                    const products = await fetchProducts({
+                        skus: PRODUCT_IDS,
+                        type: 'in-app',
+                    });
+
+                    if (products && products.length > 0) {
+                        const mappedPackages: CreditPackage[] = products.map((product: any) => {
+                            const info = PACKAGE_INFO[product.id] || { name: product.id, credits: 0, color: '#94A3B8' };
+                            return {
+                                id: product.id,
+                                name: info.name,
+                                credits: info.credits,
+                                price: product.price || 0,
+                                displayPrice: product.displayPrice || `${product.price || 0} ₺`,
+                                color: info.color,
+                                isPopular: info.isPopular,
+                            };
+                        });
+
+                        // Kredi miktarına göre sırala
+                        mappedPackages.sort((a, b) => a.credits - b.credits);
+                        setPackages(mappedPackages);
+
+                        const popular = mappedPackages.find(p => p.isPopular);
+                        if (popular) setSelectedPkg(popular.id);
+                    } else {
+                        // Eğer ürünler henüz Google Play Console'da tanımlanmadıysa fallback
+                        console.warn('Google Play ürünleri bulunamadı, fallback kullanılıyor');
+                        await loadFallbackPackages();
+                    }
+                } else {
+                    console.warn('IAP bağlantısı kurulamadı, fallback kullanılıyor');
+                    await loadFallbackPackages();
+                }
+
+                // Purchase listener - satın alma tamamlandığında
+                purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase: Purchase) => {
+                    console.log('🎉 Satın alma başarılı:', purchase.productId);
+
+                    try {
+                        // Backend'e doğrulama gönder
+                        const response = await api.post('/payments/verify-purchase', {
+                            productId: purchase.productId,
+                            purchaseToken: purchase.purchaseToken,
+                            packageName: 'com.isbitir.app',
+                        });
+
+                        if (response.data.success) {
+                            // İşlemi tamamla (consume)
+                            await finishTransaction({
+                                purchase,
+                                isConsumable: true,
+                            });
+
+                            const newBalance = response.data.data.newBalance;
+                            if (typeof newBalance === 'number') {
+                                dispatch(updateCreditBalance(newBalance));
+                            }
+                            await dispatch(getMe());
+
+                            setAlertConfig({
+                                visible: true,
+                                type: 'success',
+                                title: 'Harika! 🚀',
+                                message: 'Kredileriniz cüzdanınıza başarıyla eklendi. Şimdi yeni işlere teklif verebilirsiniz.',
+                                buttons: [{
+                                    text: 'Tamam',
+                                    onPress: () => {
+                                        setAlertConfig(prev => ({ ...prev, visible: false }));
+                                        router.back();
+                                    }
+                                }]
+                            });
+                        }
+                    } catch (error: any) {
+                        console.error('Backend doğrulama hatası:', error);
+                        setAlertConfig({
+                            visible: true,
+                            type: 'error',
+                            title: 'Doğrulama Hatası',
+                            message: 'Ödeme alındı ancak kredi yükleme sırasında bir hata oluştu. Lütfen destek ile iletişime geçin.'
+                        });
+                    } finally {
+                        setProcessing(false);
+                    }
+                });
+
+                // Hata listener
+                purchaseErrorSubscription = purchaseErrorListener((error: any) => {
+                    console.warn('Satın alma hatası:', error);
+                    setProcessing(false);
+
+                    // Kullanıcı iptal etti — sessizce geç
+                    if (error.code === 'user-cancelled') return;
+
+                    setAlertConfig({
+                        visible: true,
+                        type: 'error',
+                        title: 'Ödeme Başarısız',
+                        message: error.message || 'İşlem sırasında bir hata oluştu. Lütfen tekrar deneyin.'
+                    });
+                });
+
+                Animated.parallel([
+                    Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+                    Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+                ]).start();
+
+            } catch (error) {
+                console.error('IAP kurulum hatası:', error);
+                await loadFallbackPackages();
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        setupIAP();
+
+        return () => {
+            purchaseUpdateSubscription?.remove();
+            purchaseErrorSubscription?.remove();
+            endConnection();
+        };
     }, []);
 
-    useEffect(() => {
-        Animated.spring(selectedScale, {
-            toValue: 1,
-            tension: 100,
-            friction: 8,
-            useNativeDriver: true,
-        }).start();
-    }, [selectedPkg]);
-
-    const fetchPackages = async () => {
+    // Backend'den fallback paketleri yükle (Google Play bağlantısı yoksa)
+    const loadFallbackPackages = async () => {
         try {
-            setLoading(true);
             const response = await api.get('/payments/packages');
             if (response.data.success) {
-                setPackages(response.data.data);
-                const popular = response.data.data.find((p: any) => p.isPopular);
+                const pkgs = response.data.data.map((p: any) => ({
+                    ...p,
+                    displayPrice: `${p.price} ₺`,
+                }));
+                setPackages(pkgs);
+                const popular = pkgs.find((p: any) => p.isPopular);
                 if (popular) setSelectedPkg(popular.id);
             }
-
-            Animated.parallel([
-                Animated.timing(fadeAnim, {
-                    toValue: 1,
-                    duration: 600,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(slideAnim, {
-                    toValue: 0,
-                    duration: 500,
-                    useNativeDriver: true,
-                }),
-            ]).start();
         } catch (error) {
-            console.error('Packages fetch error:', error);
-        } finally {
-            setLoading(false);
+            console.error('Fallback paketleri yükleme hatası:', error);
         }
     };
 
+    // Satın alma işlemini başlat
     const handlePurchase = async () => {
         if (!selectedPkg) {
             setAlertConfig({
@@ -143,7 +289,7 @@ export default function BuyCreditsScreen() {
             visible: true,
             type: 'confirm',
             title: 'Satın Almayı Onayla',
-            message: `${pkg?.name} (${pkg?.credits} Kredi) hesabınıza tanımlanacaktır. İşleme devam etmek istiyor musunuz?`,
+            message: `${pkg?.name} (${pkg?.credits} Kredi) satın almak istiyor musunuz?\n\nÖdeme Google Play üzerinden güvenli şekilde gerçekleştirilecektir.`,
             buttons: [
                 {
                     text: 'Vazgeç',
@@ -151,8 +297,8 @@ export default function BuyCreditsScreen() {
                     variant: 'ghost'
                 },
                 {
-                    text: 'Öde & Yükle',
-                    onPress: async () => {
+                    text: 'Satın Al',
+                    onPress: () => {
                         setAlertConfig(prev => ({ ...prev, visible: false }));
                         processPurchase();
                     },
@@ -163,41 +309,61 @@ export default function BuyCreditsScreen() {
     };
 
     const processPurchase = async () => {
+        if (!selectedPkg) return;
+
         try {
             setProcessing(true);
-            const response = await api.post('/payments/purchase', { packageId: selectedPkg });
 
-            if (response.data.success) {
-                const newBalance = response.data.data.newBalance;
-                if (typeof newBalance === 'number') {
-                    dispatch(updateCreditBalance(newBalance));
-                }
-                await dispatch(getMe());
+            if (iapConnected) {
+                // Google Play üzerinden satın alma
+                await requestPurchase({
+                    request: {
+                        google: { skus: [selectedPkg] },
+                        apple: { sku: selectedPkg },
+                    },
+                    type: 'in-app',
+                });
+                // Sonuç purchaseUpdatedListener'da işlenecek
+            } else {
+                // Fallback: eski yöntem (test modu)
+                const response = await api.post('/payments/purchase', { packageId: selectedPkg });
 
-                setAlertConfig({
-                    visible: true,
-                    type: 'success',
-                    title: 'Harika! 🚀',
-                    message: 'Kredileriniz cüzdanınıza başarıyla eklendi. Şimdi yeni işlere teklif verebilirsiniz.',
-                    buttons: [
-                        {
-                            text: 'Tamam', onPress: () => {
+                if (response.data.success) {
+                    const newBalance = response.data.data.newBalance;
+                    if (typeof newBalance === 'number') {
+                        dispatch(updateCreditBalance(newBalance));
+                    }
+                    await dispatch(getMe());
+
+                    setAlertConfig({
+                        visible: true,
+                        type: 'success',
+                        title: 'Harika! 🚀',
+                        message: 'Kredileriniz cüzdanınıza başarıyla eklendi.',
+                        buttons: [{
+                            text: 'Tamam',
+                            onPress: () => {
                                 setAlertConfig(prev => ({ ...prev, visible: false }));
                                 router.back();
                             }
-                        }
-                    ]
-                });
+                        }]
+                    });
+                }
+                setProcessing(false);
             }
         } catch (error: any) {
+            console.error('Satın alma hatası:', error);
+            setProcessing(false);
+
+            // Kullanıcı iptal ettiğinde hata gösterme
+            if (error?.code === 'user-cancelled' || error?.message?.includes('cancel')) return;
+
             setAlertConfig({
                 visible: true,
                 type: 'error',
                 title: 'Ödeme Başarısız',
-                message: error.response?.data?.error?.message || 'İşlem sırasında bir teknik hata oluştu. Lütfen tekrar deneyin.'
+                message: error.response?.data?.error?.message || 'İşlem sırasında bir hata oluştu. Lütfen tekrar deneyin.'
             });
-        } finally {
-            setProcessing(false);
         }
     };
 
@@ -207,7 +373,7 @@ export default function BuyCreditsScreen() {
         <View style={[styles.container, { backgroundColor: colors.backgroundDark }]}>
             <StatusBar barStyle="dark-content" />
 
-            {/* Premium Header - Reduced height for more space */}
+            {/* Premium Header */}
             <View style={{ height: 60 + insets.top }}>
                 <PremiumHeader
                     title="Kredi Yükle"
@@ -279,7 +445,7 @@ export default function BuyCreditsScreen() {
                                             }
                                         ]}
                                     >
-                                        {/* Clipping container for internal decorations like glow */}
+                                        {/* Clipping container for internal decorations */}
                                         <View style={styles.clippingContainer}>
                                             {isSelected && (
                                                 <View style={[styles.selectedGlow, { backgroundColor: pkg.color }]} />
@@ -303,8 +469,7 @@ export default function BuyCreditsScreen() {
 
                                             {/* Right: Price + Selector */}
                                             <View style={styles.cardRight}>
-                                                <Text style={[styles.priceValue, { color: colors.text }]}>{pkg.price}</Text>
-                                                <Text style={[styles.priceCurrency, { color: colors.textSecondary }]}>TL</Text>
+                                                <Text style={[styles.priceValue, { color: colors.text }]}>{pkg.displayPrice}</Text>
                                                 <Text style={[styles.perCredit, { color: colors.textSecondary }]}>
                                                     {getPerCredit(pkg)} ₺/kr
                                                 </Text>
@@ -318,7 +483,7 @@ export default function BuyCreditsScreen() {
                                             </View>
                                         </View>
 
-                                        {/* Popular Tag - Rendered outside clipping container to allow hanging */}
+                                        {/* Popular Tag */}
                                         {pkg.isPopular && (
                                             <View style={[styles.popularTagContainer, { zIndex: 100 }]}>
                                                 <LinearGradient
@@ -345,15 +510,14 @@ export default function BuyCreditsScreen() {
                         <Ionicons name="shield-checkmark" size={18} color="#10B981" />
                     </View>
                     <Text style={[styles.securityText, { color: colors.textSecondary }]}>
-                        Geliştirme aşamasında test ödemesi simüle edilir. Gerçek bir tahsilat yapılmaz.
+                        Ödeme işlemi Google Play üzerinden güvenli şekilde gerçekleştirilir. Kart bilgileriniz bizimle paylaşılmaz.
                     </Text>
                 </View>
 
-                {/* Bottom spacer for fixed button */}
                 <View style={{ height: 80 }} />
             </ScrollView>
 
-            {/* Fixed Bottom Button - Adjusted for Safe Area */}
+            {/* Fixed Bottom Button */}
             <View style={[
                 styles.footer,
                 {
@@ -365,7 +529,7 @@ export default function BuyCreditsScreen() {
                 {selectedPackage && (
                     <View style={styles.footerSummary}>
                         <Text style={[styles.footerSummaryText, { color: colors.textSecondary }]}>
-                            Toplam: <Text style={[styles.footerSummaryBold, { color: colors.text }]}>{selectedPackage.price} TL</Text> → <Text style={{ color: '#10B981', fontFamily: fonts.bold }}>{selectedPackage.credits} Kredi</Text>
+                            Toplam: <Text style={[styles.footerSummaryBold, { color: colors.text }]}>{selectedPackage.displayPrice}</Text> → <Text style={{ color: '#10B981', fontFamily: fonts.bold }}>{selectedPackage.credits} Kredi</Text>
                         </Text>
                     </View>
                 )}
@@ -407,264 +571,85 @@ export default function BuyCreditsScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    scrollView: {
-        flex: 1,
-    },
-    scrollContent: {
-        padding: 14,
-        paddingBottom: 16,
-    },
+    container: { flex: 1 },
+    scrollView: { flex: 1 },
+    scrollContent: { padding: 14, paddingBottom: 16 },
 
-    // ── Balance Mini Card ──
+    // Balance Mini Card
     balanceMini: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderRadius: 14,
-        padding: 12,
-        marginBottom: 14,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-        elevation: 2,
+        flexDirection: 'row', alignItems: 'center', borderRadius: 14,
+        padding: 12, marginBottom: 14,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
     },
-    balanceMiniLeft: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-    },
+    balanceMiniLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
     balanceMiniIcon: {
-        width: 34,
-        height: 34,
-        borderRadius: 10,
-        backgroundColor: '#F5F3FF',
-        justifyContent: 'center',
-        alignItems: 'center',
+        width: 34, height: 34, borderRadius: 10,
+        backgroundColor: '#F5F3FF', justifyContent: 'center', alignItems: 'center',
     },
-    balanceMiniLabel: {
-        fontSize: 10,
-        fontFamily: fonts.medium,
-    },
-    balanceMiniValue: {
-        fontSize: 16,
-        fontFamily: fonts.black,
-    },
-    balanceMiniUnit: {
-        fontSize: 12,
-        fontFamily: fonts.bold,
-        color: '#7C3AED',
-    },
-    balanceMiniDivider: {
-        width: 1,
-        height: 32,
-        backgroundColor: '#E2E8F0',
-        marginHorizontal: 10,
-    },
-    balanceMiniRight: {
-        alignItems: 'flex-end',
-    },
+    balanceMiniLabel: { fontSize: 10, fontFamily: fonts.medium },
+    balanceMiniValue: { fontSize: 16, fontFamily: fonts.black },
+    balanceMiniUnit: { fontSize: 12, fontFamily: fonts.bold, color: '#7C3AED' },
+    balanceMiniDivider: { width: 1, height: 32, backgroundColor: '#E2E8F0', marginHorizontal: 10 },
+    balanceMiniRight: { alignItems: 'flex-end' },
 
-    // ── Header ──
-    headerBox: {
-        marginBottom: 14,
-    },
-    title: {
-        fontFamily: fonts.black,
-        fontSize: 20,
-        marginBottom: 3,
-    },
-    subtitle: {
-        fontFamily: fonts.medium,
-        fontSize: 13,
-        lineHeight: 18,
-    },
+    // Header
+    headerBox: { marginBottom: 14 },
+    title: { fontFamily: fonts.black, fontSize: 20, marginBottom: 3 },
+    subtitle: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 18 },
 
-    // ── Package Cards ──
-    packagesContainer: {
-        gap: 16,
-    },
-    clippingContainer: {
-        ...StyleSheet.absoluteFillObject,
-        borderRadius: 16,
-        overflow: 'hidden',
-    },
+    // Package Cards
+    packagesContainer: { gap: 16 },
+    clippingContainer: { ...StyleSheet.absoluteFillObject, borderRadius: 16, overflow: 'hidden' },
     packageCard: {
-        borderRadius: 16,
-        // overflow: 'hidden', // Disabled to allow popular tag to hang
-        position: 'relative',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 10,
-        elevation: 2,
+        borderRadius: 16, position: 'relative',
+        shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04, shadowRadius: 10, elevation: 2,
     },
-    popularTagContainer: {
-        position: 'absolute',
-        top: -12, // Moved up to hang over the top edge
-        left: 12,
-        zIndex: 10,
-    },
-    popularTag: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 8,
-    },
-    popularText: {
-        fontFamily: fonts.bold,
-        fontSize: 9,
-        color: '#FFF',
-        letterSpacing: 0.8,
-    },
-    selectedGlow: {
-        position: 'absolute',
-        top: -60,
-        right: -60,
-        width: 160,
-        height: 160,
-        borderRadius: 80,
-        opacity: 0.06,
-    },
-    cardContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 14,
-        gap: 12,
-    },
-    cardIconBox: {
-        width: 48,
-        height: 48,
-        borderRadius: 14,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    cardInfo: {
-        flex: 1,
-    },
-    packageName: {
-        fontFamily: fonts.semiBold,
-        fontSize: 13,
-        marginBottom: 1,
-    },
-    creditsRow: {
-        flexDirection: 'row',
-        alignItems: 'baseline',
-        gap: 4,
-    },
-    creditValue: {
-        fontFamily: fonts.black,
-        fontSize: 20,
-    },
-    creditLabel: {
-        fontFamily: fonts.bold,
-        fontSize: 10,
-        letterSpacing: 1,
-    },
-    cardDesc: {
-        fontFamily: fonts.medium,
-        fontSize: 10,
-        marginTop: 1,
-    },
-    cardRight: {
-        alignItems: 'center',
-        minWidth: 55,
-    },
-    priceValue: {
-        fontFamily: fonts.black,
-        fontSize: 16,
-    },
-    priceCurrency: {
-        fontFamily: fonts.bold,
-        fontSize: 11,
-        marginTop: -2,
-    },
-    perCredit: {
-        fontFamily: fonts.medium,
-        fontSize: 9,
-        marginTop: 2,
-    },
+    popularTagContainer: { position: 'absolute', top: -12, left: 12, zIndex: 10 },
+    popularTag: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+    popularText: { fontFamily: fonts.bold, fontSize: 9, color: '#FFF', letterSpacing: 0.8 },
+    selectedGlow: { position: 'absolute', top: -60, right: -60, width: 160, height: 160, borderRadius: 80, opacity: 0.06 },
+    cardContent: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
+    cardIconBox: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+    cardInfo: { flex: 1 },
+    packageName: { fontFamily: fonts.semiBold, fontSize: 13, marginBottom: 1 },
+    creditsRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
+    creditValue: { fontFamily: fonts.black, fontSize: 20 },
+    creditLabel: { fontFamily: fonts.bold, fontSize: 10, letterSpacing: 1 },
+    cardDesc: { fontFamily: fonts.medium, fontSize: 10, marginTop: 1 },
+    cardRight: { alignItems: 'center', minWidth: 55 },
+    priceValue: { fontFamily: fonts.black, fontSize: 14 },
+    perCredit: { fontFamily: fonts.medium, fontSize: 9, marginTop: 2 },
     selector: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        borderWidth: 2,
-        borderColor: '#D1D5DB',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 6,
+        width: 24, height: 24, borderRadius: 12, borderWidth: 2,
+        borderColor: '#D1D5DB', justifyContent: 'center', alignItems: 'center', marginTop: 6,
     },
 
-    // ── Security Note ──
+    // Security Note
     securityNote: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 18,
-        gap: 8,
-        paddingHorizontal: 16,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        marginTop: 18, gap: 8, paddingHorizontal: 16,
     },
     securityIconBox: {
-        width: 26,
-        height: 26,
-        borderRadius: 8,
-        backgroundColor: '#ECFDF5',
-        justifyContent: 'center',
-        alignItems: 'center',
+        width: 26, height: 26, borderRadius: 8,
+        backgroundColor: '#ECFDF5', justifyContent: 'center', alignItems: 'center',
     },
-    securityText: {
-        fontFamily: fonts.medium,
-        fontSize: 11,
-        flex: 1,
-        lineHeight: 16,
-    },
+    securityText: { fontFamily: fonts.medium, fontSize: 11, flex: 1, lineHeight: 16 },
 
-    // ── Footer ──
+    // Footer
     footer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        paddingHorizontal: 14,
-        paddingTop: 8,
-        borderTopWidth: 1,
-        borderTopColor: '#F1F5F9',
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        paddingHorizontal: 14, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F1F5F9',
     },
-    footerSummary: {
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    footerSummaryText: {
-        fontSize: 12,
-        fontFamily: fonts.medium,
-    },
-    footerSummaryBold: {
-        fontFamily: fonts.bold,
-    },
+    footerSummary: { alignItems: 'center', marginBottom: 8 },
+    footerSummaryText: { fontSize: 12, fontFamily: fonts.medium },
+    footerSummaryBold: { fontFamily: fonts.bold },
     payButton: {
-        borderRadius: 14,
-        overflow: 'hidden',
-        elevation: 8,
-        shadowColor: '#7C3AED',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.25,
-        shadowRadius: 12,
+        borderRadius: 14, overflow: 'hidden', elevation: 8,
+        shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.25, shadowRadius: 12,
     },
-    payGradient: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 13,
-        gap: 8,
-    },
-    payText: {
-        fontFamily: fonts.bold,
-        fontSize: 16,
-        color: '#FFF',
-    },
+    payGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 13, gap: 8 },
+    payText: { fontFamily: fonts.bold, fontSize: 16, color: '#FFF' },
 });
