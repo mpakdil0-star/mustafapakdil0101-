@@ -193,12 +193,16 @@ export const purchaseCredits = async (req: AuthRequest, res: Response, next: Nex
         const { packageId } = req.body;
         if (!packageId) throw new ValidationError('Paket seçimi yapılmadı');
 
-        // Eski paket ID formatını da destekle
+        // Tüm ID formatlarını destekle (tire ve alt çizgi)
         const packageMap: Record<string, { credits: number; price: number }> = {
             'pkg-10': { credits: 10, price: 189 },
+            'pkg_10': { credits: 10, price: 189 },
             'pkg-35': { credits: 35, price: 489 },
+            'pkg_35': { credits: 35, price: 489 },
             'pkg-75': { credits: 75, price: 889 },
+            'pkg_75': { credits: 75, price: 889 },
             'pkg-175': { credits: 175, price: 1489 },
+            'pkg_175': { credits: 175, price: 1489 },
         };
 
         const selectedPackage = packageMap[packageId];
