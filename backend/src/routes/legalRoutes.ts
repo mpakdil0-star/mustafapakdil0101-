@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getLegalDocuments, recordConsent, viewConsentsHtml, viewKvkkHtml, viewTermsHtml } from '../controllers/legalController';
+import { getLegalDocuments, recordConsent, viewKvkkHtml, viewTermsHtml } from '../controllers/legalController';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
@@ -11,7 +11,6 @@ router.get('/texts', getLegalDocuments);
 // Public HTML routes for Google Play / Web
 router.get('/kvkk', viewKvkkHtml);
 router.get('/terms', viewTermsHtml);
-router.get('/audit-logs', viewConsentsHtml);
 
 // Optional auth (can be guest during registration, but safer to protect for updates)
 router.post('/consent', (req, res, next) => {
