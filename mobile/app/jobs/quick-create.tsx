@@ -284,6 +284,7 @@ export default function QuickCreateScreen() {
         if (selectedType && !selectedSubCategory) validationErrors.push('• Lütfen spesifik bir hizmet dalı seçin');
         if (!city) validationErrors.push('• Şehir seçilmedi');
         if (!district) validationErrors.push('• İlçe seçilmedi');
+        if (!neighborhood) validationErrors.push('• Mahalle seçilmedi');
         if (!address || address.trim().length < 10) validationErrors.push('• Adres en az 10 karakter olmalı');
         if (!description || description.trim().length < 10) validationErrors.push('• Sorun açıklaması en az 10 karakter olmalı');
 

@@ -1147,6 +1147,14 @@ export default function CreateJobScreen() {
                       <Text style={[styles.urgencyCardLabel, projectHasArchitecturePlan === false && { color: colors.primary }]}>Yok (Rölöve)</Text>
                     </TouchableOpacity>
                   </View>
+                  {projectHasArchitecturePlan === true && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, backgroundColor: staticColors.error + '0D', padding: 10, borderRadius: 12, borderLeftWidth: 3, borderLeftColor: staticColors.error }}>
+                      <Ionicons name="information-circle" size={16} color={staticColors.error} style={{ marginRight: 8 }} />
+                      <Text style={{ fontFamily: fonts.medium, fontSize: 11, color: staticColors.error, flex: 1, lineHeight: 16 }}>
+                        Planınızın olduğunu belirttiniz. Bir sonraki adımda (Detaylar) plan dosyasını veya fotoğrafını eklemeyi unutmayın.
+                      </Text>
+                    </View>
+                  )}
                 </View>
 
                 <View style={[styles.btnRow, { marginTop: 16 }]}>
@@ -1174,6 +1182,15 @@ export default function CreateJobScreen() {
                     <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 18 }]}>Detay ve görseller</Text>
                   </View>
                 </View>
+ 
+               {isProjectCategory && projectHasArchitecturePlan === true && (
+                 <View style={{ marginBottom: 16, backgroundColor: colors.primary + '10', padding: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', borderColor: colors.primary + '30', borderWidth: 1 }}>
+                   <Ionicons name="information-circle" size={20} color={colors.primary} style={{ marginRight: 10 }} />
+                   <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: colors.primary, flex: 1, lineHeight: 18 }}>
+                     Mimari planınızın olduğunu belirttiniz. Ustaların doğru fiyat verebilmesi için lütfen en alttaki bölümden planın fotoğrafını veya ekran görüntüsünü ekleyin.
+                   </Text>
+                 </View>
+               )}
 
                 {isProjectCategory && (
                   <View style={{ marginBottom: 20 }}>
