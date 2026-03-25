@@ -823,7 +823,7 @@ export default function CreateJobScreen() {
     <View style={[styles.container, { backgroundColor: colors.backgroundLight }]}>
       <PremiumHeader
         title="Hemen Hizmet Al"
-        showBackButton
+        showBackButton={currentStep === 1}
         backgroundImage={require('../../assets/images/header_bg.png')}
       />
 
