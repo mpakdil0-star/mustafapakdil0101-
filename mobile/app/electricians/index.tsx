@@ -12,7 +12,6 @@ import { Picker } from '../../components/common/Picker';
 import { colors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
-import { MOCK_ELECTRICIANS } from '../../data/mockElectricians';
 import { userService } from '../../services/userService';
 import { CITY_NAMES, getDistrictsByCity } from '../../constants/locations';
 
@@ -151,12 +150,6 @@ export default function ElectriciansListScreen() {
         };
 
         const combinedData = [
-            ...MOCK_ELECTRICIANS.map(m => ({
-                ...m,
-                specialty: resolveCategory(m),
-                profileImageUrl: m.imageUrl,
-                isAuthorizedEngineer: (m as any).isAuthorizedEngineer || false
-            })),
             ...electricians.map(e => ({
                 id: e.id,
                 name: e.fullName,
