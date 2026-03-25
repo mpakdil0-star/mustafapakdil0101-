@@ -139,30 +139,35 @@ export const viewTermsHtml = async (req: Request, res: Response) => {
     const title = 'Kullanım Koşulları';
     const lastUpdate = '25 Mart 2026';
     const content = `1. Taraflar ve Sözleşmenin Kabulü
-İşbu Kullanım Koşulları, İş Bitir uygulamasını kullanan tüm kullanıcılar ile İş Bitir yönetimi arasında akdedilmiştir. Uygulamayı kullanarak bu koşulları kabul etmiş sayılırsınız.
+İşbu Kullanım Koşulları, İş Bitir uygulamasını cihazına indiren veya kullanan tüm kullanıcılar (Hizmet Alan "Vatandaş" ve Hizmet Veren "Usta") ile İş Bitir yönetimi arasında akdedilmiştir. Uygulamayı kullanarak bu koşulları peşinen kabul etmiş olursunuz.
 
 2. Yaş Sınırı
-İş Bitir platformunu kullanabilmek için en az 18 yaşında olmanız gerekmektedir.
+İş Bitir platformunu kullanarak bir iş ilanı açmak veya ustalık hizmeti verebilmek için en az 18 yaşında (reşit) olmanız gerekmektedir. 18 yaşından küçüklerin platformu kullandığının tespiti halinde hesapları derhal kapatılır.
 
 3. Platformun "Aracı" Rolü ve Sorumluluk Sınırı
-- İş Bitir; yalnızca hizmet almak isteyenler ile hizmet veren ustaları bir araya getiren bağımsız bir aracı platformdur.
-- Platform, uygulama üzerinden anlaşılan işlerin kalitesini, zamanında yapılmasını veya taraflar arasındaki maddi anlaşmazlıkları garanti etmez.
-- İşe ait maddi ve bedensel zararlardan İş Bitir sorumlu tutulamaz. Tüm hukuki sorumluluk hizmeti veren ile alan arasındaki anlaşmaya dayanır.
+- İş Bitir; yalnızca hizmet almak isteyenler ile hizmet veren ustaları/uzmanları dijital ortamda bir araya getiren bağımsız bir aracı platformdur.
+- Platform, uygulama üzerinden anlaşılan işlerin kalitesini, zamanında yapılmasını, ustaların yeterliliğini veya taraflar arasındaki fiziki/maddi anlaşmazlıkları garanti etmez.
+- İşe ait maddi ve bedensel zararlardan, işçilik kusurlarından İş Bitir veya geliştiricileri hiçbir şekilde hukuki ve cezai olarak sorumlu tutulamaz. Tüm hukuki sorumluluk hizmeti veren Usta ile hizmeti alan Vatandaş arasındaki anlaşmaya dayanır.
 
 4. Kullanıcı Yükümlülükleri
-- Kullanıcılar platformda yanıltıcı bilgiler veremez. 
-- Ustalar, ibraz ettikleri tüm dökümanların doğruluğunu taahhüt ederler.
+- Vatandaş (Müşteri): Platformda yanıltıcı bilgilerle veya ustaları oyalama amaçlı sahte iş ilanları oluşturamaz. Açtığı ilandaki iş tanımını ve adresini doğru belirtmek zorundadır.
+- Usta (Hizmet Veren): Platforma ibraz ettiği tüm belgelerin (ustalık, diploma, kimlik vb.) gerçek ve kendine ait olduğunu taahhüt eder. Müşterilere karşı nezaket kurallarına ve mesleki standartlara uymakla yükümlüdür.
 
-5. Krediler ve İade Politikası
-- Ustaların teklif verebilmesi için kredi sistemi kullanılmaktadır.
-- Bir müşteri (Vatandaş) talebini/ilanını iptal ederse, o ilana teklif vermiş olan ustaların kredileri sistem tarafından otomatik olarak iade edilir.
-- Bunun dışında, kullanılmış/harcanmış kredilerin iadesi yapılmaz. Hiç harcanmamış kredi paketleri için ilgili marketlerin (Google Play vb.) iade prosedürleri geçerlidir.
+5. Krediler, Ödemeler ve İade Politikası
+- Ustaların platform üzerinden yayımlanan işlere teklif verebilmesi için "Kredi" sistemini kullanması gerekmektedir.
+- Satın alınan krediler sadece platform içinde kullanım içindir. Uygulama dışında başka bir para birimine, nakde dönüştürülemez.
+- Bir müşteri ilanı iptal ederse, o ilana teklif vermiş olan tüm ustaların kredileri sistem tarafından otomatik olarak hesaplarına iade edilir.
+- Bunun dışında iade yapılmaz. Harcanmamış paketler market kurallarına tabidir.
 
-6. Hesabın Kapatılması
-Kuralları ihlal eden veya güvenliği tehdit eden hesaplar önceden haber verilmeksizin kalıcı olarak kapatılabilir.
+6. Hesabın Kapatılması ve Askıya Alınması
+Kullanıcılar platformu herhangi bir dolandırıcılık veya topluluk kurallarına aykırı kullandıklarında İş Bitir, önceden haber vermeksizin hesabı bloke etme hakkını saklı tutar.
 
 7. Sözleşme Değişiklikleri
-İş Bitir yönetimi işbu koşulları dilediği zaman güncelleme hakkını saklı tutar.`;
+İş Bitir yönetimi bu metni dilediği zaman güncelleyebilir. Yayınlandığı andan itibaren tüm kullanıcılar için geçerli olur.
+
+8. Uyuşmazlıkların Çözümü
+İhtilaflarda Türkiye Cumhuriyeti yasaları uygulanacak olup, İstanbul Mahkemeleri ve İcra Daireleri yetkili olacaktır.`;
+
 
     res.send(renderLegalHtml(title, content, lastUpdate));
 };
