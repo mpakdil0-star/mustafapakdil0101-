@@ -184,45 +184,6 @@ export default function AdminStatsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* City Picker Modal */}
-        {showCityPicker && (
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>İl Seçiniz</Text>
-                <TouchableOpacity onPress={() => setShowCityPicker(false)}>
-                  <Ionicons name="close" size={24} color="#64748B" />
-                </TouchableOpacity>
-              </View>
-              <ScrollView style={styles.cityList}>
-                <TouchableOpacity 
-                  style={[styles.cityItem, selectedCity === 'ALL' && styles.selectedCityItem]}
-                  onPress={() => {
-                    setSelectedCity('ALL');
-                    setShowCityPicker(false);
-                  }}
-                >
-                  <Text style={[styles.cityItemText, selectedCity === 'ALL' && styles.selectedCityText]}>Tüm Türkiye</Text>
-                  {selectedCity === 'ALL' && <Ionicons name="checkmark" size={20} color="#7C3AED" />}
-                </TouchableOpacity>
-
-                {data?.availableCities.map((city) => (
-                  <TouchableOpacity 
-                    key={city}
-                    style={[styles.cityItem, selectedCity === city && styles.selectedCityItem]}
-                    onPress={() => {
-                      setSelectedCity(city);
-                      setShowCityPicker(false);
-                    }}
-                  >
-                    <Text style={[styles.cityItemText, selectedCity === city && styles.selectedCityText]}>{city}</Text>
-                    {selectedCity === city && <Ionicons name="checkmark" size={20} color="#7C3AED" />}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          </View>
-        )}
 
         {/* Global KPI Cards */}
         <View style={styles.kpiContainer}>
@@ -350,6 +311,46 @@ export default function AdminStatsScreen() {
 
         <View style={styles.footerSpace} />
       </ScrollView>
+
+      {/* City Picker Modal - Moved outside ScrollView */}
+      {showCityPicker && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>İl Seçiniz</Text>
+              <TouchableOpacity onPress={() => setShowCityPicker(false)}>
+                <Ionicons name="close" size={24} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.cityList}>
+              <TouchableOpacity 
+                style={[styles.cityItem, selectedCity === 'ALL' && styles.selectedCityItem]}
+                onPress={() => {
+                  setSelectedCity('ALL');
+                  setShowCityPicker(false);
+                }}
+              >
+                <Text style={[styles.cityItemText, selectedCity === 'ALL' && styles.selectedCityText]}>Tüm Türkiye</Text>
+                {selectedCity === 'ALL' && <Ionicons name="checkmark" size={20} color="#7C3AED" />}
+              </TouchableOpacity>
+
+              {data?.availableCities.map((city) => (
+                <TouchableOpacity 
+                  key={city}
+                  style={[styles.cityItem, selectedCity === city && styles.selectedCityItem]}
+                  onPress={() => {
+                    setSelectedCity(city);
+                    setShowCityPicker(false);
+                  }}
+                >
+                  <Text style={[styles.cityItemText, selectedCity === city && styles.selectedCityText]}>{city}</Text>
+                  {selectedCity === city && <Ionicons name="checkmark" size={20} color="#7C3AED" />}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
