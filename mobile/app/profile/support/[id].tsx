@@ -8,6 +8,7 @@ import { fonts } from '../../../constants/typography';
 import { useAppColors } from '../../../hooks/useAppColors';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../../services/api';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TicketDetailScreen() {
     const { id } = useLocalSearchParams();
@@ -18,6 +19,7 @@ export default function TicketDetailScreen() {
     const [newMessage, setNewMessage] = useState('');
     const [sending, setSending] = useState(false);
     const scrollViewRef = useRef<ScrollView>(null);
+    const insets = useSafeAreaInsets();
 
     const fetchTicket = async () => {
         try {
@@ -130,7 +132,10 @@ export default function TicketDetailScreen() {
 
                 {/* Input Area */}
                 {ticket.status !== 'closed' && (
-                    <View style={styles.inputContainer}>
+                    <View style={[
+                        styles.inputContainer, 
+                        { paddingBottom: Math.max(insets.bottom, 12) }
+                    ]}>
                         <TextInput
                             style={styles.input}
                             placeholder="Bir mesaj yazın..."
@@ -266,7 +271,6 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         padding: 10,
-        paddingBottom: Platform.OS === 'ios' ? 14 : 20,
         backgroundColor: '#fff',
         borderTopWidth: 1,
         borderTopColor: '#E2E8F0',
