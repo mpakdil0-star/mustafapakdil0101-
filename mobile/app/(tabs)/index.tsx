@@ -906,6 +906,37 @@ export default function HomeScreen() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.categoryScroller}
               >
+                <TouchableOpacity
+                  style={styles.categoryItemMatch}
+                  onPress={() => handleActionWithAuth('/jobs/create', { category: 'Elektrik Proje Çizimi', serviceCategory: 'elektrik' })}
+                  activeOpacity={0.85}
+                >
+                  <Animated.View
+                    style={[
+                      styles.categoryIconCircleMinimal,
+                      {
+                        borderWidth: 1.5,
+                        backgroundColor: '#7C3AED12', // Subtle purple background
+                        borderColor: borderColorAnim.interpolate({
+                          inputRange: [0, 0.25, 0.5, 0.75, 1],
+                          outputRange: ['#7C3AED', '#EC4899', '#3B82F6', '#10B981', '#7C3AED']
+                        }),
+                        shadowColor: borderColorAnim.interpolate({
+                          inputRange: [0, 0.25, 0.5, 0.75, 1],
+                          outputRange: ['#7C3AED', '#EC4899', '#3B82F6', '#10B981', '#7C3AED']
+                        }),
+                        shadowOffset: { width: 0, height: 0 },
+                        shadowOpacity: 0.8,
+                        shadowRadius: 6,
+                        elevation: 5,
+                      }
+                    ]}
+                  >
+                    <Ionicons name="flash" size={20} color="#7C3AED" />
+                  </Animated.View>
+                  <Text style={[styles.categoryLabelMatch, { color: colors.text, fontFamily: fonts.bold }]}>Proje Çizimi</Text>
+                </TouchableOpacity>
+
                 {[
                   { id: 'avize-montaj', name: 'Avize Montajı', icon: 'bulb-outline', color: colors.primary },
                   { id: 'kapi-acma', name: 'Kapı Açma', icon: 'lock-open-outline', color: '#F59E0B' },
