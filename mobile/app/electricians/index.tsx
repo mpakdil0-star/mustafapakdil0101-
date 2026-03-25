@@ -203,28 +203,7 @@ export default function ElectriciansListScreen() {
         });
 
         // Sıralama Mantığı
-        if (activeFilters.sortBy === 'near') {
-            if (userLocations.length > 0) {
-                const defaultLoc = userLocations.find((l: any) => l.isDefault) || userLocations[0];
-                const userCity = defaultLoc.city;
-
-                // Sadece kullanıcının şehrindeki ustaları getir
-                const normalize = (str: string) => str ? str.toLowerCase().trim() : '';
-                const cityFiltered = result.filter((elec: any) => {
-                    const elecCity = normalize(elec.city);
-                    const targetCity = normalize(userCity);
-                    return elecCity === targetCity || elecCity.includes(targetCity) || targetCity.includes(elecCity);
-                });
-
-                if (cityFiltered.length > 0) {
-                    result = cityFiltered;
-                } else {
-                    showAlert('Bu Şehirde Usta Yok', `${userCity} şehrinde henüz hizmet veren usta bulunmuyor.`, 'warning');
-                }
-            } else {
-                showAlert('Adres Bulunamadı', 'Konum bazlı arama için lütfen profilinize bir adres ekleyin.', 'warning');
-            }
-        } else if (activeFilters.sortBy === 'popular') {
+        if (activeFilters.sortBy === 'popular') {
             result = [...result].sort((a, b) => b.reviewCount - a.reviewCount);
         }
 
@@ -310,11 +289,11 @@ export default function ElectriciansListScreen() {
                     contentContainerStyle={styles.quickFiltersContainer}
                 >
                     <TouchableOpacity
-                        style={[styles.quickFilterChip, activeFilters.sortBy === 'near' && styles.quickFilterChipActive]}
-                        onPress={() => setActiveFilters(prev => ({ ...prev, sortBy: prev.sortBy === 'near' ? null : 'near' }))}
+                        style={[styles.quickFilterChip, activeFilters.sortBy === 'popular' && styles.quickFilterChipActive]}
+                        onPress={() => setActiveFilters(prev => ({ ...prev, sortBy: prev.sortBy === 'popular' ? null : 'popular' }))}
                     >
-                        <Ionicons name="location" size={14} color={activeFilters.sortBy === 'near' ? colors.white : colors.primary} />
-                        <Text style={[styles.quickFilterText, activeFilters.sortBy === 'near' && styles.quickFilterTextActive]}>En Yakın</Text>
+                        <Ionicons name="star" size={14} color={activeFilters.sortBy === 'popular' ? colors.white : colors.primary} />
+                        <Text style={[styles.quickFilterText, activeFilters.sortBy === 'popular' && styles.quickFilterTextActive]}>En Popüler</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
