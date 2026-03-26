@@ -254,7 +254,15 @@ export default function BuyCreditsScreen() {
                     });
                 }
             } catch (error: any) {
-                console.error('Doğrulama hatası:', error);
+                const errorMsg = error.response?.data?.message || error.message || "";
+                console.error('Doğrulama hatası:', errorMsg);
+                
+                // Mükerrer istek veya zaten işlenmiş durumlarında kullanıcıyı rahatsız etme
+                if (errorMsg.includes('already') || errorMsg.includes('işlenmiş') || errorMsg.includes('not owned')) {
+                    console.log('ℹ️ Mükerrer veya geçersiz sinyal sessizce geçildi.');
+                    return;
+                }
+
                 setAlertConfig({
                     visible: true,
                     type: 'error',
