@@ -99,8 +99,8 @@ export default function BuyCreditsScreen() {
     const currentBalance = user?.electricianProfile?.creditBalance || 0;
 
     // Animations
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-    const slideAnim = useRef(new Animated.Value(20)).current;
+    const fadeAnim = useRef(new Animated.Value(1)).current; // Başlangıçta 1 yaptık
+    const slideAnim = useRef(new Animated.Value(0)).current; // Başlangıçta 0 yaptık
 
     // Alert State
     const [alertConfig, setAlertConfig] = useState<{
@@ -163,13 +163,15 @@ export default function BuyCreditsScreen() {
                     if (popular) setSelectedPkg(popular.id);
 
                     // 🔍 KRİTİK: Askıda kalan (tüketilmemiş) ödemeleri kurtar
-                    console.log('🔍 Askıda kalan ödemeler kontrol ediliyor...');
                     const available = await ExpoIap.getAvailablePurchases();
+                    console.log(`🔍 [IAP] getAvailablePurchases yanıtı: ${available?.length || 0} adet öğe.`);
+                    
                     if (available && available.length > 0) {
-                        console.log(`✅ ${available.length} adet bekleyen ödeme bulundu. Kurtarılıyor...`);
+                        console.log(`✅ [IAP] Bekleyen ödemeler listesi:`, available.map(a => a.productId).join(', '));
                         let recoveredAny = false;
                         for (const p of available) {
                             try {
+                                console.log(`🔄 [IAP] Kurtarma başlatılıyor: ${p.productId} (Token: ${p.purchaseToken.substring(0, 10)}...)`);
                                 const verifyRes = await api.post('/payments/verify-purchase', {
                                     productId: p.productId,
                                     purchaseToken: p.purchaseToken,
@@ -177,12 +179,14 @@ export default function BuyCreditsScreen() {
                                 });
 
                                 if (verifyRes.data.success || verifyRes.data.data?.alreadyProcessed) {
+                                    console.log(`✨ [IAP] Sunucu onayladı, işlem bitiriliyor: ${p.productId}`);
                                     await ExpoIap.finishTransaction({ purchase: p, isConsumable: true });
                                     recoveredAny = true;
-                                    console.log(`🛠️ Bekleyen ödeme başarıyla kurtarıldı: ${p.productId}`);
+                                } else {
+                                    console.warn(`⚠️ [IAP] Sunucu bu işlemi onaylamadı: ${p.productId}`, verifyRes.data);
                                 }
-                            } catch (error) {
-                                console.error('Kurtarma işlemi sırasında hata:', error);
+                            } catch (error: any) {
+                                console.error(`❌ [IAP] Kurtarma hatası (${p.productId}):`, error.response?.data?.message || error.message);
                             }
                         }
                         if (recoveredAny) dispatch(getMe());
@@ -206,6 +210,8 @@ export default function BuyCreditsScreen() {
             await loadFallbackPackages();
         } finally {
             setLoading(false);
+            // Animasyon güvenliği için burada tekrar dene
+            Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
         }
     };
 
@@ -298,13 +304,25 @@ export default function BuyCreditsScreen() {
         try {
             const response = await api.get('/payments/packages');
             if (response.data.success) {
-                const pkgs = response.data.data.map((p: any) => ({
-                    ...p,
-                    displayPrice: `${p.price} ₺`,
-                }));
+                const pkgs = response.data.data.map((p: any) => {
+                    const info = PACKAGE_INFO[p.id] || { color: '#94A3B8' };
+                    return {
+                        id: p.id,
+                        name: p.name || info.name || p.id,
+                        credits: p.credits,
+                        price: p.price,
+                        displayPrice: `${p.price} ₺`,
+                        color: p.color || info.color,
+                        isPopular: p.isPopular,
+                    };
+                });
                 setPackages(pkgs);
                 const popular = pkgs.find((p: any) => p.isPopular);
                 if (popular) setSelectedPkg(popular.id);
+                else if (pkgs.length > 0) setSelectedPkg(pkgs[0].id);
+                
+                // Fallback yüklemesi sonrası animasyonu tetikle
+                Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
             }
         } catch (error) {
             console.error('Fallback paketleri yükleme hatası:', error);
@@ -480,9 +498,20 @@ export default function BuyCreditsScreen() {
                     </Text>
                 </View>
 
-                {loading ? (
+                {loading && (
                     <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
-                ) : (
+                )}
+
+                {!loading && packages.length === 0 && (
+                    <View style={{ padding: 20, alignItems: 'center' }}>
+                        <Text style={{ color: colors.textSecondary }}>Paketler yüklenemedi. Lütfen internet bağlantınızı kontrol edin.</Text>
+                        <TouchableOpacity onPress={setupIAP} style={{ marginTop: 10, padding: 10, backgroundColor: colors.primary + '20', borderRadius: 10 }}>
+                            <Text style={{ color: colors.primary }}>Tekrar Dene</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {!loading && (
                     <View style={styles.packagesContainer}>
                         {packages.map((pkg, index) => {
                             const isSelected = selectedPkg === pkg.id;
@@ -494,7 +523,12 @@ export default function BuyCreditsScreen() {
                                     key={pkg.id}
                                     style={{
                                         opacity: fadeAnim,
-                                        transform: [{ translateY: Animated.multiply(slideAnim, (index + 1) * 0.3) }],
+                                        transform: [{ 
+                                            translateY: slideAnim.interpolate({
+                                                inputRange: [0, 100],
+                                                outputRange: [0, (index + 1) * 10]
+                                            }) 
+                                        }],
                                     }}
                                 >
                                     <TouchableOpacity

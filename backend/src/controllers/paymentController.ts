@@ -114,6 +114,8 @@ export const verifyAndGrantPurchase = async (req: AuthRequest, res: Response, ne
 
         if (publisher) {
             try {
+                console.log(`📡 Google Play Doğrulama İsteği: [${productId}] Token: ${purchaseToken.substring(0, 20)}...`);
+
                 const result = await publisher.purchases.products.get({
                     packageName: appPackageName,
                     productId: productId,
@@ -121,34 +123,48 @@ export const verifyAndGrantPurchase = async (req: AuthRequest, res: Response, ne
                 });
 
                 const purchase = result.data;
+                console.log(`📦 Google Play Yanıtı: purchaseState=${purchase.purchaseState}, acknowledgementState=${purchase.acknowledgementState}`);
 
                 // purchaseState: 0 = Purchased, 1 = Canceled, 2 = Pending
                 if (purchase.purchaseState !== 0) {
+                    console.error(`❌ Geçersiz Satın Alma Durumu: ${purchase.purchaseState}`);
                     throw new ValidationError('Bu satın alma tamamlanmamış veya iptal edilmiş');
                 }
 
                 // Daha önce işlenmiş mi kontrol et (duplicate prevention)
                 // acknowledgementState: 0 = Not acknowledged, 1 = Acknowledged
                 if (purchase.acknowledgementState === 1) {
+                    console.log(`ℹ️ Satın alma zaten onaylanmış (Acknowledged).`);
                     // Zaten işlenmiş bir satın alma - tekrar kredi vermemek için
                     return res.json({
                         success: true,
                         message: 'Bu satın alma daha önce işlenmiş.',
-                        data: { alreadyProcessed: true }
+                        data: { 
+                            alreadyProcessed: true,
+                            newBalance: (isDatabaseAvailable ? (await prisma.electricianProfile.findUnique({ where: { userId } }))?.creditBalance : mockStorage.get(userId).creditBalance) || 0
+                        }
                     });
                 }
 
                 // Satın almayı tüket (consumable product)
+                console.log(`🔄 Satın alma tüketiliyor (Consuming): ${productId}...`);
                 await publisher.purchases.products.consume({
                     packageName: appPackageName,
                     productId: productId,
                     token: purchaseToken,
                 });
 
-                console.log(`✅ Google Play doğrulama başarılı: ${productId} for user ${userId}`);
+                console.log(`✅ Google Play doğrulama ve tüketme başarılı: ${productId} for user ${userId}`);
             } catch (verifyError: any) {
-                console.error('❌ Google Play doğrulama hatası:', verifyError.message);
-                throw new ValidationError('Satın alma doğrulanamadı. Lütfen tekrar deneyin.');
+                const googleErrorMsg = verifyError.response?.data?.error?.message || verifyError.message;
+                console.error(`❌ Google Play API Hatası: "${googleErrorMsg}" [ID: ${productId}]`);
+                
+                // Eğer Google "Ürün kullanıcıya ait değil" diyorsa bunu detaylı logla
+                if (googleErrorMsg.includes('not owned')) {
+                    console.error(`⚠️ KRİTİK: Google bu ürünün (${productId}) kullanıcıya ait olmadığını bildirdi. Token geçersiz veya başka hesaba ait olabilir.`);
+                }
+
+                throw new ValidationError(`Google Play doğrulama hatası: ${googleErrorMsg}`);
             }
         } else {
             // Service account yoksa test modunda çalış
