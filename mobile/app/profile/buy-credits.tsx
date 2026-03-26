@@ -167,7 +167,7 @@ export default function BuyCreditsScreen() {
                     console.log(`🔍 [IAP] getAvailablePurchases yanıtı: ${available?.length || 0} adet öğe.`);
                     
                     if (available && available.length > 0) {
-                        console.log(`✅ [IAP] Bekleyen ödemeler listesi:`, available.map(a => a.productId).join(', '));
+                        console.log(`✅ [IAP] Bekleyen ödemeler listesi:`, available.map((a: any) => a.productId).join(', '));
                         let recoveredAny = false;
                         for (const p of available) {
                             try {
@@ -279,7 +279,18 @@ export default function BuyCreditsScreen() {
                     type: 'info',
                     title: 'Bekleyen İşlem',
                     message: 'Bu paket için bekleyen bir ödemeniz var. Şimdi sistem bunu kontrol edip kredinizi tanımlayacak.',
-                    buttons: [{ text: 'Kredimi Yükle', onPress: async () => { setAlertConfig(prev => ({ ...prev, visible: false })); setProcessing(true); await setupIAP(); } }]
+                    buttons: [{ 
+                        text: 'Kredimi Yükle', 
+                        onPress: async () => { 
+                            setAlertConfig(prev => ({ ...prev, visible: false })); 
+                            setProcessing(true); 
+                            try {
+                                await setupIAP(); 
+                            } finally {
+                                setProcessing(false);
+                            }
+                        } 
+                    }]
                 });
                 return;
             }
@@ -429,8 +440,12 @@ export default function BuyCreditsScreen() {
                         onPress: async () => {
                             setAlertConfig(prev => ({ ...prev, visible: false }));
                             setProcessing(true);
-                            // Bekleyen ödemeleri temizleyen kurulumu tekrar çalıştır
-                            await setupIAP();
+                            try {
+                                // Bekleyen ödemeleri temizleyen kurulumu tekrar çalıştır
+                                await setupIAP();
+                            } finally {
+                                setProcessing(false);
+                            }
                         }
                     }]
                 });
