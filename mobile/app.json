@@ -9,7 +9,7 @@
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "cover",
-      "backgroundColor": "#1E1B4B"
+      "backgroundColor": "#000000"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -27,7 +27,7 @@
       "versionCode": 36,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#1E1B4B"
+        "backgroundColor": "#000000"
       },
       "package": "com.isbitir.app",
       "googleServicesFile": "./google-services.json",
