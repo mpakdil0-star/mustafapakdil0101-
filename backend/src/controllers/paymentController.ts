@@ -82,6 +82,22 @@ export const verifyAndGrantPurchase = async (req: AuthRequest, res: Response, ne
             if (existingPurchase) {
                 console.log(`⚠️ Mükerrer ödeme engellendi: ${purchaseToken} for user ${userId}`);
                 
+                // 🛠️ KRİTİK GÜNCELLEME: Eğer veritabanında varsa ama Google'da asılı kaldıysa, tüketmeliyiz!
+                const publisher = getAndroidPublisher();
+                if (publisher) {
+                    try {
+                        console.log(`🔄 [KURTARMA] Asılı kalan satın alma Google Play üzerinde tüketiliyor: ${productId}...`);
+                        await publisher.purchases.products.consume({
+                            packageName: appPackageName,
+                            productId: productId,
+                            token: purchaseToken,
+                        });
+                        console.log(`✅ [KURTARMA] Tüketme başarılı: ${productId}`);
+                    } catch (consumeError: any) {
+                        console.error(`⚠️ [KURTARMA] Tüketme hatası: ${consumeError.message}`);
+                    }
+                }
+
                 // Bakiyeyi de ekleyelim ki frontend UI güncelleyebilsin
                 const profile = await prisma.electricianProfile.findUnique({ where: { userId } });
                 
