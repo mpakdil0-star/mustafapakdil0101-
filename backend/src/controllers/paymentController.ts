@@ -131,30 +131,11 @@ export const verifyAndGrantPurchase = async (req: AuthRequest, res: Response, ne
                     throw new ValidationError('Bu satın alma tamamlanmamış veya iptal edilmiş');
                 }
 
-                // Daha önce işlenmiş mi kontrol et (duplicate prevention)
-                // acknowledgementState: 0 = Not acknowledged, 1 = Acknowledged
-                if (purchase.acknowledgementState === 1) {
-                    console.log(`ℹ️ Satın alma zaten onaylanmış (Acknowledged).`);
-                    // Zaten işlenmiş bir satın alma - tekrar kredi vermemek için
-                    return res.json({
-                        success: true,
-                        message: 'Bu satın alma daha önce işlenmiş.',
-                        data: { 
-                            alreadyProcessed: true,
-                            newBalance: (isDatabaseAvailable ? (await prisma.electricianProfile.findUnique({ where: { userId } }))?.creditBalance : mockStorage.get(userId).creditBalance) || 0
-                        }
-                    });
-                }
-
-                // Satın almayı tüket (consumable product)
-                console.log(`🔄 Satın alma tüketiliyor (Consuming): ${productId}...`);
-                await publisher.purchases.products.consume({
-                    packageName: appPackageName,
-                    productId: productId,
-                    token: purchaseToken,
-                });
-
-                console.log(`✅ Google Play doğrulama ve tüketme başarılı: ${productId} for user ${userId}`);
+                // Satın alma durumunu onayla ve tüketmeyi KREDİ VERDİKTEN SONRA yap.
+                // Eski koddaki acknowledgementState === 1 ise return etme mantığını kaldırdık, 
+                // DB'de yoksa kesinlikle kredi vereceğiz.
+                
+                // --- Google api doğrulama başarılı ---
             } catch (verifyError: any) {
                 const googleErrorMsg = verifyError.response?.data?.error?.message || verifyError.message;
                 console.error(`❌ Google Play API Hatası: "${googleErrorMsg}" [ID: ${productId}]`);
@@ -171,6 +152,8 @@ export const verifyAndGrantPurchase = async (req: AuthRequest, res: Response, ne
             console.log(`⚠️ Test modu: ${productId} doğrulaması atlandı (GOOGLE_SERVICE_ACCOUNT_KEY yok)`);
         }
 
+        let newBalanceResponse = 0;
+
         // Krediyi kullanıcıya ekle
         if (isDatabaseAvailable) {
             const profile = await prisma.electricianProfile.findUnique({
@@ -183,6 +166,7 @@ export const verifyAndGrantPurchase = async (req: AuthRequest, res: Response, ne
 
             const currentBalance = Number(profile.creditBalance || 0);
             const newBalance = currentBalance + creditInfo.credits;
+            newBalanceResponse = newBalance;
 
             await prisma.electricianProfile.update({
                 where: { userId },
@@ -199,19 +183,11 @@ export const verifyAndGrantPurchase = async (req: AuthRequest, res: Response, ne
                     relatedId: purchaseToken // Store token for duplicate prevention
                 }
             });
-
-            return res.json({
-                success: true,
-                message: 'Ödeme başarılı! Kredileriniz hesabınıza tanımlandı.',
-                data: {
-                    creditsAdded: creditInfo.credits,
-                    newBalance
-                }
-            });
         } else {
             // Mock mod
             const mockData = mockStorage.addCredits(userId, creditInfo.credits);
-            mockStorage.markTokenProcessed(purchaseToken); // Mark token as used
+            newBalanceResponse = mockData.creditBalance;
+            mockStorage.markTokenProcessed(purchaseToken);
 
             mockTransactionStorage.addTransaction({
                 userId,
@@ -219,18 +195,35 @@ export const verifyAndGrantPurchase = async (req: AuthRequest, res: Response, ne
                 transactionType: 'PURCHASE',
                 description: `${creditInfo.credits} kredi satın alındı (${creditInfo.name})`,
                 balanceAfter: mockData.creditBalance,
-                relatedId: purchaseToken // Store for consistency
-            });
-
-            return res.json({
-                success: true,
-                message: 'Ödeme başarılı! Kredileriniz hesabınıza tanımlandı.',
-                data: {
-                    creditsAdded: creditInfo.credits,
-                    newBalance: mockData.creditBalance
-                }
+                relatedId: purchaseToken
             });
         }
+        
+        // BAŞARILI KREDİ YÜKLEMESİ SONRASI: Tüketme (Consume) işlemi
+        // Ürünü Google Play'de tüketerek kullanıcının tekrar satın alabilmesini sağla
+        if (publisher && isDatabaseAvailable) {
+            try {
+                console.log(`🔄 Satın alma tüketiliyor (Consuming): ${productId}...`);
+                await publisher.purchases.products.consume({
+                    packageName: appPackageName,
+                    productId: productId,
+                    token: purchaseToken,
+                });
+                console.log(`✅ Google Play tüketme başarılı: ${productId} for user ${userId}`);
+            } catch (consumeError: any) {
+                console.error(`⚠️ Tüketme (Consume) Hatası (ÖNEMSİZ - Kredi verildi): ${consumeError.message}`);
+                // Kredi verildiği için işlemi throw ile kesmiyoruz, frontend client-side consume deneyebilir.
+            }
+        }
+
+        return res.json({
+            success: true,
+            message: 'Ödeme başarılı! Kredileriniz hesabınıza tanımlandı.',
+            data: {
+                creditsAdded: creditInfo.credits,
+                newBalance: newBalanceResponse
+            }
+        });
     } catch (error) {
         next(error);
     }
