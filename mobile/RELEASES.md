@@ -1,6 +1,6 @@
 # Sürüm Notları (Release Notes)
 
-## [1.0.35] - 2026-03-30
+## [1.0.29] (36) - 2026-03-30
 ### Değişiklikler
 - **Tasarım:** Uygulama ikonu "Sihirli Dokunuş" (Modern Minimalist Spark) konseptiyle tamamen modernize edildi.
 - **Ödeme Sistemi:** Google Play "Ürün Zaten Sahipli" (Already Owned) hatası giderildi, bekleyen kredilerin otomatik yüklenmesi optimize edildi.
