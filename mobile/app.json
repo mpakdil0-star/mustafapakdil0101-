@@ -2,7 +2,7 @@
   "expo": {
     "name": "işbitir",
     "slug": "elektrikciler",
-    "version": "1.0.28",
+    "version": "1.0.29",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
@@ -24,7 +24,7 @@
       }
     },
     "android": {
-      "versionCode": 35,
+      "versionCode": 36,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1E1B4B"
