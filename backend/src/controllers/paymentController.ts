@@ -55,6 +55,12 @@ export const getCreditPackages = async (req: AuthRequest, res: Response) => {
 /**
  * Google Play IAP satın alma doğrulama
  * Frontend purchaseToken ve productId gönderir, backend doğrular ve kredi yükler
+ * 
+ * KRİTİK DÜZELTMELER (v1.0.30):
+ * 1. Race condition engellemek için Prisma $transaction kullanılıyor
+ * 2. Decimal hassasiyet hataları Math.round ile düzeltildi
+ * 3. "Already owned" döngüsünü kırmak için her durumda Google consume yapılıyor
+ * 4. Mükerrer ödeme kontrolü token+userId bazlı yapılıyor
  */
 export const verifyAndGrantPurchase = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
@@ -73,64 +79,71 @@ export const verifyAndGrantPurchase = async (req: AuthRequest, res: Response, ne
 
         const userId = req.user.id;
         const appPackageName = packageName || 'com.isbitir.app';
+        const publisher = getAndroidPublisher();
 
-        // 🛡️ REPEAT PREVENTION: Check if this purchaseToken was already processed
+        // 🔧 YARDIMCI: Google Play'de ürünü tüket (consume) — her durumda çağrılır
+        const consumeOnGooglePlay = async () => {
+            if (!publisher) return;
+            try {
+                console.log(`🔄 [CONSUME] Google Play tüketme: ${productId}...`);
+                await publisher.purchases.products.consume({
+                    packageName: appPackageName,
+                    productId: productId,
+                    token: purchaseToken,
+                });
+                console.log(`✅ [CONSUME] Başarılı: ${productId} for user ${userId}`);
+            } catch (consumeError: any) {
+                // "already consumed" veya benzer hatalar önemsiz — ürün zaten tüketilmiş
+                console.warn(`⚠️ [CONSUME] Hata (önemsiz): ${consumeError.message}`);
+            }
+        };
+
+        // 🛡️ MÜKERRER ÖDEME KONTROLÜ
         if (isDatabaseAvailable) {
             const existingPurchase = await prisma.credit.findFirst({
                 where: { relatedId: purchaseToken }
             });
-            if (existingPurchase) {
-                console.log(`⚠️ Mükerrer ödeme engellendi: ${purchaseToken} for user ${userId}`);
-                
-                // 🛠️ KRİTİK GÜNCELLEME: Eğer veritabanında varsa ama Google'da asılı kaldıysa, tüketmeliyiz!
-                const publisher = getAndroidPublisher();
-                if (publisher) {
-                    try {
-                        console.log(`🔄 [KURTARMA] Asılı kalan satın alma Google Play üzerinde tüketiliyor: ${productId}...`);
-                        await publisher.purchases.products.consume({
-                            packageName: appPackageName,
-                            productId: productId,
-                            token: purchaseToken,
-                        });
-                        console.log(`✅ [KURTARMA] Tüketme başarılı: ${productId}`);
-                    } catch (consumeError: any) {
-                        console.error(`⚠️ [KURTARMA] Tüketme hatası: ${consumeError.message}`);
-                    }
-                }
 
-                // Bakiyeyi de ekleyelim ki frontend UI güncelleyebilsin
+            if (existingPurchase) {
+                console.log(`⚠️ Mükerrer ödeme engellendi: token=${purchaseToken.substring(0, 15)}... user=${userId}`);
+                
+                // KRİTİK: Mükerrer olsa bile Google Play'de tüketmeyi dene
+                // Bu, "already owned" hatasını kıran en önemli adım
+                await consumeOnGooglePlay();
+
                 const profile = await prisma.electricianProfile.findUnique({ where: { userId } });
+                const safeBalance = Math.round(Number(profile?.creditBalance || 0));
                 
                 return res.json({
                     success: true,
                     message: 'Bu satın alma daha önce hesabınıza tanımlanmış.',
                     data: { 
                         alreadyProcessed: true,
-                        newBalance: profile?.creditBalance || 0 
+                        creditsAdded: 0,
+                        newBalance: safeBalance
                     }
                 });
             }
         } else {
-            const mockProfile = mockStorage.get(userId);
             if (mockStorage.isTokenProcessed(purchaseToken)) {
-                console.log(`⚠️ Mükerrer ödeme engellendi (MOCK): ${purchaseToken} for user ${userId}`);
+                console.log(`⚠️ Mükerrer ödeme engellendi (MOCK): ${purchaseToken.substring(0, 15)}...`);
+                const mockProfile = mockStorage.get(userId);
                 return res.json({
                     success: true,
                     message: 'Bu satın alma daha önce hesabınıza tanımlanmış.',
                     data: { 
                         alreadyProcessed: true,
+                        creditsAdded: 0,
                         newBalance: mockProfile?.creditBalance || 0
                     }
                 });
             }
         }
 
-        // Google Play API ile doğrulama
-        const publisher = getAndroidPublisher();
-
+        // 📡 GOOGLE PLAY API DOĞRULAMA
         if (publisher) {
             try {
-                console.log(`📡 Google Play Doğrulama İsteği: [${productId}] Token: ${purchaseToken.substring(0, 20)}...`);
+                console.log(`📡 Google Play Doğrulama: [${productId}] Token: ${purchaseToken.substring(0, 20)}...`);
 
                 const result = await publisher.purchases.products.get({
                     packageName: appPackageName,
@@ -139,66 +152,91 @@ export const verifyAndGrantPurchase = async (req: AuthRequest, res: Response, ne
                 });
 
                 const purchase = result.data;
-                console.log(`📦 Google Play Yanıtı: purchaseState=${purchase.purchaseState}, acknowledgementState=${purchase.acknowledgementState}`);
+                console.log(`📦 Google Play Yanıtı: purchaseState=${purchase.purchaseState}, consumptionState=${purchase.consumptionState}, acknowledgementState=${purchase.acknowledgementState}`);
 
                 // purchaseState: 0 = Purchased, 1 = Canceled, 2 = Pending
                 if (purchase.purchaseState !== 0) {
                     console.error(`❌ Geçersiz Satın Alma Durumu: ${purchase.purchaseState}`);
+                    // Geçersiz durumda bile consume deneyelim ki ürün serbest bırakılsın
+                    await consumeOnGooglePlay();
                     throw new ValidationError('Bu satın alma tamamlanmamış veya iptal edilmiş');
                 }
 
-                // Satın alma durumunu onayla ve tüketmeyi KREDİ VERDİKTEN SONRA yap.
-                // Eski koddaki acknowledgementState === 1 ise return etme mantığını kaldırdık, 
-                // DB'de yoksa kesinlikle kredi vereceğiz.
-                
-                // --- Google api doğrulama başarılı ---
             } catch (verifyError: any) {
+                if (verifyError instanceof ValidationError) throw verifyError;
+                
                 const googleErrorMsg = verifyError.response?.data?.error?.message || verifyError.message;
                 console.error(`❌ Google Play API Hatası: "${googleErrorMsg}" [ID: ${productId}]`);
-                
-                // Eğer Google "Ürün kullanıcıya ait değil" diyorsa bunu detaylı logla
-                if (googleErrorMsg.includes('not owned')) {
-                    console.error(`⚠️ KRİTİK: Google bu ürünün (${productId}) kullanıcıya ait olmadığını bildirdi. Token geçersiz veya başka hesaba ait olabilir.`);
-                }
-
                 throw new ValidationError(`Google Play doğrulama hatası: ${googleErrorMsg}`);
             }
         } else {
-            // Service account yoksa test modunda çalış
             console.log(`⚠️ Test modu: ${productId} doğrulaması atlandı (GOOGLE_SERVICE_ACCOUNT_KEY yok)`);
         }
 
+        // 💰 KREDİ YÜKLEME (Prisma Transaction ile race condition engelleme)
         let newBalanceResponse = 0;
 
-        // Krediyi kullanıcıya ekle
         if (isDatabaseAvailable) {
-            const profile = await prisma.electricianProfile.findUnique({
-                where: { userId }
+            const result = await prisma.$transaction(async (tx) => {
+                // Transaction içinde tekrar kontrol et (race condition kalkanı)
+                const duplicateCheck = await tx.credit.findFirst({
+                    where: { relatedId: purchaseToken }
+                });
+                if (duplicateCheck) {
+                    console.log(`🛡️ [TRANSACTION] Race condition yakalandı! Token zaten işlenmiş: ${purchaseToken.substring(0, 15)}...`);
+                    return { alreadyProcessed: true, newBalance: 0 };
+                }
+
+                const profile = await tx.electricianProfile.findUnique({
+                    where: { userId }
+                });
+
+                if (!profile) {
+                    throw new ValidationError('Bu işlem sadece usta hesapları için geçerlidir.');
+                }
+
+                // Decimal → Number dönüşümünde Math.round kullanarak hassasiyet hatalarını önle
+                const currentBalance = Math.round(Number(profile.creditBalance || 0));
+                const creditsToAdd = creditInfo.credits; // Tam sayı, hassasiyet sorunu yok
+                const newBalance = currentBalance + creditsToAdd;
+
+                console.log(`💰 Kredi yükleme: ${currentBalance} + ${creditsToAdd} = ${newBalance} (user: ${userId})`);
+
+                await tx.electricianProfile.update({
+                    where: { userId },
+                    data: { creditBalance: newBalance }
+                });
+
+                await tx.credit.create({
+                    data: {
+                        userId,
+                        amount: creditsToAdd,
+                        transactionType: 'PURCHASE',
+                        description: `${creditsToAdd} kredi satın alındı (${creditInfo.name})`,
+                        balanceAfter: newBalance,
+                        relatedId: purchaseToken
+                    }
+                });
+
+                return { alreadyProcessed: false, newBalance };
             });
 
-            if (!profile) {
-                throw new ValidationError('Bu işlem sadece usta hesapları için geçerlidir.');
+            if (result.alreadyProcessed) {
+                // Race condition yakalandı — consume yap ve dön
+                await consumeOnGooglePlay();
+                const profile = await prisma.electricianProfile.findUnique({ where: { userId } });
+                return res.json({
+                    success: true,
+                    message: 'Bu satın alma daha önce hesabınıza tanımlanmış.',
+                    data: { 
+                        alreadyProcessed: true,
+                        creditsAdded: 0,
+                        newBalance: Math.round(Number(profile?.creditBalance || 0))
+                    }
+                });
             }
 
-            const currentBalance = Number(profile.creditBalance || 0);
-            const newBalance = currentBalance + creditInfo.credits;
-            newBalanceResponse = newBalance;
-
-            await prisma.electricianProfile.update({
-                where: { userId },
-                data: { creditBalance: newBalance }
-            });
-
-            await prisma.credit.create({
-                data: {
-                    userId,
-                    amount: creditInfo.credits,
-                    transactionType: 'PURCHASE',
-                    description: `${creditInfo.credits} kredi satın alındı (${creditInfo.name})`,
-                    balanceAfter: newBalance,
-                    relatedId: purchaseToken // Store token for duplicate prevention
-                }
-            });
+            newBalanceResponse = result.newBalance;
         } else {
             // Mock mod
             const mockData = mockStorage.addCredits(userId, creditInfo.credits);
@@ -215,22 +253,10 @@ export const verifyAndGrantPurchase = async (req: AuthRequest, res: Response, ne
             });
         }
         
-        // BAŞARILI KREDİ YÜKLEMESİ SONRASI: Tüketme (Consume) işlemi
-        // Ürünü Google Play'de tüketerek kullanıcının tekrar satın alabilmesini sağla
-        if (publisher && isDatabaseAvailable) {
-            try {
-                console.log(`🔄 Satın alma tüketiliyor (Consuming): ${productId}...`);
-                await publisher.purchases.products.consume({
-                    packageName: appPackageName,
-                    productId: productId,
-                    token: purchaseToken,
-                });
-                console.log(`✅ Google Play tüketme başarılı: ${productId} for user ${userId}`);
-            } catch (consumeError: any) {
-                console.error(`⚠️ Tüketme (Consume) Hatası (ÖNEMSİZ - Kredi verildi): ${consumeError.message}`);
-                // Kredi verildiği için işlemi throw ile kesmiyoruz, frontend client-side consume deneyebilir.
-            }
-        }
+        // 🔄 KREDİ BAŞARILI → Google Play'de ürünü tüket (kullanıcı tekrar satın alabilsin)
+        await consumeOnGooglePlay();
+
+        console.log(`🎉 Satın alma tamamlandı: ${creditInfo.credits} kredi → user ${userId}, yeni bakiye: ${newBalanceResponse}`);
 
         return res.json({
             success: true,

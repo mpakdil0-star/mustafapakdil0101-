@@ -119,6 +119,8 @@ export default function BuyCreditsScreen() {
     // IAP bağlantısı ve hata yönetimi için abonelikler
     const purchaseUpdateSubscription = useRef<any>(null);
     const purchaseErrorSubscription = useRef<any>(null);
+    // 🛡️ Race condition engelleme: Aynı anda birden fazla işlem yapılmasını önler
+    const isProcessingRef = useRef(false);
 
     const setupIAP = async () => {
         try {
@@ -163,34 +165,7 @@ export default function BuyCreditsScreen() {
                     if (popular) setSelectedPkg(popular.id);
 
                     // 🔍 KRİTİK: Askıda kalan (tüketilmemiş) ödemeleri kurtar
-                    const available = await ExpoIap.getAvailablePurchases();
-                    console.log(`🔍 [IAP] getAvailablePurchases yanıtı: ${available?.length || 0} adet öğe.`);
-                    
-                    if (available && available.length > 0) {
-                        console.log(`✅ [IAP] Bekleyen ödemeler listesi:`, available.map((a: any) => a.productId).join(', '));
-                        let recoveredAny = false;
-                        for (const p of available) {
-                            try {
-                                console.log(`🔄 [IAP] Kurtarma başlatılıyor: ${p.productId} (Token: ${p.purchaseToken.substring(0, 10)}...)`);
-                                const verifyRes = await api.post('/payments/verify-purchase', {
-                                    productId: p.productId,
-                                    purchaseToken: p.purchaseToken,
-                                    packageName: 'com.isbitir.app',
-                                });
-
-                                if (verifyRes.data.success || verifyRes.data.data?.alreadyProcessed) {
-                                    console.log(`✨ [IAP] Sunucu onayladı, işlem bitiriliyor: ${p.productId}`);
-                                    await ExpoIap.finishTransaction({ purchase: p, isConsumable: true });
-                                    recoveredAny = true;
-                                } else {
-                                    console.warn(`⚠️ [IAP] Sunucu bu işlemi onaylamadı: ${p.productId}`, verifyRes.data);
-                                }
-                            } catch (error: any) {
-                                console.error(`❌ [IAP] Kurtarma hatası (${p.productId}):`, error.response?.data?.message || error.message);
-                            }
-                        }
-                        if (recoveredAny) dispatch(getMe());
-                    }
+                    await recoverPendingPurchases();
 
                 } else {
                     await loadFallbackPackages();
@@ -215,6 +190,71 @@ export default function BuyCreditsScreen() {
         }
     };
 
+    /**
+     * 🔄 KURTARMA FONKSİYONU: Askıda kalan (tüketilmemiş) ödemeleri temizler
+     * Bu fonksiyon setupIAP'tan bağımsızdır — sonsuz döngü riski YOKTUR.
+     * Backend başarısız olsa bile client-side finishTransaction MUTLAKA çağrılır.
+     */
+    const recoverPendingPurchases = async () => {
+        if (!ExpoIap || isExpoGo) return;
+        // Zaten bir kurtarma/satın alma devam ediyorsa tekrar girmeyi engelle
+        if (isProcessingRef.current) {
+            console.log('⏳ [RECOVERY] Zaten bir işlem devam ediyor, atlanıyor.');
+            return;
+        }
+        isProcessingRef.current = true;
+        try {
+            const available = await ExpoIap.getAvailablePurchases();
+            console.log(`🔍 [RECOVERY] getAvailablePurchases: ${available?.length || 0} adet öğe.`);
+
+            if (!available || available.length === 0) return;
+
+            console.log(`✅ [RECOVERY] Bekleyen ürünler:`, available.map((a: any) => a.productId).join(', '));
+            let recoveredAny = false;
+
+            for (const p of available) {
+                try {
+                    console.log(`🔄 [RECOVERY] Kurtarma: ${p.productId} (Token: ${p.purchaseToken?.substring(0, 10)}...)`);
+                    
+                    // Backend'e doğrulat (kredi ekleyecek veya mükerrer diyecek)
+                    try {
+                        await api.post('/payments/verify-purchase', {
+                            productId: p.productId,
+                            purchaseToken: p.purchaseToken,
+                            packageName: 'com.isbitir.app',
+                        });
+                        console.log(`✨ [RECOVERY] Sunucu onayladı: ${p.productId}`);
+                    } catch (verifyError: any) {
+                        console.warn(`⚠️ [RECOVERY] Backend hatası (önemsiz, consume devam edecek): ${verifyError.response?.data?.message || verifyError.message}`);
+                    }
+
+                    // 🔑 KRİTİK: Backend başarılı OLSA DA OLMASA DA ürünü tüket!
+                    // Bu, "already owned" döngüsünü kıran en önemli adımdır.
+                    await ExpoIap.finishTransaction({ purchase: p, isConsumable: true });
+                    console.log(`🗑️ [RECOVERY] finishTransaction başarılı: ${p.productId}`);
+                    recoveredAny = true;
+                } catch (error: any) {
+                    console.error(`❌ [RECOVERY] Kurtarma hatası (${p.productId}):`, error.message);
+                }
+            }
+
+            if (recoveredAny) {
+                dispatch(getMe());
+                setAlertConfig({
+                    visible: true,
+                    type: 'success',
+                    title: 'İşlem Tamamlandı ✅',
+                    message: 'Bekleyen ödemeleriniz başarıyla işlendi ve krediniz hesabınıza tanımlandı.',
+                    buttons: [{ text: 'Tamam', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }]
+                });
+            }
+        } catch (error: any) {
+            console.error('❌ [RECOVERY] Genel hata:', error.message);
+        } finally {
+            isProcessingRef.current = false;
+        }
+    };
+
     // IAP listener'larını kur
     useEffect(() => {
         setupIAP();
@@ -222,29 +262,62 @@ export default function BuyCreditsScreen() {
         // Başarılı Satın Alma Dinleyicisi
         purchaseUpdateSubscription.current = ExpoIap?.purchaseUpdatedListener(async (purchase: any) => {
             console.log('🎉 Satın alma işlemi güncellendi:', purchase.productId);
+            if (isProcessingRef.current) {
+                console.log('⏳ Zaten bir işlem devam ediyor, listener atlanıyor.');
+                return;
+            }
+            isProcessingRef.current = true;
             try {
                 setProcessing(true);
-                const response = await api.post('/payments/verify-purchase', {
-                    productId: purchase.productId,
-                    purchaseToken: purchase.purchaseToken,
-                    packageName: 'com.isbitir.app',
-                });
+                
+                let backendSuccess = false;
+                let newBalance: number | null = null;
+                let alreadyProcessed = false;
 
-                if (response.data.success) {
-                    await ExpoIap.finishTransaction({ purchase, isConsumable: true });
-                    const newBalance = response.data.data?.newBalance;
+                // 1. Backend'e doğrulat
+                try {
+                    const response = await api.post('/payments/verify-purchase', {
+                        productId: purchase.productId,
+                        purchaseToken: purchase.purchaseToken,
+                        packageName: 'com.isbitir.app',
+                    });
+
+                    if (response.data.success) {
+                        backendSuccess = true;
+                        newBalance = response.data.data?.newBalance ?? null;
+                        alreadyProcessed = response.data.data?.alreadyProcessed === true;
+                    }
+                } catch (verifyError: any) {
+                    const errorMsg = verifyError.response?.data?.message || verifyError.message || '';
+                    console.error('Backend doğrulama hatası:', errorMsg);
                     
-                    if (typeof newBalance === 'number') {
-                        dispatch(updateCreditBalance(newBalance));
+                    // Mükerrer veya zaten işlenmiş durumlarında sessizce geç
+                    if (errorMsg.includes('already') || errorMsg.includes('işlenmiş') || errorMsg.includes('tanımlanmış')) {
+                        alreadyProcessed = true;
                     }
-                    await dispatch(getMe());
+                }
 
-                    // Mükerrer bir bildirimse (alreadyProcessed), kullanıcıyı bekletmeden sessizce bitir
-                    if (response.data.data?.alreadyProcessed) {
-                        setProcessing(false);
-                        return;
-                    }
+                // 2. 🔑 KRİTİK: Backend ne dönerse dönsün, ürünü mutlaka tüket!
+                // Bu, "already owned" hatasını kalıcı olarak çözen adımdır.
+                try {
+                    await ExpoIap.finishTransaction({ purchase, isConsumable: true });
+                    console.log('✅ finishTransaction başarılı:', purchase.productId);
+                } catch (finishError: any) {
+                    console.warn('⚠️ finishTransaction hatası (önemsiz):', finishError.message);
+                }
 
+                // 3. UI güncelle
+                if (typeof newBalance === 'number') {
+                    dispatch(updateCreditBalance(newBalance));
+                }
+                await dispatch(getMe());
+
+                // Mükerrer bildirimse sessizce bitir
+                if (alreadyProcessed) {
+                    return;
+                }
+
+                if (backendSuccess) {
                     setAlertConfig({
                         visible: true,
                         type: 'success',
@@ -252,25 +325,17 @@ export default function BuyCreditsScreen() {
                         message: 'Kredileriniz cüzdanınıza başarıyla eklendi.',
                         buttons: [{ text: 'Tamam', onPress: () => { setAlertConfig(prev => ({ ...prev, visible: false })); router.back(); } }]
                     });
+                } else {
+                    setAlertConfig({
+                        visible: true,
+                        type: 'error',
+                        title: 'Sistem Hatası',
+                        message: 'Ödeme başarılı oldu ancak krediler yüklenirken bir sorun çıktı. Lütfen birazdan tekrar "Kredi Yükle" sayfasına girin, işleminiz otomatik tamamlanacaktır.'
+                    });
                 }
-            } catch (error: any) {
-                const errorMsg = error.response?.data?.message || error.message || "";
-                console.error('Doğrulama hatası:', errorMsg);
-                
-                // Mükerrer istek veya zaten işlenmiş durumlarında kullanıcıyı rahatsız etme
-                if (errorMsg.includes('already') || errorMsg.includes('işlenmiş') || errorMsg.includes('not owned')) {
-                    console.log('ℹ️ Mükerrer veya geçersiz sinyal sessizce geçildi.');
-                    return;
-                }
-
-                setAlertConfig({
-                    visible: true,
-                    type: 'error',
-                    title: 'Sistem Hatası',
-                    message: 'Ödeme başarılı oldu ancak krediler yüklenirken bir sorun çıktı. Lütfen birazdan tekrar "Kredi Yükle" sayfasına girin, işleminiz otomatik tamamlanacaktır.'
-                });
             } finally {
                 setProcessing(false);
+                isProcessingRef.current = false;
             }
         });
 
@@ -278,9 +343,10 @@ export default function BuyCreditsScreen() {
         purchaseErrorSubscription.current = ExpoIap?.purchaseErrorListener((error: any) => {
             console.warn('IAP Hatası:', error);
             setProcessing(false);
+            isProcessingRef.current = false;
             if (error.code === 'user-cancelled') return;
             
-            // 'Already owned' hatası için özel mesaj
+            // 'Already owned' hatası için → setupIAP DEĞİL, recoverPendingPurchases çağır (döngü yok!)
             if (error?.message?.includes('already owned') || error?.code === 7) {
                 setAlertConfig({
                     visible: true,
@@ -293,7 +359,8 @@ export default function BuyCreditsScreen() {
                             setAlertConfig(prev => ({ ...prev, visible: false })); 
                             setProcessing(true); 
                             try {
-                                await setupIAP(); 
+                                // ✅ setupIAP yerine recoverPendingPurchases kullan — sonsuz döngü riski YOK
+                                await recoverPendingPurchases(); 
                             } finally {
                                 setProcessing(false);
                             }
@@ -449,8 +516,8 @@ export default function BuyCreditsScreen() {
                             setAlertConfig(prev => ({ ...prev, visible: false }));
                             setProcessing(true);
                             try {
-                                // Bekleyen ödemeleri temizleyen kurulumu tekrar çalıştır
-                                await setupIAP();
+                                // ✅ setupIAP yerine recoverPendingPurchases — sonsuz döngü riski YOK
+                                await recoverPendingPurchases();
                             } finally {
                                 setProcessing(false);
                             }

@@ -184,3 +184,9 @@ dependencies {
 
 apply plugin: 'com.google.gms.google-services'
 android { aaptOptions { cruncherEnabled = false; useNewCruncher = false } }
+
+android { aaptOptions { cruncherEnabled = false; useNewCruncher = false } }
+
+android { aaptOptions { cruncherEnabled = false; useNewCruncher = false } }
+
+android { aaptOptions { cruncherEnabled = false; useNewCruncher = false } }
