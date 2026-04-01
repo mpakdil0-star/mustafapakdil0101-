@@ -92,8 +92,8 @@ android {
         applicationId 'com.isbitir.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 36
-        versionName "1.0.29"
+        versionCode 38
+        versionName "1.0.30"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
@@ -183,3 +183,4 @@ dependencies {
 }
 
 apply plugin: 'com.google.gms.google-services'
+android { aaptOptions { cruncherEnabled = false; useNewCruncher = false } }

@@ -43,4 +43,4 @@ Write-Host "Starting EAS Build..." -ForegroundColor Green
 Set-Location $destDir
 $env:EAS_NO_VCS = "1"
 # Use npx but ensure it finds the project context
-npx eas build --profile development --platform android
+npx eas build --profile production --platform android
