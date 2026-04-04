@@ -136,7 +136,7 @@ function RootLayoutNav() {
           const { getItemAsync, setItemAsync } = await import('expo-secure-store');
           const profileSetupDone = await getItemAsync('profile_setup_completed_' + user.id);
 
-          if (isIncomplete && !isInsideProfileGroup && !profileSetupDone) {
+          if (isIncomplete && !isInsideProfileGroup && !profileSetupDone && currentPath !== '(auth)/register') {
             // Only force redirect on FIRST TIME setup (no flag saved yet)
             router.replace('/profile/edit?mandatory=true');
             return;
