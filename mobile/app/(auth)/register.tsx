@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Alert,
   TouchableOpacity,
   Modal,
+  TextInput,
 } from 'react-native';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,6 +25,7 @@ import { colors as baseColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { SERVICE_CATEGORIES, ServiceCategory } from '../../constants/serviceCategories';
+import { API_BASE_URL } from '../../constants/api';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -52,6 +54,16 @@ export default function RegisterScreen() {
   const [confirm, setConfirm] = useState<any>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // E-posta doğrulama state'leri
+  const [emailVerifyModal, setEmailVerifyModal] = useState(false);
+  const [verifyCode, setVerifyCode] = useState('');
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyError, setVerifyError] = useState('');
+  const [mockCode, setMockCode] = useState<string | null>(null); // Test modunda gösterilir
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [registeredFullName, setRegisteredFullName] = useState('');
+  const codeInputRef = useRef<TextInput>(null);
 
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -107,6 +119,67 @@ export default function RegisterScreen() {
     setIsPhoneModalVisible(true);
   };
 
+  // E-posta doğrulama kodu gönder
+  const sendVerificationCode = async (emailAddr: string, name: string) => {
+    try {
+      const resp = await fetch(`${API_BASE_URL}auth/send-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailAddr, fullName: name }),
+      });
+      const data = await resp.json();
+      if (data.mockCode) {
+        setMockCode(data.mockCode); // Test modunda kodu göster
+      } else {
+        setMockCode(null);
+      }
+      setEmailVerifyModal(true);
+      setTimeout(() => codeInputRef.current?.focus(), 400);
+    } catch (err) {
+      // Hata olursa doğrulamayı atla, ana sayfaya geç
+      console.warn('E-posta doğrulama isteği gönderilemedi, atlanıyor.');
+      navigateAfterRegister();
+    }
+  };
+
+  // E-posta kodunu doğrula
+  const handleVerifyCode = async () => {
+    if (verifyCode.length !== 6) {
+      setVerifyError('Lütfen 6 haneli kodu girin.');
+      return;
+    }
+    setVerifyLoading(true);
+    setVerifyError('');
+    try {
+      const resp = await fetch(`${API_BASE_URL}auth/verify-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: registeredEmail, code: verifyCode }),
+      });
+      const data = await resp.json();
+      if (data.success) {
+        setEmailVerifyModal(false);
+        showAlert('✅ Başarılı', 'E-posta adresiniz doğrulandı!', 'success', [
+          { text: 'Devam Et', onPress: navigateAfterRegister, variant: 'primary' }
+        ]);
+      } else {
+        setVerifyError(data.error?.message || 'Geçersiz kod.');
+      }
+    } catch (err) {
+      setVerifyError('Bir hata oluştu. Lütfen tekrar deneyin.');
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  const navigateAfterRegister = () => {
+    try {
+      router.replace('/(tabs)');
+    } catch (navErr) {
+      console.log('Navigation handled by _layout.tsx');
+    }
+  };
+
   const openLegalModal = async (type: string) => {
     try {
       const { getLegalDocuments } = await import('../../services/legalService');
@@ -133,7 +206,7 @@ export default function RegisterScreen() {
       return;
     }
 
-    // Show confirmation modal for everyone since phone is mandatory
+    // Show phone confirmation modal
     if (!forceRegister) {
       setIsPhoneModalVisible(true);
       return;
@@ -148,7 +221,7 @@ export default function RegisterScreen() {
           password,
           userType,
           serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined,
-          acceptedLegalVersion: '25 Mart 2026 Tarihli Sözleşme', // Mandatory audit log tracking version
+          acceptedLegalVersion: '25 Mart 2026 Tarihli Sözleşme',
           marketingAllowed,
           location: location ? {
             city: location.city,
@@ -160,19 +233,13 @@ export default function RegisterScreen() {
         })
       ).unwrap();
 
-      // Small delay to let _layout.tsx handle navigation properly
-      // This avoids race condition between register screen and root layout
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Kayıt başarılı → e-posta doğrulama modalını göster
+      setRegisteredEmail(email);
+      setRegisteredFullName(fullName);
+      setVerifyCode('');
+      setVerifyError('');
+      await sendVerificationCode(email, fullName);
 
-      try {
-        if (redirectTo) {
-          router.replace(redirectTo as any);
-        } else {
-          router.replace('/(tabs)');
-        }
-      } catch (navErr) {
-        console.log('Navigation handled by _layout.tsx');
-      }
     } catch (err: any) {
       showAlert('Kayıt Hatası', err || 'Kayıt olunamadı. Lütfen tekrar deneyin.', 'error');
     }
@@ -183,6 +250,103 @@ export default function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
+      {/* E-posta Doğrulama Modalı */}
+      <Modal
+        visible={emailVerifyModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => {}}
+      >
+        <View style={[styles.modalOverlay, { backgroundColor: 'rgba(15, 23, 42, 0.95)' }]}>
+          <View style={[styles.modalContent, { backgroundColor: 'rgba(20, 30, 55, 0.98)', borderColor: 'rgba(255,255,255,0.12)', borderWidth: 1 }]}>
+            <LinearGradient
+              colors={['#7C3AED', '#4F46E5']}
+              style={styles.modalHeader}
+            >
+              <Ionicons name="mail-outline" size={36} color="#FFFFFF" />
+              <Text style={styles.modalTitle}>E-posta Doğrulama</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, textAlign: 'center', marginTop: 4 }}>
+                {registeredEmail}
+              </Text>
+            </LinearGradient>
+
+            <View style={styles.modalBody}>
+              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, textAlign: 'center', marginBottom: 20, lineHeight: 21 }}>
+                E-posta adresinize 6 haneli doğrulama kodu gönderdik. Lütfen kodu aşağıya girin.
+              </Text>
+
+              {/* Test modu: kodu direkt göster */}
+              {mockCode && (
+                <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(16,185,129,0.3)' }}>
+                  <Text style={{ color: '#34D399', fontSize: 12, textAlign: 'center', marginBottom: 4 }}>🧪 Test Modu — Gerçek E-posta Gönderilmedi</Text>
+                  <Text style={{ color: '#6EE7B7', fontSize: 26, textAlign: 'center', fontFamily: fonts.bold, letterSpacing: 8 }}>{mockCode}</Text>
+                </View>
+              )}
+
+              {/* Kod giriş kutusu */}
+              <TextInput
+                ref={codeInputRef}
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.08)',
+                  borderWidth: 1.5,
+                  borderColor: verifyError ? '#F87171' : 'rgba(124, 58, 237, 0.5)',
+                  borderRadius: 16,
+                  color: '#FFFFFF',
+                  fontSize: 32,
+                  fontFamily: fonts.bold,
+                  letterSpacing: 10,
+                  textAlign: 'center',
+                  paddingVertical: 18,
+                  marginBottom: 8,
+                }}
+                value={verifyCode}
+                onChangeText={(t) => { setVerifyCode(t.replace(/\D/g, '').slice(0, 6)); setVerifyError(''); }}
+                keyboardType="number-pad"
+                maxLength={6}
+                placeholder="------"
+                placeholderTextColor="rgba(255,255,255,0.2)"
+              />
+
+              {verifyError ? (
+                <Text style={{ color: '#F87171', fontSize: 13, textAlign: 'center', marginBottom: 12 }}>{verifyError}</Text>
+              ) : null}
+
+              <TouchableOpacity
+                style={[
+                  { borderRadius: 14, overflow: 'hidden', marginTop: 8 },
+                  (verifyLoading || verifyCode.length !== 6) && { opacity: 0.5 }
+                ]}
+                onPress={handleVerifyCode}
+                disabled={verifyLoading || verifyCode.length !== 6}
+                activeOpacity={0.85}
+              >
+                <LinearGradient
+                  colors={['#7C3AED', '#4F46E5']}
+                  style={{ paddingVertical: 16, alignItems: 'center' }}
+                >
+                  <Text style={{ color: '#FFFFFF', fontFamily: fonts.bold, fontSize: 16 }}>
+                    {verifyLoading ? 'Doğrulanıyor...' : 'Doğrula'}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{ marginTop: 16, alignItems: 'center' }}
+                onPress={() => sendVerificationCode(registeredEmail, registeredFullName)}
+              >
+                <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>Kodu Tekrar Gönder</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{ marginTop: 12, alignItems: 'center' }}
+                onPress={() => { setEmailVerifyModal(false); navigateAfterRegister(); }}
+              >
+                <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>Şimdi Doğrulama (Daha Sonra Yapabilirim)</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
       <Modal
         visible={isPhoneModalVisible}
         transparent={true}

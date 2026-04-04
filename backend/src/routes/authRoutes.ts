@@ -7,6 +7,8 @@ import {
   meController,
   forgotPasswordController,
   resetPasswordController,
+  sendEmailVerificationController,
+  verifyEmailController,
 } from '../controllers/authController';
 import { googleLoginController } from '../controllers/googleAuthController';
 import { authenticate } from '../middleware/auth';
@@ -30,6 +32,8 @@ router.get('/me', authenticate, meController);
 router.post('/forgot-password', authLimiter, validate(forgotPasswordValidation), forgotPasswordController);
 router.post('/reset-password', authLimiter, validate(resetPasswordValidation), resetPasswordController);
 router.post('/google', authLimiter, googleLoginController);
+router.post('/send-verification', authLimiter, sendEmailVerificationController);
+router.post('/verify-email', authLimiter, verifyEmailController);
 
 export default router;
 

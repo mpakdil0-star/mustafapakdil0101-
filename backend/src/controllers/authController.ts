@@ -4,6 +4,7 @@ import { ValidationError, UnauthorizedError } from '../utils/errors';
 import prisma, { isDatabaseAvailable } from '../config/database';
 import { AuthRequest } from '../middleware/auth';
 import { mockStorage } from '../utils/mockStorage';
+import { sendEmailVerificationCode, verifyEmailCode } from '../services/emailVerificationService';
 
 export const logoutController = async (
   req: AuthRequest,
@@ -382,6 +383,68 @@ export const resetPasswordController = async (
 
     const result = await resetPassword({ email, code, newPassword });
     res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * E-posta doğrulama kodu gönder (kayıt sonrası)
+ */
+export const sendEmailVerificationController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, fullName } = req.body;
+    if (!email) throw new ValidationError('Email is required');
+
+    const result = await sendEmailVerificationCode(email, fullName || 'Kullanıcı');
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * E-posta doğrulama kodunu kontrol et
+ */
+export const verifyEmailController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) throw new ValidationError('Email and code are required');
+
+    const result = verifyEmailCode(email, code);
+
+    if (!result.valid) {
+      return res.status(400).json({
+        success: false,
+        error: { message: result.message },
+      });
+    }
+
+    // Veritabanında emailVerified flag'ini güncelle (varsa)
+    if (isDatabaseAvailable) {
+      try {
+        await prisma.user.update({
+          where: { email },
+          data: { isVerified: true },
+        });
+      } catch (dbErr) {
+        // DB hatası olursa sessizce geç — doğrulama yine de başarılı
+        console.warn('⚠️ Could not update isVerified in DB:', dbErr);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: result.message,
+    });
   } catch (error) {
     next(error);
   }
