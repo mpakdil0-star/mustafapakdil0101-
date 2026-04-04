@@ -316,5 +316,6 @@ const styles = StyleSheet.create({
         fontFamily: fonts.bold,
         fontSize: 16,
         paddingHorizontal: 20, // If width changes
+        textAlign: 'center',
     }
 });
