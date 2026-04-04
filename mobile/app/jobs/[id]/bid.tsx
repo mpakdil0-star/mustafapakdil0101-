@@ -287,11 +287,20 @@ export default function CreateBidScreen() {
 
           {/* Cost Items Section */}
           <View style={styles.inputGroup}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Maliyet Kalemleri (Opsiyonel)</Text>
-              <TouchableOpacity onPress={addCostItem} style={styles.addBtn}>
-                <Ionicons name="add-circle" size={20} color={colors.primary} />
-                <Text style={[styles.addBtnText, { color: colors.primary }]}>Ekle</Text>
+            <View style={[styles.sectionHeader, { alignItems: 'center' }]}>
+              <View>
+                <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 2 }]}>Maliyet Kalemleri (Opsiyonel)</Text>
+                <Text style={{ fontSize: 10, fontFamily: fonts.semiBold, color: '#6366F1', marginLeft: 2 }}>Şeffaf teklifler daha çok seçilir</Text>
+              </View>
+              <TouchableOpacity 
+                activeOpacity={0.7}
+                onPress={addCostItem} 
+                style={[styles.addBtn, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' }]}
+              >
+                <View style={[styles.addIconCircle, { backgroundColor: colors.primary }]}>
+                  <Ionicons name="add" size={14} color={staticColors.white} />
+                </View>
+                <Text style={[styles.addBtnText, { color: colors.primary }]}>Kalem Ekle</Text>
               </TouchableOpacity>
             </View>
             
@@ -505,10 +514,25 @@ const styles = StyleSheet.create({
 
   // Form Section
   formSection: { gap: 10 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   sectionTitle: { fontSize: 14, fontFamily: fonts.extraBold, marginBottom: 0, marginLeft: 2 },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  addBtnText: { fontSize: 12, fontFamily: fonts.bold },
+  addBtn: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  addIconCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addBtnText: { fontSize: 12, fontFamily: fonts.extraBold },
   costItemRow: { 
     flexDirection: 'row', 
     alignItems: 'center', 
