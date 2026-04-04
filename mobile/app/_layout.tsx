@@ -162,7 +162,11 @@ function RootLayoutNav() {
 
         // Default: If in auth group, go to tabs
         if (inAuthGroup) {
-          router.replace('/(tabs)');
+          // EXCEPTION: If the user is currently on the register screen, don't force redirect. 
+          // Let register.tsx handle its own navigation because it has an Email Verification Modal.
+          if (currentPath !== '(auth)/register') {
+            router.replace('/(tabs)');
+          }
         }
       }
     };
