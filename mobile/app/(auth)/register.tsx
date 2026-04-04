@@ -336,13 +336,6 @@ export default function RegisterScreen() {
               >
                 <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>Kodu Tekrar Gönder</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                style={{ marginTop: 12, alignItems: 'center' }}
-                onPress={() => { setEmailVerifyModal(false); navigateAfterRegister(); }}
-              >
-                <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>Şimdi Doğrulama (Daha Sonra Yapabilirim)</Text>
-              </TouchableOpacity>
             </View>
           </View>
         </View>
