@@ -198,10 +198,7 @@ export default function OnboardingScreen() {
                         ]}
                     >
                         {currentIndex === slides.length - 1 ? (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                                <Text style={styles.nextButtonText}>Hemen Başla</Text>
-                                <Ionicons name="rocket-outline" size={20} color="#FFF" />
-                            </View>
+                            <Text style={styles.nextButtonText}>Hemen Başla</Text>
                         ) : (
                             <Ionicons name="arrow-forward" size={24} color="#FFF" />
                         )}
