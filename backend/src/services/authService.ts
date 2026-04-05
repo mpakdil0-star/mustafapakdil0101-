@@ -71,9 +71,9 @@ export const register = async (data: RegisterData) => {
     if (existingEmailUser) {
       console.log(`🔍 Debug Register: Found existing user ${email}. isActive: ${existingEmailUser.isActive}, Type: ${typeof existingEmailUser.isActive}`);
 
-      // Eğer hesap silinmişse, kullanıcının yeniden kayıt olmasına izin ver (eski veriyi sıfırla)
-      if (existingEmailUser.isActive === false) {
-        console.log(`♻️ Resetting deleted account for ${email}, allowing fresh registration`);
+      // Eğer hesap silinmişse veya doğrulanmamışsa, kullanıcının yeniden kayıt olmasına izin ver (eski veriyi sıfırla)
+      if (existingEmailUser.isActive === false || existingEmailUser.isVerified === false) {
+        console.log(`♻️ Resetting deleted/unverified account for ${email}, allowing fresh registration`);
         // Eski hesap ID'sini kullanarak veriyi tamamen sıfırla
         // Yeni kayıt akışı devam edecek ve eski veriyi override edecek
       } else {
@@ -84,9 +84,9 @@ export const register = async (data: RegisterData) => {
     if (phone) {
       const existingPhoneUser = allUsers.find((u: any) => u.phone === phone);
       if (existingPhoneUser) {
-        // Eğer telefon numarası silinmiş bir hesaba aitse, yeniden kayda izin ver
-        if (existingPhoneUser.isActive === false) {
-          console.log(`♻️ Phone ${phone} belongs to deleted account, allowing re-registration`);
+        // Eğer telefon numarası silinmiş veya doğrulanmamış bir hesaba aitse, yeniden kayda izin ver
+        if (existingPhoneUser.isActive === false || existingPhoneUser.isVerified === false) {
+          console.log(`♻️ Phone ${phone} belongs to deleted/unverified account, allowing re-registration`);
         } else {
           throw new ConflictError('Bu telefon numarası zaten kullanımda.');
         }
@@ -147,15 +147,22 @@ export const register = async (data: RegisterData) => {
   });
 
   if (existingUser) {
-    // Eğer silinmiş hesap varsa, yeniden kayda izin ver (veriler sıfırlanacak)
-    if (!existingUser.isActive) {
-      console.log(`♻️ DB: Allowing re-registration for deleted account ${email}`);
+    // Eğer silinmiş hesap veya onaylanmamış hesap varsa, yeniden kayda izin ver (veriler sıfırlanacak)
+    if (!existingUser.isActive || !existingUser.isVerified) {
+      console.log(`♻️ DB: Allowing re-registration for deleted/unverified account ${email}`);
+      // İlişkili kayıtları temizle
+      await prisma.userConsent.deleteMany({
+        where: { userId: existingUser.id }
+      });
+      await prisma.electricianProfile.deleteMany({
+        where: { userId: existingUser.id }
+      });
       // Eski kullanıcıyı tamamen sil, yeni kayıt oluşturulsun
       await prisma.user.delete({
         where: { id: existingUser.id }
       });
     } else {
-      throw new ConflictError('User with this email or phone already exists');
+      throw new ConflictError('Bu e-posta veya telefon numarası zaten kayıtlı.');
     }
   }
 
