@@ -64,6 +64,17 @@ export default function RegisterScreen() {
   const [registeredEmail, setRegisteredEmail] = useState('');
   const [registeredFullName, setRegisteredFullName] = useState('');
   const codeInputRef = useRef<TextInput>(null);
+  const [resendTimer, setResendTimer] = useState(0);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
 
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -133,6 +144,7 @@ export default function RegisterScreen() {
       } else {
         setMockCode(null);
       }
+      setResendTimer(60); // Geri sayımı 60 saniyeden başlat
       setEmailVerifyModal(true);
       setTimeout(() => codeInputRef.current?.focus(), 400);
     } catch (err) {
@@ -333,8 +345,21 @@ export default function RegisterScreen() {
               <TouchableOpacity
                 style={{ marginTop: 16, alignItems: 'center' }}
                 onPress={() => sendVerificationCode(registeredEmail, registeredFullName)}
+                disabled={resendTimer > 0}
               >
-                <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>Kodu Tekrar Gönder</Text>
+                <Text style={{ color: resendTimer > 0 ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.6)', fontSize: 13, fontFamily: fonts.medium }}>
+                  {resendTimer > 0 ? `Kodu Tekrar Gönder (${resendTimer}s)` : 'Kodu Tekrar Gönder'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{ marginTop: 24, paddingVertical: 8, alignItems: 'center' }}
+                onPress={() => setEmailVerifyModal(false)}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Ionicons name="arrow-back" size={14} color="#F87171" />
+                  <Text style={{ color: '#F87171', fontSize: 13, fontFamily: fonts.semiBold }}>Geri Dön / Vazgeç</Text>
+                </View>
               </TouchableOpacity>
             </View>
           </View>
