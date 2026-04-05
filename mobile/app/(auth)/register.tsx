@@ -17,7 +17,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import LocationPicker from '../../components/common/LocationPicker';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
-import { register } from '../../store/slices/authSlice';
+import { register, getMe } from '../../store/slices/authSlice';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { validateEmail, validatePassword, validateRequired, validatePhone } from '../../utils/validation';
@@ -171,6 +171,10 @@ export default function RegisterScreen() {
       const data = await resp.json();
       if (data.success) {
         setEmailVerifyModal(false);
+        // CRITICAL: Fetch updated user info to sync `isVerified: true` in Redux 
+        // before _layout.tsx throws the user out to login screen
+        await dispatch(getMe()).unwrap();
+        
         showAlert('✅ Başarılı', 'E-posta adresiniz doğrulandı!', 'success', [
           { text: 'Devam Et', onPress: navigateAfterRegister, variant: 'primary' }
         ]);
