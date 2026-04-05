@@ -10,19 +10,34 @@ export const validateEmail = (email: string): string | null => {
 
   // Yaygın yazım hataları kontrolü
   const lowerEmail = email.toLowerCase();
-  const commonTypos = [
-    { domain: 'gmail.co', correct: 'gmail.com' },
-    { domain: 'hotmail.co', correct: 'hotmail.com' },
-    { domain: 'yandex.co', correct: 'yandex.com' },
-    { domain: 'yahoo.co', correct: 'yahoo.com' },
-    { domain: 'outlook.co', correct: 'outlook.com' },
-    { domain: 'icloud.co', correct: 'icloud.com' }
-  ];
 
-  for (const typo of commonTypos) {
-    if (lowerEmail.endsWith('@' + typo.domain)) {
-      return `Muhtemelen ${typo.correct} yazmak istediniz`;
-    }
+  // En sık yapılan global alan adı (domain uzantısı) hataları
+  if (lowerEmail.endsWith('.con')) {
+    return 'Uzanti .con olamaz, muhtemelen .com yazmak istediniz';
+  }
+  if (lowerEmail.endsWith('.cm')) {
+    return 'Uzanti .cm olamaz, muhtemelen .com yazmak istediniz';
+  }
+  if (lowerEmail.endsWith('.cmo')) {
+    return 'Uzanti .cmo olamaz, muhtemelen .com yazmak istediniz';
+  }
+  if (lowerEmail.endsWith('gamil.com') || lowerEmail.endsWith('gmal.com') || lowerEmail.endsWith('gmil.com') || lowerEmail.endsWith('gmail.co')) {
+    return 'Muhtemelen gmail.com yazmak istediniz';
+  }
+  if (lowerEmail.endsWith('hotmial.com') || lowerEmail.endsWith('hotmal.com') || lowerEmail.endsWith('hotmail.co')) {
+    return 'Muhtemelen hotmail.com yazmak istediniz';
+  }
+  if (lowerEmail.endsWith('outlok.com') || lowerEmail.endsWith('outlook.co')) {
+    return 'Muhtemelen outlook.com yazmak istediniz';
+  }
+  if (lowerEmail.endsWith('yandex.co')) {
+    return 'Muhtemelen yandex.com yazmak istediniz';
+  }
+  if (lowerEmail.endsWith('yahoo.co')) {
+    return 'Muhtemelen yahoo.com yazmak istediniz';
+  }
+  if (lowerEmail.endsWith('icloud.co')) {
+    return 'Muhtemelen icloud.com yazmak istediniz';
   }
 
   return null;
