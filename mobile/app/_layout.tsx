@@ -14,7 +14,7 @@ import { authService } from '../services/authService';
 import { PremiumAlert } from '../components/common/PremiumAlert';
 import { useAppDispatch } from '../hooks/redux';
 import { addNotification, fetchNotifications, incrementUnreadCount, fetchUnreadCount } from '../store/slices/notificationSlice';
-import { getMe, setRequiredLegalVersion } from '../store/slices/authSlice';
+import { getMe, setRequiredLegalVersion, logout } from '../store/slices/authSlice';
 import LegalUpdateModal from '../components/legal/LegalUpdateModal';
 import { Alert } from 'react-native';
 import * as Notifications from 'expo-notifications';
@@ -126,6 +126,21 @@ function RootLayoutNav() {
             router.replace('/admin');
           }
           return;
+        }
+
+        // Email Verification Security Check
+        // If the user's email/phone is not verified, they must not be allowed to enter the app.
+        if (user && user.isVerified === false) {
+          if (currentPath === '(auth)/register') {
+            // Keep them on register screen to finish the verification modal flow
+            return;
+          } else {
+            // If they restarted the app (kill & start) or navigated away without verifying
+            dispatch(logout());
+            showAlert('E-posta Doğrulaması Eksik', 'Güvenliğiniz için kayıt sırasında e-postanızı doğrulamanız zorunludur. İşlem tamamlanmadığı için oturumunuz kapatıldı.', 'error');
+            router.replace('/(auth)/login');
+            return;
+          }
         }
 
         // Profile completion check for professionals
