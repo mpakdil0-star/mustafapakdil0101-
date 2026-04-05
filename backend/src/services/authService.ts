@@ -100,7 +100,7 @@ export const register = async (data: RegisterData) => {
       fullName: fullName || 'İsimsiz Kullanıcı',
       phone: phone || '', // Use the REAL provided phone
       userType,
-      isVerified: userType === UserType.ELECTRICIAN && !!phone,
+      isVerified: false, // Email verification is strictly required now
       profileImageUrl: null,
       createdAt: new Date(),
     };
@@ -171,7 +171,7 @@ export const register = async (data: RegisterData) => {
         fullName,
         phone,
         userType,
-        isVerified: userType === UserType.ELECTRICIAN && !!phone,
+        isVerified: false, // Email verification is strictly required now
         acceptedLegalVersion: data.acceptedLegalVersion || null,
         marketingAllowed: data.marketingAllowed || false,
       },
@@ -281,7 +281,7 @@ export const register = async (data: RegisterData) => {
       fullName: fullName || 'İsimsiz Kullanıcı',
       phone: phone || '',
       email: email,
-      isVerified: userType === UserType.ELECTRICIAN && !!phone,
+      isVerified: false, // Email verification is strictly required now
       passwordHash: passwordHash, // Use hashed password
       experienceYears: 0,
       creditBalance: userType === UserType.ELECTRICIAN ? 5 : 0,
@@ -297,7 +297,7 @@ export const register = async (data: RegisterData) => {
       fullName: fullName || 'İsimsiz Kullanıcı',
       phone: phone || '',
       userType,
-      isVerified: userType === UserType.ELECTRICIAN && !!phone,
+      isVerified: false, // Email verification is strictly required now
       profileImageUrl: null,
       createdAt: new Date(),
     };
