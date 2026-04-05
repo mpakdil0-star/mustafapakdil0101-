@@ -1009,21 +1009,12 @@ export default function HomeScreen() {
                     />
                   ))
                 ) : (
-                  // Fallback to mock data if no electricians from API
-                  getFeaturedElectricians(userCities).map((elec) => (
-                    <FeaturedElectrician
-                      key={elec.id}
-                      name={elec.name}
-                      rating={elec.rating}
-                      reviewCount={elec.reviewCount}
-                      specialty={getUstaCategory(elec)}
-                      isVerified={elec.isVerified}
-                      imageUrl={elec.imageUrl}
-                      location={elec.location}
-                      onPress={() => router.push(`/electricians/${elec.id}` as any)}
-                      onBook={() => handleActionWithAuth('/jobs/create', { electricianId: elec.id })}
-                    />
-                  ))
+                  <View style={{ padding: 40, alignItems: 'center' }}>
+                    <Ionicons name="people-outline" size={36} color={colors.textLight} />
+                    <Text style={{ marginTop: 12, color: colors.textSecondary, fontFamily: fonts.medium, textAlign: 'center' }}>
+                      Şu an için öne çıkan usta bulunmuyor.
+                    </Text>
+                  </View>
                 )}
               </View>
             </View>
