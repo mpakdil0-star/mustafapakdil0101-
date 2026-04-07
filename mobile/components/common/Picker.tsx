@@ -248,8 +248,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopLeftRadius: spacing.radius.lg,
     borderTopRightRadius: spacing.radius.lg,
-    height: '80%',
-    paddingBottom: spacing.xl,
+    height: '85%', // Biraz daha yüksek yaparak alanı genişletelim
+    paddingBottom: Platform.OS === 'ios' ? spacing.xl * 2 : 100, // Alt navigasyon çubuğu için ekstra boşluk
   },
   modalHeader: {
     flexDirection: 'row',
