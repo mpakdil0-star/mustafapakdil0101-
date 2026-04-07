@@ -4,6 +4,7 @@ import prisma, { isDatabaseAvailable } from '../config/database';
 import { config } from '../config/env';
 import { ValidationError, UnauthorizedError, ConflictError } from '../utils/errors';
 import { UserType } from '@prisma/client';
+import { sendPasswordResetCode, verifyEmailCode } from './emailVerificationService';
 
 export interface RegisterData {
   email: string;
@@ -549,26 +550,27 @@ export const refreshToken = async (refreshToken: string) => {
  * Forgot Password - Send recovery code
  */
 export const forgotPassword = async (email: string) => {
-  // In a real app, you would send an email. For now, we'll use a fixed code for mock/demo
-  const recoveryCode = '123456';
-
+  let userFullName = 'Değerli Kullanıcımız';
+  
   if (!isDatabaseAvailable) {
     const { mockStorage } = require('../utils/mockStorage');
     const allUsers = mockStorage.getAllUsers();
-    const user = allUsers.find((u: { email: string }) => u.email === email);
+    const user = allUsers.find((u: { email: string, fullName?: string }) => u.email === email);
     if (!user) {
       throw new ValidationError('Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı.');
     }
-    return { success: true, message: 'Kurtarma kodu gönderildi (Mock: 123456)' };
+    if (user.fullName) userFullName = user.fullName;
+  } else {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new ValidationError('Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı.');
+    }
+    if (user.fullName) userFullName = user.fullName;
   }
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    throw new ValidationError('Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı.');
-  }
-
-  // Real DB logic would store the code and expiry
-  return { success: true, message: 'Kurtarma kodu gönderildi (Test: 123456)' };
+  // Generate and send the code using emailVerificationService
+  const result = await sendPasswordResetCode(email, userFullName);
+  return result;
 };
 
 /**
@@ -577,8 +579,10 @@ export const forgotPassword = async (email: string) => {
 export const resetPassword = async (data: any) => {
   const { email, code, newPassword } = data;
 
-  if (code !== '123456') {
-    throw new ValidationError('Geçersiz kurtarma kodu.');
+  const codeVerification = verifyEmailCode(email, code);
+  
+  if (!codeVerification.valid) {
+    throw new ValidationError(codeVerification.message);
   }
 
   const passwordHash = await hashPassword(newPassword);

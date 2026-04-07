@@ -877,7 +877,7 @@ export default function HomeScreen() {
               <View style={styles.sectionHeaderRow}>
                 <View style={styles.sectionTitleContainer}>
                   <Text style={[styles.sectionKicker, { color: colors.textLight }]}>Hizmet Seçimi</Text>
-                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Ne lazım?</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Usta bul</Text>
                 </View>
                 <TouchableOpacity
                   activeOpacity={0.8}
