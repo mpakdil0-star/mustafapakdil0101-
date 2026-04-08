@@ -1,6 +1,26 @@
 import { body } from 'express-validator';
 
 /**
+ * Sunucu tarafı gibberish (anlamsız metin) tespit fonksiyonu.
+ * Mobile utility ile aynı mantığı paylaşır — iki kademeli güvenlik.
+ */
+const isGibberish = (text: string): boolean => {
+    const trimmed = text.trim();
+    // Tekrarlayan karakter: "aaaa", "1111"
+    if (/(.)(\1{3,})/i.test(trimmed)) return true;
+    // Klavye sırası mash
+    const mashPatterns = [/qwert/i, /asdfg/i, /zxcvb/i, /yuiop/i, /123456/i, /654321/i, /abcdef/i, /asd/i, /qwe/i, /zxc/i];
+    if (mashPatterns.some(p => p.test(trimmed))) return true;
+    // Yalnızca rakam
+    if (/^\d+$/.test(trimmed)) return true;
+    // Düşük karakter çeşitliliği
+    const uniqueChars = new Set(trimmed.toLowerCase().replace(/\s/g, '')).size;
+    const totalChars = trimmed.replace(/\s/g, '').length;
+    if (totalChars > 6 && uniqueChars / totalChars < 0.2) return true;
+    return false;
+};
+
+/**
  * İş ilanı oluşturma validasyonu
  */
 export const createJobValidation = [
@@ -9,14 +29,26 @@ export const createJobValidation = [
         .withMessage('İlan başlığı gerekli')
         .isLength({ min: 5, max: 200 })
         .withMessage('Başlık 5-200 karakter arasında olmalıdır')
-        .trim(),
+        .trim()
+        .custom((value: string) => {
+            if (isGibberish(value)) {
+                throw new Error('Lütfen işinizi daha detaylı ve anlamlı bir şekilde açıklayın');
+            }
+            return true;
+        }),
 
     body('description')
         .notEmpty()
         .withMessage('İlan açıklaması gerekli')
         .isLength({ min: 10, max: 2000 })
         .withMessage('Açıklama 10-2000 karakter arasında olmalıdır')
-        .trim(),
+        .trim()
+        .custom((value: string) => {
+            if (isGibberish(value)) {
+                throw new Error('Lütfen işinizi daha detaylı ve anlamlı bir şekilde açıklayın');
+            }
+            return true;
+        }),
 
     body('category')
         .notEmpty()

@@ -36,6 +36,7 @@ import {
 import LocationPicker from '../../components/common/LocationPicker';
 import { Picker } from '../../components/common/Picker';
 import { getSubCategoriesByParent, JobCategory } from '../../constants/jobCategories';
+import { validateJobText } from '../../utils/validation';
 
 const EMERGENCY_TYPES = [
     { id: 'elektrik', label: 'Elektrik', color: '#7C3AED', icon: 'flash' },
@@ -286,7 +287,10 @@ export default function QuickCreateScreen() {
         if (!district) validationErrors.push('• İlçe seçilmedi');
         if (!neighborhood) validationErrors.push('• Mahalle seçilmedi');
         if (!address || address.trim().length < 10) validationErrors.push('• Adres en az 10 karakter olmalı');
-        if (!description || description.trim().length < 10) validationErrors.push('• Sorun açıklaması en az 10 karakter olmalı');
+
+        // Gibberish (anlamsız metin) kontrolü - açıklama alanı
+        const descriptionError = validateJobText(description || '', 'Sorun açıklaması', 10);
+        if (descriptionError) validationErrors.push(`• ${descriptionError}`);
 
         if (selectedSubCategory?.id === 'elektrik-proje') {
             if (!projectBuildingType) validationErrors.push('• Proje için Yapı Tipi seçilmedi');

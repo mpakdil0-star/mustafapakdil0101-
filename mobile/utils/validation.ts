@@ -85,3 +85,58 @@ export const containsPhoneNumber = (text: string | undefined | null): boolean =>
   const phoneRegex = /(05|5)\d{9}/;
   return phoneRegex.test(normalized);
 };
+
+/**
+ * Anlamsız (gibberish) metin tespit edici.
+ * İlan başlığı ve açıklama alanlarında sahte/spam içerikleri engeller.
+ */
+export const validateJobText = (text: string, fieldName: string = 'Metin', minLength: number = 10): string | null => {
+  const trimmed = text.trim();
+
+  // 1. Minimum uzunluk kontrolü
+  if (trimmed.length < minLength) {
+    return `${fieldName} en az ${minLength} karakter olmalıdır.`;
+  }
+
+  // 2. Tekrarlayan karakter kontrolü: "aaaa", "bbbbb", "11111" vb.
+  if (/(.)\1{3,}/i.test(trimmed)) {
+    return `Lütfen işinizi daha detaylı ve anlamlı bir şekilde açıklayın.`;
+  }
+
+  // 3. Klavye sırası (keyboard mash) kontrolü: "asdf", "qwerty", "zxcv", "123456" vb.
+  const keyboardMashPatterns = [
+    /qwert/i, /asdfg/i, /zxcvb/i, /yuiop/i, /hjklm/i,
+    /qwerty/i, /azerty/i, /dvorak/i,
+    /123456/i, /654321/i, /abcdef/i, /fedcba/i,
+    /asd/i, /qwe/i, /zxc/i,
+  ];
+  for (const pattern of keyboardMashPatterns) {
+    if (pattern.test(trimmed)) {
+      return `Lütfen işinizi daha detaylı ve anlamlı bir şekilde açıklayın.`;
+    }
+  }
+
+  // 4. Yalnızca sayılardan oluşan metin kontrolü: "123123", "999" vb.
+  if (/^\d+$/.test(trimmed)) {
+    return `Lütfen işinizi daha detaylı ve anlamlı bir şekilde açıklayın.`;
+  }
+
+  // 5. Benzersiz karakter çeşitliliği kontrolü (entropy)
+  // Toplam karakter sayısının benzersiz olanların oranı çok düşükse anlamsızdır.
+  const uniqueChars = new Set(trimmed.toLowerCase().replace(/\s/g, '')).size;
+  const totalChars = trimmed.replace(/\s/g, '').length;
+  if (totalChars > 6 && uniqueChars / totalChars < 0.2) {
+    return `Lütfen işinizi daha detaylı ve anlamlı bir şekilde açıklayın.`;
+  }
+
+  // 6. Tekrarlayan kelime kontrolü: "tamam tamam tamam", "evet evet evet" vb.
+  const words = trimmed.toLowerCase().split(/\s+/);
+  if (words.length >= 3) {
+    const uniqueWords = new Set(words).size;
+    if (uniqueWords / words.length < 0.4) {
+      return `Lütfen işinizi daha detaylı ve anlamlı bir şekilde açıklayın.`;
+    }
+  }
+
+  return null;
+};
