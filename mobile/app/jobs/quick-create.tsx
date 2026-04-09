@@ -280,6 +280,13 @@ export default function QuickCreateScreen() {
     };
 
     const handleSubmit = async () => {
+        // Gibberish (anlamsız metin) kontrolü - açıklama alanı (öncelikli kontrol)
+        const descriptionError = validateJobText(description || '', 'Sorun açıklaması', 10);
+        if (descriptionError) {
+            showAlert('Uyarı', 'Lütfen işinizi daha detaylı ve anlamlı bir şekilde açıklayın.', 'warning');
+            return;
+        }
+
         const validationErrors: string[] = [];
         if (!selectedType) validationErrors.push('• Arıza tipi seçilmedi');
         if (selectedType && !selectedSubCategory) validationErrors.push('• Lütfen spesifik bir hizmet dalı seçin');
@@ -287,10 +294,6 @@ export default function QuickCreateScreen() {
         if (!district) validationErrors.push('• İlçe seçilmedi');
         if (!neighborhood) validationErrors.push('• Mahalle seçilmedi');
         if (!address || address.trim().length < 10) validationErrors.push('• Adres en az 10 karakter olmalı');
-
-        // Gibberish (anlamsız metin) kontrolü - açıklama alanı
-        const descriptionError = validateJobText(description || '', 'Sorun açıklaması', 10);
-        if (descriptionError) validationErrors.push(`• ${descriptionError}`);
 
         if (selectedSubCategory?.id === 'elektrik-proje') {
             if (!projectBuildingType) validationErrors.push('• Proje için Yapı Tipi seçilmedi');
