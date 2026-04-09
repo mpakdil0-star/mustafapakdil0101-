@@ -38,6 +38,7 @@ import {
 } from '../../constants/locations';
 import LocationPicker from '../../components/common/LocationPicker';
 import { JOB_CATEGORIES, getSubCategoriesByParent } from '../../constants/jobCategories';
+import { validateJobText } from '../../utils/validation';
 import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
 
 const MAX_IMAGES = 5;
@@ -704,6 +705,12 @@ export default function CreateJobScreen() {
         setErrors({ ...errors, title: 'Başlık en az 5 karakter olmalıdır' });
         return;
       }
+      // Gibberish kontrolü - İlan Başlığı
+      const titleGibberishError = validateJobText(title, 'İlan başlığı', 5);
+      if (titleGibberishError) {
+        showAlert('Uyarı', 'Lütfen işinizi daha detaylı ve anlamlı bir şekilde açıklayın.', 'warning');
+        return;
+      }
       if (!category) {
         setErrors({ ...errors, category: 'Kategori seçiniz' });
         return;
@@ -741,6 +748,12 @@ export default function CreateJobScreen() {
       }
       if (description.trim().length < 10) {
         setErrors({ ...errors, description: 'Açıklama en az 10 karakter olmalıdır' });
+        return;
+      }
+      // Gibberish kontrolü - Açıklama
+      const descGibberishError = validateJobText(description, 'Açıklama', 10);
+      if (descGibberishError) {
+        showAlert('Uyarı', 'Lütfen işinizi daha detaylı ve anlamlı bir şekilde açıklayın.', 'warning');
         return;
       }
     }
