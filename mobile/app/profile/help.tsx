@@ -54,7 +54,7 @@ export default function HelpScreen() {
     const router = useRouter();
     const colors = useAppColors();
     const handleContactSupport = () => {
-        Linking.openURL('mailto:destek@isbitir.com');
+        Linking.openURL('mailto:isbitir.destek@gmail.com');
     };
 
     return (
@@ -146,16 +146,7 @@ export default function HelpScreen() {
                             <Ionicons name="mail" size={24} color="#3B82F6" />
                         </View>
                         <Text style={styles.supportCardTitle}>E-Posta</Text>
-                        <Text style={styles.supportCardValue}>destek@isbitir.com</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.supportCard} onPress={() => Linking.openURL('tel:08500000000')}>
-                        <LinearGradient colors={['#10B98110', '#10B98105']} style={styles.supportCardGrad} />
-                        <View style={[styles.contactIconBox, { backgroundColor: '#10B98115' }]}>
-                            <Ionicons name="call" size={24} color="#10B981" />
-                        </View>
-                        <Text style={styles.supportCardTitle}>Müşteri Hizmetleri</Text>
-                        <Text style={styles.supportCardValue}>0850 000 00 00</Text>
+                        <Text style={styles.supportCardValue}>isbitir.destek@gmail.com</Text>
                     </TouchableOpacity>
                 </View>
 
