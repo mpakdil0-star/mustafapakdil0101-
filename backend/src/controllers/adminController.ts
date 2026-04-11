@@ -932,11 +932,31 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
         const updates = req.body;
         
         if (isDatabaseAvailable && !idStr.startsWith('mock-')) {
-            const updated = await prisma.user.update({
-                where: { id: idStr },
-                data: updates
-            });
-            return res.json({ success: true, data: updated });
+            const { creditBalance, ...userUpdates } = updates;
+            
+            // If updating credit balance, it belongs to ElectricianProfile
+            if (creditBalance !== undefined) {
+                await prisma.electricianProfile.update({
+                    where: { userId: idStr },
+                    data: { creditBalance: Number(creditBalance) }
+                });
+            }
+
+            let updatedUser;
+            if (Object.keys(userUpdates).length > 0) {
+                updatedUser = await prisma.user.update({
+                    where: { id: idStr },
+                    data: userUpdates,
+                    include: { electricianProfile: true }
+                });
+            } else {
+                updatedUser = await prisma.user.findUnique({
+                    where: { id: idStr },
+                    include: { electricianProfile: true }
+                });
+            }
+            
+            return res.json({ success: true, data: updatedUser });
         }
         
         const updatedMock = mockStorage.updateProfile(idStr, updates);
