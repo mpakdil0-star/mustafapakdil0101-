@@ -27,7 +27,7 @@
       "versionCode": 59,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000000"
+        "backgroundColor": "#0D1B4B"
       },
       "package": "com.isbitir.app",
       "googleServicesFile": "./google-services.json",
