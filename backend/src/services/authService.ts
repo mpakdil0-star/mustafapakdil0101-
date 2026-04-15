@@ -341,9 +341,23 @@ export const login = async (data: LoginData) => {
       throw new UnauthorizedError('Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı.');
     }
 
-    // Block login for deleted accounts
+    // 🛟 Master Admin Can Simidi: Kendini askıya alırsa otomatik geri aç (Render/Gerçek Veritabanı için)
+    if (user.email === 'mpakdil0@gmail.com' && !user.isActive) {
+      user.isActive = true;
+      try {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { isActive: true }
+        });
+        console.log('🛟 Master admin otomatik olarak tekrar aktifleştirildi.');
+      } catch (e) {
+        console.error('Failed to auto-activate master admin:', e);
+      }
+    }
+
+    // Block login for deleted/suspended accounts
     if (!user.isActive) {
-      throw new UnauthorizedError('Bu hesap silinmiş. Yeniden kayıt olmanız gerekiyor.');
+      throw new UnauthorizedError('Bu hesap silinmiş veya askıya alınmış. Lütfen destek ile iletişime geçin.');
     }
 
     if (user.isBanned) {
