@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, RefreshControl, Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, RefreshControl, Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform, ScrollView, Image, Clipboard } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
@@ -54,10 +54,23 @@ export default function AdminUsersScreen() {
     const [creditAmount, setCreditAmount] = useState('');
     const [isSubmittingCredit, setIsSubmittingCredit] = useState(false);
     const [expandedLocations, setExpandedLocations] = useState<Set<string>>(new Set());
+    const [expandedInfo, setExpandedInfo] = useState<Set<string>>(new Set());
     const [messagingUserId, setMessagingUserId] = useState<string | null>(null); // Mesaj gönder loading state
 
     const toggleLocation = (userId: string) => {
         setExpandedLocations(prev => {
+            const next = new Set(prev);
+            if (next.has(userId)) {
+                next.delete(userId);
+            } else {
+                next.add(userId);
+            }
+            return next;
+        });
+    };
+
+    const toggleInfo = (userId: string) => {
+        setExpandedInfo(prev => {
             const next = new Set(prev);
             if (next.has(userId)) {
                 next.delete(userId);
@@ -312,6 +325,21 @@ export default function AdminUsersScreen() {
                     </View>
                 </TouchableOpacity>
             )}
+            {/* İletişim Bilgisi Kutucuğu */}
+            {expandedInfo.has(item.id) && (
+                <View style={styles.contactInfoBox}>
+                    <View style={styles.contactInfoRow}>
+                        <Ionicons name="mail-outline" size={14} color={colors.primary} />
+                        <Text style={styles.contactInfoLabel}>E-posta:</Text>
+                        <Text style={styles.contactInfoValue} selectable numberOfLines={1}>{item.email || 'Belirtilmemiş'}</Text>
+                    </View>
+                    <View style={styles.contactInfoRow}>
+                        <Ionicons name="call-outline" size={14} color={colors.primary} />
+                        <Text style={styles.contactInfoLabel}>Telefon:</Text>
+                        <Text style={styles.contactInfoValue} selectable>{item.phone || 'Belirtilmemiş'}</Text>
+                    </View>
+                </View>
+            )}
             <View style={styles.actionRow}>
                 {item.userType === 'ELECTRICIAN' && (
                     <TouchableOpacity
@@ -346,6 +374,13 @@ export default function AdminUsersScreen() {
                         <Ionicons name="chatbubble-outline" size={16} color={colors.primary} />
                     )}
                     <Text style={[styles.actionBtnText, { color: colors.primary }]}>Mesaj</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.actionBtn, { backgroundColor: '#6366F115' }]}
+                    onPress={() => toggleInfo(item.id)}
+                >
+                    <Ionicons name={expandedInfo.has(item.id) ? 'chevron-up-outline' : 'information-circle-outline'} size={16} color="#6366F1" />
+                    <Text style={[styles.actionBtnText, { color: '#6366F1' }]}>Bilgi</Text>
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>
@@ -630,6 +665,32 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         marginTop: 12,
         gap: 8,
+        flexWrap: 'wrap',
+    },
+    contactInfoBox: {
+        backgroundColor: '#F8FAFC',
+        borderRadius: 12,
+        padding: 12,
+        marginTop: 10,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        gap: 8,
+    },
+    contactInfoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    contactInfoLabel: {
+        fontFamily: fonts.semiBold,
+        fontSize: 12,
+        color: staticColors.textSecondary,
+    },
+    contactInfoValue: {
+        fontFamily: fonts.medium,
+        fontSize: 12,
+        color: staticColors.text,
+        flex: 1,
     },
     actionBtn: {
         flexDirection: 'row',
