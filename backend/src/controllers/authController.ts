@@ -3,8 +3,68 @@ import { register, login, refreshToken, generateTokens, forgotPassword, resetPas
 import { ValidationError, UnauthorizedError } from '../utils/errors';
 import prisma, { isDatabaseAvailable } from '../config/database';
 import { AuthRequest } from '../middleware/auth';
-import { mockStorage } from '../utils/mockStorage';
+import { mockStorage, getAllMockUsers } from '../utils/mockStorage';
 import { sendEmailVerificationCode, verifyEmailCode } from '../services/emailVerificationService';
+import pushNotificationService from '../services/pushNotificationService';
+
+/**
+ * Yeni kullanıcı kaydolduğunda tüm admin hesaplarına push bildirim gönder
+ */
+const notifyAdminsNewUser = async (newUserName: string, newUserEmail: string, newUserType: string) => {
+  try {
+    const userTypeLabel = newUserType === 'ELECTRICIAN' ? 'Usta' : (newUserType === 'ADMIN' ? 'Admin' : 'Müşteri');
+
+    // Collect admin push tokens from both DB and mock storage
+    const adminPushTokens: string[] = [];
+
+    // 1. Check mock storage for admin users
+    const allMockUsers = getAllMockUsers();
+    for (const [id, user] of Object.entries(allMockUsers)) {
+      if (user.userType === 'ADMIN' && user.pushToken) {
+        adminPushTokens.push(user.pushToken);
+      }
+    }
+
+    // 2. Check real DB for admin users (if available)
+    if (isDatabaseAvailable) {
+      try {
+        const dbAdmins = await prisma.user.findMany({
+          where: { userType: 'ADMIN', isActive: true },
+          select: { pushToken: true }
+        });
+        dbAdmins.forEach(admin => {
+          if (admin.pushToken && !adminPushTokens.includes(admin.pushToken)) {
+            adminPushTokens.push(admin.pushToken);
+          }
+        });
+      } catch (e) {
+        // DB unavailable, mock tokens already collected
+      }
+    }
+
+    if (adminPushTokens.length === 0) {
+      console.log('ℹ️ No admin push tokens found, skipping new user notification');
+      return;
+    }
+
+    console.log(`📢 Sending new user notification to ${adminPushTokens.length} admin(s)`);
+
+    await pushNotificationService.sendNotification({
+      to: adminPushTokens,
+      title: '🆕 Yeni Kullanıcı Katıldı!',
+      body: `${newUserName} (${userTypeLabel}) uygulamaya kaydoldu.`,
+      data: {
+        type: 'NEW_USER_REGISTERED',
+        userEmail: newUserEmail,
+        userType: newUserType,
+      },
+      sound: 'default',
+    });
+  } catch (error) {
+    // Bildirim gönderilemezse kayıt akışını bozma
+    console.error('⚠️ Failed to notify admins about new user:', error);
+  }
+};
 
 export const logoutController = async (
   req: AuthRequest,
@@ -60,6 +120,9 @@ export const registerController = async (
         marketingAllowed,
         ipAddress,
       });
+
+      // 🔔 Admin'e yeni kullanıcı bildirimi gönder (arka planda, response'u beklemesin)
+      notifyAdminsNewUser(fullName, email, userType);
 
       res.status(201).json({
         success: true,
@@ -119,6 +182,9 @@ export const registerController = async (
         });
 
         const tokens = generateTokens({ id: mockUserId, email, userType });
+
+        // 🔔 Admin'e yeni kullanıcı bildirimi gönder (mock fallback path)
+        notifyAdminsNewUser(fullName, email, userType);
 
         return res.status(201).json({
           success: true,

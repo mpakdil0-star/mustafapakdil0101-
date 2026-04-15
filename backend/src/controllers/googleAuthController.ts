@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import { generateTokens } from '../services/authService';
-import { mockStorage } from '../utils/mockStorage';
+import { mockStorage, getAllMockUsers } from '../utils/mockStorage';
 import { ValidationError } from '../utils/errors';
+import pushNotificationService from '../services/pushNotificationService';
+import prisma, { isDatabaseAvailable } from '../config/database';
 
 // Bu ID'yi daha sonra env veya config'den alabiliriz
 // Şimdilik boş bırakıyoruz, verifyIdToken içinde audience kontrolünü esnek tutacağız veya client'tan gelen ID'yi kullanacağız
@@ -87,6 +89,49 @@ export const googleLoginController = async (
 
             // Fetch the newly created user
             user = mockStorage.getFullUser(userId, requestedUserType);
+
+            // 🔔 Admin'e yeni Google kullanıcı bildirimi gönder
+            (async () => {
+              try {
+                const userTypeLabel = requestedUserType === 'ELECTRICIAN' ? 'Usta' : 'Müşteri';
+                const adminPushTokens: string[] = [];
+
+                // Mock storage admin tokens
+                const allMockUsers = getAllMockUsers();
+                for (const [id, u] of Object.entries(allMockUsers)) {
+                  if ((u as any).userType === 'ADMIN' && (u as any).pushToken) {
+                    adminPushTokens.push((u as any).pushToken);
+                  }
+                }
+
+                // DB admin tokens
+                if (isDatabaseAvailable) {
+                  try {
+                    const dbAdmins = await prisma.user.findMany({
+                      where: { userType: 'ADMIN', isActive: true },
+                      select: { pushToken: true }
+                    });
+                    dbAdmins.forEach(admin => {
+                      if (admin.pushToken && !adminPushTokens.includes(admin.pushToken)) {
+                        adminPushTokens.push(admin.pushToken);
+                      }
+                    });
+                  } catch (e) { /* ignore */ }
+                }
+
+                if (adminPushTokens.length > 0) {
+                  await pushNotificationService.sendNotification({
+                    to: adminPushTokens,
+                    title: '🆕 Yeni Kullanıcı Katıldı!',
+                    body: `${name || email} (${userTypeLabel} - Google) uygulamaya kaydoldu.`,
+                    data: { type: 'NEW_USER_REGISTERED', userEmail: email, userType: requestedUserType },
+                    sound: 'default',
+                  });
+                }
+              } catch (err) {
+                console.error('⚠️ Failed to notify admins about new Google user:', err);
+              }
+            })();
         } else {
             // Update existing user's photo if missing
             if (!user.profileImageUrl && picture) {
