@@ -53,6 +53,7 @@ export default function AdminUsersScreen() {
     const [creditAmount, setCreditAmount] = useState('');
     const [isSubmittingCredit, setIsSubmittingCredit] = useState(false);
     const [expandedLocations, setExpandedLocations] = useState<Set<string>>(new Set());
+    const [messagingUserId, setMessagingUserId] = useState<string | null>(null); // Mesaj gönder loading state
 
     const toggleLocation = (userId: string) => {
         setExpandedLocations(prev => {
@@ -144,6 +145,30 @@ export default function AdminUsersScreen() {
         setSelectedUserId(userId);
         setCreditAmount('');
         setCreditModalVisible(true);
+    };
+
+    // Admin olarak kullanıcıya mesaj gönder
+    const handleSendMessage = async (targetUserId: string) => {
+        if (messagingUserId) return; // Zaten işlem devam ediyor
+        setMessagingUserId(targetUserId);
+        try {
+            // Mevcut konuşmayı bul veya yenisini oluştur
+            const response = await api.post('/conversations', {
+                recipientId: targetUserId,
+            });
+
+            if (response.data.success && response.data.data.conversation) {
+                const conversationId = response.data.data.conversation.id;
+                router.push(`/messages/${conversationId}`);
+            } else {
+                Alert.alert('Hata', 'Konuşma oluşturulamadı');
+            }
+        } catch (error: any) {
+            console.error('Failed to create conversation:', error);
+            Alert.alert('Hata', 'Mesaj penceresi açılamadı. Lütfen tekrar deneyin.');
+        } finally {
+            setMessagingUserId(null);
+        }
     };
 
     const handleAddCredit = async () => {
@@ -301,6 +326,18 @@ export default function AdminUsersScreen() {
                     <Text style={[styles.actionBtnText, { color: item.isActive ? '#EF4444' : '#10B981' }]}>
                         {item.isActive ? 'Askıya Al' : 'Aktifleştir'}
                     </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.actionBtn, { backgroundColor: colors.primary + '15' }]}
+                    onPress={() => handleSendMessage(item.id)}
+                    disabled={messagingUserId === item.id}
+                >
+                    {messagingUserId === item.id ? (
+                        <ActivityIndicator size={14} color={colors.primary} />
+                    ) : (
+                        <Ionicons name="chatbubble-outline" size={16} color={colors.primary} />
+                    )}
+                    <Text style={[styles.actionBtnText, { color: colors.primary }]}>Mesaj</Text>
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>
