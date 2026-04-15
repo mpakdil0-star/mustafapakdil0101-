@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, RefreshControl, Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, RefreshControl, Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
@@ -8,6 +8,7 @@ import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
 import api from '../../services/api';
+import { getFileUrl } from '../../constants/api';
 
 interface User {
     id: string;
@@ -210,11 +211,18 @@ export default function AdminUsersScreen() {
         >
             <View style={styles.userHeader}>
                 <View style={[styles.avatar, { backgroundColor: item.userType === 'ELECTRICIAN' ? colors.primary + '20' : '#F1F5F9' }]}>
-                    <Ionicons
-                        name={item.userType === 'ELECTRICIAN' ? 'construct' : 'person'}
-                        size={24}
-                        color={item.userType === 'ELECTRICIAN' ? colors.primary : staticColors.textSecondary}
-                    />
+                    {item.profileImageUrl && getFileUrl(item.profileImageUrl) ? (
+                        <Image
+                            source={{ uri: getFileUrl(item.profileImageUrl)! }}
+                            style={styles.avatarImage}
+                        />
+                    ) : (
+                        <Ionicons
+                            name={item.userType === 'ELECTRICIAN' ? 'construct' : 'person'}
+                            size={24}
+                            color={item.userType === 'ELECTRICIAN' ? colors.primary : staticColors.textSecondary}
+                        />
+                    )}
                 </View>
                 <View style={styles.userInfo}>
                     <View style={styles.nameRow}>
@@ -549,6 +557,12 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
+        overflow: 'hidden',
+    },
+    avatarImage: {
+        width: 48,
+        height: 48,
+        borderRadius: 14,
     },
     userInfo: {
         flex: 1,
