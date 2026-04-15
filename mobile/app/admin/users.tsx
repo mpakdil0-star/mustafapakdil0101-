@@ -217,10 +217,8 @@ export default function AdminUsersScreen() {
     };
 
     const renderUserItem = ({ item }: { item: User }) => (
-        <TouchableOpacity
+        <View
             style={[styles.userCard, !item.isActive && styles.userCardInactive]}
-            activeOpacity={0.8}
-            onLongPress={() => toggleUserStatus(item.id, item.isActive)}
         >
             <View style={styles.userHeader}>
                 <View style={[styles.avatar, { backgroundColor: item.userType === 'ELECTRICIAN' ? colors.primary + '20' : '#F1F5F9' }]}>
@@ -383,7 +381,7 @@ export default function AdminUsersScreen() {
                     <Text style={[styles.actionBtnText, { color: '#6366F1' }]}>Bilgi</Text>
                 </TouchableOpacity>
             </View>
-        </TouchableOpacity>
+        </View>
     );
 
     const FilterButton = ({ type, label }: { type: FilterType; label: string }) => (
