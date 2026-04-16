@@ -16,12 +16,50 @@ export interface PushNotificationPayload {
     badge?: number;
 }
 
+/**
+ * Geçersiz (DeviceNotRegistered) token'ı veritabanından ve mock storage'dan temizler.
+ * Bu sayede bir sonraki bildirim denemesinde boşa gitmez.
+ */
+async function cleanupInvalidToken(pushToken: string) {
+    try {
+        // 1. Gerçek veritabanından temizle
+        const prismaModule = require('../config/database');
+        const prisma = prismaModule.default;
+        const isDatabaseAvailable = prismaModule.isDatabaseAvailable;
+
+        if (isDatabaseAvailable) {
+            const result = await prisma.user.updateMany({
+                where: { pushToken: pushToken as string },
+                data: { pushToken: null }
+            });
+            if (result.count > 0) {
+                console.log(`🧹 Cleaned invalid pushToken from DB for ${result.count} user(s): ${pushToken}`);
+            }
+        }
+
+        // 2. Mock storage'dan temizle
+        const { mockStorage } = require('../utils/mockStorage');
+        const allUsers = mockStorage.getAllUsers();
+        for (const user of allUsers) {
+            if (user.pushToken === pushToken) {
+                user.pushToken = null;
+                mockStorage.set(user.id, user);
+                console.log(`🧹 Cleaned invalid pushToken from mockStorage for user: ${user.id}`);
+            }
+        }
+    } catch (cleanupError) {
+        console.error('⚠️ Failed to cleanup invalid token (non-blocking):', cleanupError);
+    }
+}
+
 export const pushNotificationService = {
     async sendNotification(payload: PushNotificationPayload) {
         const { to, title, body, data, sound = 'default', badge } = payload;
 
         const messages: ExpoPushMessage[] = [];
         const pushTokens = Array.isArray(to) ? to : [to];
+        // Token → mesaj index eşlemesi (temizleme için)
+        const tokenMap: Map<number, string> = new Map();
 
         for (const pushToken of pushTokens) {
             if (!Expo.isExpoPushToken(pushToken)) {
@@ -29,6 +67,7 @@ export const pushNotificationService = {
                 continue;
             }
 
+            tokenMap.set(messages.length, pushToken);
             messages.push({
                 to: pushToken,
                 sound,
@@ -50,6 +89,7 @@ export const pushNotificationService = {
 
         const chunks = expo.chunkPushNotifications(messages);
         const tickets = [];
+        let globalIndex = 0;
 
         for (const chunk of chunks) {
             try {
@@ -68,10 +108,15 @@ export const pushNotificationService = {
                         if (ticket.details?.error) {
                             console.error(`      Details: ${ticket.details.error}`);
                             if (ticket.details.error === 'DeviceNotRegistered') {
-                                console.error(`      ⚠️ This token is INVALID - device unregistered or token expired!`);
+                                console.error(`      ⚠️ Token INVALID — auto-cleaning from database...`);
+                                // Geçersiz token'ı arka planda temizle (non-blocking)
+                                if (typeof token === 'string') {
+                                    cleanupInvalidToken(token);
+                                }
                             }
                         }
                     }
+                    globalIndex++;
                 });
             } catch (error) {
                 console.error('❌ Error sending push notification chunk:', error);
@@ -83,3 +128,4 @@ export const pushNotificationService = {
 };
 
 export default pushNotificationService;
+
