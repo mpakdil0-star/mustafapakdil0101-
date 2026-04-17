@@ -5,10 +5,10 @@ import { Provider, useSelector } from 'react-redux';
 import { store } from '../store/store';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { InteractionManager, View, Text, Platform } from 'react-native';
+import { InteractionManager, View, Text, Platform, StyleSheet, TouchableOpacity } from 'react-native';
 import { RootState } from '../store/store';
 import { useFonts } from 'expo-font';
-import { fontFiles } from '../constants/typography';
+import { fontFiles, fonts } from '../constants/typography';
 import { socketService } from '../services/socketService';
 import { authService } from '../services/authService';
 import { PremiumAlert } from '../components/common/PremiumAlert';
@@ -18,6 +18,8 @@ import { getMe, setRequiredLegalVersion, logout } from '../store/slices/authSlic
 import LegalUpdateModal from '../components/legal/LegalUpdateModal';
 import { Alert } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // TODO: Uncomment after running: npx expo install expo-network
 // import { OfflineBanner } from '../components/common/OfflineBanner';
 
@@ -42,6 +44,7 @@ function RootLayoutNav() {
   const segments = useSegments();
   const params = useGlobalSearchParams();
   const dispatch = useAppDispatch();
+  const insets = useSafeAreaInsets();
   const { isAuthenticated, user, isLoading, requiredLegalVersion } = useSelector((state: RootState) => state.auth);
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [isNavigationReady, setIsNavigationReady] = useState(false);
@@ -601,6 +604,23 @@ function RootLayoutNav() {
           <StatusBar style="dark" />
           <Slot />
 
+          {user?.isImpersonated && (
+            <View style={[styles.impersonationBanner, { paddingTop: insets.top + 8 }]}>
+              <View style={styles.impersonationContent}>
+                <Ionicons name="shield-checkmark" size={18} color="#FFF" />
+                <Text style={styles.impersonationText}>ADMİN MODU: {user.fullName?.toUpperCase()}</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.impersonationLogoutBtn}
+                onPress={() => dispatch(logout())}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.impersonationLogoutText}>Çıkış</Text>
+                <Ionicons name="log-out-outline" size={16} color="#FFF" />
+              </TouchableOpacity>
+            </View>
+          )}
+
           <PremiumAlert
             visible={alertConfig.visible}
             title={alertConfig.title}
@@ -630,3 +650,49 @@ export default function RootLayout() {
     </Provider>
   );
 }
+
+const styles = StyleSheet.create({
+  impersonationBanner: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#7C3AED', // Premium Purple instead of red, or maybe admin red? User said "ince bir bar". Let's use a distinct color.
+    paddingBottom: 8,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    zIndex: 9999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  impersonationContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  impersonationText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontFamily: fonts.bold,
+    letterSpacing: 0.5,
+  },
+  impersonationLogoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+  },
+  impersonationLogoutText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontFamily: fonts.bold,
+  }
+});
