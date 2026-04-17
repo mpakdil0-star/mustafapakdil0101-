@@ -172,11 +172,15 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                         message: mockMessage
                     });
 
+                    const senderTitle = (senderUser?.userType === 'ADMIN' || senderUser?.email === 'mpakdil0@gmail.com') 
+                        ? 'Yönetici' 
+                        : (senderUser?.fullName || 'Kullanıcı');
+
                     // Send notification to force badge update if user is not in the room
                     io.to(`user:${mockMessage.receiverId}`).emit('notification', {
                         type: 'new_message',
                         conversationId,
-                        senderName: senderUser?.fullName || 'Kullanıcı',
+                        senderName: senderTitle,
                         preview: content.substring(0, 50),
                     });
 
@@ -186,7 +190,7 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                         const pushNotificationService = require('../services/pushNotificationService').default;
                         pushNotificationService.sendNotification({
                             to: receiverData.pushToken,
-                            title: `${senderUser?.fullName || 'Birisi'} mesaj gönderdi 💬`,
+                            title: `${senderTitle} mesaj gönderdi 💬`,
                             body: content.substring(0, 80) + (content.length > 80 ? '...' : ''),
                             data: { conversationId, type: 'new_message' }
                         }).catch((err: any) => console.error('Push Notification Error:', err));
@@ -280,6 +284,10 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                     }
                 });
 
+                const senderTitle = (message.sender.userType === 'ADMIN' || message.sender.email === 'mpakdil0@gmail.com') 
+                    ? 'Yönetici' 
+                    : message.sender.fullName;
+
                 // Alıcıya socket bildirimi gönder (konuşmada değilse bile gerçek zamanlı güncelleme için)
                 io.to(`user:${recipientId}`).emit('notification', {
                     id: dbNotification.id,
@@ -293,7 +301,7 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                         messageType: message.messageType,
                         createdAt: message.createdAt,
                     },
-                    senderName: message.sender.fullName,
+                    senderName: senderTitle,
                     preview: content.substring(0, 50),
                     isRead: false,
                     createdAt: dbNotification.createdAt,
@@ -309,7 +317,7 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                 if (recipient?.pushToken) {
                     pushNotificationService.sendNotification({
                         to: recipient.pushToken,
-                        title: `${message.sender.fullName} mesaj gönderdi 💬`,
+                        title: `${senderTitle} mesaj gönderdi 💬`,
                         body: content.substring(0, 80) + (content.length > 80 ? '...' : ''),
                         data: { conversationId, type: 'new_message' }
                     }).catch((err: any) => console.error('Push Notification Error (Real DB):', err));
