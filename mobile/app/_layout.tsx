@@ -145,7 +145,7 @@ function RootLayoutNav() {
 
         // Profile completion check for professionals
         if (user?.userType === 'ELECTRICIAN') {
-          const isIncomplete = user?.isImpersonated ? false : checkIsProfileIncomplete(user);
+          const isIncomplete = checkIsProfileIncomplete(user);
 
 
           // Check if user has already completed profile setup at least once

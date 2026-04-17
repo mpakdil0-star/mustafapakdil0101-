@@ -215,7 +215,7 @@ export default function AdminUsersScreen() {
                                 dispatch(impersonateLogin({
                                     user: {
                                         ...user,
-                                        isVerified: true, // Admin test amacıyla girildiği için doğrulama ekranına takılmasın diye zorla true yapıyoruz
+                                        isVerified: user.isVerified,
                                         isImpersonated: true,
                                     },
 
