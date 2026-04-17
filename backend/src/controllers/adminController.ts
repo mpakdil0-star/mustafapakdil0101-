@@ -1132,6 +1132,8 @@ export const sendBulkPushNotifications = async (req: Request, res: Response, nex
         // Her kullanıcı için işlem yap
         for (const target of targets) {
             try {
+                let convId: string | undefined = undefined;
+
                 if (isDatabaseAvailable && !target.id.startsWith('mock-')) {
                     // 1. Konuşma bul veya oluştur
                     let conv = await prisma.conversation.findFirst({
@@ -1152,6 +1154,7 @@ export const sendBulkPushNotifications = async (req: Request, res: Response, nex
                             }
                         });
                     }
+                    convId = conv.id;
 
                     // 2. Mesajı kaydet
                     await prisma.message.create({
@@ -1184,7 +1187,7 @@ export const sendBulkPushNotifications = async (req: Request, res: Response, nex
                         body: body,
                         data: { 
                             type: 'bulk_admin_campaign',
-                            conversationId: isDatabaseAvailable && !target.id.startsWith('mock-') ? (conv as any)?.id : undefined
+                            conversationId: convId
                         }
                     }).catch(console.error);
                 }
