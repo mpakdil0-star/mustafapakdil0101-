@@ -389,6 +389,11 @@ export const meController = async (
         },
       });
 
+      // 🛡️ Master Admin Identity Protection
+      if (user && (user.email === 'mpakdil0@gmail.com' || user.userType === 'ADMIN')) {
+        (user as any).fullName = 'Yönetici';
+      }
+
       res.json({
         success: true,
         data: { user },

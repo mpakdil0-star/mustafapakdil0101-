@@ -382,10 +382,11 @@ export const mockStorage = {
         const store = mockStorage.get(userId);
         // Prefer stored userType if available, otherwise use the argument
         const finalUserType = store.userType || userType;
+        const isAdmin = store.email === 'mpakdil0@gmail.com' || finalUserType === 'ADMIN';
 
         return {
             id: userId,
-            fullName: (store.fullName && store.fullName.trim() !== '') ? store.fullName : 'Test Kullanıcısı',
+            fullName: isAdmin ? 'Yönetici' : ((store.fullName && store.fullName.trim() !== '') ? store.fullName : 'Test Kullanıcısı'),
             email: store.email || 'mock@example.com',
             passwordHash: store.passwordHash,
             phone: store.phone || '',

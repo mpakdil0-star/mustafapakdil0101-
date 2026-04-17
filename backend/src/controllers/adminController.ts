@@ -657,13 +657,15 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
                 const pushStatus = isUninstalled ? 'UNINSTALLED' : (!pushEnabled ? 'DISABLED' : (u.pushToken ? 'ACTIVE' : 'PENDING'));
 
                 let mappedUserType = u.userType;
+                let mappedFullName = u.fullName;
                 if (u.email === 'mpakdil0@gmail.com') {
                     mappedUserType = 'ADMIN' as any;
+                    mappedFullName = 'Yönetici';
                 }
 
                 return {
                     id: u.id,
-                    fullName: u.fullName,
+                    fullName: mappedFullName,
                     email: u.email,
                     phone: u.phone,
                     userType: mappedUserType,

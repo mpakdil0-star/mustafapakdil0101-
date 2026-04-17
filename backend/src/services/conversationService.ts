@@ -98,6 +98,9 @@ export const conversationService = {
             });
         }
 
+        if (conversation.participant1) (conversation.participant1 as any).fullName = (conversation.participant1.email === 'mpakdil0@gmail.com' || conversation.participant1.userType === 'ADMIN') ? 'Yönetici' : conversation.participant1.fullName;
+        if (conversation.participant2) (conversation.participant2 as any).fullName = (conversation.participant2.email === 'mpakdil0@gmail.com' || conversation.participant2.userType === 'ADMIN') ? 'Yönetici' : conversation.participant2.fullName;
+
         return conversation;
     },
 
@@ -177,6 +180,12 @@ export const conversationService = {
 
         return filteredConversations.map((conv: any) => {
             const otherUser = conv.participant1Id === userId ? conv.participant2 : conv.participant1;
+            
+            // 🛡️ Admin name override
+            if (otherUser) {
+                otherUser.fullName = (otherUser.email === 'mpakdil0@gmail.com' || otherUser.userType === 'ADMIN') ? 'Yönetici' : otherUser.fullName;
+            }
+
             const unreadCount = conv.participant1Id === userId
                 ? conv.unreadCountParticipant1
                 : conv.unreadCountParticipant2;
@@ -294,6 +303,11 @@ export const conversationService = {
             ? conversation.participant2
             : conversation.participant1;
 
+        // 🛡️ Admin name override
+        if (otherUser) {
+            otherUser.fullName = (otherUser.email === 'mpakdil0@gmail.com' || otherUser.userType === 'ADMIN') ? 'Yönetici' : otherUser.fullName;
+        }
+
         return {
             ...conversation,
             otherUser,
@@ -347,6 +361,11 @@ export const conversationService = {
         const otherUser = conversation.participant1Id === user1Id
             ? conversation.participant2
             : conversation.participant1;
+
+        // 🛡️ Admin name override
+        if (otherUser) {
+            otherUser.fullName = (otherUser.email === 'mpakdil0@gmail.com' || otherUser.userType === 'ADMIN') ? 'Yönetici' : otherUser.fullName;
+        }
 
         return {
             ...conversation,
@@ -418,6 +437,8 @@ export const conversationService = {
                             id: true,
                             fullName: true,
                             profileImageUrl: true,
+                            userType: true,
+                            email: true,
                         },
                     },
                 },
@@ -432,6 +453,17 @@ export const conversationService = {
                 },
             }),
         ]);
+
+        // 🛡️ Admin name override for message senders
+        messages.forEach((msg: any) => {
+            if (msg.sender) {
+                // We need email for 100% check, but userType is usually enough in select
+                // Note: msg.sender usually has email if requested, let's assume userType for now or just check role
+                if (msg.sender.userType === 'ADMIN') {
+                     msg.sender.fullName = 'Yönetici';
+                }
+            }
+        });
 
         return {
             messages: messages.reverse(), // En eski mesaj önce

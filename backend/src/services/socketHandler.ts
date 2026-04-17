@@ -274,21 +274,24 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                     },
                 });
 
+                const senderTitle = (message.sender.userType === 'ADMIN' || message.sender.email === 'mpakdil0@gmail.com') 
+                    ? 'Yönetici' 
+                    : message.sender.fullName;
+
+                // 🛡️ Identity Masking
+                (message.sender as any).fullName = senderTitle;
+
                 // Bildirimi veritabanına kaydet (Kalıcı rozet için)
                 const dbNotification = await prisma.notification.create({
                     data: {
                         userId: recipientId,
                         type: 'new_message',
                         title: '💬 Yeni Mesaj',
-                        message: `${message.sender.fullName}: ${content.substring(0, 50)}`,
+                        message: `${senderTitle}: ${content.substring(0, 50)}`,
                         relatedType: 'CONVERSATION',
                         relatedId: conversationId,
                     }
                 });
-
-                const senderTitle = (message.sender.userType === 'ADMIN' || message.sender.email === 'mpakdil0@gmail.com') 
-                    ? 'Yönetici' 
-                    : message.sender.fullName;
 
                 // Alıcıya socket bildirimi gönder (konuşmada değilse bile gerçek zamanlı güncelleme için)
                 io.to(`user:${recipientId}`).emit('notification', {
