@@ -10,7 +10,8 @@ import { useAppColors } from '../../hooks/useAppColors';
 import api, { apiService } from '../../services/api';
 import { getFileUrl } from '../../constants/api';
 import { useDispatch } from 'react-redux';
-import { setUser } from '../../store/slices/authSlice';
+import { impersonateLogin } from '../../store/slices/authSlice';
+
 
 
 
@@ -208,17 +209,19 @@ export default function AdminUsersScreen() {
                             const response = await api.post(`/admin/impersonate/${targetUser.id}`);
                             if (response.data.success) {
                                 const { accessToken, user } = response.data.data;
-                                // Yeni token'ı kaydet (refresh token olmadan — 4 saat geçerli)
-                                await apiService.setTokens(accessToken, '');
-                                // Redux store'u güncelle
-                                dispatch(setUser({
-                                    id: user.id,
-                                    email: user.email,
-                                    fullName: user.fullName,
-                                    userType: user.userType,
-                                    isVerified: false,
+                                // Token'ı SecureStore'a kaydet
+                                await apiService.setTokens(accessToken, accessToken); // refresh olarak da aynısını koy (4 saat geçerli)
+                                // Redux store'u atomik olarak güncelle (user + token birlikte)
+                                dispatch(impersonateLogin({
+                                    user: {
+                                        id: user.id,
+                                        email: user.email,
+                                        fullName: user.fullName,
+                                        userType: user.userType,
+                                        isVerified: false,
+                                    },
+                                    accessToken,
                                 }));
-
                                 Alert.alert(
                                     '✅ Geçiş Başarılı',
                                     `"${user.fullName}" hesabına geçildi. Ana sayfaya yönlendiriliyorsunuz.\n\nNot: Bu oturum 4 saat geçerlidir.`,

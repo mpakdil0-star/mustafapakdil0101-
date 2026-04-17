@@ -182,6 +182,14 @@ const authSlice = createSlice({
     setRequiredLegalVersion: (state, action: PayloadAction<string | null>) => {
       state.requiredLegalVersion = action.payload;
     },
+    // Admin impersonation: kullanıcı ve token'ı aynı anda set et
+    impersonateLogin: (state, action: PayloadAction<{ user: User; accessToken: string }>) => {
+      state.user = action.payload.user;
+      state.token = action.payload.accessToken;
+      state.isAuthenticated = true;
+      state.error = null;
+      state.guestRole = null;
+    },
   },
   extraReducers: (builder) => {
     // Register & Login (aynı mantık)
@@ -250,6 +258,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, setUser, setGuestRole, updateCreditBalance, setDraftProfile, clearDraftProfile, setRequiredLegalVersion } = authSlice.actions;
+export const { clearError, setUser, setGuestRole, updateCreditBalance, setDraftProfile, clearDraftProfile, setRequiredLegalVersion, impersonateLogin } = authSlice.actions;
 export default authSlice.reducer;
 
