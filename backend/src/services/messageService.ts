@@ -44,6 +44,7 @@ export const messageService = {
             },
             include: {
                 sender: {
+                    select: {
                         id: true,
                         fullName: true,
                         profileImageUrl: true,
