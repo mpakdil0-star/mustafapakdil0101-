@@ -237,6 +237,7 @@ export default function NotificationsScreen() {
                     }
                 }
             }
+        }
 
             // Sync preferences to backend
             try {
