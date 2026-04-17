@@ -645,12 +645,17 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
                 const pushEnabled = ns?.push !== false;
                 const pushStatus = !pushEnabled ? 'DISABLED' : (u.pushToken ? 'ACTIVE' : 'PENDING');
 
+                let mappedUserType = u.userType;
+                if (u.email === 'mpakdil0@gmail.com') {
+                    mappedUserType = 'ADMIN' as any;
+                }
+
                 return {
                     id: u.id,
                     fullName: u.fullName,
                     email: u.email,
                     phone: u.phone,
-                    userType: u.userType,
+                    userType: mappedUserType,
                     profileImageUrl: u.profileImageUrl,
                     creditBalance: Number(u.electricianProfile?.creditBalance || 0),
                     isVerified: u.isVerified,
@@ -690,6 +695,10 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
                 else if (id.endsWith('-ADMIN')) derivedUserType = 'ADMIN';
                 else derivedUserType = 'CITIZEN';
             }
+            if (data.email === 'mpakdil0@gmail.com') {
+                derivedUserType = 'ADMIN';
+            }
+            
             return {
                 id,
                 fullName: data.fullName || 'İsimsiz Kullanıcı',
