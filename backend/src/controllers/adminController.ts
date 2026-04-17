@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma, { isDatabaseAvailable } from '../config/database';
-import { mockStorage } from '../utils/mockStorage';
+import { mockStorage, getAllMockUsers } from '../utils/mockStorage';
 import { notifyUser } from '../server';
 import pushNotificationService from '../services/pushNotificationService';
 import { jobStoreById, deleteMockJob, loadMockJobs } from './jobController';
@@ -1116,7 +1116,7 @@ export const sendBulkPushNotifications = async (req: Request, res: Response, nex
             targetTokens = users.map(u => u.pushToken).filter(Boolean) as string[];
         } else {
             // Mock mode
-            const allUsers = Object.values(mockStorage.getAll() as any);
+            const allUsers = Object.values(getAllMockUsers() as any);
             const filteredUsers = userIds === 'ALL' 
                 ? allUsers 
                 : allUsers.filter((u: any) => Array.isArray(userIds) && userIds.includes(u.id));
