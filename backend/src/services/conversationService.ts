@@ -44,6 +44,7 @@ export const conversationService = {
                         fullName: true,
                         profileImageUrl: true,
                         userType: true,
+                        email: true,
                     },
                 },
                 participant2: {
@@ -52,6 +53,7 @@ export const conversationService = {
                         fullName: true,
                         profileImageUrl: true,
                         userType: true,
+                        email: true,
                     },
                 },
                 jobPost: {
@@ -126,6 +128,7 @@ export const conversationService = {
                         fullName: true,
                         profileImageUrl: true,
                         userType: true,
+                        email: true,
                     },
                 },
                 participant2: {
@@ -134,6 +137,7 @@ export const conversationService = {
                         fullName: true,
                         profileImageUrl: true,
                         userType: true,
+                        email: true,
                     },
                 },
                 jobPost: {
@@ -228,6 +232,7 @@ export const conversationService = {
                         fullName: true,
                         profileImageUrl: true,
                         userType: true,
+                        email: true,
                     },
                 },
                 participant2: {
@@ -236,6 +241,7 @@ export const conversationService = {
                         fullName: true,
                         profileImageUrl: true,
                         userType: true,
+                        email: true,
                     },
                 },
                 jobPost: {
@@ -255,10 +261,10 @@ export const conversationService = {
                 where: { id: conversationId },
                 include: {
                     participant1: {
-                        select: { id: true, fullName: true, profileImageUrl: true, userType: true },
+                        select: { id: true, fullName: true, profileImageUrl: true, userType: true, email: true },
                     },
                     participant2: {
-                        select: { id: true, fullName: true, profileImageUrl: true, userType: true },
+                        select: { id: true, fullName: true, profileImageUrl: true, userType: true, email: true },
                     },
                     jobPost: {
                         select: { id: true, title: true },
@@ -337,6 +343,7 @@ export const conversationService = {
                         fullName: true,
                         profileImageUrl: true,
                         userType: true,
+                        email: true,
                     },
                 },
                 participant2: {
@@ -345,6 +352,7 @@ export const conversationService = {
                         fullName: true,
                         profileImageUrl: true,
                         userType: true,
+                        email: true,
                     },
                 },
                 jobPost: {
