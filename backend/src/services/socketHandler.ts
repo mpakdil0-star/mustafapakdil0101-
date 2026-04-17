@@ -236,6 +236,8 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                                 id: true,
                                 fullName: true,
                                 profileImageUrl: true,
+                                userType: true,
+                                email: true,
                             },
                         },
                     },
