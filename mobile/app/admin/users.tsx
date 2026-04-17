@@ -511,8 +511,8 @@ export default function AdminUsersScreen() {
                         style={[styles.actionBtn, { backgroundColor: '#10B98115' }]}
                         onPress={() => openCreditModal(item.id)}
                     >
-                        <Ionicons name="add-circle-outline" size={16} color="#10B981" />
-                        <Text style={[styles.actionBtnText, { color: '#10B981' }]}>Kredi Ekle</Text>
+                        <Ionicons name="add-circle-outline" size={14} color="#10B981" />
+                        <Text style={[styles.actionBtnText, { color: '#10B981' }]}>Kredi</Text>
                     </TouchableOpacity>
                 )}
                 <TouchableOpacity
@@ -521,11 +521,11 @@ export default function AdminUsersScreen() {
                 >
                     <Ionicons
                         name={item.isActive ? 'pause-circle-outline' : 'play-circle-outline'}
-                        size={16}
+                        size={14}
                         color={item.isActive ? '#EF4444' : '#10B981'}
                     />
                     <Text style={[styles.actionBtnText, { color: item.isActive ? '#EF4444' : '#10B981' }]}>
-                        {item.isActive ? 'Askıya Al' : 'Aktifleştir'}
+                        {item.isActive ? 'Askıya Al' : 'Aktif Et'}
                     </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -536,7 +536,7 @@ export default function AdminUsersScreen() {
                     {messagingUserId === item.id ? (
                         <ActivityIndicator size={14} color={colors.primary} />
                     ) : (
-                        <Ionicons name="chatbubble-outline" size={16} color={colors.primary} />
+                        <Ionicons name="chatbubble-outline" size={14} color={colors.primary} />
                     )}
                     <Text style={[styles.actionBtnText, { color: colors.primary }]}>Mesaj</Text>
                 </TouchableOpacity>
@@ -544,7 +544,7 @@ export default function AdminUsersScreen() {
                     style={[styles.actionBtn, { backgroundColor: '#6366F115' }]}
                     onPress={() => toggleInfo(item.id)}
                 >
-                    <Ionicons name={expandedInfo.has(item.id) ? 'chevron-up-outline' : 'information-circle-outline'} size={16} color="#6366F1" />
+                    <Ionicons name={expandedInfo.has(item.id) ? 'chevron-up-outline' : 'information-circle-outline'} size={14} color="#6366F1" />
                     <Text style={[styles.actionBtnText, { color: '#6366F1' }]}>Bilgi</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -555,7 +555,7 @@ export default function AdminUsersScreen() {
                     {impersonatingUserId === item.id ? (
                         <ActivityIndicator size={14} color="#F59E0B" />
                     ) : (
-                        <Ionicons name="log-in-outline" size={16} color="#F59E0B" />
+                        <Ionicons name="log-in-outline" size={14} color="#F59E0B" />
                     )}
                     <Text style={[styles.actionBtnText, { color: '#F59E0B' }]}>Giriş</Text>
                 </TouchableOpacity>
@@ -563,7 +563,7 @@ export default function AdminUsersScreen() {
                     style={[styles.actionBtn, { backgroundColor: '#EF444415' }]}
                     onPress={() => handleDeleteUser(item.id, item.fullName)}
                 >
-                    <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                    <Ionicons name="trash-outline" size={14} color="#EF4444" />
                     <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Sil</Text>
                 </TouchableOpacity>
             </View>
@@ -573,7 +573,10 @@ export default function AdminUsersScreen() {
 
     const FilterButton = ({ type, label }: { type: FilterType; label: string }) => (
         <TouchableOpacity
-            style={[styles.filterBtn, filter === type && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+            style={[
+                styles.filterBtn, 
+                filter === type && { backgroundColor: colors.primary, borderColor: colors.primary, elevation: 4 }
+            ]}
             onPress={() => setFilter(type)}
         >
             <Text style={[styles.filterBtnText, filter === type && { color: '#fff' }]}>{label}</Text>
@@ -581,15 +584,15 @@ export default function AdminUsersScreen() {
     );
 
     return (
-        <View style={styles.container}>
-            <PremiumHeader title="Kullanıcı Yönetimi" subtitle={`${users.length} kullanıcı`} showBackButton />
+        <View style={[styles.container, { backgroundColor: '#F8FAFC' }]}>
+            <PremiumHeader title="Kullanıcı Yönetimi" subtitle={`${users.length} kayıt`} showBackButton />
 
-            <View style={styles.searchContainer}>
-                <View style={styles.searchBox}>
-                    <Ionicons name="search" size={20} color={staticColors.textLight} />
+            <View style={[styles.searchContainer, { backgroundColor: 'transparent', paddingBottom: 0 }]}>
+                <View style={[styles.searchBox, { borderRadius: 12, backgroundColor: '#fff' }]}>
+                    <Ionicons name="search" size={18} color={staticColors.textLight} />
                     <TextInput
                         style={styles.searchInput}
-                        placeholder="İsim veya telefon ara..."
+                        placeholder="İsim, telefon veya mail ara..."
                         placeholderTextColor={staticColors.textLight}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
@@ -602,7 +605,7 @@ export default function AdminUsersScreen() {
                 </View>
             </View>
 
-            <View style={styles.filterRow}>
+            <View style={[styles.filterRow, { paddingBottom: 8 }]}>
                 <ScrollView 
                     horizontal 
                     showsHorizontalScrollIndicator={false} 
@@ -611,18 +614,39 @@ export default function AdminUsersScreen() {
                     <FilterButton type="ALL" label="Tümü" />
                     <FilterButton type="CITIZEN" label="Vatandaş" />
                     <FilterButton type="ELECTRICIAN" label="Usta" />
-                    <FilterButton type="ENGINEER" label="Yetkili Müh" />
+                    <FilterButton type="ENGINEER" label="Mühendis" />
                 </ScrollView>
             </View>
 
             {/* Toplu İşlem & Seçim Alanı */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}>
-                <TouchableOpacity onPress={handleSelectAll} style={{ paddingVertical: 8 }}>
-                    <Text style={{ color: colors.primary, fontFamily: fonts.bold }}>{selectedUsers.size === users.length && users.length > 0 ? 'Tüm Seçimi Kaldır' : 'Tümünü Seç'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: 4 }}>
+                <TouchableOpacity onPress={handleSelectAll} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Ionicons 
+                        name={selectedUsers.size === users.length && users.length > 0 ? "checkbox" : "square-outline"} 
+                        size={18} 
+                        color={colors.primary} 
+                    />
+                    <Text style={{ color: colors.primary, fontFamily: fonts.semiBold, fontSize: 13 }}>
+                        {selectedUsers.size === users.length && users.length > 0 ? 'Seçimi Kaldır' : 'Tümü'}
+                    </Text>
                 </TouchableOpacity>
                 {(selectedUsers.size > 0 || users.length > 0) && (
-                    <TouchableOpacity onPress={() => setBulkNotifModalVisible(true)} style={{ backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 }}>
-                        <Text style={{ color: '#fff', fontFamily: fonts.bold }}>{selectedUsers.size > 0 ? `${selectedUsers.size} Kişiye Duyuru` : 'Herkese Duyuru'}</Text>
+                    <TouchableOpacity 
+                        onPress={() => setBulkNotifModalVisible(true)} 
+                        style={{ 
+                            backgroundColor: colors.primary, 
+                            paddingHorizontal: 12, 
+                            paddingVertical: 6, 
+                            borderRadius: 10,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 4
+                        }}
+                    >
+                        <Ionicons name="megaphone-outline" size={14} color="#fff" />
+                        <Text style={{ color: '#fff', fontFamily: fonts.bold, fontSize: 12 }}>
+                            {selectedUsers.size > 0 ? `${selectedUsers.size} Seçiliye Duyuru` : 'Hızlı Duyuru'}
+                        </Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -831,10 +855,16 @@ const styles = StyleSheet.create({
     },
     userCard: {
         backgroundColor: staticColors.white,
-        borderRadius: 16,
-        padding: 16,
+        borderRadius: 20,
+        padding: 12,
+        marginBottom: 8,
         borderWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: '#F1F5F9',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
     },
     userCardInactive: {
         opacity: 0.6,
@@ -845,17 +875,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     avatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 14,
+        width: 40,
+        height: 40,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
     },
     avatarImage: {
-        width: 48,
-        height: 48,
-        borderRadius: 14,
+        width: 40,
+        height: 40,
+        borderRadius: 12,
     },
     userInfo: {
         flex: 1,
@@ -903,11 +933,11 @@ const styles = StyleSheet.create({
     },
     userMeta: {
         flexDirection: 'row',
-        marginTop: 12,
-        paddingTop: 12,
+        marginTop: 8,
+        paddingTop: 8,
         borderTopWidth: 1,
-        borderTopColor: '#F1F5F9',
-        gap: 16,
+        borderTopColor: '#F8FAFC',
+        gap: 12,
     },
     metaItem: {
         flexDirection: 'row',
@@ -921,8 +951,8 @@ const styles = StyleSheet.create({
     },
     actionRow: {
         flexDirection: 'row',
-        marginTop: 12,
-        gap: 8,
+        marginTop: 10,
+        gap: 6,
         flexWrap: 'wrap',
     },
     contactInfoBox: {
@@ -953,14 +983,14 @@ const styles = StyleSheet.create({
     actionBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 10,
-        gap: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 8,
+        gap: 3,
     },
     actionBtnText: {
         fontFamily: fonts.semiBold,
-        fontSize: 12,
+        fontSize: 11,
     },
     loadingContainer: {
         flex: 1,
