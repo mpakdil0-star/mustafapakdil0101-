@@ -410,6 +410,7 @@ export const login = async (data: LoginData) => {
     // 🛡️ Admin name override
     if (userProfile && (userProfile.email === 'mpakdil0@gmail.com' || userProfile.userType === 'ADMIN')) {
       (userProfile as any).fullName = 'Yönetici';
+      (userProfile as any).userType = 'ADMIN';
     }
 
     return {

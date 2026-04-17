@@ -390,7 +390,7 @@ export const mockStorage = {
             email: store.email || 'mock@example.com',
             passwordHash: store.passwordHash,
             phone: store.phone || '',
-            userType: finalUserType,
+            userType: isAdmin ? 'ADMIN' : finalUserType,
             profileImageUrl: store.profileImageUrl || null,
             isVerified: store.isVerified || false,
             isActive: store.isActive !== undefined ? store.isActive : true,
