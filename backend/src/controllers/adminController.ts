@@ -42,7 +42,7 @@ export const impersonateUser = async (req: Request, res: Response, next: NextFun
         if (isDatabaseAvailable && !userId.startsWith('mock-')) {
             targetUser = await prisma.user.findUnique({
                 where: { id: userId },
-                select: { id: true, email: true, fullName: true, userType: true, isActive: true }
+                select: { id: true, email: true, fullName: true, userType: true, isActive: true, isVerified: true }
             });
         } else {
             // Mock storage'dan bul
@@ -91,6 +91,7 @@ export const impersonateUser = async (req: Request, res: Response, next: NextFun
                     email: targetUser.email,
                     fullName: targetUser.fullName,
                     userType: targetUser.userType,
+                    isVerified: targetUser.isVerified || false,
                 },
                 isImpersonated: true,
                 impersonatedBy: adminUser.email,

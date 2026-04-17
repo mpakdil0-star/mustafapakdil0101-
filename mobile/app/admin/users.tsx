@@ -218,7 +218,7 @@ export default function AdminUsersScreen() {
                                         email: user.email,
                                         fullName: user.fullName,
                                         userType: user.userType,
-                                        isVerified: false,
+                                        isVerified: user.isVerified,
                                     },
                                     accessToken,
                                 }));
