@@ -275,7 +275,7 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                 });
 
                 const senderTitle = (message.sender.userType === 'ADMIN' || message.sender.email === 'mpakdil0@gmail.com') 
-                    ? 'Yönetici' 
+                    ? 'İşBitir' 
                     : message.sender.fullName;
 
                 // 🛡️ Identity Masking

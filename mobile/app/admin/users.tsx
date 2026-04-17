@@ -69,7 +69,7 @@ export default function AdminUsersScreen() {
     const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [bulkNotifModalVisible, setBulkNotifModalVisible] = useState(false);
-    const [bulkNotifTitle, setBulkNotifTitle] = useState('');
+    const [bulkNotifTitle, setBulkNotifTitle] = useState('İşBitir');
     const [bulkNotifBody, setBulkNotifBody] = useState('');
     const [isSendingBulk, setIsSendingBulk] = useState(false);
 
