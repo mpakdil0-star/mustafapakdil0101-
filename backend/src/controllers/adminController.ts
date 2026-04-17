@@ -651,9 +651,10 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
 
             // Transform to match frontend expectations
             const transformedUsers = users.map(u => {
-                const ns = u.notificationSettings as any;
+                const ns = (u.notificationSettings as any) || {};
                 const pushEnabled = ns?.push !== false;
-                const pushStatus = !pushEnabled ? 'DISABLED' : (u.pushToken ? 'ACTIVE' : 'PENDING');
+                const isUninstalled = ns?.appUninstalled === true;
+                const pushStatus = isUninstalled ? 'UNINSTALLED' : (!pushEnabled ? 'DISABLED' : (u.pushToken ? 'ACTIVE' : 'PENDING'));
 
                 let mappedUserType = u.userType;
                 if (u.email === 'mpakdil0@gmail.com') {

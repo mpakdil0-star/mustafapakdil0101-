@@ -303,6 +303,8 @@ export default function AdminUsersScreen() {
                                         Alert.alert('Bildirim Durumu: Aktif', 'Kullanıcı bildirim alabilir durumda ve cihazı aktif (En son bu hesaptan giriş yapılmış).');
                                     } else if (item.pushStatus === 'PENDING') {
                                         Alert.alert('Bildirim Durumu: Beklemede', 'Kullanıcı bildirimleri kapatmamış ancak şu an aktif bir cihaza bağlı değil (Başka bir hesaba geçmiş olabilir).');
+                                    } else if (item.pushStatus === 'UNINSTALLED') {
+                                        Alert.alert('Uygulama Silinmiş', 'Sistem bu cihaza bildirim yollamaya çalışırken hata aldı. Kullanıcı büyük ihtimalle uygulamayı cihazından silmiş.');
                                     } else {
                                         Alert.alert('Bildirim Durumu: Kapalı', 'Kullanıcı kendi isteğiyle bildirim almayı tamamen kapatmış.');
                                     }
@@ -311,15 +313,20 @@ export default function AdminUsersScreen() {
                                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             >
                                 <Ionicons
-                                    name={item.pushStatus === 'ACTIVE' ? "notifications" : item.pushStatus === 'PENDING' ? "notifications-outline" : "notifications-off"}
+                                    name={item.pushStatus === 'ACTIVE' ? "notifications" : item.pushStatus === 'PENDING' ? "notifications-outline" : item.pushStatus === 'UNINSTALLED' ? "phone-portrait-outline" : "notifications-off"}
                                     size={16}
-                                    color={item.pushStatus === 'ACTIVE' ? '#10B981' : item.pushStatus === 'PENDING' ? '#F59E0B' : staticColors.textLight}
+                                    color={item.pushStatus === 'ACTIVE' ? '#10B981' : item.pushStatus === 'PENDING' ? '#F59E0B' : item.pushStatus === 'UNINSTALLED' ? '#EF4444' : staticColors.textLight}
                                 />
                             </TouchableOpacity>
                         )}
                         {!item.isActive && (
                             <View style={styles.suspendedBadge}>
                                 <Text style={styles.suspendedText}>Askıda</Text>
+                            </View>
+                        )}
+                        {item.pushStatus === 'UNINSTALLED' && (
+                            <View style={[styles.suspendedBadge, { backgroundColor: '#FEE2E2', borderColor: '#EF4444', marginLeft: 4 }]}>
+                                <Text style={[styles.suspendedText, { color: '#EF4444' }]}>Silinmiş</Text>
                             </View>
                         )}
                     </View>

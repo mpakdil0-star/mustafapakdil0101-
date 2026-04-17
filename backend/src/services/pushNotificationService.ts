@@ -28,12 +28,23 @@ async function cleanupInvalidToken(pushToken: string) {
         const isDatabaseAvailable = prismaModule.isDatabaseAvailable;
 
         if (isDatabaseAvailable) {
-            const result = await prisma.user.updateMany({
-                where: { pushToken: pushToken as string },
-                data: { pushToken: null }
+            const usersWithToken = await prisma.user.findMany({
+                where: { pushToken: pushToken as string }
             });
-            if (result.count > 0) {
-                console.log(`🧹 Cleaned invalid pushToken from DB for ${result.count} user(s): ${pushToken}`);
+            
+            for (const u of usersWithToken) {
+                const ns = (u.notificationSettings as any) || {};
+                ns.appUninstalled = true;
+                ns.uninstalledAt = new Date().toISOString();
+                
+                await prisma.user.update({
+                    where: { id: u.id },
+                    data: { 
+                        pushToken: null,
+                        notificationSettings: ns
+                    }
+                });
+                console.log(`🧹 Marked user ${u.id} as UNINSTALLED from DB.`);
             }
         }
 
@@ -43,8 +54,11 @@ async function cleanupInvalidToken(pushToken: string) {
         for (const user of allUsers) {
             if (user.pushToken === pushToken) {
                 user.pushToken = null;
+                if (!user.notificationSettings) user.notificationSettings = {};
+                (user.notificationSettings as any).appUninstalled = true;
+                (user.notificationSettings as any).uninstalledAt = new Date().toISOString();
                 mockStorage.set(user.id, user);
-                console.log(`🧹 Cleaned invalid pushToken from mockStorage for user: ${user.id}`);
+                console.log(`🧹 Marked user ${user.id} as UNINSTALLED in mockStorage`);
             }
         }
     } catch (cleanupError) {

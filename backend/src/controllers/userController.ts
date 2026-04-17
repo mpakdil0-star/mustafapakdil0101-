@@ -970,10 +970,15 @@ export const updatePushToken = async (req: Request, res: Response, next: NextFun
                 console.log(`🧹 Cleared duplicate push token from ${cleared.count} other account(s) - same device login detected`);
             }
 
-            // 2. Şimdiki kullanıcıya token'ı ata
+            // 2. Şimdiki kullanıcıya token'ı ata ve uninstalled flagini kaldır
+            const currentUser = await prisma.user.findUnique({ where: { id: userId } });
+            const userNs = (currentUser?.notificationSettings as any) || {};
+            delete userNs.appUninstalled;
+            delete userNs.uninstalledAt;
+
             await prisma.user.update({
                 where: { id: userId },
-                data: { pushToken },
+                data: { pushToken, notificationSettings: userNs },
             });
 
             res.status(200).json({
@@ -989,7 +994,13 @@ export const updatePushToken = async (req: Request, res: Response, next: NextFun
             // 🧹 Mock modda da token'ı diğer hesaplardan temizle
             mockStorage.clearPushTokenFromOthers(pushToken, userId);
 
-            mockStorage.updateProfile(userId, { pushToken } as any);
+            const mockUser = mockStorage.getUser(userId);
+            if (mockUser) {
+                 const ns = (mockUser.notificationSettings as any) || {};
+                 delete ns.appUninstalled;
+                 delete ns.uninstalledAt;
+                 mockStorage.updateProfile(userId, { pushToken, notificationSettings: ns } as any);
+            }
             console.log(`✅ PushToken saved to mockStorage for user ${userId} (cleared from other accounts)`);
 
             res.status(200).json({
