@@ -128,6 +128,32 @@ export default function AdminUsersScreen() {
         }
     };
 
+    const handleDeleteUser = async (userId: string, fullName: string) => {
+        Alert.alert(
+            '⚠️ Kullanıcıyı Sil',
+            `"${fullName}" adlı kullanıcıyı tamamen silmek istediğinize emin misiniz? bu işlem geri alınamaz.`,
+            [
+                { text: 'Vazgeç', style: 'cancel' },
+                {
+                    text: 'Sil',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const res = await api.delete(`/admin/users/${userId}`);
+                            if (res.data.success) {
+                                setUsers(prev => prev.filter(u => u.id !== userId));
+                                Alert.alert('Başarılı', 'Kullanıcı silindi.');
+                            }
+                        } catch (error: any) {
+                            const msg = error.response?.data?.message || 'Kullanıcı silinemedi.';
+                            Alert.alert('Hata', msg);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     const toggleLocation = (userId: string) => {
         setExpandedLocations(prev => {
             const next = new Set(prev);
@@ -532,6 +558,13 @@ export default function AdminUsersScreen() {
                         <Ionicons name="log-in-outline" size={16} color="#F59E0B" />
                     )}
                     <Text style={[styles.actionBtnText, { color: '#F59E0B' }]}>Giriş</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.actionBtn, { backgroundColor: '#EF444415' }]}
+                    onPress={() => handleDeleteUser(item.id, item.fullName)}
+                >
+                    <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                    <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Sil</Text>
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>

@@ -1147,4 +1147,33 @@ export const sendBulkPushNotifications = async (req: Request, res: Response, nex
     }
 };
 
+/**
+ * Kullanıcı Silme
+ */
+export const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+
+        if (isDatabaseAvailable && !id.startsWith('mock-')) {
+            // Soft delete
+            await prisma.user.update({
+                where: { id },
+                data: { deletedAt: new Date() }
+            });
+            return res.json({ success: true, message: 'Kullanıcı silindi.' });
+        }
+
+        // Mock mode hard delete
+        delete (mockStorage as any).mockStore[id];
+        // Note: Normally we'd add a delete method to mockStorage, but this is a quick fix
+        // for the requested action.
+        (mockStorage as any).saveToDisk();
+
+        return res.json({ success: true, message: 'Kullanıcı silindi.' });
+    } catch (error: any) {
+        console.error('Delete user error:', error);
+        res.status(500).json({ success: false, message: 'Kullanıcı silinemedi.', error: error.message });
+    }
+};
+
 

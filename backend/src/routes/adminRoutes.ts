@@ -69,5 +69,8 @@ router.post('/impersonate/:userId', authenticate, adminMiddleware, adminControll
 // POST /admin/notifications/bulk - Bulk Push Notifications
 router.post('/notifications/bulk', authenticate, adminMiddleware, adminController.sendBulkPushNotifications);
 
+// DELETE /admin/users/:id - Delete User
+router.delete('/users/:id', authenticate, adminMiddleware, adminController.deleteUser);
+
 export default router;
 
