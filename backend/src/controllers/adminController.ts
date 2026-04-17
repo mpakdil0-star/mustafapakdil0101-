@@ -1096,7 +1096,7 @@ export const sendBulkPushNotifications = async (req: Request, res: Response, nex
             return res.status(400).json({ success: false, error: { message: 'Başlık ve içerik gereklidir.' } });
         }
 
-        let targetTokens: string[] = [];
+        let targets: { id: string, pushToken: string | null }[] = [];
 
         if (isDatabaseAvailable) {
             let filter: any = {};
@@ -1107,12 +1107,12 @@ export const sendBulkPushNotifications = async (req: Request, res: Response, nex
             const users = await prisma.user.findMany({
                 where: {
                     ...filter,
-                    pushToken: { not: null }
+                    deletedAt: null
                 },
-                select: { pushToken: true }
+                select: { id: true, pushToken: true }
             });
 
-            targetTokens = users.map(u => u.pushToken).filter(Boolean) as string[];
+            targets = users;
         } else {
             // Mock mode
             const allUsers = Object.values(getAllMockUsers() as any);
@@ -1120,25 +1120,79 @@ export const sendBulkPushNotifications = async (req: Request, res: Response, nex
                 ? allUsers 
                 : allUsers.filter((u: any) => Array.isArray(userIds) && userIds.includes(u.id));
 
-            targetTokens = filteredUsers.map((u: any) => u.pushToken).filter(Boolean) as string[];
+            targets = filteredUsers.map((u: any) => ({ id: u.id, pushToken: u.pushToken || null }));
         }
 
-        if (targetTokens.length === 0) {
-            return res.status(400).json({ success: false, error: { message: 'Bildirim gönderilecek geçerli kullanıcı bulunamadı (Cihaz bildirimi kapalı veya oturum açılmamış olabilir).' } });
+        if (targets.length === 0) {
+            return res.status(400).json({ success: false, error: { message: 'Bildirim gönderilecek kullanıcı bulunamadı.' } });
         }
 
-        for (const token of targetTokens) {
-            await pushNotificationService.sendNotification({
-                to: token,
-                title: title,
-                body: body,
-                data: { type: 'bulk_admin_campaign' }
-            }).catch(console.error);
+        const adminId = (req as any).user.id;
+
+        // Her kullanıcı için işlem yap
+        for (const target of targets) {
+            try {
+                if (isDatabaseAvailable && !target.id.startsWith('mock-')) {
+                    // 1. Konuşma bul veya oluştur
+                    let conv = await prisma.conversation.findFirst({
+                        where: {
+                            OR: [
+                                { participant1Id: adminId, participant2Id: target.id },
+                                { participant1Id: target.id, participant2Id: adminId },
+                            ],
+                            jobPostId: null
+                        }
+                    });
+
+                    if (!conv) {
+                        conv = await prisma.conversation.create({
+                            data: {
+                                participant1Id: adminId,
+                                participant2Id: target.id,
+                            }
+                        });
+                    }
+
+                    // 2. Mesajı kaydet
+                    await prisma.message.create({
+                        data: {
+                            conversationId: conv.id,
+                            senderId: adminId,
+                            recipientId: target.id,
+                            content: body,
+                            messageType: 'TEXT',
+                        }
+                    });
+
+                    // 3. Konuşmayı güncelle (preview ve unread count)
+                    const isPart1 = conv.participant1Id === target.id;
+                    await prisma.conversation.update({
+                        where: { id: conv.id },
+                        data: {
+                            lastMessageAt: new Date(),
+                            lastMessagePreview: body.substring(0, 100),
+                            [isPart1 ? 'unreadCountParticipant1' : 'unreadCountParticipant2']: { increment: 1 }
+                        }
+                    });
+                }
+
+                // 4. Push bildirimi gönder
+                if (target.pushToken) {
+                    await pushNotificationService.sendNotification({
+                        to: target.pushToken,
+                        title: title,
+                        body: body,
+                        data: { type: 'bulk_admin_campaign' }
+                    }).catch(console.error);
+                }
+            } catch (err) {
+                console.error(`Error sending bulk to user ${target.id}:`, err);
+            }
         }
 
         return res.json({
             success: true,
-            data: { message: `${targetTokens.length} cihaza bildirim gönderim işlemi başlatıldı.` }
+            data: { message: `${targets.length} kullanıcıya mesaj ve bildirim işlemi tamamlandı.` }
         });
 
     } catch (error: any) {
