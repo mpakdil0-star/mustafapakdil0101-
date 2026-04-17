@@ -48,7 +48,7 @@ export const impersonateUser = async (req: Request, res: Response, next: NextFun
             // Mock storage'dan bul
             const mockUser = mockStorage.get(userId);
             if (mockUser) {
-                targetUser = { id: userId, ...mockUser };
+                targetUser = { ...mockUser };
             }
         }
 
