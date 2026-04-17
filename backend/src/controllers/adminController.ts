@@ -1218,7 +1218,10 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
             // Soft delete
             await prisma.user.update({
                 where: { id },
-                data: { deletedAt: new Date() }
+                data: { 
+                    deletedAt: new Date(),
+                    isActive: false
+                }
             });
             return res.json({ success: true, message: 'Kullanıcı silindi.' });
         }
