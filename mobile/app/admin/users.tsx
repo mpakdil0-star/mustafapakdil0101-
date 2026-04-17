@@ -326,9 +326,15 @@ export default function AdminUsersScreen() {
                     <Text style={styles.userPhone}>{item.phone || 'Telefon yok'}</Text>
                 </View>
                 <View style={styles.userTypeContainer}>
-                    <View style={[styles.userTypeBadge, { backgroundColor: item.userType === 'ELECTRICIAN' ? colors.primary + '15' : '#F1F5F9' }]}>
-                        <Text style={[styles.userTypeText, { color: item.userType === 'ELECTRICIAN' ? colors.primary : staticColors.textSecondary }]}>
-                            {item.userType === 'ELECTRICIAN' ? 'Usta' : 'Vatandaş'}
+                    <View style={[
+                        styles.userTypeBadge, 
+                        { backgroundColor: item.userType === 'ADMIN' ? '#7C3AED15' : (item.userType === 'ELECTRICIAN' ? colors.primary + '15' : '#F1F5F9') }
+                    ]}>
+                        <Text style={[
+                            styles.userTypeText, 
+                            { color: item.userType === 'ADMIN' ? '#7C3AED' : (item.userType === 'ELECTRICIAN' ? colors.primary : staticColors.textSecondary) }
+                        ]}>
+                            {item.userType === 'ADMIN' ? 'Yönetici' : (item.userType === 'ELECTRICIAN' ? 'Usta' : 'Vatandaş')}
                         </Text>
                     </View>
                     {item.isAuthorizedEngineer && (
