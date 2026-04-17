@@ -386,7 +386,7 @@ export const mockStorage = {
 
         return {
             id: userId,
-            fullName: isAdmin ? 'Yönetici' : ((store.fullName && store.fullName.trim() !== '') ? store.fullName : 'Test Kullanıcısı'),
+            fullName: isAdmin ? 'İşBitir' : ((store.fullName && store.fullName.trim() !== '') ? store.fullName : 'Test Kullanıcısı'),
             email: store.email || 'mock@example.com',
             passwordHash: store.passwordHash,
             phone: store.phone || '',

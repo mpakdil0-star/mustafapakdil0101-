@@ -1182,7 +1182,10 @@ export const sendBulkPushNotifications = async (req: Request, res: Response, nex
                         to: target.pushToken,
                         title: title,
                         body: body,
-                        data: { type: 'bulk_admin_campaign' }
+                        data: { 
+                            type: 'bulk_admin_campaign',
+                            conversationId: isDatabaseAvailable && !target.id.startsWith('mock-') ? (conv as any)?.id : undefined
+                        }
                     }).catch(console.error);
                 }
             } catch (err) {

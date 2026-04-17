@@ -292,7 +292,7 @@ export default function ProfileScreen() {
                     {user?.userType === 'ELECTRICIAN'
                       ? (SERVICE_CATEGORIES.find(c => c.id === (user as any)?.electricianProfile?.serviceCategory)?.name?.toUpperCase() || 'USTA')
                       : user?.userType === 'ADMIN'
-                        ? 'YÖNETİCİ'
+                        ? 'İŞBİTİR'
                         : 'BİREYSEL'
                     }
                   </Text>

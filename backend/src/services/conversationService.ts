@@ -382,7 +382,7 @@ export const conversationService = {
 
         // 🛡️ Admin name override
         if (otherUser && (otherUser.email === 'mpakdil0@gmail.com' || otherUser.userType === 'ADMIN')) {
-            otherUser.fullName = 'Yönetici';
+            otherUser.fullName = 'İşBitir';
             otherUser.userType = 'ADMIN';
         }
 
