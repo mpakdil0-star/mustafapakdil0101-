@@ -218,8 +218,9 @@ export default function AdminUsersScreen() {
                                         email: user.email,
                                         fullName: user.fullName,
                                         userType: user.userType,
-                                        isVerified: user.isVerified,
+                                        isVerified: true, // Admin test amacıyla girildiği için doğrulama ekranına takılmasın diye zorla true yapıyoruz
                                     },
+
                                     accessToken,
                                 }));
                                 Alert.alert(
