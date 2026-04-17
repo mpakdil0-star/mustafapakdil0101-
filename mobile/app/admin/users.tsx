@@ -61,9 +61,72 @@ export default function AdminUsersScreen() {
     const [isSubmittingCredit, setIsSubmittingCredit] = useState(false);
     const [expandedLocations, setExpandedLocations] = useState<Set<string>>(new Set());
     const [expandedInfo, setExpandedInfo] = useState<Set<string>>(new Set());
-    const [messagingUserId, setMessagingUserId] = useState<string | null>(null); // Mesaj gönder loading state
-    const [impersonatingUserId, setImpersonatingUserId] = useState<string | null>(null); // Hesaba geçiş loading state
+    const [messagingUserId, setMessagingUserId] = useState<string | null>(null); 
+    const [impersonatingUserId, setImpersonatingUserId] = useState<string | null>(null); 
     const dispatch = useDispatch();
+
+    // Bulk Notification State
+    const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const [bulkNotifModalVisible, setBulkNotifModalVisible] = useState(false);
+    const [bulkNotifTitle, setBulkNotifTitle] = useState('');
+    const [bulkNotifBody, setBulkNotifBody] = useState('');
+    const [isSendingBulk, setIsSendingBulk] = useState(false);
+
+    const toggleUserSelection = (userId: string) => {
+        setExpandedLocations(new Set()); 
+        setExpandedInfo(new Set());
+        const next = new Set(selectedUsers);
+        if (next.has(userId)) {
+            next.delete(userId);
+        } else {
+            next.add(userId);
+        }
+        setIsSelectionMode(next.size > 0);
+        setSelectedUsers(next);
+    };
+
+    const handleSelectAll = () => {
+        if (selectedUsers.size === users.length && users.length > 0) {
+            setSelectedUsers(new Set());
+            setIsSelectionMode(false);
+        } else if (users.length > 0) {
+            setSelectedUsers(new Set(users.map(u => u.id)));
+            setIsSelectionMode(true);
+        }
+    };
+
+    const sendBulkNotification = async () => {
+        if (!bulkNotifTitle.trim() || !bulkNotifBody.trim()) {
+            Alert.alert('Hata', 'Lütfen duyuru başlığı ve metni giriniz.');
+            return;
+        }
+
+        setIsSendingBulk(true);
+        try {
+            const userIdArray = selectedUsers.size > 0 ? Array.from(selectedUsers) : 'ALL';
+            
+            const res = await api.post('/admin/notifications/bulk', {
+                userIds: userIdArray,
+                title: bulkNotifTitle,
+                body: bulkNotifBody
+            });
+
+            if (res.data.success) {
+                Alert.alert('Başarılı', res.data.data.message || 'Bildirimler gönderildi.');
+                setBulkNotifModalVisible(false);
+                setSelectedUsers(new Set());
+                setIsSelectionMode(false);
+                setBulkNotifTitle('');
+                setBulkNotifBody('');
+            }
+        } catch (error: any) {
+            const msg = error.response?.data?.error?.message || 'Bildirim gönderilemedi.';
+            Alert.alert('Hata', msg);
+        } finally {
+            setIsSendingBulk(false);
+        }
+    };
 
     const toggleLocation = (userId: string) => {
         setExpandedLocations(prev => {
@@ -271,9 +334,19 @@ export default function AdminUsersScreen() {
         }
     };
 
-    const renderUserItem = ({ item }: { item: User }) => (
-        <View
-            style={[styles.userCard, !item.isActive && styles.userCardInactive]}
+    const renderUserItem = ({ item }: { item: User }) => {
+        const isSelected = selectedUsers.has(item.id);
+
+        return (
+        <TouchableOpacity
+            style={[
+                styles.userCard, 
+                !item.isActive && styles.userCardInactive,
+                isSelected && { borderColor: colors.primary, borderWidth: 2 }
+            ]}
+            onLongPress={() => toggleUserSelection(item.id)}
+            onPress={() => isSelectionMode ? toggleUserSelection(item.id) : null}
+            activeOpacity={isSelectionMode ? 0.8 : 1}
         >
             <View style={styles.userHeader}>
                 <View style={[styles.avatar, { backgroundColor: item.userType === 'ELECTRICIAN' ? colors.primary + '20' : '#F1F5F9' }]}>
@@ -461,7 +534,7 @@ export default function AdminUsersScreen() {
                     <Text style={[styles.actionBtnText, { color: '#F59E0B' }]}>Giriş</Text>
                 </TouchableOpacity>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 
     const FilterButton = ({ type, label }: { type: FilterType; label: string }) => (
@@ -506,6 +579,18 @@ export default function AdminUsersScreen() {
                     <FilterButton type="ELECTRICIAN" label="Usta" />
                     <FilterButton type="ENGINEER" label="Yetkili Müh" />
                 </ScrollView>
+            </View>
+
+            {/* Toplu İşlem & Seçim Alanı */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}>
+                <TouchableOpacity onPress={handleSelectAll} style={{ paddingVertical: 8 }}>
+                    <Text style={{ color: colors.primary, fontFamily: fonts.bold }}>{selectedUsers.size === users.length && users.length > 0 ? 'Tüm Seçimi Kaldır' : 'Tümünü Seç'}</Text>
+                </TouchableOpacity>
+                {(selectedUsers.size > 0 || users.length > 0) && (
+                    <TouchableOpacity onPress={() => setBulkNotifModalVisible(true)} style={{ backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 }}>
+                        <Text style={{ color: '#fff', fontFamily: fonts.bold }}>{selectedUsers.size > 0 ? `${selectedUsers.size} Kişiye Duyuru` : 'Herkese Duyuru'}</Text>
+                    </TouchableOpacity>
+                )}
             </View>
 
             {loading && users.length === 0 ? (
@@ -588,6 +673,67 @@ export default function AdminUsersScreen() {
                                     <ActivityIndicator size="small" color="#fff" />
                                 ) : (
                                     <Text style={styles.modalBtnTextConfirm}>Ekle</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
+
+            {/* Bulk Notification Modal */}
+            <Modal
+                transparent
+                visible={bulkNotifModalVisible}
+                animationType="slide"
+                onRequestClose={() => setBulkNotifModalVisible(false)}
+            >
+                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { width: '90%' }]}>
+                        <View style={[styles.iconCircle, { backgroundColor: colors.primary + '20' }]}>
+                            <Ionicons name="megaphone" size={32} color={colors.primary} />
+                        </View>
+                        <Text style={styles.modalTitle}>Duyuru Gönder</Text>
+                        <Text style={styles.modalSubtitle}>{selectedUsers.size > 0 ? `${selectedUsers.size} kullanıcıya` : 'Tüm kullanıcılara'} Push Bildirimi gönderilecek.</Text>
+
+                        <Text style={{ fontFamily: fonts.bold, color: staticColors.text, alignSelf: 'flex-start', marginTop: 10 }}>Başlık</Text>
+                        <TextInput
+                            style={[styles.modalInput, { borderColor: colors.primary, marginTop: 4 }]}
+                            placeholder="Bildirim Başlığı"
+                            placeholderTextColor={staticColors.textLight}
+                            value={bulkNotifTitle}
+                            onChangeText={setBulkNotifTitle}
+                        />
+
+                        <Text style={{ fontFamily: fonts.bold, color: staticColors.text, alignSelf: 'flex-start', marginTop: 10 }}>İçerik</Text>
+                        <TextInput
+                            style={[styles.modalInput, { borderColor: colors.primary, marginTop: 4, height: 80, textAlignVertical: 'top' }]}
+                            placeholder="Mesajınız..."
+                            placeholderTextColor={staticColors.textLight}
+                            multiline
+                            numberOfLines={3}
+                            value={bulkNotifBody}
+                            onChangeText={setBulkNotifBody}
+                        />
+
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity
+                                style={[styles.modalBtn, styles.modalBtnCancel]}
+                                onPress={() => setBulkNotifModalVisible(false)}
+                            >
+                                <Text style={styles.modalBtnTextCancel}>İptal</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalBtn, { backgroundColor: colors.primary }]}
+                                onPress={sendBulkNotification}
+                                disabled={isSendingBulk}
+                            >
+                                {isSendingBulk ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                        <Ionicons name="send" size={16} color="#fff" />
+                                        <Text style={styles.modalBtnTextConfirm}>Gönder</Text>
+                                    </View>
                                 )}
                             </TouchableOpacity>
                         </View>

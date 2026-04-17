@@ -66,5 +66,8 @@ router.delete('/jobs/:id', authenticate, adminMiddleware, adminController.delete
 // POST /admin/impersonate/:userId - Admin olarak başka bir hesaba geçici giriş yap
 router.post('/impersonate/:userId', authenticate, adminMiddleware, adminController.impersonateUser);
 
+// POST /admin/notifications/bulk - Bulk Push Notifications
+router.post('/notifications/bulk', authenticate, adminMiddleware, adminController.sendBulkPushNotifications);
+
 export default router;
 

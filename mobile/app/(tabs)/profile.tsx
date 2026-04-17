@@ -291,7 +291,9 @@ export default function ProfileScreen() {
                   <Text style={[styles.typeBadgeText, { color: colors.primary }]}>
                     {user?.userType === 'ELECTRICIAN'
                       ? (SERVICE_CATEGORIES.find(c => c.id === (user as any)?.electricianProfile?.serviceCategory)?.name?.toUpperCase() || 'USTA')
-                      : 'BİREYSEL'
+                      : user?.userType === 'ADMIN'
+                        ? 'YÖNETİCİ'
+                        : 'BİREYSEL'
                     }
                   </Text>
                 </View>

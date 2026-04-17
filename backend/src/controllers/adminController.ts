@@ -1085,4 +1085,67 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
     }
 };
 
+/**
+ * Toplu Push Bildirimi Gönderme
+ */
+export const sendBulkPushNotifications = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { userIds, title, body } = req.body;
+
+        if (!title || !body) {
+            return res.status(400).json({ success: false, error: { message: 'Başlık ve içerik gereklidir.' } });
+        }
+
+        let targetTokens: string[] = [];
+
+        if (isDatabaseAvailable) {
+            let filter: any = {};
+            if (userIds !== 'ALL' && Array.isArray(userIds) && userIds.length > 0) {
+                filter = { id: { in: userIds } };
+            }
+
+            const users = await prisma.user.findMany({
+                where: {
+                    ...filter,
+                    pushToken: { not: null },
+                    pushStatus: { not: 'DISABLED' } // Sadece DISABLED olmayanlar
+                },
+                select: { pushToken: true }
+            });
+
+            targetTokens = users.map(u => u.pushToken).filter(Boolean) as string[];
+        } else {
+            // Mock mode
+            const allUsers = Object.values(mockStorage.getAll() as any);
+            const filteredUsers = userIds === 'ALL' 
+                ? allUsers 
+                : allUsers.filter((u: any) => Array.isArray(userIds) && userIds.includes(u.id));
+
+            targetTokens = filteredUsers.map((u: any) => u.pushToken).filter(Boolean) as string[];
+        }
+
+        if (targetTokens.length === 0) {
+            return res.status(400).json({ success: false, error: { message: 'Bildirim gönderilecek geçerli kullanıcı bulunamadı (Cihaz bildirimi kapalı veya oturum açılmamış olabilir).' } });
+        }
+
+        for (const token of targetTokens) {
+            await pushNotificationService.sendNotification({
+                to: token,
+                title: title,
+                body: body,
+                data: { type: 'bulk_admin_campaign' }
+            }).catch(console.error);
+        }
+
+        return res.json({
+            success: true,
+            data: { message: `${targetTokens.length} cihaza bildirim gönderim işlemi başlatıldı.` }
+        });
+
+    } catch (error: any) {
+        console.error('Bulk push error:', error);
+        return res.status(500).json({ success: false, error: { message: 'Bildirimler gönderilirken sunucu hatası oluştu.' } });
+    }
+};
+
 
