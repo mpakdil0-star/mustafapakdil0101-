@@ -5,6 +5,103 @@ import { notifyUser } from '../server';
 import pushNotificationService from '../services/pushNotificationService';
 import { jobStoreById, deleteMockJob, loadMockJobs } from './jobController';
 import { mockTransactionStorage } from '../utils/mockStorage';
+import jwt from 'jsonwebtoken';
+import { config } from '../config/env';
+
+// Master admin e-posta adresi — sadece bu hesap impersonate işlemi yapabilir
+const MASTER_ADMIN_EMAIL = 'mpakdil0@gmail.com';
+
+/**
+ * Admin olarak başka bir kullanıcının hesabına geçici giriş yap (Impersonation)
+ * SADECE master admin (mpakdil0@gmail.com) kullanabilir.
+ */
+export const impersonateUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const adminUser = (req as any).user;
+
+        // Güvenlik: Sadece master admin bu işlemi yapabilir
+        if (adminUser.email !== MASTER_ADMIN_EMAIL) {
+            return res.status(403).json({
+                success: false,
+                error: { message: 'Bu işlem yalnızca baş yönetici tarafından kullanılabilir.' }
+            });
+        }
+
+        const { userId } = req.params;
+
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                error: { message: 'Kullanıcı ID gereklidir.' }
+            });
+        }
+
+        let targetUser: any = null;
+
+        // DB'den kullanıcıyı bul
+        if (isDatabaseAvailable && !userId.startsWith('mock-')) {
+            targetUser = await prisma.user.findUnique({
+                where: { id: userId },
+                select: { id: true, email: true, fullName: true, userType: true, isActive: true }
+            });
+        } else {
+            // Mock storage'dan bul
+            const mockUser = mockStorage.get(userId);
+            if (mockUser) {
+                targetUser = { id: userId, ...mockUser };
+            }
+        }
+
+        if (!targetUser) {
+            return res.status(404).json({
+                success: false,
+                error: { message: 'Kullanıcı bulunamadı.' }
+            });
+        }
+
+        // Kendi hesabına bürünmeye çalışıyor mu?
+        if (targetUser.id === adminUser.id) {
+            return res.status(400).json({
+                success: false,
+                error: { message: 'Kendi hesabınıza bürünemezsiniz.' }
+            });
+        }
+
+        // 4 saatlik geçici token üret (isImpersonated flag ile)
+        const impersonatedToken = jwt.sign(
+            {
+                id: targetUser.id,
+                email: targetUser.email,
+                userType: targetUser.userType,
+                isImpersonated: true,
+                impersonatedBy: adminUser.email,
+            },
+            config.jwtSecret,
+            { expiresIn: '4h' } as any
+        );
+
+        console.log(`🔐 [IMPERSONATION] Admin ${adminUser.email} → User ${targetUser.email} (${targetUser.userType})`);
+
+        return res.json({
+            success: true,
+            data: {
+                accessToken: impersonatedToken,
+                user: {
+                    id: targetUser.id,
+                    email: targetUser.email,
+                    fullName: targetUser.fullName,
+                    userType: targetUser.userType,
+                },
+                isImpersonated: true,
+                impersonatedBy: adminUser.email,
+                expiresIn: '4 saat'
+            }
+        });
+    } catch (error) {
+        console.error('Error in impersonateUser:', error);
+        next(error);
+    }
+};
 
 const hasValidDocument = (docs: any): boolean => {
     if (!docs) return false;

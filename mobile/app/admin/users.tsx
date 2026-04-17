@@ -7,8 +7,12 @@ import { colors as staticColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
-import api from '../../services/api';
+import api, { apiService } from '../../services/api';
 import { getFileUrl } from '../../constants/api';
+import { useDispatch } from 'react-redux';
+import { setUser } from '../../store/slices/authSlice';
+
+
 
 interface User {
     id: string;
@@ -56,6 +60,8 @@ export default function AdminUsersScreen() {
     const [expandedLocations, setExpandedLocations] = useState<Set<string>>(new Set());
     const [expandedInfo, setExpandedInfo] = useState<Set<string>>(new Set());
     const [messagingUserId, setMessagingUserId] = useState<string | null>(null); // Mesaj gönder loading state
+    const [impersonatingUserId, setImpersonatingUserId] = useState<string | null>(null); // Hesaba geçiş loading state
+    const dispatch = useDispatch();
 
     const toggleLocation = (userId: string) => {
         setExpandedLocations(prev => {
@@ -183,6 +189,51 @@ export default function AdminUsersScreen() {
         } finally {
             setMessagingUserId(null);
         }
+    };
+
+    // Admin olarak başka bir kullanıcının hesabına geçici giriş yap
+    const handleImpersonate = async (targetUser: User) => {
+        Alert.alert(
+            '🔐 Hesaba Geçiş',
+            `"${targetUser.fullName}" adlı kullanıcının hesabına 4 saatliğine giriş yapmak istediğinizden emin misiniz?\n\nGeri dönmek için çıkış yapıp kendi hesabınızla giriş yapabilirsiniz.`,
+            [
+                { text: 'İptal', style: 'cancel' },
+                {
+                    text: 'Geçiş Yap',
+                    style: 'destructive',
+                    onPress: async () => {
+                        setImpersonatingUserId(targetUser.id);
+                        try {
+                            const response = await api.post(`/admin/impersonate/${targetUser.id}`);
+                            if (response.data.success) {
+                                const { accessToken, user } = response.data.data;
+                                // Yeni token'ı kaydet (refresh token olmadan — 4 saat geçerli)
+                                await apiService.setTokens(accessToken, '');
+                                // Redux store'u güncelle
+                                dispatch(setUser({
+                                    id: user.id,
+                                    email: user.email,
+                                    fullName: user.fullName,
+                                    userType: user.userType,
+                                    isVerified: false,
+                                }));
+
+                                Alert.alert(
+                                    '✅ Geçiş Başarılı',
+                                    `"${user.fullName}" hesabına geçildi. Ana sayfaya yönlendiriliyorsunuz.\n\nNot: Bu oturum 4 saat geçerlidir.`,
+                                    [{ text: 'Tamam', onPress: () => router.replace('/(tabs)') }]
+                                );
+                            }
+                        } catch (error: any) {
+                            const msg = error.response?.data?.error?.message || 'Hesaba geçiş başarısız oldu.';
+                            Alert.alert('Hata', msg);
+                        } finally {
+                            setImpersonatingUserId(null);
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const handleAddCredit = async () => {
@@ -379,6 +430,18 @@ export default function AdminUsersScreen() {
                 >
                     <Ionicons name={expandedInfo.has(item.id) ? 'chevron-up-outline' : 'information-circle-outline'} size={16} color="#6366F1" />
                     <Text style={[styles.actionBtnText, { color: '#6366F1' }]}>Bilgi</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.actionBtn, { backgroundColor: '#F59E0B15' }]}
+                    onPress={() => handleImpersonate(item)}
+                    disabled={impersonatingUserId === item.id}
+                >
+                    {impersonatingUserId === item.id ? (
+                        <ActivityIndicator size={14} color="#F59E0B" />
+                    ) : (
+                        <Ionicons name="log-in-outline" size={16} color="#F59E0B" />
+                    )}
+                    <Text style={[styles.actionBtnText, { color: '#F59E0B' }]}>Giriş</Text>
                 </TouchableOpacity>
             </View>
         </View>

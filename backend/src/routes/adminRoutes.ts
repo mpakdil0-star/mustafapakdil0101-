@@ -63,4 +63,8 @@ router.get('/jobs', authenticate, adminMiddleware, adminController.getAllJobs);
 
 router.delete('/jobs/:id', authenticate, adminMiddleware, adminController.deleteJob);
 
+// POST /admin/impersonate/:userId - Admin olarak başka bir hesaba geçici giriş yap
+router.post('/impersonate/:userId', authenticate, adminMiddleware, adminController.impersonateUser);
+
 export default router;
+
