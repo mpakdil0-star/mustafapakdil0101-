@@ -145,7 +145,8 @@ function RootLayoutNav() {
 
         // Profile completion check for professionals
         if (user?.userType === 'ELECTRICIAN') {
-          const isIncomplete = checkIsProfileIncomplete(user);
+          const isIncomplete = user?.isImpersonated ? false : checkIsProfileIncomplete(user);
+
 
           // Check if user has already completed profile setup at least once
           const { getItemAsync, setItemAsync } = await import('expo-secure-store');

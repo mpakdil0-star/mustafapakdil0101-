@@ -219,7 +219,9 @@ export default function AdminUsersScreen() {
                                         fullName: user.fullName,
                                         userType: user.userType,
                                         isVerified: true, // Admin test amacıyla girildiği için doğrulama ekranına takılmasın diye zorla true yapıyoruz
+                                        isImpersonated: true,
                                     },
+
 
                                     accessToken,
                                 }));

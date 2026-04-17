@@ -12,6 +12,7 @@ interface User {
   district?: string;
   profileImageUrl?: string;
   isVerified: boolean;
+  isImpersonated?: boolean;
   acceptedLegalVersion?: string;
   specialties?: string[];
   electricianProfile?: {
