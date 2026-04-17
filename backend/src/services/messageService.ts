@@ -44,10 +44,11 @@ export const messageService = {
             },
             include: {
                 sender: {
-                    select: {
                         id: true,
                         fullName: true,
                         profileImageUrl: true,
+                        userType: true,
+                        email: true,
                     },
                 },
             },
@@ -85,11 +86,14 @@ export const messageService = {
                 // 2. Save Notification to DB (usually messages don't create separate notifications in list, 
                 // but for critical stuff they might. Here we just rely on unreadCount)
 
-                // 3. Send Push Notification if token exists
                 if (recipient.pushToken) {
+                    const senderTitle = (message.sender.userType === 'ADMIN' || message.sender.email === 'mpakdil0@gmail.com') 
+                        ? 'Yönetici' 
+                        : message.sender.fullName;
+                        
                     await pushNotificationService.sendNotification({
                         to: recipient.pushToken,
-                        title: message.sender.fullName,
+                        title: senderTitle,
                         body: messageType === 'TEXT' ? content : `[Fotoğraf Gönderildi]`,
                         data: { conversationId, type: 'new_message' }
                     });

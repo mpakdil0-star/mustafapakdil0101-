@@ -86,11 +86,14 @@ router.post('/', async (req, res) => {
     const { mockStorage } = require('../utils/mockStorage');
     const senderData = mockStorage.get(userId);
     const receiverData = mockStorage.get(receiverId);
-    if (receiverData?.pushToken) {
+      const senderTitle = (senderData?.userType === 'ADMIN' || senderData?.email === 'mpakdil0@gmail.com') 
+        ? 'Yönetici' 
+        : (senderData?.fullName || 'Birisi');
+        
       const pushNotificationService = require('../services/pushNotificationService').default;
       pushNotificationService.sendNotification({
         to: receiverData.pushToken,
-        title: `${senderData?.fullName || 'Birisi'} mesaj gönderdi 💬`,
+        title: `${senderTitle} mesaj gönderdi 💬`,
         body: content?.substring(0, 80) + (content?.length > 80 ? '...' : ''),
         data: { conversationId: conversation.id, type: 'new_message' }
       }).catch((err: any) => console.error('Push Notification Error:', err));
