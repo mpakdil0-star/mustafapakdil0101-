@@ -19,7 +19,8 @@ interface User {
     fullName: string;
     email: string;
     phone: string;
-    userType: 'CITIZEN' | 'ELECTRICIAN';
+    userType: 'CITIZEN' | 'ELECTRICIAN' | 'ADMIN';
+
     profileImageUrl?: string;
     creditBalance: number;
     isVerified: boolean;
@@ -280,7 +281,7 @@ export default function AdminUsersScreen() {
                         />
                     ) : (
                         <Ionicons
-                            name={item.userType === 'ELECTRICIAN' ? 'construct' : 'person'}
+                            name={item.userType === 'ADMIN' ? 'shield-checkmark' : (item.userType === 'ELECTRICIAN' ? 'construct' : 'person')}
                             size={24}
                             color={item.userType === 'ELECTRICIAN' ? colors.primary : staticColors.textSecondary}
                         />
