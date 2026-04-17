@@ -80,6 +80,7 @@ export const conversationService = {
                             fullName: true,
                             profileImageUrl: true,
                             userType: true,
+                            email: true,
                         },
                     },
                     participant2: {
@@ -88,6 +89,7 @@ export const conversationService = {
                             fullName: true,
                             profileImageUrl: true,
                             userType: true,
+                            email: true,
                         },
                     },
                     jobPost: {
