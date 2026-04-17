@@ -1107,8 +1107,7 @@ export const sendBulkPushNotifications = async (req: Request, res: Response, nex
             const users = await prisma.user.findMany({
                 where: {
                     ...filter,
-                    pushToken: { not: null },
-                    pushStatus: { not: 'DISABLED' } // Sadece DISABLED olmayanlar
+                    pushToken: { not: null }
                 },
                 select: { pushToken: true }
             });

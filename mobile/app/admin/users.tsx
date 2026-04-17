@@ -536,6 +536,7 @@ export default function AdminUsersScreen() {
             </View>
         </TouchableOpacity>
     );
+};
 
     const FilterButton = ({ type, label }: { type: FilterType; label: string }) => (
         <TouchableOpacity
