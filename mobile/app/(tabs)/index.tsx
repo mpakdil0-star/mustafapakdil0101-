@@ -435,7 +435,9 @@ export default function HomeScreen() {
             await AsyncStorage.setItem('push_activated', 'true');
             setShowPushBanner(false);
             // Silently ensure push token is registered
-            authService.registerPushToken().catch(() => {});
+            if (!user?.isImpersonated) {
+              authService.registerPushToken().catch(() => {});
+            }
             return;
           }
           // System permission NOT granted — show the fallback banner
@@ -468,8 +470,10 @@ export default function HomeScreen() {
             console.log('🔔 [HomeScreen] Permission granted after returning from settings — registering token...');
             await AsyncStorage.setItem('push_activated', 'true');
             setShowPushBanner(false);
-            await authService.registerPushToken();
-            try { await api.put('/users/notification-preferences', { pushEnabled: true }); } catch (e) { }
+            if (!user?.isImpersonated) {
+              await authService.registerPushToken();
+              try { await api.put('/users/notification-preferences', { pushEnabled: true }); } catch (e) { }
+            }
           }
         } catch (e) {
           console.warn('AppState permission check error:', e);

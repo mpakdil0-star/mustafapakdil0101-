@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, Switch, ScrollView, Platform, ImageBackground, ActivityIndicator, TouchableOpacity, Linking, Alert, AppState } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store/store';
 import * as SecureStore from 'expo-secure-store';
 import { Card } from '../../components/common/Card';
 import { colors as staticColors } from '../../constants/colors';
@@ -72,6 +74,7 @@ export default function NotificationsScreen() {
     const [savingKey, setSavingKey] = useState<string | null>(null);
     const [systemPermission, setSystemPermission] = useState<'granted' | 'denied' | 'unknown'>('unknown');
     const colors = useAppColors();
+    const { user } = useSelector((state: RootState) => state.auth);
     const appState = useRef(AppState.currentState);
     const previousPermission = useRef<string>('unknown');
 
@@ -89,6 +92,7 @@ export default function NotificationsScreen() {
             // If permission just changed from denied to granted, auto-register push token
             if (autoRegister && previousPermission.current === 'denied' && newPermission === 'granted') {
                 console.log('🔔 Permission changed to granted — auto-registering push token...');
+                if (user?.isImpersonated) return;
                 const result = await authService.registerPushToken();
                 if (result === 'granted') {
                     console.log('✅ Push token auto-registered after settings change!');
@@ -186,17 +190,24 @@ export default function NotificationsScreen() {
                 if (value === false) {
                     // Disable push: clear push token on backend
                     console.log('🔕 Push notifications disabled - clearing push token');
-                    try {
-                        await api.post('/users/push-token', { pushToken: null });
-                        console.log('✅ Push token cleared on backend');
-                    } catch (e) {
-                        console.warn('Could not clear push token on backend:', e);
+                    if (user?.isImpersonated) {
+                        console.log('🛡️ [IMPERSONATION] Skipping push token clear');
+                    } else {
+                        try {
+                            await api.post('/users/push-token', { pushToken: null });
+                            console.log('✅ Push token cleared on backend');
+                        } catch (e) {
+                            console.warn('Could not clear push token on backend:', e);
+                        }
                     }
                 } else {
                     // Enable push: re-register push token
                     console.log('🔔 Push notifications enabled - re-registering push token');
-                    try {
-                        const result = await authService.registerPushToken();
+                    if (user?.isImpersonated) {
+                         console.log('🛡️ [IMPERSONATION] Skipping push token registration');
+                    } else {
+                        try {
+                            const result = await authService.registerPushToken();
                         if (result === 'needs_settings') {
                             // Permission permanently denied – open system settings
                             Alert.alert(
@@ -302,6 +313,7 @@ export default function NotificationsScreen() {
                                         // Permission granted in-app! Register token immediately
                                         console.log('🔔 Permission granted in-app — registering push token...');
                                         setSystemPermission('granted');
+                                        if (user?.isImpersonated) return;
                                         const result = await authService.registerPushToken();
                                         if (result === 'granted') {
                                             const updatedPrefs = { ...preferences, pushEnabled: true };

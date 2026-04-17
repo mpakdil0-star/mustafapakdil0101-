@@ -9,6 +9,7 @@ export interface AuthRequest extends Request {
     id: string;
     email: string;
     userType: string;
+    isImpersonated?: boolean;
   };
 }
 
@@ -26,14 +27,10 @@ export const authenticate = async (
 
     const token = authHeader.substring(7);
 
-    let decoded: { id: string; email: string; userType: string };
+    let decoded: { id: string; email: string; userType: string; isImpersonated?: boolean };
 
     try {
-      decoded = jwt.verify(token, config.jwtSecret) as {
-        id: string;
-        email: string;
-        userType: string;
-      };
+      decoded = jwt.verify(token, config.jwtSecret) as any;
     } catch (jwtError: any) {
       if (jwtError.name === 'TokenExpiredError') {
         return next(new UnauthorizedError('Token expired'));
@@ -50,6 +47,7 @@ export const authenticate = async (
         id: decoded.id,
         email: decoded.email,
         userType: decoded.userType,
+        isImpersonated: decoded.isImpersonated,
       };
       return next();
     }
@@ -96,6 +94,7 @@ export const authenticate = async (
         id: user.id,
         email: user.email,
         userType: user.userType,
+        isImpersonated: decoded.isImpersonated,
       };
 
       // Non-blocking update of lastSeenAt
@@ -136,6 +135,7 @@ export const authenticate = async (
           id: decoded?.id || 'unknown',
           email: decoded?.email || 'unknown',
           userType: fallbackUserType || 'CITIZEN',
+          isImpersonated: decoded?.isImpersonated,
         };
         return next();
       } else {
@@ -165,11 +165,7 @@ export const optionalAuthenticate = async (
 
     // Token varsa decode etmeyi dene, ama başarısız olursa da devam et
     try {
-      const decoded = jwt.verify(token, config.jwtSecret) as {
-        id: string;
-        email: string;
-        userType: string;
-      };
+      const decoded = jwt.verify(token, config.jwtSecret) as any;
 
       // FAST PATH: Skip Prisma if database is not available or user is mock
       if (!isDatabaseAvailable || decoded.id.startsWith('mock-')) {
@@ -177,6 +173,7 @@ export const optionalAuthenticate = async (
           id: decoded.id,
           email: decoded.email,
           userType: decoded.userType,
+          isImpersonated: decoded.isImpersonated,
         };
         return next();
       }
@@ -200,6 +197,7 @@ export const optionalAuthenticate = async (
             id: user.id,
             email: user.email,
             userType: user.userType,
+            isImpersonated: decoded.isImpersonated,
           };
         }
         // User yoksa veya aktif değilse, req.user undefined kalır ama devam eder

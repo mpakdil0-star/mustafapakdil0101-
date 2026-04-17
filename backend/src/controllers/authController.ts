@@ -77,12 +77,14 @@ export const logoutController = async (
     if (userId) {
       if (!isDatabaseAvailable || userId.startsWith('mock-')) {
         mockStorage.updateProfile(userId, { pushToken: null });
-      } else {
-        await prisma.user.update({
-          where: { id: userId },
-          data: { pushToken: null },
-        });
-      }
+        // SADECE impersonate edilmemiş oturumlarda pushToken silinmeli.
+        // Eğer admin kullanıcı hesabı bürünmüşse (impersonate), o kullanıcının gerçek push token'ı silinmemeli.
+        if (!(req as any).user?.isImpersonated) {
+          await prisma.user.update({
+            where: { id: userId },
+            data: { pushToken: null },
+          });
+        }
       console.log(`📡 User ${userId} logged out, pushToken cleared.`);
     }
 

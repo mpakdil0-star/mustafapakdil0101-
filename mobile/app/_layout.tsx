@@ -223,6 +223,7 @@ function RootLayoutNav() {
 
     // Register Push Token on login — Device-based notification prompt (one-time per install)
     const requestNotificationPermission = async () => {
+      if (user?.isImpersonated) return; // Hesaba bürünülmüşse (Admin Modu) push kaydı yapma
       try {
         const { Platform } = await import('react-native');
         const Constants = (await import('expo-constants')).default;

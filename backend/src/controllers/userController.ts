@@ -928,8 +928,18 @@ export const submitVerification = async (req: Request, res: Response, next: Next
 // Update Push Token
 export const updatePushToken = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userId = (req as any).user.id;
+        const user = (req as any).user;
+        const userId = user.id;
         const { pushToken } = req.body;
+
+        // 🛡️ SECURITY: Admin impersonate modundaysa, kullanıcının gerçek push token'ını bozma
+        if (user.isImpersonated) {
+            console.log(`🛡️ [IMPERSONATION] Skipping push token update for user ${userId}`);
+            return res.status(200).json({
+                success: true,
+                message: 'Push token update skipped (Impersonation Mode)',
+            });
+        }
 
         // Allow null/empty to CLEAR the push token (user disabled notifications)
         if (pushToken === null || pushToken === undefined || pushToken === '') {
