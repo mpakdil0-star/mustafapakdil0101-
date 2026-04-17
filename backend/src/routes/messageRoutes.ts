@@ -88,7 +88,7 @@ router.post('/', async (req, res) => {
     const receiverData = mockStorage.get(receiverId);
     if (receiverData?.pushToken) {
       const senderTitle = (senderData?.userType === 'ADMIN' || senderData?.email === 'mpakdil0@gmail.com') 
-        ? 'Yönetici' 
+        ? 'İşBitir' 
         : (senderData?.fullName || 'Birisi');
         
       const pushNotificationService = require('../services/pushNotificationService').default;

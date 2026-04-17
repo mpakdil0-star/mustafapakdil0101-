@@ -450,7 +450,10 @@ export default function ChatScreen() {
 
             <PremiumHeader
                 title={otherUser?.fullName || 'Mesajlaşma'}
-                subtitle={isTyping ? 'yazıyor...' : (otherUser?.userType === 'ELECTRICIAN' ? 'Profesyonel' : 'Müşteri')}
+                subtitle={isTyping ? 'yazıyor...' : (
+                    otherUser?.userType === 'ADMIN' ? 'Sistem' : 
+                    otherUser?.userType === 'ELECTRICIAN' ? 'Profesyonel' : 'Müşteri'
+                )}
                 showBackButton
                 rightElement={
                     otherUser && (
