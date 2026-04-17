@@ -86,6 +86,7 @@ router.post('/', async (req, res) => {
     const { mockStorage } = require('../utils/mockStorage');
     const senderData = mockStorage.get(userId);
     const receiverData = mockStorage.get(receiverId);
+    if (receiverData?.pushToken) {
       const senderTitle = (senderData?.userType === 'ADMIN' || senderData?.email === 'mpakdil0@gmail.com') 
         ? 'Yönetici' 
         : (senderData?.fullName || 'Birisi');
