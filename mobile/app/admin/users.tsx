@@ -214,10 +214,7 @@ export default function AdminUsersScreen() {
                                 // Redux store'u atomik olarak güncelle (user + token birlikte)
                                 dispatch(impersonateLogin({
                                     user: {
-                                        id: user.id,
-                                        email: user.email,
-                                        fullName: user.fullName,
-                                        userType: user.userType,
+                                        ...user,
                                         isVerified: true, // Admin test amacıyla girildiği için doğrulama ekranına takılmasın diye zorla true yapıyoruz
                                         isImpersonated: true,
                                     },
