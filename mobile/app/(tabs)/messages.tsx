@@ -226,7 +226,9 @@ export default function MessagesScreen() {
           <EmptyState
             icon="chatbubbles-outline"
             title="Mesajları Görüntüle"
-            description="Mesajlarınızı görmek ve yeni mesaj göndermek için giriş yapmalısınız."
+            description={isElectrician 
+              ? "Gelen mesajları görmek ve müşterilerinizle iletişime geçmek için giriş yapmalısınız."
+              : "Mesajlarınızı görmek ve ustalarla iletişime geçmek için giriş yapmalısınız."}
             buttonTitle="Giriş Yap / Kayıt Ol"
             onButtonPress={() => setShowAuthModal(true)}
           />

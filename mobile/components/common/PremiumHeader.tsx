@@ -83,7 +83,7 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
     };
 
     const { user } = useAppSelector((state) => state.auth);
-    const isElectrician = user?.userType === 'ELECTRICIAN';
+    const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
 
     const gradientColors = variant === 'emergency'
         ? (colors.gradientEmergency as [string, string, ...string[]])

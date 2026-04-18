@@ -194,7 +194,9 @@ export default function ProfileScreen() {
             </View>
             <Text style={[styles.guestTitle, { color: colors.text }]}>Profilinizi Yönetin</Text>
             <Text style={[styles.guestSubtitle, { color: staticColors.textSecondary }]}>
-              Profilinizi oluşturarak ilan verebilir, teklif gönderebilir ve ustalarla anlık mesajlaşabilirsiniz.
+              {isElectrician 
+                ? "Profilinizi oluşturarak iş ilanlarına teklif verebilir ve müşterilerle anlık mesajlaşabilirsiniz."
+                : "Profilinizi oluşturarak kolayca ilan verebilir ve çevrenizdeki ustalarla anında iletişime geçebilirsiniz."}
             </Text>
 
             <Button
@@ -224,7 +226,12 @@ export default function ProfileScreen() {
           }}
           onRegister={() => {
             setShowAuthModal(false);
-            router.push('/(auth)/role-select');
+             router.push({
+              pathname: '/(auth)/register',
+              params: {
+                initialRole: isElectrician ? 'ELECTRICIAN' : 'CITIZEN',
+              }
+            });
           }}
         />
       </View>
