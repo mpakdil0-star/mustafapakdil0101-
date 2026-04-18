@@ -421,7 +421,7 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
         if (!isDatabaseAvailable) {
             // ... Existing Mock Logic ...
             const allUsers = mockStorage.getAllUsers();
-            const users = Object.values(allUsers);
+            const users = Object.values(allUsers).filter((u: any) => u.isActive !== false);
             const totalUsers = users.length;
             const totalElectricians = users.filter((u: any) => u.userType === 'ELECTRICIAN').length;
             const totalCitizens = users.filter((u: any) => u.userType === 'CITIZEN').length;
@@ -454,17 +454,17 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
             totalCitizens,
             activeJobs,
         ] = await Promise.all([
-            prisma.user.count({ where: { deletedAt: null } }),
-            prisma.user.count({ where: { userType: 'ELECTRICIAN' as any, deletedAt: null } }),
-            prisma.user.count({ where: { userType: 'CITIZEN' as any, deletedAt: null } }),
-            prisma.jobPost.count({ where: { status: 'OPEN' as any } }),
+            prisma.user.count({ where: { deletedAt: null, isActive: true } }),
+            prisma.user.count({ where: { userType: 'ELECTRICIAN' as any, deletedAt: null, isActive: true } }),
+            prisma.user.count({ where: { userType: 'CITIZEN' as any, deletedAt: null, isActive: true } }),
+            prisma.jobPost.count({ where: { status: 'OPEN' as any, deletedAt: null } }),
         ]);
 
         // Count pending verifications with documents
         const pendingWithDocsProfiles = await prisma.electricianProfile.findMany({
             where: {
                 verificationStatus: 'PENDING' as any,
-                user: { deletedAt: null },
+                user: { deletedAt: null, isActive: true },
                 NOT: {
                     verificationDocuments: {
                         equals: null as any
@@ -822,7 +822,7 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                 // Fetch dynamic city list from both users and locations
                 const [userCities, locationCities] = await Promise.all([
                     prisma.user.findMany({
-                        where: { city: { not: null, notIn: ['ALL', 'All', 'all'] }, deletedAt: null },
+                        where: { city: { not: null, notIn: ['ALL', 'All', 'all'] }, deletedAt: null, isActive: true },
                         select: { city: true },
                         distinct: ['city']
                     }),
@@ -855,15 +855,15 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
 
                 // 1. KPI Cards
                 const [totalCitizens, totalElectricians] = await Promise.all([
-                    prisma.user.count({ where: { userType: 'CITIZEN' as any, ...cityFilter, deletedAt: null } }),
-                    prisma.user.count({ where: { userType: 'ELECTRICIAN' as any, ...cityFilter, deletedAt: null } }),
+                    prisma.user.count({ where: { userType: 'CITIZEN' as any, ...cityFilter, deletedAt: null, isActive: true } }),
+                    prisma.user.count({ where: { userType: 'ELECTRICIAN' as any, ...cityFilter, deletedAt: null, isActive: true } }),
                 ]);
 
                 // Pending verifications
                 const pendingWithDocsProfiles = await prisma.electricianProfile.findMany({
                     where: {
                         verificationStatus: 'PENDING' as any,
-                        user: { deletedAt: null, ...cityFilter },
+                        user: { deletedAt: null, isActive: true, ...cityFilter },
                         NOT: {
                             verificationDocuments: { equals: null as any }
                         }
@@ -875,12 +875,18 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                 const categoryCounts = await prisma.electricianProfile.groupBy({
                     by: ['serviceCategory' as any],
                     _count: { _all: true },
-                    where: normalizedSearchCity ? { user: { ...cityFilter } } : {}
+                    where: {
+                        user: {
+                            deletedAt: null,
+                            isActive: true,
+                            ...(normalizedSearchCity ? cityFilter : {})
+                        }
+                    }
                 });
 
                 // 3. District Distribution (Citizens only)
                 const citizens = await prisma.user.findMany({
-                    where: { userType: 'CITIZEN' as any, ...cityFilter, deletedAt: null },
+                    where: { userType: 'CITIZEN' as any, ...cityFilter, deletedAt: null, isActive: true },
                     include: { locations: true }
                 });
                 
@@ -915,10 +921,10 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                 const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
                 const [activeUstalar, activeCitizens] = await Promise.all([
                     prisma.user.count({ 
-                        where: { userType: 'ELECTRICIAN' as any, ...cityFilter, deletedAt: null, lastSeenAt: { gte: last24h } } 
+                        where: { userType: 'ELECTRICIAN' as any, ...cityFilter, deletedAt: null, isActive: true, lastSeenAt: { gte: last24h } } 
                     }),
                     prisma.user.count({ 
-                        where: { userType: 'CITIZEN' as any, ...cityFilter, deletedAt: null, lastSeenAt: { gte: last24h } } 
+                        where: { userType: 'CITIZEN' as any, ...cityFilter, deletedAt: null, isActive: true, lastSeenAt: { gte: last24h } } 
                     }),
                 ]);
 
@@ -937,7 +943,7 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
 
                 const mastersInCity = await prisma.electricianProfile.findMany({
                     where: { 
-                        user: { deletedAt: null, ...cityFilter },
+                        user: { deletedAt: null, isActive: true, ...cityFilter },
                         ...(serviceCategory ? { serviceCategory } : {})
                     },
                     include: { user: { include: { locations: true } } }
