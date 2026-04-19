@@ -36,7 +36,8 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
     const router = useRouter();
     const segments = useSegments() as string[];
 
-    const { isAuthenticated, guestRole } = useAppSelector((state) => state.auth);
+    const { user, guestRole, isAuthenticated } = useAppSelector((state) => state.auth);
+    const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
     const shouldShowBackButton = showBackButton || (!isAuthenticated && !!guestRole);
 
     const handleBack = () => {
@@ -82,16 +83,14 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
         }
     };
 
-    const { user } = useAppSelector((state) => state.auth);
-    const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
-
     const gradientColors = variant === 'emergency'
         ? (colors.gradientEmergency as [string, string, ...string[]])
         : variant === 'transparent'
             ? (['transparent', 'transparent'] as [string, string, ...string[]])
             : isElectrician
                 ? ([colors.primary, colors.primary] as [string, string, ...string[]])
-                : ((colors as any).gradientHeaderAmethyst || [colors.primary + '88', colors.primaryLight + 'DD']) as [string, string, ...string[]];
+                : (colors.gradientHeaderAmethyst || [colors.primary + '88', colors.primaryLight + 'DD']) as [string, string, ...string[]];
+
 
     const isTransparent = variant === 'transparent';
     const headerTextColor = isTransparent ? colors.text : staticColors.white;

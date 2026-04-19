@@ -253,13 +253,14 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* User Profile Profile Card with Glass Glow */}
-        <View style={[styles.profileCardContainer, !isElectrician && { shadowColor: (colors as any).shadowAmethyst || colors.primary }]}>
+        <View style={[styles.profileCardContainer, { shadowColor: isElectrician ? colors.primary : (colors as any).shadowAmethyst || colors.primary }]}>
           <LinearGradient
-            colors={isElectrician ? [staticColors.white, '#F1F5F9'] : (colors as any).gradientAmethystLight || [staticColors.white, '#F5F3FF']}
-            style={[styles.profileCard, !isElectrician && { borderColor: (colors as any).borderAmethyst || 'rgba(167, 139, 250, 0.3)' }]}
+            colors={isElectrician ? [staticColors.white, '#F1F5F9'] : (colors.gradientAmethystLight || [staticColors.white, '#F5F3FF'])}
+            style={[styles.profileCard, !isElectrician && { borderColor: (colors.borderAmethyst || 'rgba(167, 139, 250, 0.3)') }]}
           >
             <View style={styles.avatarGlowWrapper}>
               <View style={[styles.avatarGlow, { backgroundColor: colors.primary + '30' }]} />
+
               <TouchableOpacity
                 onPress={handlePhotoOptions}
                 activeOpacity={0.9}
@@ -448,7 +449,6 @@ const styles = StyleSheet.create({
   profileCardContainer: {
     marginTop: -20,
     zIndex: 10,
-    shadowColor: staticColors.primary,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.12,
     shadowRadius: 20,
@@ -503,7 +503,6 @@ const styles = StyleSheet.create({
   avatarText: {
     fontFamily: fonts.extraBold,
     fontSize: 36,
-    color: staticColors.primary,
   },
   cameraIconBadge: {
     position: 'absolute',
@@ -588,7 +587,6 @@ const styles = StyleSheet.create({
     backgroundColor: staticColors.white,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.8)',
-    shadowColor: staticColors.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.04,
     shadowRadius: 12,

@@ -24,6 +24,8 @@ export default function MessagesScreen() {
   const colors = useAppColors();
   const dispatch = useAppDispatch();
   const { user, guestRole } = useAppSelector((state) => state.auth);
+  const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
+
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,11 +61,15 @@ export default function MessagesScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadConversations();
-    }, [loadConversations])
+      if (user) {
+        loadConversations();
+      }
+    }, [loadConversations, user])
   );
 
   useEffect(() => {
+    if (!user) return;
+
     socketService.connect();
 
     // Yeni mesaj veya bildirim geldiğinde listeyi güncelle
@@ -210,7 +216,7 @@ export default function MessagesScreen() {
     );
   }, [router, getOtherParticipant]);
 
-  const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
+
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   // If not authenticated, show guest state
@@ -221,6 +227,7 @@ export default function MessagesScreen() {
           title="Mesajlar"
           subtitle="Sohbetlerinizi buradan yönetin"
           layout="tab"
+          backgroundImage={require('../../assets/images/header_bg.png')}
         />
         <View style={styles.guestCardWrapper}>
           <EmptyState
@@ -280,28 +287,7 @@ export default function MessagesScreen() {
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[colors.primary]} />
         }
         ListEmptyComponent={() => {
-          if (!user) {
-            return (
-              <View style={styles.guestCardWrapper}>
-                <Card style={styles.guestCard} elevated>
-                  <View style={[styles.guestIconContainer, { backgroundColor: colors.primary + '10' }]}>
-                    <Ionicons name="chatbubbles-outline" size={60} color={colors.primary} />
-                  </View>
-                  <Text style={[styles.guestTitle, { color: colors.text }]}>Mesajlarınızı Yönetin</Text>
-                  <Text style={[styles.guestSubtitle, { color: staticColors.textSecondary }]}>
-                    Oturum açarak ustalara mesaj gönderebilir ve gelen teklifleri anlık olarak görüşebilirsiniz.
-                  </Text>
-                  <Button
-                    title="Giriş Yap / Kayıt Ol"
-                    onPress={() => router.push('/(auth)/login')}
-                    variant="primary"
-                    fullWidth
-                    style={styles.guestButton}
-                  />
-                </Card>
-              </View>
-            );
-          }
+
 
           return (
             <EmptyState

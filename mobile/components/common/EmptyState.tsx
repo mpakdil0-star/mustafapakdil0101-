@@ -34,11 +34,12 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         <View style={[styles.container, style]}>
             <Card variant="default" style={[
                 styles.card,
+                { shadowColor: isElectrician ? colors.primary : (colors as any).shadowAmethyst || colors.primary },
                 !isElectrician && {
-                    shadowColor: (colors as any).shadowAmethyst || colors.primary,
                     backgroundColor: (colors as any).backgroundAmethyst || colors.backgroundLight
                 }
             ]}>
+
                 <View style={[styles.iconCircle, { backgroundColor: colors.primary + '10' }]}>
                     <Ionicons name={icon} size={40} color={colors.primary} />
                     <View style={[styles.iconGlow, { backgroundColor: colors.primary + '20' }]} />
