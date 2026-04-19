@@ -215,7 +215,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </Card>
 
-          <Text style={[styles.versionText, { color: staticColors.textLight }]}>Versiyon 1.0.4 - Premium Misafir Modu</Text>
+          <Text style={[styles.versionText, { color: staticColors.textLight }]}>Versiyon 1.0.65 - Premium Misafir Modu</Text>
         </ScrollView>
         <AuthGuardModal
           visible={showAuthModal}
@@ -364,7 +364,7 @@ export default function ProfileScreen() {
           icon={<Ionicons name="log-out-outline" size={20} color={staticColors.white} />}
         />
 
-        <Text style={[styles.versionText, { color: staticColors.textLight }]}>Versiyon 1.0.5 - Premium</Text>
+        <Text style={[styles.versionText, { color: staticColors.textLight }]}>Versiyon 1.0.65 - Premium</Text>
       </ScrollView>
 
       {/* Logout Confirmation Modal - Glass Glow Theme */}
