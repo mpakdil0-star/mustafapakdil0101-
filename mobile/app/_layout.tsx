@@ -81,8 +81,9 @@ function RootLayoutNav() {
     const hasSpecialties = profile.specialties &&
       profile.specialties.length > 0 &&
       profile.specialties.some((s: string) => s !== 'Genel' && s !== 'Genel Elektrik');
+    const hasPhone = userData.phone && userData.phone.trim() !== ''; // Telefon kontrolü eklendi
 
-    return !hasExperience || !hasSpecialties;
+    return !hasExperience || !hasSpecialties || !hasPhone;
   }, []);
 
   useEffect(() => {

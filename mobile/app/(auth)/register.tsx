@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
+  Image,
 } from 'react-native';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,7 +18,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import LocationPicker from '../../components/common/LocationPicker';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
-import { register, getMe } from '../../store/slices/authSlice';
+import { register, getMe, googleLogin, appleLogin } from '../../store/slices/authSlice';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { validateEmail, validatePassword, validateRequired, validatePhone } from '../../utils/validation';
@@ -83,6 +84,8 @@ export default function RegisterScreen() {
     type?: 'success' | 'error' | 'warning' | 'info' | 'confirm';
     buttons?: { text: string; onPress: () => void; variant?: 'primary' | 'secondary' | 'danger' | 'ghost' }[];
   }>({ visible: false, title: '', message: '' });
+
+  const [socialLoading, setSocialLoading] = useState<'google' | 'apple' | null>(null);
 
   const [legalModal, setLegalModal] = useState<{ visible: boolean; type: string; title: string; content: string }>({
     visible: false,
@@ -211,6 +214,46 @@ export default function RegisterScreen() {
       }
     } catch (err) {
       console.error('Failed to load legal doc for modal:', err);
+    }
+  };
+
+  // ============================================================
+  // SOSYAL KAYIT
+  // ============================================================
+
+  const handleGoogleRegister = async () => {
+    setSocialLoading('google');
+    try {
+      await dispatch(googleLogin({ userType, serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined })).unwrap();
+      navigateAfterRegister();
+    } catch (err: any) {
+      if (err === 'CANCELLED') {
+        // Kullanıcı iptal etti
+      } else if (typeof err === 'string') {
+        showAlert('Google Kayıt Hatası', err, 'error');
+      } else {
+        showAlert('Google Kayıt Hatası', 'Google ile kayıt sırasında bir hata oluştu.', 'error');
+      }
+    } finally {
+      setSocialLoading(null);
+    }
+  };
+
+  const handleAppleRegister = async () => {
+    setSocialLoading('apple');
+    try {
+      await dispatch(appleLogin({ userType, serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined })).unwrap();
+      navigateAfterRegister();
+    } catch (err: any) {
+      if (err === 'CANCELLED') {
+        // Kullanıcı iptal etti
+      } else if (typeof err === 'string') {
+        showAlert('Apple Kayıt Hatası', err, 'error');
+      } else {
+        showAlert('Apple Kayıt Hatası', 'Apple ile kayıt sırasında bir hata oluştu.', 'error');
+      }
+    } finally {
+      setSocialLoading(null);
     }
   };
 
@@ -483,6 +526,47 @@ export default function RegisterScreen() {
 
             {/* Form */}
             <View style={styles.formSection}>
+              {/* ===== SOSYAL KAYIT BUTONLARI ===== */}
+              <TouchableOpacity
+                onPress={handleGoogleRegister}
+                disabled={isLoading || socialLoading !== null}
+                activeOpacity={0.8}
+                style={[styles.socialButton, socialLoading === 'google' && { opacity: 0.7 }]}
+              >
+                <View style={styles.socialButtonInner}>
+                  <Image
+                    source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}
+                    style={styles.socialIcon}
+                  />
+                  <Text style={styles.socialButtonText}>
+                    {socialLoading === 'google' ? 'Bağlanıyor...' : 'Google ile kayıt ol'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {Platform.OS === 'ios' && (
+                <TouchableOpacity
+                  onPress={handleAppleRegister}
+                  disabled={isLoading || socialLoading !== null}
+                  activeOpacity={0.8}
+                  style={[styles.socialButton, styles.socialButtonApple, socialLoading === 'apple' && { opacity: 0.7 }]}
+                >
+                  <View style={styles.socialButtonInner}>
+                    <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
+                    <Text style={[styles.socialButtonText, { color: '#FFFFFF' }]}>
+                      {socialLoading === 'apple' ? 'Bağlanıyor...' : 'Apple ile kayıt ol'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+
+              <View style={styles.socialDivider}>
+                <View style={styles.socialDividerLine} />
+                <Text style={styles.socialDividerText}>veya</Text>
+                <View style={styles.socialDividerLine} />
+              </View>
+              {/* ===== SOSYAL KAYIT BUTONLARI BİTİŞ ===== */}
+
               <Input
                 label="Ad Soyad"
                 placeholder="Ahmet Yılmaz"
@@ -982,5 +1066,52 @@ const styles = StyleSheet.create({
   changeBadgeText: {
     fontFamily: fonts.bold,
     fontSize: 12,
+  },
+  // ===== Sosyal Kayıt Buton Stilleri =====
+  socialButton: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  socialButtonApple: {
+    backgroundColor: '#000000',
+  },
+  socialButtonInner: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingVertical: 14,
+    gap: 12,
+  },
+  socialIcon: {
+    width: 20,
+    height: 20,
+  },
+  socialButtonText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
+    color: '#1F2937',
+  },
+  socialDivider: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    marginVertical: 16,
+  },
+  socialDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  socialDividerText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.5)',
+    marginHorizontal: 16,
   },
 });

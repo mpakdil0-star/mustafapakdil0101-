@@ -17,6 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.isbitir.app",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "NSCameraUsageDescription": "Arıza fotoğrafları çekebilmeniz için kameraya erişim izni gerekiyor.",
         "NSPhotoLibraryUsageDescription": "Galeriden fotoğraf seçebilmeniz için kütüphaneye erişim izni gerekiyor.",
@@ -54,7 +55,9 @@
           "enableBackgroundRemoteNotifications": true
         }
       ],
-      "expo-iap"
+      "expo-iap",
+      "expo-apple-authentication",
+      "@react-native-google-signin/google-signin"
     ],
     "scheme": "isbitir",
     "platforms": [

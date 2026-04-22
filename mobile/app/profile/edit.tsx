@@ -299,11 +299,14 @@ export default function EditProfileScreen() {
             return;
         }
         if (!phoneNumber || phoneNumber.trim() === '') {
-            // Ustalar için telefon alanı pasifse uyarı verme
-            if (!isElectrician) {
-                showValidationError('Lütfen telefon numarası alanını doldurunuz.');
-                return;
-            }
+            showValidationError('Lütfen telefon numaranızı giriniz.');
+            return;
+        }
+        // Telefon format kontrolü (en az 10 hane)
+        const cleanPhone = phoneNumber.replace(/\s/g, '');
+        if (cleanPhone.length < 10) {
+            showValidationError('Lütfen geçerli bir telefon numarası giriniz (en az 10 hane).');
+            return;
         }
 
         // Electrician-specific validations
@@ -488,14 +491,17 @@ export default function EditProfileScreen() {
                         />
 
                         <Input
-                            label="Telefon Numarası"
+                            label={mandatory ? "Telefon Numarası *" : "Telefon Numarası"}
                             value={phoneNumber}
                             onChangeText={setPhoneNumber}
                             placeholder="0555 555 55 55"
                             keyboardType="phone-pad"
                             containerStyle={styles.input}
-                            editable={false}
-                            helperText={"Bu bilgiler kayıt esnasında belirlenir ve değiştirilemez."}
+                            editable={!!mandatory}
+                            helperText={mandatory
+                                ? (phoneNumber ? undefined : "Ustalar için telefon numarası zorunludur.")
+                                : "Bu bilgiler kayıt esnasında belirlenir ve değiştirilemez."
+                            }
                         />
 
                         {user?.userType === 'ELECTRICIAN' && (

@@ -11,6 +11,7 @@ import {
   verifyEmailController,
 } from '../controllers/authController';
 import { googleLoginController } from '../controllers/googleAuthController';
+import { appleLoginController } from '../controllers/appleAuthController';
 import { authenticate } from '../middleware/auth';
 import { authLimiter, registerLimiter } from '../middleware/rateLimiter';
 import {
@@ -32,6 +33,7 @@ router.get('/me', authenticate, meController);
 router.post('/forgot-password', authLimiter, validate(forgotPasswordValidation), forgotPasswordController);
 router.post('/reset-password', authLimiter, validate(resetPasswordValidation), resetPasswordController);
 router.post('/google', authLimiter, googleLoginController);
+router.post('/apple', authLimiter, appleLoginController);
 router.post('/send-verification', authLimiter, sendEmailVerificationController);
 router.post('/verify-email', authLimiter, verifyEmailController);
 

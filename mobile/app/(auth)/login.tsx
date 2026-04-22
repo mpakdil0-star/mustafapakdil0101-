@@ -9,13 +9,14 @@ import {
   Alert,
   Animated,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
-import { login } from '../../store/slices/authSlice';
+import { login, googleLogin, appleLogin } from '../../store/slices/authSlice';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { validateEmail, validatePassword } from '../../utils/validation';
@@ -33,6 +34,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [socialLoading, setSocialLoading] = useState<'google' | 'apple' | null>(null);
 
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -157,6 +159,73 @@ export default function LoginScreen() {
       } else {
         showAlert('Giriş Hatası', errorMessage, 'error');
       }
+    }
+  };
+
+  // ============================================================
+  // SOSYAL GİRİŞ
+  // ============================================================
+
+  const handleGoogleLogin = async () => {
+    setSocialLoading('google');
+    try {
+      const result = await dispatch(googleLogin(undefined)).unwrap();
+      // Başarılı giriş
+      setTimeout(() => {
+        router.replace(redirectTo ? (redirectTo as any) : '/(tabs)');
+      }, 200);
+    } catch (err: any) {
+      if (err === 'CANCELLED') {
+        // Kullanıcı iptal etti, sessizce devam et
+      } else if (err?.code === 'USER_NOT_FOUND') {
+        showAlert(
+          'Hesap Bulunamadı',
+          'Bu Google hesabı ile kayıtlı kullanıcı bulunamadı. Kayıt olmak ister misiniz?',
+          'info',
+          [
+            { text: 'Vazgeç', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },
+            { text: 'Kayıt Ol', variant: 'primary', onPress: () => {
+              setAlertConfig(prev => ({ ...prev, visible: false }));
+              router.push({ pathname: '/(auth)/role-select', params: { redirectTo } });
+            }}
+          ]
+        );
+      } else if (typeof err === 'string') {
+        showAlert('Google Giriş Hatası', err, 'error');
+      }
+    } finally {
+      setSocialLoading(null);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    setSocialLoading('apple');
+    try {
+      const result = await dispatch(appleLogin(undefined)).unwrap();
+      setTimeout(() => {
+        router.replace(redirectTo ? (redirectTo as any) : '/(tabs)');
+      }, 200);
+    } catch (err: any) {
+      if (err === 'CANCELLED') {
+        // Kullanıcı iptal etti
+      } else if (err?.code === 'USER_NOT_FOUND') {
+        showAlert(
+          'Hesap Bulunamadı',
+          'Bu Apple hesabı ile kayıtlı kullanıcı bulunamadı. Kayıt olmak ister misiniz?',
+          'info',
+          [
+            { text: 'Vazgeç', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },
+            { text: 'Kayıt Ol', variant: 'primary', onPress: () => {
+              setAlertConfig(prev => ({ ...prev, visible: false }));
+              router.push({ pathname: '/(auth)/role-select', params: { redirectTo } });
+            }}
+          ]
+        );
+      } else if (typeof err === 'string') {
+        showAlert('Apple Giriş Hatası', err, 'error');
+      }
+    } finally {
+      setSocialLoading(null);
     }
   };
 
@@ -337,6 +406,41 @@ export default function LoginScreen() {
                   <View style={styles.dividerLine} />
                 </View>
 
+                {/* ===== SOSYAL GİRİŞ BUTONLARI ===== */}
+                <TouchableOpacity
+                  onPress={handleGoogleLogin}
+                  disabled={isLoading || socialLoading !== null}
+                  activeOpacity={0.8}
+                  style={[styles.socialButton, socialLoading === 'google' && { opacity: 0.7 }]}
+                >
+                  <View style={styles.socialButtonInner}>
+                    <Image
+                      source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}
+                      style={styles.socialIcon}
+                    />
+                    <Text style={styles.socialButtonText}>
+                      {socialLoading === 'google' ? 'Bağlanıyor...' : 'Google ile devam et'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
+                {Platform.OS === 'ios' && (
+                  <TouchableOpacity
+                    onPress={handleAppleLogin}
+                    disabled={isLoading || socialLoading !== null}
+                    activeOpacity={0.8}
+                    style={[styles.socialButton, styles.socialButtonApple, socialLoading === 'apple' && { opacity: 0.7 }]}
+                  >
+                    <View style={styles.socialButtonInner}>
+                      <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
+                      <Text style={[styles.socialButtonText, { color: '#FFFFFF' }]}>
+                        {socialLoading === 'apple' ? 'Bağlanıyor...' : 'Apple ile devam et'}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+                {/* ===== SOSYAL GİRİŞ BUTONLARI BİTİŞ ===== */}
+
                 <Button
                   title="Kayıt Ol"
                   onPress={() => router.push({
@@ -346,7 +450,7 @@ export default function LoginScreen() {
                   variant="outline"
                   fullWidth
                   disabled={isLoading}
-                  style={styles.registerBtn}
+                  style={[styles.registerBtn, { marginTop: 16 }]}
                   textStyle={{ color: colors.white }}
                 />
 
@@ -517,7 +621,7 @@ const styles = StyleSheet.create({
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: spacing.lg,
+    marginVertical: spacing.md,
   },
   dividerLine: {
     flex: 1,
@@ -530,6 +634,38 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.65)',
     marginHorizontal: spacing.lg,
   },
+  // ===== Sosyal Giriş Buton Stilleri =====
+  socialButton: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  socialButtonApple: {
+    backgroundColor: '#000000',
+  },
+  socialButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    gap: 12,
+  },
+  socialIcon: {
+    width: 20,
+    height: 20,
+  },
+  socialButtonText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
+    color: '#1F2937',
+  },
+  // ===== Sosyal Giriş Buton Stilleri Bitiş =====
   registerBtn: {
     borderRadius: 18,
     height: 56,

@@ -1,5 +1,12 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { authService, RegisterData, LoginData } from '../../services/authService';
+import {
+  signInWithGoogle,
+  googleLoginToBackend,
+  signInWithApple,
+  appleLoginToBackend,
+  configureGoogleSignIn,
+} from '../../services/socialAuthService';
 import Analytics from '../../services/analyticsService';
 
 interface User {
@@ -136,6 +143,71 @@ export const logout = createAsyncThunk(
   }
 );
 
+// ============================================================
+// SOSYAL GİRİŞ THUNK'LARI
+// ============================================================
+
+export const googleLogin = createAsyncThunk(
+  'auth/googleLogin',
+  async (params: { userType?: 'CITIZEN' | 'ELECTRICIAN'; serviceCategory?: string } | undefined, { rejectWithValue }) => {
+    try {
+      // 1. Google popup aç ve ID token al
+      const idToken = await signInWithGoogle();
+
+      // 2. Backend'e gönder
+      const result = await googleLoginToBackend(
+        idToken,
+        params?.userType,
+        params?.serviceCategory
+      );
+
+      return result;
+    } catch (error: any) {
+      // Kullanıcı iptal etti
+      if (error.message === 'CANCELLED') {
+        return rejectWithValue('CANCELLED');
+      }
+      // Backend 404 döndüyse (kullanıcı bulunamadı)
+      if (error?.response?.status === 404) {
+        const email = error?.response?.data?.error?.email;
+        return rejectWithValue({ code: 'USER_NOT_FOUND', email });
+      }
+      return rejectWithValue(handleAuthError(error, 'Google ile giriş başarısız oldu'));
+    }
+  }
+);
+
+export const appleLogin = createAsyncThunk(
+  'auth/appleLogin',
+  async (params: { userType?: 'CITIZEN' | 'ELECTRICIAN'; serviceCategory?: string } | undefined, { rejectWithValue }) => {
+    try {
+      // 1. Apple popup aç ve identity token + isim al
+      const { identityToken, fullName } = await signInWithApple();
+
+      // 2. Backend'e gönder
+      const result = await appleLoginToBackend(
+        identityToken,
+        fullName,
+        params?.userType,
+        params?.serviceCategory
+      );
+
+      return result;
+    } catch (error: any) {
+      // Kullanıcı iptal etti
+      if (error.message === 'CANCELLED') {
+        return rejectWithValue('CANCELLED');
+      }
+      // Backend 404 döndüyse (kullanıcı bulunamadı)
+      if (error?.response?.status === 404) {
+        const email = error?.response?.data?.error?.email;
+        return rejectWithValue({ code: 'USER_NOT_FOUND', email });
+      }
+      return rejectWithValue(handleAuthError(error, 'Apple ile giriş başarısız oldu'));
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -227,6 +299,33 @@ const authSlice = createSlice({
       .addCase(login.pending, handleAuthPending)
       .addCase(login.fulfilled, handleAuthFulfilled)
       .addCase(login.rejected, handleAuthRejected)
+      // Google Login
+      .addCase(googleLogin.pending, handleAuthPending)
+      .addCase(googleLogin.fulfilled, handleAuthFulfilled)
+      .addCase(googleLogin.rejected, (state, action) => {
+        state.isLoading = false;
+        // İptal durumunda hata gösterme
+        if (action.payload === 'CANCELLED') {
+          state.error = null;
+        } else if (typeof action.payload === 'object' && (action.payload as any)?.code === 'USER_NOT_FOUND') {
+          state.error = null; // Frontend kendisi handle edecek
+        } else {
+          state.error = action.payload as string;
+        }
+      })
+      // Apple Login
+      .addCase(appleLogin.pending, handleAuthPending)
+      .addCase(appleLogin.fulfilled, handleAuthFulfilled)
+      .addCase(appleLogin.rejected, (state, action) => {
+        state.isLoading = false;
+        if (action.payload === 'CANCELLED') {
+          state.error = null;
+        } else if (typeof action.payload === 'object' && (action.payload as any)?.code === 'USER_NOT_FOUND') {
+          state.error = null;
+        } else {
+          state.error = action.payload as string;
+        }
+      })
       .addCase(getMe.pending, (state) => {
         state.isLoading = true;
       })

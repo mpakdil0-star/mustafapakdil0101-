@@ -31,7 +31,16 @@
                     "package_name": "com.isbitir.app"
                 }
             },
-            "oauth_client": [],
+            "oauth_client": [
+                {
+                    "client_id": "850829107432-722tuskg1qbktela7q5bdj9o4d1jceav.apps.googleusercontent.com",
+                    "client_type": 3
+                },
+                {
+                    "client_id": "850829107432-cpsgrgov30vv9u51kerc6nnr32ckfdh4.apps.googleusercontent.com",
+                    "client_type": 1
+                }
+            ],
             "api_key": [
                 {
                     "current_key": "AIzaSyAlg91paE2PA-MZsh5Zvp3byzY6OSZryQQ"
@@ -39,7 +48,12 @@
             ],
             "services": {
                 "appinvite_service": {
-                    "other_platform_oauth_client": []
+                    "other_platform_oauth_client": [
+                        {
+                            "client_id": "850829107432-722tuskg1qbktela7q5bdj9o4d1jceav.apps.googleusercontent.com",
+                            "client_type": 3
+                        }
+                    ]
                 }
             }
         }
