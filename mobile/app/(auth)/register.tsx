@@ -530,18 +530,25 @@ export default function RegisterScreen() {
               <TouchableOpacity
                 onPress={handleGoogleRegister}
                 disabled={isLoading || socialLoading !== null}
-                activeOpacity={0.8}
-                style={[styles.socialButton, socialLoading === 'google' && { opacity: 0.7 }]}
+                activeOpacity={0.85}
+                style={[styles.googleButtonWrapper, socialLoading === 'google' && { opacity: 0.7 }]}
               >
-                <View style={styles.socialButtonInner}>
-                  <Image
-                    source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}
-                    style={styles.socialIcon}
-                  />
-                  <Text style={styles.socialButtonText}>
-                    {socialLoading === 'google' ? 'Bağlanıyor...' : 'Google ile kayıt ol'}
-                  </Text>
-                </View>
+                <LinearGradient
+                  colors={['#EA4335', '#FBBC04', '#34A853', '#4285F4']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.googleButtonBorder}
+                >
+                  <View style={styles.googleButtonInner}>
+                    <Image
+                      source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}
+                      style={styles.googleIcon}
+                    />
+                    <Text style={styles.googleButtonText}>
+                      {socialLoading === 'google' ? 'Bağlanıyor...' : 'Google ile kayıt ol'}
+                    </Text>
+                  </View>
+                </LinearGradient>
               </TouchableOpacity>
 
               {Platform.OS === 'ios' && (
@@ -1067,18 +1074,52 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontSize: 12,
   },
-  // ===== Sosyal Kayıt Buton Stilleri =====
-  socialButton: {
-    borderRadius: 20,
-    overflow: 'hidden',
+  // ===== Google Premium Button =====
+  googleButtonWrapper: {
+    marginBottom: 14,
+    borderRadius: 18,
+    shadowColor: '#4285F4',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  googleButtonBorder: {
+    borderRadius: 18,
+    padding: 2,
+  },
+  googleButtonInner: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    gap: 12,
     backgroundColor: '#FFFFFF',
-    marginBottom: 16,
+    borderRadius: 16,
+  },
+  googleIcon: {
+    width: 24,
+    height: 24,
+  },
+  googleButtonText: {
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    color: '#1F2937',
+    letterSpacing: 0.3,
+  },
+  // ===== Apple Button =====
+  socialButton: {
+    borderRadius: 18,
+    overflow: 'hidden',
+    marginBottom: 14,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 15,    elevation: 8,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
   },
   socialButtonApple: {
     backgroundColor: '#000000',
@@ -1088,7 +1129,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    paddingVertical: 16,
+    paddingVertical: 15,
     gap: 12,
   },
   socialIcon: {
