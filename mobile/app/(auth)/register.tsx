@@ -696,8 +696,18 @@ export default function RegisterScreen() {
               )}
 
               <TouchableOpacity
-                onPress={() => handleRegister()}
-                disabled={isLoading || !termsAccepted || !kvkkAccepted}
+                onPress={() => {
+                  if (!termsAccepted || !kvkkAccepted) {
+                    showAlert(
+                      '⚠️ Onay Gerekli',
+                      'Devam etmek için Kullanım Koşullarını ve KVKK Politikasını okuduğunuzu onaylamanız gerekmektedir.',
+                      'warning'
+                    );
+                    return;
+                  }
+                  handleRegister();
+                }}
+                disabled={isLoading}
                 activeOpacity={0.8}
                 style={[
                   styles.registerButtonWrapper,
