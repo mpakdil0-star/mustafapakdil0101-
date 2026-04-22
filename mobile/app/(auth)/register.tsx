@@ -563,7 +563,7 @@ export default function RegisterScreen() {
                 }}
                 disabled={isLoading || socialLoading !== null}
                 activeOpacity={0.85}
-                style={[styles.googleButtonWrapper, (!termsAccepted || !kvkkAccepted) && { opacity: 0.4 }, socialLoading === 'google' && { opacity: 0.7 }]}
+                style={[styles.googleButtonWrapper, socialLoading === 'google' && { opacity: 0.7 }]}
               >
                 <LinearGradient
                   colors={['#EA4335', '#FBBC04', '#34A853', '#4285F4']}
@@ -598,7 +598,7 @@ export default function RegisterScreen() {
                   }}
                   disabled={isLoading || socialLoading !== null}
                   activeOpacity={0.8}
-                  style={[styles.socialButton, styles.socialButtonApple, (!termsAccepted || !kvkkAccepted) && { opacity: 0.4 }, socialLoading === 'apple' && { opacity: 0.7 }]}
+                  style={[styles.socialButton, styles.socialButtonApple, socialLoading === 'apple' && { opacity: 0.7 }]}
                 >
                   <View style={styles.socialButtonInner}>
                     <Ionicons name="logo-apple" size={22} color="#FFFFFF" />
@@ -711,8 +711,7 @@ export default function RegisterScreen() {
                 activeOpacity={0.8}
                 style={[
                   styles.registerButtonWrapper,
-                  { shadowColor: accentColor },
-                  (!termsAccepted || !kvkkAccepted) && { opacity: 0.5 }
+                  { shadowColor: accentColor }
                 ]}
               >
                 <LinearGradient
