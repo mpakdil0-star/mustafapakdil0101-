@@ -432,8 +432,8 @@ export default function LoginScreen() {
                     style={[styles.socialButton, styles.socialButtonApple, socialLoading === 'apple' && { opacity: 0.7 }]}
                   >
                     <View style={styles.socialButtonInner}>
-                      <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
-                      <Text style={[styles.socialButtonText, { color: '#FFFFFF' }]}>
+                      <Ionicons name="logo-apple" size={22} color="#FFFFFF" />
+                      <Text style={[styles.socialButtonText, styles.socialButtonTextApple]}>
                         {socialLoading === 'apple' ? 'Bağlanıyor...' : 'Apple ile devam et'}
                       </Text>
                     </View>
@@ -636,34 +636,43 @@ const styles = StyleSheet.create({
   },
   // ===== Sosyal Giriş Buton Stilleri =====
   socialButton: {
-    borderRadius: 14,
+    borderRadius: 20,
     overflow: 'hidden',
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    elevation: 8,
+  },
+  socialButtonGoogle: {
     backgroundColor: '#FFFFFF',
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   socialButtonApple: {
     backgroundColor: '#000000',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   socialButtonInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
+    paddingVertical: 16,
     gap: 12,
   },
   socialIcon: {
-    width: 20,
-    height: 20,
+    width: 22,
+    height: 22,
   },
   socialButtonText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
+    fontFamily: fonts.bold,
+    fontSize: 16,
     color: '#1F2937',
+    letterSpacing: 0.2,
+  },
+  socialButtonTextApple: {
+    color: '#FFFFFF',
   },
   // ===== Sosyal Giriş Buton Stilleri Bitiş =====
   registerBtn: {
