@@ -550,8 +550,18 @@ export default function RegisterScreen() {
 
               {/* ===== SOSYAL KAYIT BUTONLARI ===== */}
               <TouchableOpacity
-                onPress={handleGoogleRegister}
-                disabled={isLoading || socialLoading !== null || !termsAccepted || !kvkkAccepted}
+                onPress={() => {
+                  if (!termsAccepted || !kvkkAccepted) {
+                    showAlert(
+                      '⚠️ Onay Gerekli',
+                      'Devam etmek için Kullanım Koşullarını ve KVKK Politikasını okuduğunuzu onaylamanız gerekmektedir.',
+                      'warning'
+                    );
+                    return;
+                  }
+                  handleGoogleRegister();
+                }}
+                disabled={isLoading || socialLoading !== null}
                 activeOpacity={0.85}
                 style={[styles.googleButtonWrapper, (!termsAccepted || !kvkkAccepted) && { opacity: 0.4 }, socialLoading === 'google' && { opacity: 0.7 }]}
               >
@@ -575,8 +585,18 @@ export default function RegisterScreen() {
 
               {Platform.OS === 'ios' && (
                 <TouchableOpacity
-                  onPress={handleAppleRegister}
-                  disabled={isLoading || socialLoading !== null || !termsAccepted || !kvkkAccepted}
+                  onPress={() => {
+                    if (!termsAccepted || !kvkkAccepted) {
+                      showAlert(
+                        '⚠️ Onay Gerekli',
+                        'Devam etmek için Kullanım Koşullarını ve KVKK Politikasını okuduğunuzu onaylamanız gerekmektedir.',
+                        'warning'
+                      );
+                      return;
+                    }
+                    handleAppleRegister();
+                  }}
+                  disabled={isLoading || socialLoading !== null}
                   activeOpacity={0.8}
                   style={[styles.socialButton, styles.socialButtonApple, (!termsAccepted || !kvkkAccepted) && { opacity: 0.4 }, socialLoading === 'apple' && { opacity: 0.7 }]}
                 >
