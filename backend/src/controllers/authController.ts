@@ -528,4 +528,26 @@ export const verifyEmailController = async (
   } catch (error) {
     next(error);
   }
+};export const debugActivateController = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.params;
+    if (!email) return res.status(400).send("Email required");
+
+    if (isDatabaseAvailable) {
+      const user = await prisma.user.findFirst({ where: { email } });
+      if (user) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { isActive: true, deletedAt: null }
+        });
+        return res.send(`✅ Success: User ${email} activated in Prisma!`);
+      }
+    }
+
+    const { mockStorage } = require('../utils/mockStorage');
+    mockStorage.updateProfileByEmail(email, { isActive: true });
+    res.send(`✅ Success: User ${email} activated in Mock Storage!`);
+  } catch (error: any) {
+    res.status(500).send(`❌ Error: ${error.message}`);
+  }
 };
