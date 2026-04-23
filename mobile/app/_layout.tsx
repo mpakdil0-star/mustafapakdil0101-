@@ -79,11 +79,11 @@ function RootLayoutNav() {
     const profile = userData.electricianProfile;
     if (!profile) return true; // No profile object yet
 
-    const hasExperience = profile.experienceYears && profile.experienceYears > 0;
-    const hasSpecialties = profile.specialties &&
+    const hasExperience = profile.experienceYears !== undefined && profile.experienceYears !== null && profile.experienceYears > 0;
+    const hasSpecialties = Array.isArray(profile.specialties) &&
       profile.specialties.length > 0 &&
       profile.specialties.some((s: string) => s !== 'Genel' && s !== 'Genel Elektrik');
-    const hasPhone = userData.phone && userData.phone.trim() !== ''; // Telefon kontrolü eklendi
+    const hasPhone = userData.phone && userData.phone.trim() !== ''; 
 
     return !hasExperience || !hasSpecialties || !hasPhone;
   }, []);
@@ -201,8 +201,11 @@ function RootLayoutNav() {
   // Fetch initial notification count and SYNC USER STATUS on login/app start
   useEffect(() => {
     if (isAuthenticated) {
-      dispatch(fetchNotifications());
-      dispatch(getMe());
+      // Use interaction manager to wait for navigation/transitions to settle
+      InteractionManager.runAfterInteractions(() => {
+        dispatch(fetchNotifications());
+        dispatch(getMe());
+      });
     }
   }, [isAuthenticated, dispatch]);
 
@@ -260,7 +263,7 @@ function RootLayoutNav() {
         }
 
         // Small delay to let the UI settle after login/navigation
-        await new Promise(resolve => setTimeout(resolve, 1200));
+        await new Promise(resolve => setTimeout(resolve, 2500));
 
         showAlert(
           '🔔 Bildirimlerinizi Açın',
@@ -604,55 +607,53 @@ function RootLayoutNav() {
   }
 
   return (
-    <Provider store={store}>
-      <SafeAreaProvider>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <StatusBar style="dark" />
-          <Slot />
+    <>
+      <StatusBar style="dark" />
+      <Slot />
 
-          {user?.isImpersonated && (
-            <View style={[styles.impersonationBanner, { paddingTop: insets.top + 8 }]}>
-              <View style={styles.impersonationContent}>
-                <Ionicons name="shield-checkmark" size={18} color="#FFF" />
-                <Text style={styles.impersonationText}>ADMİN MODU: {user.fullName?.toUpperCase()}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.impersonationLogoutBtn}
-                onPress={() => dispatch(logout())}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.impersonationLogoutText}>Çıkış</Text>
-                <Ionicons name="log-out-outline" size={16} color="#FFF" />
-              </TouchableOpacity>
-            </View>
-          )}
+      {user?.isImpersonated && (
+        <View style={[styles.impersonationBanner, { paddingTop: insets.top + 8 }]}>
+          <View style={styles.impersonationContent}>
+            <Ionicons name="shield-checkmark" size={18} color="#FFF" />
+            <Text style={styles.impersonationText}>ADMİN MODU: {user.fullName?.toUpperCase()}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.impersonationLogoutBtn}
+            onPress={() => dispatch(logout())}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.impersonationLogoutText}>Çıkış</Text>
+            <Ionicons name="log-out-outline" size={16} color="#FFF" />
+          </TouchableOpacity>
+        </View>
+      )}
 
-          <PremiumAlert
-            visible={alertConfig.visible}
-            title={alertConfig.title}
-            message={alertConfig.message}
-            onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
-            type={alertConfig.type}
-            buttons={alertConfig.buttons}
-          />
+      <PremiumAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+        type={alertConfig.type}
+        buttons={alertConfig.buttons}
+      />
 
-          <LegalUpdateModal
-            visible={showLegalModal}
-            requiredVersion={requiredLegalVersion || 'v1.0'}
-            onAccept={handleLegalAccept}
-          />
-        </GestureHandlerRootView>
-        {/* TODO: Uncomment after running: npx expo install expo-network */}
-        {/* <OfflineBanner /> */}
-      </SafeAreaProvider>
-    </Provider>
+      <LegalUpdateModal
+        visible={showLegalModal}
+        requiredVersion={requiredLegalVersion || 'v1.0'}
+        onAccept={handleLegalAccept}
+      />
+    </>
   );
 }
 
 export default function RootLayout() {
   return (
     <Provider store={store}>
-      <RootLayoutNav />
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <RootLayoutNav />
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
     </Provider>
   );
 }

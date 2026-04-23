@@ -49,6 +49,7 @@ type BidNotificationHandler = (data: BidNotificationData) => void;
 class SocketService {
     private socket: Socket | null = null;
     private isConnected = false;
+    private isConnecting = false;
     private reconnectAttempts = 0;
     private maxReconnectAttempts = 5;
 
@@ -63,24 +64,26 @@ class SocketService {
     private reviewHandlers: Set<NotificationHandler> = new Set();
 
     async connect(): Promise<boolean> {
-        // Eğer zaten bağlıysa tekrar deneme
-        if (this.socket?.connected) {
-            console.log('🔌 Socket: Zaten bağlı.');
+        // Eğer zaten bağlıysa veya bağlanma sürecindeyse tekrar deneme
+        if (this.socket?.connected || this.isConnecting) {
+            if (this.socket?.connected) console.log('🔌 Socket: Zaten bağlı.');
             return true;
         }
+
+        this.isConnecting = true;
 
         try {
             const token = await SecureStore.getItemAsync(API_TOKEN_KEY);
 
             if (!token) {
                 console.warn('🔌 Socket: No token available');
+                this.isConnecting = false;
                 return false;
             }
 
             // Base URL'den WebSocket URL oluştur
             const wsUrl = WS_BASE_URL;
             console.log('🔌 Socket: Bağlanmaya çalışılan adres:', wsUrl);
-            // console.log('🔌 Socket: Kullanılan Token:', token.substring(0, 10) + '...');
 
             // Varsa eski soketi temizle
             if (this.socket) {
@@ -93,36 +96,40 @@ class SocketService {
                 reconnection: true,
                 reconnectionAttempts: this.maxReconnectAttempts,
                 reconnectionDelay: 2000,
-                timeout: 5000, // Timeout süresini düşür
-                transports: ['polling', 'websocket'], // Polling ile başla (daha güvenilir)
+                timeout: 5000,
+                transports: ['polling', 'websocket'],
                 forceNew: true
             });
 
             this.setupEventListeners();
 
             return new Promise((resolve) => {
-                this.socket?.on('connect', () => {
+                this.socket?.once('connect', () => {
                     console.log('🔌 Socket connected');
                     this.isConnected = true;
+                    this.isConnecting = false;
                     this.reconnectAttempts = 0;
                     resolve(true);
                 });
 
-                this.socket?.on('connect_error', (error) => {
-                    // Sessizce arka planda denemeye devam et
+                this.socket?.once('connect_error', (error) => {
                     this.isConnected = false;
+                    this.isConnecting = false;
+                    resolve(false);
                 });
 
                 // Timeout
                 setTimeout(() => {
-                    if (!this.isConnected && this.reconnectAttempts > 3) {
-                        console.warn('🔌 Socket: Bağlantı kurulamadı, arka planda denenmeye devam edecek.');
+                    if (this.isConnecting) {
+                        console.warn('🔌 Socket: Bağlantı zaman aşımı.');
+                        this.isConnecting = false;
                         resolve(false);
                     }
-                }, 15000);
+                }, 10000);
             });
         } catch (error) {
             console.error('🔌 Socket connection failed:', error);
+            this.isConnecting = false;
             return false;
         }
     }
