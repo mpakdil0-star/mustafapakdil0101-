@@ -772,6 +772,7 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
         const idStr = String(req.params.id);
 
         if (isDatabaseAvailable && !idStr.startsWith('mock-')) {
+            console.log(`🚀 [ADMIN DELETE V2] Attempting soft-delete for job: ${idStr}`);
             try {
                 // Sadece silindi olarak işaretle, status güncellemesi yapma (daha garanti)
                 await prisma.jobPost.update({ 
