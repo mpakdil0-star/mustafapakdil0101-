@@ -73,8 +73,13 @@ export const signInWithGoogle = async (): Promise<string> => {
     if (error?.code === 'SIGN_IN_CANCELLED' || error?.code === '12501') {
       throw new Error('CANCELLED');
     }
-    console.error('Google Sign-In hatası:', error);
-    throw new Error('Google ile giriş başarısız oldu.');
+    // DEVELOPER_ERROR (kod 10) = SHA-1 parmak izi Google Cloud Console'da kayıtlı değil
+    if (error?.code === 'DEVELOPER_ERROR' || error?.code === '10') {
+      console.error('❌ Google Sign-In DEVELOPER_ERROR: SHA-1 parmak izi Google Cloud Console\'da kayıtlı değil veya paket adı yanlış.');
+      throw new Error('DEVELOPER_ERROR');
+    }
+    console.error('Google Sign-In hatası - Kod:', error?.code, '| Mesaj:', error?.message, '| Tam hata:', JSON.stringify(error));
+    throw new Error(`GOOGLE_ERROR:${error?.code || 'UNKNOWN'}`);
   }
 };
 

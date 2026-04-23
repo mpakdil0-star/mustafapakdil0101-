@@ -167,11 +167,16 @@ export const googleLogin = createAsyncThunk(
       if (error.message === 'CANCELLED') {
         return rejectWithValue('CANCELLED');
       }
+      // SHA-1 / paket adı uyuşmazlığı
+      if (error.message === 'DEVELOPER_ERROR') {
+        return rejectWithValue('SHA-1 sertifika hatası: Lütfen Google Cloud Console\'da SHA-1 parmak izinizi kaydedin.');
+      }
       // Backend 404 döndüyse (kullanıcı bulunamadı)
       if (error?.response?.status === 404) {
         const email = error?.response?.data?.error?.email;
         return rejectWithValue({ code: 'USER_NOT_FOUND', email });
       }
+      console.error('googleLogin thunk error:', error?.message, error?.response?.data);
       return rejectWithValue(handleAuthError(error, 'Google ile giriş başarısız oldu'));
     }
   }
