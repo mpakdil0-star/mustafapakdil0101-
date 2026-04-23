@@ -90,8 +90,9 @@ export default function AdminJobsScreen() {
                                 // Refresh list to remove deleted item accurately
                                 onRefresh();
                             }
-                        } catch (error) {
-                            Alert.alert('Hata', 'İlan silinemedi');
+                        } catch (error: any) {
+                            const errorMsg = error.response?.data?.message || error.message || 'İlan silinemedi';
+                            Alert.alert('Hata', errorMsg);
                         } finally {
                             setDeletingId(null);
                         }

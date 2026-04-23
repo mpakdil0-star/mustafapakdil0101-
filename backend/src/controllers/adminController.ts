@@ -772,35 +772,23 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
         const idStr = String(req.params.id);
 
         if (isDatabaseAvailable && !idStr.startsWith('mock-')) {
-            // DB Implementation: Soft delete for admin as well to avoid foreign key constraint errors
             try {
+                // Sadece silindi olarak işaretle, status güncellemesi yapma (daha garanti)
                 await prisma.jobPost.update({ 
                     where: { id: idStr },
-                    data: { 
-                        deletedAt: new Date(),
-                        status: 'CANCELLED' as any
-                    }
+                    data: { deletedAt: new Date() }
                 });
-                console.log(`🗑️ Database job soft-deleted by admin: ${idStr}`);
+                console.log(`🗑️ Admin soft-deleted job: ${idStr}`);
 
-                // Also remove from mock store if it exists there to keep sync
-                if (jobStoreById.has(idStr)) {
-                    deleteMockJob(idStr);
-                }
-
+                if (jobStoreById.has(idStr)) deleteMockJob(idStr);
                 return res.json({ success: true, message: 'İlan silindi' });
             } catch (dbError: any) {
-                console.error('Database deletion error:', dbError);
+                console.error('DB delete error:', dbError);
+                if (deleteMockJob(idStr)) return res.json({ success: true, message: 'İlan silindi (Mock)' });
                 
-                // Fallback: If not found in DB, it might be in mock store
-                if (deleteMockJob(idStr)) {
-                    return res.json({ success: true, message: 'İlan silindi (Mock)' });
-                }
-
                 return res.status(500).json({ 
                     success: false, 
-                    message: 'İlan silinirken hata oluştu',
-                    error: dbError.message 
+                    message: 'Veritabanı hatası: ' + dbError.message 
                 });
             }
         }
