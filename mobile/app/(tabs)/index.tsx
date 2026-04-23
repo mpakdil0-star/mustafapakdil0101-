@@ -525,12 +525,7 @@ export default function HomeScreen() {
     if (hasNewJobNotif && isElectrician) {
       fetchNewJobsCount();
     }
-
-    // Force sync total unread count with server to be absolutely sure
-    if (notifications.length > 0 && !notifications[0].isRead) {
-      dispatch(fetchNotifications());
-    }
-  }, [notifications.length, isAuthenticated, isElectrician, fetchNewJobsCount, dispatch]);
+  }, [notifications.length, isAuthenticated, isElectrician, fetchNewJobsCount]);
 
   // Socket setup moved to global _layout.tsx
   useEffect(() => {
