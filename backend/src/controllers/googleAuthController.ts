@@ -91,17 +91,18 @@ export const googleLoginController = async (
                         });
 
                         if (mockUserFound.userType === 'ELECTRICIAN' || requestedUserType === 'ELECTRICIAN') {
-                            const profileData = mockUserFound.electricianProfile || {};
+                            const mockAny = mockUserFound as any;
+                            const profileData = mockAny.electricianProfile || {};
                             await prisma.electricianProfile.create({
                                 data: {
                                     userId: dbUser.id,
-                                    creditBalance: mockUserFound.creditBalance || profileData.creditBalance || 5,
+                                    creditBalance: mockAny.creditBalance || profileData.creditBalance || 5,
                                     isAvailable: true,
-                                    experienceYears: mockUserFound.experienceYears || profileData.experienceYears || 0,
+                                    experienceYears: mockAny.experienceYears || profileData.experienceYears || 0,
                                     totalReviews: profileData.totalReviews || 0,
                                     ratingAverage: profileData.ratingAverage || 0,
                                     completedJobsCount: profileData.completedJobsCount || 0,
-                                    serviceCategory: mockUserFound.serviceCategory || profileData.serviceCategory || 'elektrik' // default profession
+                                    serviceCategory: mockAny.serviceCategory || profileData.serviceCategory || 'elektrik' // default profession
                                 }
                             });
                         }
