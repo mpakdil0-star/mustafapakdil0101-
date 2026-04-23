@@ -523,6 +523,7 @@ export const refreshToken = async (refreshToken: string) => {
       });
 
       if (!user || !user.isActive || user.isBanned) {
+        console.warn(`❌ refreshToken: User invalid. id: ${decoded.id}, exists: ${!!user}, active: ${user?.isActive}, banned: ${user?.isBanned}`);
         throw new UnauthorizedError('Invalid refresh token');
       }
 

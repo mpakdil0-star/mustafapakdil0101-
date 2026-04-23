@@ -79,7 +79,10 @@ export const authenticate = async (
         return next();
       }
 
+      console.log(`👤 auth.ts: User found: ${user.email}, id: ${user.id}, isActive: ${user.isActive}, isBanned: ${user.isBanned}`);
+
       if (!user.isActive) {
+        console.warn(`❌ auth.ts: User ${user.email} is inactive`);
         throw new UnauthorizedError('User account is inactive');
       }
 

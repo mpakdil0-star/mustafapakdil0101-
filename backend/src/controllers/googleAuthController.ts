@@ -87,6 +87,7 @@ export const googleLoginController = async (
                                 passwordHash: mockUserFound.passwordHash || 'GOOGLE_AUTH_MIGRATED',
                                 acceptedLegalVersion: mockUserFound.acceptedLegalVersion || '25 Mart 2026 Tarihli Sözleşme',
                                 marketingAllowed: mockUserFound.marketingAllowed || false,
+                                isActive: true,
                             }
                         });
 

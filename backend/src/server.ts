@@ -14,6 +14,9 @@ import prisma from './config/database';
 const app = express();
 const httpServer = createServer(app);
 
+// Use trust proxy for Render/Proxies to allow rate limiting and correct IP detection
+app.set('trust proxy', 1);
+
 // Global Socket.io instance
 let io: SocketServer;
 
