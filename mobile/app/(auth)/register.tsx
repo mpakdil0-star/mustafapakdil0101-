@@ -228,9 +228,18 @@ export default function RegisterScreen() {
       
       // Delay navigation slightly to let the backend/state settle
       // This prevents the "instant logout" crash loop
-      setTimeout(() => {
-        navigateAfterRegister();
-      }, 500);
+      const timer = setTimeout(() => {
+        try {
+          if (router.canGoBack()) {
+            // If already navigated away by _layout, don't do anything
+            return;
+          }
+          navigateAfterRegister();
+        } catch (navErr) {
+          console.log('Post-social-register navigation safe-skipped:', navErr);
+        }
+      }, 1500);
+      return () => clearTimeout(timer);
     } catch (err: any) {
       console.error('Google registration error:', err);
       if (err !== 'CANCELLED') {
@@ -247,9 +256,14 @@ export default function RegisterScreen() {
       await dispatch(appleLogin({ userType, serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined })).unwrap();
       
       // Delay navigation slightly to let the backend/state settle
-      setTimeout(() => {
-        navigateAfterRegister();
-      }, 500);
+      const timer = setTimeout(() => {
+        try {
+          navigateAfterRegister();
+        } catch (navErr) {
+          console.log('Post-apple-register navigation safe-skipped:', navErr);
+        }
+      }, 1500);
+      return () => clearTimeout(timer);
     } catch (err: any) {
       if (err === 'CANCELLED') {
         // Kullanıcı iptal etti

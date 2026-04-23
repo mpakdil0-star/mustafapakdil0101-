@@ -171,9 +171,14 @@ export default function LoginScreen() {
     try {
       const result = await dispatch(googleLogin(undefined)).unwrap();
       // Başarılı giriş
-      setTimeout(() => {
-        router.replace(redirectTo ? (redirectTo as any) : '/(tabs)');
-      }, 200);
+      const timer = setTimeout(() => {
+        try {
+          router.replace(redirectTo ? (redirectTo as any) : '/(tabs)');
+        } catch (navErr) {
+          console.log('Post-google-login navigation safe-skipped:', navErr);
+        }
+      }, 1500);
+      return () => clearTimeout(timer);
     } catch (err: any) {
       if (err === 'CANCELLED') {
         // Kullanıcı iptal etti, sessizce devam et
@@ -202,9 +207,14 @@ export default function LoginScreen() {
     setSocialLoading('apple');
     try {
       const result = await dispatch(appleLogin(undefined)).unwrap();
-      setTimeout(() => {
-        router.replace(redirectTo ? (redirectTo as any) : '/(tabs)');
-      }, 200);
+      const timer = setTimeout(() => {
+        try {
+          router.replace(redirectTo ? (redirectTo as any) : '/(tabs)');
+        } catch (navErr) {
+          console.log('Post-apple-login navigation safe-skipped:', navErr);
+        }
+      }, 1500);
+      return () => clearTimeout(timer);
     } catch (err: any) {
       if (err === 'CANCELLED') {
         // Kullanıcı iptal etti

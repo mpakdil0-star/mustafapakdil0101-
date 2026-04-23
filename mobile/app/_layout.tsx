@@ -106,6 +106,12 @@ function RootLayoutNav() {
     };
 
     const runNavigationLogic = async () => {
+      // CRITICAL: Wait until navigation is ready before performing any redirects
+      if (!isNavigationReady) {
+        console.log('⏳ Navigation not ready yet, skipping logic');
+        return;
+      }
+
       const inAuthGroup = segments[0] === '(auth)';
       const isOnboarding = segments[0] === 'onboarding';
       const currentPath = segments.join('/');
@@ -192,7 +198,7 @@ function RootLayoutNav() {
     };
 
     runNavigationLogic();
-  }, [isAuthenticated, user, user?.electricianProfile, segments, isNavigationReady, router, checkIsProfileIncomplete, params.mandatory]);
+  }, [isAuthenticated, user, user?.userType, segments, isNavigationReady, router, checkIsProfileIncomplete, params.mandatory]);
 
   // Fetch initial notification count and SYNC USER STATUS on login/app start
   useEffect(() => {
