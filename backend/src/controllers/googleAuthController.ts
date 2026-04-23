@@ -261,21 +261,27 @@ export const googleLoginController = async (
         // 5. Ensure existing user is active and has photo updated
         if (user) {
             // Reactivate user if they were inactive (e.g. soft-deleted)
-            if (!user.isActive) {
+            if (!user.isActive || !user.isVerified) {
                 if (isDatabaseAvailable && !user.id.startsWith('mock-')) {
                     try {
-                        await prisma.user.update({
+                        const updatedUser = await prisma.user.update({
                             where: { id: user.id },
-                            data: { isActive: true, deletedAt: null }
+                            data: { 
+                                isActive: true, 
+                                isVerified: true,
+                                deletedAt: null 
+                            }
                         });
                         user.isActive = true;
-                        console.log(`✅ Reactivated existing user: ${email}`);
+                        user.isVerified = true;
+                        console.log(`✅ Fully reactivated/verified existing user: ${email}`);
                     } catch (e) {
                         console.error(`❌ Failed to reactivate user ${email}:`, e);
                     }
                 } else {
-                    mockStorage.updateProfile(user.id, { isActive: true });
+                    mockStorage.updateProfile(user.id, { isActive: true, isVerified: true });
                     user.isActive = true;
+                    user.isVerified = true;
                 }
             }
 
