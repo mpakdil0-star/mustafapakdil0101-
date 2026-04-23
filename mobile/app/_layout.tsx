@@ -136,7 +136,9 @@ function RootLayoutNav() {
               if (inAuthGroup || currentPath === '') {
                 if (lastRedirectPath.current !== '/admin') {
                    lastRedirectPath.current = '/admin';
-                   router.replace('/admin');
+                   requestAnimationFrame(() => {
+                     router.replace('/admin');
+                   });
                 }
               }
               return;
@@ -148,7 +150,9 @@ function RootLayoutNav() {
               
               dispatch(logout());
               showAlert('E-posta Doğrulaması Eksik', 'Güvenliğiniz için kayıt sırasında e-postanızı doğrulamanız zorunludur.', 'error');
-              router.replace('/(auth)/login');
+              requestAnimationFrame(() => {
+                router.replace('/(auth)/login');
+              });
               return;
             }
 
@@ -161,7 +165,9 @@ function RootLayoutNav() {
               if (isIncomplete && !isInsideProfileGroup && !profileSetupDone && currentPath !== '(auth)/register') {
                 if (lastRedirectPath.current !== '/profile/edit') {
                   lastRedirectPath.current = '/profile/edit';
-                  router.replace('/profile/edit?mandatory=true');
+                  requestAnimationFrame(() => {
+                    router.replace('/profile/edit?mandatory=true');
+                  });
                 }
                 return;
               }
@@ -173,7 +179,9 @@ function RootLayoutNav() {
               if (!isIncomplete && isInsideProfileGroup && params.mandatory === 'true') {
                 if (lastRedirectPath.current !== '/(tabs)') {
                    lastRedirectPath.current = '/(tabs)';
-                   router.replace('/(tabs)');
+                   requestAnimationFrame(() => {
+                     router.replace('/(tabs)');
+                   });
                 }
                 return;
               }
@@ -184,7 +192,9 @@ function RootLayoutNav() {
               if (currentPath !== '(auth)/register') {
                 if (lastRedirectPath.current !== '/(tabs)') {
                   lastRedirectPath.current = '/(tabs)';
-                  router.replace('/(tabs)');
+                  requestAnimationFrame(() => {
+                    router.replace('/(tabs)');
+                  });
                 }
               }
             }
@@ -198,13 +208,37 @@ function RootLayoutNav() {
     runNavigationLogic();
   }, [isAuthenticated, user?.id, user?.userType, segments, isNavigationReady, params.mandatory]);
 
-  // Fetch initial notification count and SYNC USER STATUS on login/app start
+  // Ref to track if we've already done the initial data fetch for this session
+  const initialDataFetched = useRef(false);
+
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!isAuthenticated) {
+      initialDataFetched.current = false;
+      return;
+    }
+
+    if (isAuthenticated && !initialDataFetched.current) {
+      initialDataFetched.current = true;
+      
       // Use interaction manager to wait for navigation/transitions to settle
-      InteractionManager.runAfterInteractions(() => {
-        dispatch(fetchNotifications());
-        dispatch(getMe());
+      InteractionManager.runAfterInteractions(async () => {
+        try {
+          console.log('🚀 [Root] Starting sequential bootstrap...');
+          
+          // 1. First get user details (this is the most critical)
+          await dispatch(getMe()).unwrap();
+          
+          // 2. Small pause between heavy requests
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          // 3. Fetch notifications
+          dispatch(fetchNotifications());
+          dispatch(fetchUnreadCount());
+          
+          console.log('✅ [Root] Bootstrap sequence completed');
+        } catch (err) {
+          console.warn('⚠️ [Root] Bootstrap sequence had errors:', err);
+        }
       });
     }
   }, [isAuthenticated, dispatch]);
