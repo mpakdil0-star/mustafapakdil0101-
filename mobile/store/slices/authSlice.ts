@@ -161,6 +161,10 @@ export const googleLogin = createAsyncThunk(
         params?.serviceCategory
       );
 
+      // Add a small delay to ensure the native Google Login modal is fully closed
+      // and the UI thread is ready before triggering Redux state updates that cause navigation.
+      await new Promise(resolve => setTimeout(resolve, 600));
+
       return result;
     } catch (error: any) {
       // Kullanıcı iptal etti
@@ -285,11 +289,19 @@ const authSlice = createSlice({
       state.guestRole = null;
       state.requiredLegalVersion = action.payload.currentLegalVersion || null;
 
-      // Track analytics
-      const userType = action.payload.user?.userType || 'CITIZEN';
-      Analytics.setUser(action.payload.user?.id);
-      Analytics.setProperty('user_type', userType);
-      Analytics.userLoggedIn(userType);
+      // Track analytics safely
+      try {
+        const userType = action.payload.user?.userType || 'CITIZEN';
+        const userId = action.payload.user?.id;
+        
+        if (userId) {
+          Analytics.setUser(userId);
+          Analytics.setProperty('user_type', userType);
+          Analytics.userLoggedIn(userType);
+        }
+      } catch (analyticsError) {
+        console.warn('📊 [AuthSlice] Analytics tracking failed:', analyticsError);
+      }
     };
 
     const handleAuthRejected = (state: AuthState, action: any) => {
