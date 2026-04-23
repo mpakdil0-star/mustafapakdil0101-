@@ -511,8 +511,10 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
         const skip = (page - 1) * limit;
 
         if (isDatabaseAvailable) {
+            const where = { deletedAt: null };
             const [jobs, totalJobs] = await Promise.all([
                 prisma.jobPost.findMany({
+                    where,
                     skip,
                     take: limit,
                     include: {
@@ -523,7 +525,7 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
                     },
                     orderBy: { createdAt: 'desc' }
                 }),
-                prisma.jobPost.count()
+                prisma.jobPost.count({ where })
             ]);
 
             const totalPages = Math.ceil(totalJobs / limit);
@@ -770,10 +772,17 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
         const idStr = String(req.params.id);
 
         if (isDatabaseAvailable && !idStr.startsWith('mock-')) {
-            // DB Implementation
+            // DB Implementation: Soft delete for admin as well to avoid foreign key constraint errors
+            // (e.g., if there are reviews or payments associated with a completed job)
             try {
-                await prisma.jobPost.delete({ where: { id: idStr } });
-                console.log(`🗑️ Database job deleted: ${idStr}`);
+                await prisma.jobPost.update({ 
+                    where: { id: idStr },
+                    data: { 
+                        deletedAt: new Date(),
+                        status: 'CANCELLED' // Set to cancelled as well to match user delete behavior
+                    }
+                });
+                console.log(`🗑️ Database job soft-deleted by admin: ${idStr}`);
 
                 // Also remove from mock store if it exists there to keep sync
                 if (jobStoreById.has(idStr)) {
