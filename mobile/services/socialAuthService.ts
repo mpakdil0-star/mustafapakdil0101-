@@ -52,6 +52,7 @@ export const configureGoogleSignIn = async () => {
  * @returns Google ID Token
  */
 export const signInWithGoogle = async (): Promise<string> => {
+  await configureGoogleSignIn();
   const GS = await getGoogleSignin();
 
   try {
