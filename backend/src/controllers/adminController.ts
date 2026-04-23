@@ -1221,15 +1221,28 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
         const { id } = req.params;
 
         if (isDatabaseAvailable && !id.startsWith('mock-')) {
-            // Soft delete
+            // Get user first to preserve email for anonymization
+            const userToDelete = await prisma.user.findUnique({
+                where: { id },
+                select: { email: true }
+            });
+
+            if (!userToDelete) {
+                return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' });
+            }
+
+            // Anonymize and soft-delete
             await prisma.user.update({
                 where: { id },
                 data: { 
+                    email: `del_${Date.now()}_${userToDelete.email}`, // Free the original email
+                    phone: null, // Free the phone number
                     deletedAt: new Date(),
                     isActive: false
                 }
             });
-            return res.json({ success: true, message: 'Kullanıcı silindi.' });
+            console.log(`🗑️ User ${id} anonymized and deleted by admin.`);
+            return res.json({ success: true, message: 'Kullanıcı başarıyla silindi ve e-posta adresi boşa çıkartıldı.' });
         }
 
         // Mock mode hard delete
