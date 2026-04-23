@@ -225,14 +225,16 @@ export default function RegisterScreen() {
     setSocialLoading('google');
     try {
       await dispatch(googleLogin({ userType, serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined })).unwrap();
-      navigateAfterRegister();
+      
+      // Delay navigation slightly to let the backend/state settle
+      // This prevents the "instant logout" crash loop
+      setTimeout(() => {
+        navigateAfterRegister();
+      }, 500);
     } catch (err: any) {
-      if (err === 'CANCELLED') {
-        // Kullanıcı iptal etti
-      } else if (typeof err === 'string') {
-        showAlert('Google Kayıt Hatası', err, 'error');
-      } else {
-        showAlert('Google Kayıt Hatası', 'Google ile kayıt sırasında bir hata oluştu.', 'error');
+      console.error('Google registration error:', err);
+      if (err !== 'CANCELLED') {
+        showAlert('Google Kayıt Hatası', 'Google ile kayıt işlemi yapılırken bir hata oluştu. Lütfen tekrar deneyin.', 'error');
       }
     } finally {
       setSocialLoading(null);
@@ -243,7 +245,11 @@ export default function RegisterScreen() {
     setSocialLoading('apple');
     try {
       await dispatch(appleLogin({ userType, serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined })).unwrap();
-      navigateAfterRegister();
+      
+      // Delay navigation slightly to let the backend/state settle
+      setTimeout(() => {
+        navigateAfterRegister();
+      }, 500);
     } catch (err: any) {
       if (err === 'CANCELLED') {
         // Kullanıcı iptal etti
