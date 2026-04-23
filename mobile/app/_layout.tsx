@@ -49,6 +49,8 @@ function RootLayoutNav() {
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [isNavigationReady, setIsNavigationReady] = useState(false);
   const [hasCheckedProfile, setHasCheckedProfile] = useState(false);
+  const lastRedirectPath = useRef<string | null>(null);
+  const isRedirecting = useRef(false);
 
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -104,10 +106,9 @@ function RootLayoutNav() {
         return false;
       }
     };
-
     const runNavigationLogic = async () => {
       // CRITICAL: Wait until navigation is fully ready before performing any redirects
-      if (!isNavigationReady) return;
+      if (!isNavigationReady || isRedirecting.current) return;
 
       const inAuthGroup = segments[0] === '(auth)';
       const isOnboarding = segments[0] === 'onboarding';
@@ -127,55 +128,68 @@ function RootLayoutNav() {
         socketService.connect();
 
         // 2. Auth-based redirection logic
-        // Using InteractionManager ensures we don't redirect while animations (like login button press) are still running,
-        // which is a common cause of native crashes in Expo/React Native.
+        isRedirecting.current = true;
         InteractionManager.runAfterInteractions(async () => {
-          // Re-check state inside interactions to ensure accuracy
-          if (user?.userType === 'ADMIN') {
-            if (inAuthGroup || currentPath === '') {
-              router.replace('/admin');
-            }
-            return;
-          }
-
-          // Case: Unverified users
-          if (user && user.isVerified === false) {
-            if (currentPath === '(auth)/register') return;
-            
-            // Safety logout for unverified re-entry
-            dispatch(logout());
-            showAlert('E-posta Doğrulaması Eksik', 'Güvenliğiniz için kayıt sırasında e-postanızı doğrulamanız zorunludur. İşlem tamamlanmadığı için oturumunuz kapatıldı.', 'error');
-            router.replace('/(auth)/login');
-            return;
-          }
-
-          // Case: Electrician profile completion
-          if (user?.userType === 'ELECTRICIAN') {
-            const isIncomplete = checkIsProfileIncomplete(user);
-            const { getItemAsync, setItemAsync } = await import('expo-secure-store');
-            const profileSetupDone = await getItemAsync('profile_setup_completed_' + user.id);
-
-            if (isIncomplete && !isInsideProfileGroup && !profileSetupDone && currentPath !== '(auth)/register') {
-              router.replace('/profile/edit?mandatory=true');
+          try {
+            // Re-check state inside interactions to ensure accuracy
+            if (user?.userType === 'ADMIN') {
+              if (inAuthGroup || currentPath === '') {
+                if (lastRedirectPath.current !== '/admin') {
+                   lastRedirectPath.current = '/admin';
+                   router.replace('/admin');
+                }
+              }
               return;
             }
 
-            if (!isIncomplete && !profileSetupDone) {
-              await setItemAsync('profile_setup_completed_' + user.id, 'true');
-            }
-
-            if (!isIncomplete && isInsideProfileGroup && params.mandatory === 'true') {
-              router.replace('/(tabs)');
+            // Case: Unverified users
+            if (user && user.isVerified === false) {
+              if (currentPath === '(auth)/register') return;
+              
+              dispatch(logout());
+              showAlert('E-posta Doğrulaması Eksik', 'Güvenliğiniz için kayıt sırasında e-postanızı doğrulamanız zorunludur.', 'error');
+              router.replace('/(auth)/login');
               return;
             }
-          }
 
-          // Case: Default redirect to TABS
-          if (inAuthGroup) {
-            // We give register.tsx a pass because it has its own state-aware verification modal
-            if (currentPath !== '(auth)/register') {
-              router.replace('/(tabs)');
+            // Case: Electrician profile completion
+            if (user?.userType === 'ELECTRICIAN') {
+              const isIncomplete = checkIsProfileIncomplete(user);
+              const { getItemAsync, setItemAsync } = await import('expo-secure-store');
+              const profileSetupDone = await getItemAsync('profile_setup_completed_' + user.id);
+
+              if (isIncomplete && !isInsideProfileGroup && !profileSetupDone && currentPath !== '(auth)/register') {
+                if (lastRedirectPath.current !== '/profile/edit') {
+                  lastRedirectPath.current = '/profile/edit';
+                  router.replace('/profile/edit?mandatory=true');
+                }
+                return;
+              }
+
+              if (!isIncomplete && !profileSetupDone) {
+                await setItemAsync('profile_setup_completed_' + user.id, 'true');
+              }
+
+              if (!isIncomplete && isInsideProfileGroup && params.mandatory === 'true') {
+                if (lastRedirectPath.current !== '/(tabs)') {
+                   lastRedirectPath.current = '/(tabs)';
+                   router.replace('/(tabs)');
+                }
+                return;
+              }
             }
+
+            // Case: Default redirect to TABS
+            if (inAuthGroup) {
+              if (currentPath !== '(auth)/register') {
+                if (lastRedirectPath.current !== '/(tabs)') {
+                  lastRedirectPath.current = '/(tabs)';
+                  router.replace('/(tabs)');
+                }
+              }
+            }
+          } finally {
+            isRedirecting.current = false;
           }
         });
       }

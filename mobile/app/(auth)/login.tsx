@@ -103,27 +103,7 @@ export default function LoginScreen() {
 
     try {
       await dispatch(login({ email, password })).unwrap();
-
-      // The guestRole is now automatically cleared in the Redux slice.
-      // We wait a tiny bit for the state to settle before checking the role.
-      setTimeout(() => {
-        try {
-          if (redirectTo) {
-            router.replace(redirectTo as any);
-          } else {
-            // Check Redux state for the final decision (or use email for simple check)
-            if (email.toLowerCase().includes('admin')) {
-              router.replace('/admin');
-            } else {
-              // The _layout.tsx will handle the final guarding, but we can be explicit
-              router.replace('/(tabs)');
-            }
-          }
-        } catch (navError) {
-          console.error('[Login] Navigation failed:', navError);
-          router.replace('/');
-        }
-      }, 200);
+      console.log('✅ Manual login successful, layout will handle redirection');
     } catch (err: any) {
       // Check if this is a "user not found" error
       const errorMessage = err?.message || err || 'Giriş yapılamadı';
@@ -201,14 +181,7 @@ export default function LoginScreen() {
     setSocialLoading('apple');
     try {
       const result = await dispatch(appleLogin(undefined)).unwrap();
-      const timer = setTimeout(() => {
-        try {
-          router.replace(redirectTo ? (redirectTo as any) : '/(tabs)');
-        } catch (navErr) {
-          console.log('Post-apple-login navigation safe-skipped:', navErr);
-        }
-      }, 1500);
-      return () => clearTimeout(timer);
+      console.log('✅ Apple login successful, layout will handle redirection');
     } catch (err: any) {
       if (err === 'CANCELLED') {
         // Kullanıcı iptal etti
@@ -243,11 +216,7 @@ export default function LoginScreen() {
 
     try {
       await dispatch(login({ email: testEmail, password: testPassword })).unwrap();
-      if (redirectTo) {
-        router.replace(redirectTo as any);
-      } else {
-        router.replace('/(tabs)');
-      }
+      console.log('✅ Test login successful, layout will handle redirection');
     } catch (err: any) {
       // Eğer kullanıcı yoksa, otomatik kayıt yap
       showAlert(

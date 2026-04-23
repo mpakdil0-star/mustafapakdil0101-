@@ -377,80 +377,93 @@ export default function HomeScreen() {
   }, [isAuthenticated, isElectrician, user]);
 
   // Kullanıcının konumunu/şehrini ve hizmet bölgelerini yükle
+  const initializationRef = useRef(false);
+
   useFocusEffect(
     useCallback(() => {
-      const fetchUserLocations = async () => {
+      if (initializationRef.current && isAuthenticated) {
+        // Refresh ONLY necessary data on subsequent focuses
+        fetchNewJobsCount();
+        return;
+      }
+
+      const runInitialization = async () => {
         if (!isAuthenticated) {
           setIsInitialized(true);
           return;
         }
 
-        // Independent fetches for locations and verification
-        const fetchLocations = async () => {
-          try {
-            const response = await api.get(API_ENDPOINTS.LOCATIONS);
-            if (response.data.success && response.data.data.length > 0) {
-              const locations = response.data.data;
-              const cities = locations.map((l: any) => l.city).filter(Boolean);
-              setUserCities(cities);
-              setLocationsCount(locations.length);
-            } else {
-              setLocationsCount(0);
-              setUserCities([]);
-            }
-          } catch (error: any) {
-            console.warn('Error fetching user locations:', error.message || error);
-            setLocationsCount(0);
-            setUserCities([]);
-          }
-        };
+        initializationRef.current = true;
 
-        const fetchVerification = async () => {
-          if (!isElectrician) return;
-          try {
-            const vResponse = await api.get('/users/verification');
-            if (vResponse.data.success && vResponse.data.data) {
-              setVerificationStatus(vResponse.data.data.status);
-            }
-          } catch (vError) {
-            console.log('Error fetching verification status:', vError);
-          }
-        };
-
-        await Promise.all([fetchLocations(), fetchVerification()]);
-        setIsInitialized(true);
-      };
-
-      const checkPushStatus = async () => {
         try {
-          const { Platform } = await import('react-native');
-          const Constants = (await import('expo-constants')).default;
-          if (Platform.OS === 'android' && Constants.appOwnership === 'expo') {
-            return;
-          }
-          const Notifications = await import('expo-notifications');
-          const { status } = await Notifications.getPermissionsAsync();
-          if (status === 'granted') {
-            // Permission granted — hide banner and ensure token is registered
-            await AsyncStorage.setItem('push_activated', 'true');
-            setShowPushBanner(false);
-            // Silently ensure push token is registered
-            if (!user?.isImpersonated) {
-              authService.registerPushToken().catch(() => {});
+          console.log('🚀 [Home] Initializing data...');
+          
+          const fetchLocations = async () => {
+            try {
+              const response = await api.get(API_ENDPOINTS.LOCATIONS);
+              if (response.data.success && response.data.data.length > 0) {
+                const locations = response.data.data;
+                const cities = locations.map((l: any) => l.city).filter(Boolean);
+                setUserCities(cities);
+                setLocationsCount(locations.length);
+              }
+            } catch (error) {
+              console.log('Error fetching locations count:', error);
             }
-            return;
-          }
-          // System permission NOT granted — show the fallback banner
-          await AsyncStorage.removeItem('push_activated');
-          setShowPushBanner(true);
-        } catch (e) { }
+          };
+
+          const fetchVerification = async () => {
+            try {
+              const response = await authService.getVerificationStatus();
+              setVerificationStatus(response.data?.status || null);
+            } catch (vError) {
+              console.log('Error fetching verification status:', vError);
+            }
+          };
+
+          const checkPushStatus = async () => {
+            try {
+              const { Platform } = await import('react-native');
+              const Notifications = await import('expo-notifications');
+              const { status } = await Notifications.getPermissionsAsync();
+              if (status === 'granted') {
+                await AsyncStorage.setItem('push_activated', 'true');
+                setShowPushBanner(false);
+                if (!user?.isImpersonated) {
+                  authService.registerPushToken().catch(() => {});
+                }
+                return;
+              }
+              await AsyncStorage.removeItem('push_activated');
+              setShowPushBanner(true);
+            } catch (e) { }
+          };
+          
+          await Promise.all([
+            fetchLocations(),
+            fetchVerification(),
+            fetchNewJobsCount(),
+            checkPushStatus()
+          ]);
+          
+          setIsInitialized(true);
+          console.log('✅ [Home] Initialization complete');
+        } catch (err) {
+          console.error('[Home] Initialization error:', err);
+          setIsInitialized(true);
+        }
       };
 
-      fetchUserLocations();
-      fetchNewJobsCount();
-      if (isAuthenticated) checkPushStatus();
-    }, [isAuthenticated, isElectrician, fetchNewJobsCount])
+      runInitialization();
+    }, [isAuthenticated, isElectrician])
   );
+
+  // Separate Effect for Featured Electricians to avoid blocking main UI
+  useEffect(() => {
+    if (isInitialized && userCities.length > 0) {
+      fetchFeaturedElectricians();
+    }
+  }, [isInitialized, userCities.length]);
 
   // AppState listener: auto-detect when user returns from system settings
   // If notification permission was just granted, auto-hide banner & register token
