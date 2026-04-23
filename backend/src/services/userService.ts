@@ -96,6 +96,9 @@ export const userService = {
                 finalUserData.phone = phone;
                 finalUserData.isVerified = true;
                 profileData.creditBalance = 5;
+            } else if (phone && currentUser.isVerified && (!currentUser.phone || currentUser.phone === '')) {
+                // Allow setting phone for the first time even if already verified (e.g. Google Login)
+                finalUserData.phone = phone;
             } else if (phone && currentUser.isVerified && phone !== currentUser.phone) {
                 // Attempt to change verified phone - reject/ignore for security
                 console.warn(`User ${userId} attempted to change verified phone number. Operation blocked.`);
