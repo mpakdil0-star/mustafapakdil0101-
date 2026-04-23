@@ -341,7 +341,9 @@ const authSlice = createSlice({
       })
       .addCase(getMe.rejected, (state) => {
         state.isLoading = false;
-        state.isAuthenticated = false;
+        // NOT setting isAuthenticated = false here intentionally.
+        // If getMe fails (e.g. 401 due to token timing), we keep the user logged in.
+        // Real logout is triggered explicitly via the logout thunk or api interceptor.
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = null;

@@ -67,8 +67,60 @@ export const googleLoginController = async (
         // 3. Also check mockStorage (always, as fallback for users created during DB-down periods)
         if (!user) {
             const allUsers = mockStorage.getAllUsers();
-            user = allUsers.find(u => u.email === email);
-            if (user) userId = user.id;
+            const mockUserFound = allUsers.find(u => u.email === email);
+            if (mockUserFound) {
+                user = mockUserFound;
+                userId = user.id;
+
+                // 🌟 MIGRATION LOGIC: if DB is available but user is only in mock, migrate them!
+                if (isDatabaseAvailable) {
+                    console.log('🔄 Migrating mock user to Prisma DB:', email);
+                    try {
+                        const dbUser = await prisma.user.create({
+                            data: {
+                                email: mockUserFound.email,
+                                fullName: mockUserFound.fullName || name || 'Google User',
+                                phone: mockUserFound.phone || '',
+                                isVerified: mockUserFound.isVerified || true,
+                                userType: mockUserFound.userType || requestedUserType,
+                                profileImageUrl: mockUserFound.profileImageUrl || picture,
+                                passwordHash: mockUserFound.passwordHash || 'GOOGLE_AUTH_MIGRATED',
+                                acceptedLegalVersion: mockUserFound.acceptedLegalVersion || '25 Mart 2026 Tarihli Sözleşme',
+                                marketingAllowed: mockUserFound.marketingAllowed || false,
+                            }
+                        });
+
+                        if (mockUserFound.userType === 'ELECTRICIAN' || requestedUserType === 'ELECTRICIAN') {
+                            const profileData = mockUserFound.electricianProfile || {};
+                            await prisma.electricianProfile.create({
+                                data: {
+                                    userId: dbUser.id,
+                                    creditBalance: mockUserFound.creditBalance || profileData.creditBalance || 5,
+                                    isAvailable: true,
+                                    experienceYears: mockUserFound.experienceYears || profileData.experienceYears || 0,
+                                    totalReviews: profileData.totalReviews || 0,
+                                    ratingAverage: profileData.ratingAverage || 0,
+                                    completedJobsCount: profileData.completedJobsCount || 0,
+                                    serviceCategory: mockUserFound.serviceCategory || profileData.serviceCategory || 'elektrik' // default profession
+                                }
+                            });
+                        }
+
+                        await prisma.userConsent.createMany({
+                            data: [
+                                { userId: dbUser.id, documentType: 'KVKK', documentVersion: mockUserFound.acceptedLegalVersion || '25 Mart 2026 Tarihli Sözleşme', action: 'ACCEPTED', ipAddress: req.ip || 'google_auth_migration' },
+                                { userId: dbUser.id, documentType: 'TERMS', documentVersion: mockUserFound.acceptedLegalVersion || '25 Mart 2026 Tarihli Sözleşme', action: 'ACCEPTED', ipAddress: req.ip || 'google_auth_migration' }
+                            ]
+                        });
+
+                        user = await prisma.user.findUnique({ where: { id: dbUser.id }, include: { electricianProfile: true } });
+                        if (user) userId = user.id;
+                        console.log('✅ Migration successful, new user ID:', userId);
+                    } catch (migrationError) {
+                        console.error('❌ Failed to migrate mock user to Prisma:', migrationError);
+                    }
+                }
+            }
         }
 
         if (!user) {
