@@ -528,10 +528,8 @@ export default function HomeScreen() {
   }, [notifications.length, isAuthenticated, isElectrician, fetchNewJobsCount]);
 
   // Socket setup moved to global _layout.tsx
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    dispatch(fetchNotifications());
-  }, [isAuthenticated, dispatch]);
+  // Socket setup moved to global _layout.tsx
+  // No longer fetching notifications here to avoid double fetch and potential loops
 
   const handleActionWithAuth = (path: string, params?: any) => {
     if (!isAuthenticated) {

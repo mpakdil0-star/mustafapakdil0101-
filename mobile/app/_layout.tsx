@@ -106,99 +106,83 @@ function RootLayoutNav() {
     };
 
     const runNavigationLogic = async () => {
-      // CRITICAL: Wait until navigation is ready before performing any redirects
-      if (!isNavigationReady) {
-        console.log('⏳ Navigation not ready yet, skipping logic');
-        return;
-      }
+      // CRITICAL: Wait until navigation is fully ready before performing any redirects
+      if (!isNavigationReady) return;
 
       const inAuthGroup = segments[0] === '(auth)';
       const isOnboarding = segments[0] === 'onboarding';
       const currentPath = segments.join('/');
       const isInsideProfileGroup = segments[0] === 'profile';
 
-      // 1. Check onboarding first if not already there
+      // 1. Check onboarding first
       if (!isOnboarding) {
         const redirectedToOnboarding = await checkOnboarding();
         if (redirectedToOnboarding) return;
       }
 
-      // 2. Auth-based redirection
       if (!segments.length) return;
 
       if (isAuthenticated) {
-        // Ensure socket is connected
+        // Socket connection (centralized)
         socketService.connect();
 
-        // Admin check
-        if (user?.userType === 'ADMIN') {
-          if (inAuthGroup || currentPath === '') {
-            router.replace('/admin');
-          }
-          return;
-        }
-
-        // Email Verification Security Check
-        // If the user's email/phone is not verified, they must not be allowed to enter the app.
-        if (user && user.isVerified === false) {
-          if (currentPath === '(auth)/register') {
-            // Keep them on register screen to finish the verification modal flow
+        // 2. Auth-based redirection logic
+        // Using InteractionManager ensures we don't redirect while animations (like login button press) are still running,
+        // which is a common cause of native crashes in Expo/React Native.
+        InteractionManager.runAfterInteractions(async () => {
+          // Re-check state inside interactions to ensure accuracy
+          if (user?.userType === 'ADMIN') {
+            if (inAuthGroup || currentPath === '') {
+              router.replace('/admin');
+            }
             return;
-          } else {
-            // If they restarted the app (kill & start) or navigated away without verifying
+          }
+
+          // Case: Unverified users
+          if (user && user.isVerified === false) {
+            if (currentPath === '(auth)/register') return;
+            
+            // Safety logout for unverified re-entry
             dispatch(logout());
             showAlert('E-posta Doğrulaması Eksik', 'Güvenliğiniz için kayıt sırasında e-postanızı doğrulamanız zorunludur. İşlem tamamlanmadığı için oturumunuz kapatıldı.', 'error');
             router.replace('/(auth)/login');
             return;
           }
-        }
 
-        // Profile completion check for professionals
-        if (user?.userType === 'ELECTRICIAN') {
-          const isIncomplete = checkIsProfileIncomplete(user);
+          // Case: Electrician profile completion
+          if (user?.userType === 'ELECTRICIAN') {
+            const isIncomplete = checkIsProfileIncomplete(user);
+            const { getItemAsync, setItemAsync } = await import('expo-secure-store');
+            const profileSetupDone = await getItemAsync('profile_setup_completed_' + user.id);
 
+            if (isIncomplete && !isInsideProfileGroup && !profileSetupDone && currentPath !== '(auth)/register') {
+              router.replace('/profile/edit?mandatory=true');
+              return;
+            }
 
-          // Check if user has already completed profile setup at least once
-          const { getItemAsync, setItemAsync } = await import('expo-secure-store');
-          const profileSetupDone = await getItemAsync('profile_setup_completed_' + user.id);
-
-          if (isIncomplete && !isInsideProfileGroup && !profileSetupDone && currentPath !== '(auth)/register') {
-            // Only force redirect on FIRST TIME setup (no flag saved yet)
-            router.replace('/profile/edit?mandatory=true');
-            return;
-          }
-
-          // If profile is now complete, save the flag so we never force-redirect again
-          if (!isIncomplete && !profileSetupDone) {
-            await setItemAsync('profile_setup_completed_' + user.id, 'true');
-            console.log('✅ Profile setup completed flag saved for user:', user.id);
-          }
-
-          // If profile is complete but we are still on the mandatory edit page, go home
-          if (!isIncomplete && isInsideProfileGroup && params.mandatory === 'true') {
-            console.log('✅ Profile complete, exiting mandatory edit mode');
-            // Save the flag here too in case it wasn't saved yet
-            if (!profileSetupDone) {
+            if (!isIncomplete && !profileSetupDone) {
               await setItemAsync('profile_setup_completed_' + user.id, 'true');
             }
-            router.replace('/(tabs)');
-            return;
-          }
-        }
 
-        // Default: If in auth group, go to tabs
-        if (inAuthGroup) {
-          // EXCEPTION: If the user is currently on the register screen, don't force redirect. 
-          // Let register.tsx handle its own navigation because it has an Email Verification Modal.
-          if (currentPath !== '(auth)/register') {
-            router.replace('/(tabs)');
+            if (!isIncomplete && isInsideProfileGroup && params.mandatory === 'true') {
+              router.replace('/(tabs)');
+              return;
+            }
           }
-        }
+
+          // Case: Default redirect to TABS
+          if (inAuthGroup) {
+            // We give register.tsx a pass because it has its own state-aware verification modal
+            if (currentPath !== '(auth)/register') {
+              router.replace('/(tabs)');
+            }
+          }
+        });
       }
     };
 
     runNavigationLogic();
-  }, [isAuthenticated, user, user?.userType, segments, isNavigationReady, router, checkIsProfileIncomplete, params.mandatory]);
+  }, [isAuthenticated, user?.id, user?.userType, segments, isNavigationReady, params.mandatory]);
 
   // Fetch initial notification count and SYNC USER STATUS on login/app start
   useEffect(() => {

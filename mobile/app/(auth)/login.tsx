@@ -169,16 +169,10 @@ export default function LoginScreen() {
   const handleGoogleLogin = async () => {
     setSocialLoading('google');
     try {
-      const result = await dispatch(googleLogin(undefined)).unwrap();
-      // Başarılı giriş
-      const timer = setTimeout(() => {
-        try {
-          router.replace(redirectTo ? (redirectTo as any) : '/(tabs)');
-        } catch (navErr) {
-          console.log('Post-google-login navigation safe-skipped:', navErr);
-        }
-      }, 1500);
-      return () => clearTimeout(timer);
+      await dispatch(googleLogin()).unwrap();
+
+      // Rely on _layout.tsx for navigation
+      console.log('✅ Google Login successful, waiting for _layout.tsx to handle redirect');
     } catch (err: any) {
       if (err === 'CANCELLED') {
         // Kullanıcı iptal etti, sessizce devam et
