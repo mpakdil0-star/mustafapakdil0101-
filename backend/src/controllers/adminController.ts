@@ -773,13 +773,12 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
 
         if (isDatabaseAvailable && !idStr.startsWith('mock-')) {
             // DB Implementation: Soft delete for admin as well to avoid foreign key constraint errors
-            // (e.g., if there are reviews or payments associated with a completed job)
             try {
                 await prisma.jobPost.update({ 
                     where: { id: idStr },
                     data: { 
                         deletedAt: new Date(),
-                        status: 'CANCELLED' // Set to cancelled as well to match user delete behavior
+                        status: 'CANCELLED' as any
                     }
                 });
                 console.log(`🗑️ Database job soft-deleted by admin: ${idStr}`);
@@ -789,11 +788,20 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
                     deleteMockJob(idStr);
                 }
 
-                return res.json({ success: true, message: 'İlan veritabanından silindi' });
-            } catch (dbError) {
+                return res.json({ success: true, message: 'İlan silindi' });
+            } catch (dbError: any) {
                 console.error('Database deletion error:', dbError);
-                // Fallthrough to mock deletion or return error if confirmed DB ID
-                return res.status(500).json({ success: false, message: 'İlan silinirken veritabanı hatası oluştu' });
+                
+                // Fallback: If not found in DB, it might be in mock store
+                if (deleteMockJob(idStr)) {
+                    return res.json({ success: true, message: 'İlan silindi (Mock)' });
+                }
+
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'İlan silinirken hata oluştu',
+                    error: dbError.message 
+                });
             }
         }
 
