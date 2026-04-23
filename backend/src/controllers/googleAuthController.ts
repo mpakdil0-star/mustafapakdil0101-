@@ -256,7 +256,25 @@ export const googleLoginController = async (
                 console.error('⚠️ Failed to notify admins about new Google user:', err);
               }
             })();
-        } else {
+            // Reactivate user if they were inactive (e.g. soft-deleted)
+            if (!user.isActive) {
+                if (isDatabaseAvailable && !user.id.startsWith('mock-')) {
+                    try {
+                        await prisma.user.update({
+                            where: { id: user.id },
+                            data: { isActive: true, deletedAt: null }
+                        });
+                        user.isActive = true;
+                        console.log(`✅ Reactivated existing user: ${email}`);
+                    } catch (e) {
+                        console.error(`❌ Failed to reactivate user ${email}:`, e);
+                    }
+                } else {
+                    mockStorage.updateProfile(user.id, { isActive: true });
+                    user.isActive = true;
+                }
+            }
+
             // Update existing user's photo if missing
             if (!user.profileImageUrl && picture) {
                 if (isDatabaseAvailable && !user.id.startsWith('mock-')) {
