@@ -256,6 +256,10 @@ export const googleLoginController = async (
                 console.error('⚠️ Failed to notify admins about new Google user:', err);
               }
             })();
+        }
+
+        // 5. Ensure existing user is active and has photo updated
+        if (user) {
             // Reactivate user if they were inactive (e.g. soft-deleted)
             if (!user.isActive) {
                 if (isDatabaseAvailable && !user.id.startsWith('mock-')) {
@@ -289,11 +293,11 @@ export const googleLoginController = async (
                     mockStorage.updateProfile(user.id, { profileImageUrl: picture });
                 }
             }
-            // Ensure userType matches or handle multi-role (currently simplified)
+            // Update userId to the potentially updated/migrated ID
             userId = user.id;
         }
 
-        // 5. Generate Tokens
+        // 6. Generate Tokens
         const tokens = generateTokens({ id: userId!, email, userType: user?.userType || requestedUserType });
         let fullUser = user;
         if (!isDatabaseAvailable || userId!.startsWith('mock-')) {
