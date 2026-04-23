@@ -620,7 +620,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 style={styles.headerLinkButton}
                 activeOpacity={0.7}
-                onPress={() => router.push('/profile/notifications')}
+                onPress={() => handleActionWithAuth('/profile/notifications')}
               >
                 <Ionicons name="notifications-outline" size={24} color={colors.white} />
                 {unreadCount > 0 && (
@@ -636,7 +636,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 style={styles.profileAvatarButton}
                 activeOpacity={0.7}
-                onPress={() => router.push('/profile')}
+                onPress={() => handleActionWithAuth('/profile')}
               >
                 {user?.profileImageUrl ? (
                   <Image source={{ uri: getFileUrl(user.profileImageUrl) || '' }} style={styles.headerAvatar} />
