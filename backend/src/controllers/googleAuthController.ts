@@ -64,8 +64,8 @@ export const googleLoginController = async (
             }
         }
 
-        // 3. Fallback to mockStorage if not found in Prisma or Prisma unavailable
-        if (!user && !isDatabaseAvailable) {
+        // 3. Also check mockStorage (always, as fallback for users created during DB-down periods)
+        if (!user) {
             const allUsers = mockStorage.getAllUsers();
             user = allUsers.find(u => u.email === email);
             if (user) userId = user.id;

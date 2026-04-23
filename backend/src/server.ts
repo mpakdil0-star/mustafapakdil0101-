@@ -68,6 +68,14 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// URL normalization - fix double slashes from mobile client
+app.use((req, res, next) => {
+  if (req.url.includes('//')) {
+    req.url = req.url.replace(/\/\//g, '/');
+  }
+  next();
+});
+
 // Routes
 app.use('/api/v1', routes);
 

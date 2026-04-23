@@ -67,7 +67,16 @@ export const authenticate = async (
       });
 
       if (!user) {
-        throw new UnauthorizedError('User not found');
+        // User not in Prisma - might be a mock-storage user created during DB-down period
+        // Fall back to decoded token info instead of rejecting
+        console.warn(`⚠️ auth.ts: User ${decoded.id} not found in Prisma, falling back to token info`);
+        req.user = {
+          id: decoded.id,
+          email: decoded.email,
+          userType: decoded.userType,
+          isImpersonated: decoded.isImpersonated,
+        };
+        return next();
       }
 
       if (!user.isActive) {

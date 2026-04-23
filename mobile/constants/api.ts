@@ -38,13 +38,13 @@ const TUNNEL_URL: string = 'https://elektrikciler-backend.onrender.com'; // Prod
 const getApiUrl = () => {
   // 1. Eğer TUNNEL_URL doluysa onu kullan (Remote test)
   if (TUNNEL_URL && TUNNEL_URL.length > 0) {
-    const baseUrl = `${TUNNEL_URL}/api/${API_VERSION}/`;
+    const baseUrl = `${TUNNEL_URL}/api/${API_VERSION}`;
     console.log('🔌 Backend URL (Ngrok Tunnel):', baseUrl);
     return baseUrl;
   }
 
   // 2. Yoksa Yerel IP'yi kullan (Local test - Fast & Stable)
-  const baseUrl = `http://${LOCALHOST}:${PORT}/api/${API_VERSION}/`; 
+  const baseUrl = `http://${LOCALHOST}:${PORT}/api/${API_VERSION}`; 
   console.log('🏠 Backend URL (Local IP):', baseUrl);
   return process.env.EXPO_PUBLIC_API_URL || baseUrl;
 };
