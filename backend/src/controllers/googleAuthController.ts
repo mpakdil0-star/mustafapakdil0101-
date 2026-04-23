@@ -48,10 +48,28 @@ export const googleLoginController = async (
 
         console.log(`🔌 Google Login attempt: ${email} as ${requestedUserType}`);
 
-        // 2. Check if user exists in mockStorage (since DB is down/mocked)
-        const allUsers = mockStorage.getAllUsers();
-        let user = allUsers.find(u => u.email === email);
-        let userId = user?.id;
+        let user: any = null;
+        let userId: string | undefined;
+
+        // 2. Check Database if available
+        if (isDatabaseAvailable) {
+            try {
+                user = await prisma.user.findFirst({
+                    where: { email },
+                    include: { electricianProfile: true }
+                });
+                if (user) userId = user.id;
+            } catch (error) {
+                console.warn('⚠️ Prisma query failed in google auth fallback to mock', error);
+            }
+        }
+
+        // 3. Fallback to mockStorage if not found in Prisma or Prisma unavailable
+        if (!user && !isDatabaseAvailable) {
+            const allUsers = mockStorage.getAllUsers();
+            user = allUsers.find(u => u.email === email);
+            if (user) userId = user.id;
+        }
 
         if (!user) {
             // If userType was NOT explicitly provided (Login screen flow),
@@ -67,28 +85,80 @@ export const googleLoginController = async (
                 });
             }
 
-            // 3. Register new user automatically (Register screen flow)
+            // 4. Register new user automatically (Register screen flow)
             console.log('🆕 New Google user, registering...');
 
             // Retrieve serviceCategory from request body (sent from Register screen)
             const { serviceCategory } = req.body;
+            
+            const acceptedLegalVersion = req.body.acceptedLegalVersion || '25 Mart 2026 Tarihli Sözleşme';
+            const marketingAllowed = req.body.marketingAllowed || false;
 
-            // Sanitize email for ID
-            const sanitizedEmail = email.replace(/[^a-zA-Z0-9]/g, '-');
-            userId = `mock-user-${sanitizedEmail}-${requestedUserType}-google`;
+            if (isDatabaseAvailable) {
+                try {
+                    const dbUser = await prisma.user.create({
+                        data: {
+                            email,
+                            fullName: name || 'Google User',
+                            phone: '',
+                            isVerified: true,
+                            userType: requestedUserType,
+                            profileImageUrl: picture,
+                            passwordHash: 'GOOGLE_AUTH_NO_PASSWORD',
+                            acceptedLegalVersion,
+                            marketingAllowed,
+                        }
+                    });
 
-            mockStorage.updateProfile(userId, {
-                fullName: name || 'Google User',
-                email,
-                phone: '', // Google doesn't provide phone by default
-                isVerified: true, // Google email is verified
-                userType: requestedUserType,
-                profileImageUrl: picture,
-                serviceCategory: requestedUserType === 'ELECTRICIAN' ? (serviceCategory || 'elektrik') : undefined
-            });
+                    if (requestedUserType === 'ELECTRICIAN') {
+                        await prisma.electricianProfile.create({
+                            data: {
+                                userId: dbUser.id,
+                                creditBalance: 5,
+                                isAvailable: true,
+                                experienceYears: 0,
+                                totalReviews: 0,
+                                ratingAverage: 0,
+                                completedJobsCount: 0,
+                                serviceCategory: serviceCategory || 'elektrik'
+                            }
+                        });
+                    }
 
-            // Fetch the newly created user
-            user = mockStorage.getFullUser(userId, requestedUserType);
+                    await prisma.userConsent.createMany({
+                        data: [
+                            { userId: dbUser.id, documentType: 'KVKK', documentVersion: acceptedLegalVersion, action: 'ACCEPTED', ipAddress: req.ip || 'google_auth' },
+                            { userId: dbUser.id, documentType: 'TERMS', documentVersion: acceptedLegalVersion, action: 'ACCEPTED', ipAddress: req.ip || 'google_auth' },
+                            ...(marketingAllowed ? [{ userId: dbUser.id, documentType: 'MARKETING', documentVersion: acceptedLegalVersion, action: 'ACCEPTED', ipAddress: req.ip || 'google_auth' }] : [])
+                        ]
+                    });
+
+                    user = await prisma.user.findUnique({ where: { id: dbUser.id }, include: { electricianProfile: true } });
+                    userId = user.id;
+                } catch (error) {
+                    console.error('Error creating Google user in Prisma:', error);
+                }
+            }
+
+            // Fallback or double save to mock storage for safety
+            if (!userId) {
+                // Sanitize email for ID
+                const sanitizedEmail = email.replace(/[^a-zA-Z0-9]/g, '-');
+                userId = `mock-user-${sanitizedEmail}-${requestedUserType}-google`;
+
+                mockStorage.updateProfile(userId, {
+                    fullName: name || 'Google User',
+                    email,
+                    phone: '', // Google doesn't provide phone by default
+                    isVerified: true, // Google email is verified
+                    userType: requestedUserType,
+                    profileImageUrl: picture,
+                    serviceCategory: requestedUserType === 'ELECTRICIAN' ? (serviceCategory || 'elektrik') : undefined
+                });
+
+                // Fetch the newly created user
+                user = mockStorage.getFullUser(userId, requestedUserType);
+            }
 
             // 🔔 Admin'e yeni Google kullanıcı bildirimi gönder
             (async () => {
@@ -135,15 +205,28 @@ export const googleLoginController = async (
         } else {
             // Update existing user's photo if missing
             if (!user.profileImageUrl && picture) {
-                mockStorage.updateProfile(user.id, { profileImageUrl: picture });
+                if (isDatabaseAvailable && !user.id.startsWith('mock-')) {
+                    try {
+                        await prisma.user.update({
+                            where: { id: user.id },
+                            data: { profileImageUrl: picture }
+                        });
+                        user.profileImageUrl = picture;
+                    } catch (e) {}
+                } else {
+                    mockStorage.updateProfile(user.id, { profileImageUrl: picture });
+                }
             }
             // Ensure userType matches or handle multi-role (currently simplified)
             userId = user.id;
         }
 
-        // 4. Generate Tokens
+        // 5. Generate Tokens
         const tokens = generateTokens({ id: userId!, email, userType: user?.userType || requestedUserType });
-        const fullUser = mockStorage.getFullUser(userId!, user?.userType || requestedUserType);
+        let fullUser = user;
+        if (!isDatabaseAvailable || userId!.startsWith('mock-')) {
+            fullUser = mockStorage.getFullUser(userId!, user?.userType || requestedUserType);
+        }
 
         res.json({
             success: true,
