@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+// V2.1: Admin Soft-Delete Fix - 24.04.2026
 import prisma, { isDatabaseAvailable } from '../config/database';
 import { mockStorage, getAllMockUsers } from '../utils/mockStorage';
 import { notifyUser } from '../server';

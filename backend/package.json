@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "node scripts/kill-port.js && nodemon",
-    "build": "prisma generate && tsc",
+    "build": "rm -rf dist && prisma generate && tsc",
     "start": "npx prisma db push --accept-data-loss && node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
