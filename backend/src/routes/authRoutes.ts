@@ -9,7 +9,6 @@ import {
   resetPasswordController,
   sendEmailVerificationController,
   verifyEmailController,
-  debugActivateController,
 } from '../controllers/authController';
 import { googleLoginController } from '../controllers/googleAuthController';
 import { appleLoginController } from '../controllers/appleAuthController';
@@ -37,7 +36,7 @@ router.post('/google', authLimiter, googleLoginController);
 router.post('/apple', authLimiter, appleLoginController);
 router.post('/send-verification', authLimiter, sendEmailVerificationController);
 router.post('/verify-email', authLimiter, verifyEmailController);
-router.get('/debug-activate/:email', debugActivateController);
+
 
 export default router;
 
