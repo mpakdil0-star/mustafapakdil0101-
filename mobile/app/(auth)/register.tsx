@@ -7,50 +7,42 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Animated,
   TouchableOpacity,
+  Image,
   Modal,
   TextInput,
-  Image,
 } from 'react-native';
-import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import LocationPicker from '../../components/common/LocationPicker';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
-import { register, getMe, googleLogin, appleLogin } from '../../store/slices/authSlice';
-import { Button } from '../../components/common/Button';
+import { register, googleLogin, appleLogin, getMe } from '../../store/slices/authSlice';
 import { Input } from '../../components/common/Input';
-import { validateEmail, validatePassword, validateRequired, validatePhone } from '../../utils/validation';
-import { colors as baseColors } from '../../constants/colors';
+import { validateEmail, validatePassword, validateFullName, validatePhone } from '../../utils/validation';
+import { colors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
-import { SERVICE_CATEGORIES, ServiceCategory } from '../../constants/serviceCategories';
-import { API_BASE_URL } from '../../constants/api';
+import { PremiumAlert } from '../../components/common/PremiumAlert';
+import { API_BASE_URL } from '../../config/api';
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { redirectTo, initialRole, serviceCategory: initialServiceCategory } = useLocalSearchParams<{ redirectTo?: string; initialRole?: 'CITIZEN' | 'ELECTRICIAN'; serviceCategory?: string }>();
+  const { initialRole, initialServiceCategory, redirectTo } = useLocalSearchParams<{
+    initialRole?: string;
+    initialServiceCategory?: string;
+    redirectTo?: string;
+  }>();
   const dispatch = useAppDispatch();
-  const { isLoading, error, isAuthenticated } = useAppSelector((state) => state.auth);
-
-  // Safety net: If authenticated but still on this screen after 1.5s, force navigation
-  useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      const timer = setTimeout(() => {
-        console.log('🛡️ [Register] Safety net triggered - forcing navigation');
-        router.replace('/(tabs)');
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [isAuthenticated, isLoading]);
+  const { isLoading, error } = useAppSelector((state) => state.auth);
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [location, setLocation] = useState<{ city: string; district: string; address: string; latitude: number; longitude: number } | null>(null);
-  // Use values from role-select screen
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [socialLoading, setSocialLoading] = useState<'google' | 'apple' | null>(null);
+
   const userType = initialRole === 'ELECTRICIAN' ? 'ELECTRICIAN' : 'CITIZEN';
   const serviceCategory = initialServiceCategory || 'elektrik';
   const [marketingAllowed, setMarketingAllowed] = useState(false);
@@ -59,29 +51,22 @@ export default function RegisterScreen() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [kvkkAccepted, setKvkkAccepted] = useState(false);
 
-  // Theme selection based on userType
-  const colors = userType === 'CITIZEN' ? baseColors : (baseColors as any).ELECTRICIAN_COLORS || baseColors;
-  const accentColor = userType === 'CITIZEN' ? '#7C3AED' : '#3B82F6';
-
-  const [isPhoneModalVisible, setIsPhoneModalVisible] = useState(false);
-  const [isSendingCode, setIsSendingCode] = useState(false);
-  const [confirm, setConfirm] = useState<any>(null);
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // E-posta doğrulama state'leri
+  // Email Verification Modal States
   const [emailVerifyModal, setEmailVerifyModal] = useState(false);
   const [verifyCode, setVerifyCode] = useState('');
-  const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyError, setVerifyError] = useState('');
-  const [mockCode, setMockCode] = useState<string | null>(null); // Test modunda gösterilir
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
   const [registeredEmail, setRegisteredEmail] = useState('');
   const [registeredFullName, setRegisteredFullName] = useState('');
+  const [mockCode, setMockCode] = useState<string | null>(null);
   const codeInputRef = useRef<TextInput>(null);
-  const [resendTimer, setResendTimer] = useState(0);
+
+  // Phone modal states
+  const [isPhoneModalVisible, setIsPhoneModalVisible] = useState(false);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: any;
     if (resendTimer > 0) {
       interval = setInterval(() => {
         setResendTimer((prev) => prev - 1);
@@ -109,15 +94,6 @@ export default function RegisterScreen() {
     buttons?: { text: string; onPress: () => void; variant?: 'primary' | 'secondary' | 'danger' | 'ghost' }[];
   }>({ visible: false, title: '', message: '' });
 
-  const [socialLoading, setSocialLoading] = useState<'google' | 'apple' | null>(null);
-
-  const [legalModal, setLegalModal] = useState<{ visible: boolean; type: string; title: string; content: string }>({
-    visible: false,
-    type: '',
-    title: '',
-    content: ''
-  });
-
   const showAlert = (title: string, message: string, type: any = 'info', buttons?: any[]) => {
     setAlertConfig({ visible: true, title, message, type, buttons });
   };
@@ -125,12 +101,12 @@ export default function RegisterScreen() {
   const validate = () => {
     const newErrors: Record<string, string> = {};
 
-    const fullNameErr = validateRequired(fullName, 'Ad soyad');
+    const nameErr = validateFullName(fullName);
     const emailErr = validateEmail(email);
+    const phoneErr = validatePhone(phone);
     const passwordErr = validatePassword(password);
-    const phoneErr = validateRequired(phone, 'Telefon numarası') || validatePhone(phone);
 
-    if (fullNameErr) newErrors.fullName = fullNameErr;
+    if (nameErr) newErrors.fullName = nameErr;
     if (emailErr) newErrors.email = emailErr;
     if (passwordErr) newErrors.password = passwordErr;
     if (phoneErr) newErrors.phone = phoneErr;
@@ -170,82 +146,64 @@ export default function RegisterScreen() {
       setVerifyError('Lütfen 6 haneli kodu girin.');
       return;
     }
-    setVerifyLoading(true);
+
+    setIsVerifying(true);
     setVerifyError('');
+
     try {
       const resp = await fetch(`${API_BASE_URL}auth/verify-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: registeredEmail, code: verifyCode }),
       });
+
       const data = await resp.json();
       if (data.success) {
         setEmailVerifyModal(false);
         await dispatch(getMe()).unwrap();
         
         showAlert('✅ Başarılı', 'E-posta adresiniz doğrulandı!', 'success', [
-          { text: 'Devam Et', onPress: navigateAfterRegister, variant: 'primary' }
+          { text: 'Tamam', onPress: () => navigateAfterRegister() }
         ]);
       } else {
-        setVerifyError(data.error?.message || 'Geçersiz kod.');
+        setVerifyError(data.error?.message || 'Geçersiz kod. Lütfen tekrar deneyin.');
       }
     } catch (err) {
       setVerifyError('Bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
-      setVerifyLoading(false);
+      setIsVerifying(false);
     }
   };
 
   const navigateAfterRegister = () => {
-    try {
+    if (redirectTo) {
+      router.replace(redirectTo as any);
+    } else {
       router.replace('/(tabs)');
-    } catch (navErr) {
-      console.log('Navigation handled by _layout.tsx');
     }
   };
 
-  const openLegalModal = async (type: string) => {
-    try {
-      const { getLegalDocuments } = await import('../../services/legalService');
-      const docs = await getLegalDocuments();
-      const found = docs.find(d => d.type.toLowerCase() === type.toLowerCase());
-      if (found) {
-        setLegalModal({
-          visible: true,
-          type: found.type,
-          title: found.title,
-          content: found.content.replace(/\\n/g, '\n')
-        });
-      }
-    } catch (err) {
-      console.error('Failed to load legal doc for modal:', err);
-    }
-  };
-
-  const handleGoogleRegister = async () => {
+  const handleGoogleLogin = async () => {
     setSocialLoading('google');
     try {
       await dispatch(googleLogin({ userType, serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined })).unwrap();
     } catch (err: any) {
       console.error('Google registration error:', err);
       if (err !== 'CANCELLED') {
-        showAlert('Google Kayıt Hatası', 'Google ile kayıt işlemi yapılırken bir hata oluştu. Lütfen tekrar deneyin.', 'error');
+        showAlert('Google Kayıt Hatası', typeof err === 'string' ? err : 'Google ile kayıt yapılırken bir hata oluştu.', 'error');
       }
     } finally {
       setSocialLoading(null);
     }
   };
 
-  const handleAppleRegister = async () => {
+  const handleAppleLogin = async () => {
     setSocialLoading('apple');
     try {
       await dispatch(appleLogin({ userType, serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined })).unwrap();
     } catch (err: any) {
-      if (err === 'CANCELLED') {
-      } else if (typeof err === 'string') {
-        showAlert('Apple Kayıt Hatası', err, 'error');
-      } else {
-        showAlert('Apple Kayıt Hatası', 'Apple ile kayıt sırasında bir hata oluştu.', 'error');
+      if (err !== 'CANCELLED') {
+        showAlert('Apple Kayıt Hatası', typeof err === 'string' ? err : 'Apple ile kayıt yapılırken bir hata oluştu.', 'error');
       }
     } finally {
       setSocialLoading(null);
@@ -254,9 +212,8 @@ export default function RegisterScreen() {
 
   const handleRegister = async (forceRegister = false) => {
     if (!validate()) return;
-
     if (!termsAccepted || !kvkkAccepted) {
-      showAlert('Bilgi', 'Devam etmek için Kullanıcı Sözleşmesi ve KVKK metinlerini onaylamanız gerekmektedir.', 'warning');
+      showAlert('⚠️ Onay Gerekli', 'Devam etmek için Kullanım Koşullarını ve KVKK Politikasını onaylamanız gerekmektedir.', 'warning');
       return;
     }
 
@@ -275,27 +232,22 @@ export default function RegisterScreen() {
           userType,
           serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined,
           acceptedLegalVersion: '25 Mart 2026 Tarihli Sözleşme',
-          marketingAllowed,
-          location: location ? {
-            city: location.city,
-            district: location.district,
-            address: location.address,
-            latitude: location.latitude,
-            longitude: location.longitude
-          } : undefined
+          marketingAllowed
         })
       ).unwrap();
 
       setRegisteredEmail(email);
       setRegisteredFullName(fullName);
       setVerifyCode('');
-      setVerifyError('');
       await sendVerificationCode(email, fullName);
-
     } catch (err: any) {
-      showAlert('Kayıt Hatası', err || 'Kayıt olunamadı. Lütfen tekrar deneyin.', 'error');
+      showAlert('Kayıt Hatası', err?.message || err || 'Kayıt yapılırken bir hata oluştu.', 'error');
     }
   };
+
+  const accentColor = userType === 'CITIZEN' ? '#7C3AED' : '#3B82F6';
+
+  const [legalModal, setLegalModal] = useState<{ visible: boolean; type: 'KVKK' | 'TERMS' }>({ visible: false, type: 'KVKK' });
 
   return (
     <KeyboardAvoidingView
@@ -305,157 +257,94 @@ export default function RegisterScreen() {
       <Modal
         visible={emailVerifyModal}
         transparent={true}
-        animationType="slide"
-        onRequestClose={() => {}}
+        animationType="fade"
       >
-        <View style={[styles.modalOverlay, { backgroundColor: 'rgba(15, 23, 42, 0.95)' }]}>
-          <View style={[styles.modalContent, { backgroundColor: 'rgba(20, 30, 55, 0.98)', borderColor: 'rgba(255,255,255,0.12)', borderWidth: 1 }]}>
-            <LinearGradient
-              colors={['#7C3AED', '#4F46E5']}
-              style={styles.modalHeader}
-            >
-              <Ionicons name="mail-outline" size={36} color="#FFFFFF" />
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
+                <Ionicons name="mail-open" size={32} color={colors.primary} />
+              </View>
               <Text style={styles.modalTitle}>E-posta Doğrulama</Text>
-              <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, textAlign: 'center', marginTop: 4 }}>
-                {registeredEmail}
-              </Text>
-            </LinearGradient>
-
-            <View style={styles.modalBody}>
-              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, textAlign: 'center', marginBottom: 20, lineHeight: 21 }}>
+              <Text style={styles.modalSubtitle}>
                 E-posta adresinize 6 haneli doğrulama kodu gönderdik. Lütfen kodu aşağıya girin.
               </Text>
 
               {mockCode && (
                 <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(16,185,129,0.3)' }}>
                   <Text style={{ color: '#34D399', fontSize: 12, textAlign: 'center', marginBottom: 4 }}>🧪 Test Modu — Gerçek E-posta Gönderilmedi</Text>
-                  <Text style={{ color: '#6EE7B7', fontSize: 26, textAlign: 'center', fontFamily: fonts.bold, letterSpacing: 8 }}>{mockCode}</Text>
+                  <Text style={{ color: colors.white, fontSize: 24, fontFamily: fonts.bold, textAlign: 'center', letterSpacing: 8 }}>{mockCode}</Text>
                 </View>
               )}
 
               <TextInput
                 ref={codeInputRef}
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.08)',
-                  borderWidth: 1.5,
-                  borderColor: verifyError ? '#F87171' : 'rgba(124, 58, 237, 0.5)',
-                  borderRadius: 16,
-                  color: '#FFFFFF',
-                  fontSize: 32,
-                  fontFamily: fonts.bold,
-                  letterSpacing: 10,
-                  textAlign: 'center',
-                  paddingVertical: 18,
-                  marginBottom: 8,
-                }}
+                style={styles.codeInput}
                 value={verifyCode}
-                onChangeText={(t) => { setVerifyCode(t.replace(/\D/g, '').slice(0, 6)); setVerifyError(''); }}
+                onChangeText={setVerifyCode}
+                placeholder="000000"
+                placeholderTextColor="rgba(255,255,255,0.2)"
                 keyboardType="number-pad"
                 maxLength={6}
-                placeholder="------"
-                placeholderTextColor="rgba(255,255,255,0.2)"
               />
 
-              {verifyError ? (
-                <Text style={{ color: '#F87171', fontSize: 13, textAlign: 'center', marginBottom: 12 }}>{verifyError}</Text>
-              ) : null}
+              {verifyError ? <Text style={styles.errorText}>{verifyError}</Text> : null}
 
               <TouchableOpacity
-                style={[
-                  { borderRadius: 14, overflow: 'hidden', marginTop: 8 },
-                  (verifyLoading || verifyCode.length !== 6) && { opacity: 0.5 }
-                ]}
+                style={[styles.verifyButton, isVerifying && { opacity: 0.7 }]}
                 onPress={handleVerifyCode}
-                disabled={verifyLoading || verifyCode.length !== 6}
-                activeOpacity={0.85}
+                disabled={isVerifying}
               >
                 <LinearGradient
-                  colors={['#7C3AED', '#4F46E5']}
-                  style={{ paddingVertical: 16, alignItems: 'center' }}
+                  colors={colors.gradientPrimary as any}
+                  style={styles.verifyButtonGradient}
                 >
-                  <Text style={{ color: '#FFFFFF', fontFamily: fonts.bold, fontSize: 16 }}>
-                    {verifyLoading ? 'Doğrulanıyor...' : 'Doğrula'}
-                  </Text>
+                  <Text style={styles.verifyButtonText}>{isVerifying ? 'Doğrulanıyor...' : 'Doğrula'}</Text>
                 </LinearGradient>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={{ marginTop: 16, alignItems: 'center' }}
-                onPress={() => sendVerificationCode(registeredEmail, registeredFullName)}
+                onPress={() => resendTimer === 0 && sendVerificationCode(registeredEmail, registeredFullName)}
                 disabled={resendTimer > 0}
+                style={{ marginTop: 20 }}
               >
-                <Text style={{ color: resendTimer > 0 ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.6)', fontSize: 13, fontFamily: fonts.medium }}>
-                  {resendTimer > 0 ? `Kodu Tekrar Gönder (${resendTimer}s)` : 'Kodu Tekrar Gönder'}
+                <Text style={[styles.resendText, resendTimer > 0 && { opacity: 0.5 }]}>
+                  {resendTimer > 0 ? `Kodu tekrar gönder (${resendTimer}s)` : 'Kodu tekrar gönder'}
                 </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={{ marginTop: 24, paddingVertical: 8, alignItems: 'center' }}
-                onPress={() => setEmailVerifyModal(false)}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Ionicons name="arrow-back" size={14} color="#F87171" />
-                  <Text style={{ color: '#F87171', fontSize: 13, fontFamily: fonts.semiBold }}>Geri Dön / Vazgeç</Text>
-                </View>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
+
       <Modal
         visible={isPhoneModalVisible}
         transparent={true}
-        animationType="fade"
-        onRequestClose={() => setIsPhoneModalVisible(false)}
+        animationType="slide"
       >
-        <View style={[styles.modalOverlay, { backgroundColor: 'rgba(15, 23, 42, 0.85)' }]}>
-          <View style={[styles.modalContent, { backgroundColor: 'rgba(30, 41, 59, 0.98)', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 }]}>
-            <LinearGradient
-              colors={[accentColor, accentColor + 'CC']}
-              style={styles.modalHeader}
-            >
-              <Ionicons name="call-outline" size={32} color="#FFFFFF" />
-              <Text style={styles.modalTitle}>Numaranızı Onaylayın</Text>
-            </LinearGradient>
-
-            <View style={styles.modalBody}>
-              <View style={[styles.phoneDisplayContainer, { backgroundColor: 'rgba(255,255,255,0.05)' }]}>
-                <Text style={[styles.phoneLabelText, { color: 'rgba(255,255,255,0.5)' }]}>Kayıt Edilecek Numara:</Text>
-                <Text style={[styles.phoneNumberDisplay, { color: accentColor }]}>{phone}</Text>
-                <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>(0 ile başlayan 11 haneli numara)</Text>
-              </View>
-
-              <View style={[styles.infoBoxRed, { backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}>
-                <Ionicons name="information-circle-outline" size={20} color="#F87171" />
-                <Text style={[styles.infoBoxText, { color: '#F87171' }]}>
-                  {userType === 'ELECTRICIAN'
-                    ? 'Bu numara daha sonra değiştirilemez ve başlangıç krediniz (5 kredi) bu numaraya tanımlanacaktır.'
-                    : 'Bu numara daha sonra değiştirilemez ve hesabınızın güvenliği bu numara üzerinden sağlanır.'}
-                </Text>
-              </View>
-
-              <View style={styles.modalActions}>
-                <TouchableOpacity
-                  style={[styles.modalCancelButton, { backgroundColor: 'rgba(255,255,255,0.05)' }]}
-                  onPress={() => setIsPhoneModalVisible(false)}
-                >
-                  <Text style={[styles.modalCancelText, { color: 'rgba(255,255,255,0.6)' }]}>Düzenle</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.modalConfirmButton}
-                  onPress={() => {
-                    setIsPhoneModalVisible(false);
-                    handleRegister(true);
-                  }}
-                >
-                  <LinearGradient
-                    colors={[accentColor, accentColor + 'CC']}
-                    style={styles.modalConfirmGradient}
-                  >
-                    <Text style={styles.modalConfirmText}>Onaylıyorum</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Ionicons name="call" size={48} color={accentColor} style={{ alignSelf: 'center', marginBottom: 16 }} />
+            <Text style={styles.modalTitle}>Telefon Doğrulaması</Text>
+            <Text style={styles.modalSubtitle}>
+              Güvenliğiniz için telefon numaranızı doğrulamanız gerekmektedir. Devam etmek istiyor musunuz?
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: 'rgba(255,255,255,0.05)', flex: 1 }]}
+                onPress={() => setIsPhoneModalVisible(false)}
+              >
+                <Text style={[styles.modalButtonText, { color: 'rgba(255,255,255,0.6)' }]}>Vazgeç</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: accentColor, flex: 1 }]}
+                onPress={() => {
+                  setIsPhoneModalVisible(false);
+                  handleRegister(true);
+                }}
+              >
+                <Text style={styles.modalButtonText}>Onayla</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -479,7 +368,7 @@ export default function RegisterScreen() {
                 onPress={() => router.back()}
                 style={styles.backButton}
               >
-                <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+                <Ionicons name="arrow-back" size={24} color={colors.white} />
               </TouchableOpacity>
             </View>
 
@@ -491,42 +380,35 @@ export default function RegisterScreen() {
             <View style={styles.roleBadgeContainer}>
               <View style={[styles.roleBadge, { backgroundColor: accentColor + '20', borderColor: accentColor }]}>
                 <Ionicons
-                  name={userType === 'CITIZEN' ? 'person' : 'construct'}
+                  name={userType === 'ELECTRICIAN' ? 'construct' : 'person'}
                   size={16}
                   color={accentColor}
                 />
                 <Text style={[styles.roleBadgeText, { color: accentColor }]}>
-                  {userType === 'CITIZEN'
-                    ? 'Vatandaş olarak kayıt'
-                    : `${SERVICE_CATEGORIES.find(c => c.id === serviceCategory)?.name || 'Usta'} olarak kayıt`
-                  }
+                  {userType === 'ELECTRICIAN' ? 'Elektrikçi olarak kayıt' : 'Müşteri olarak kayıt'}
                 </Text>
                 <TouchableOpacity
-                  onPress={() => router.back()}
-                  style={styles.changeBadgeBtn}
+                  onPress={() => router.replace('/(auth)/role-select')}
+                  style={styles.changeRoleBtn}
                 >
-                  <Text style={[styles.changeBadgeText, { color: accentColor }]}>Değiştir</Text>
+                  <Text style={styles.changeRoleText}>Değiştir</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             <View style={styles.formSection}>
-
               <TouchableOpacity
                 style={styles.legalCheckboxContainer}
                 onPress={() => {
-                  const val = !termsAccepted;
-                  setTermsAccepted(val);
-                  setKvkkAccepted(val);
-                  setMarketingAllowed(val);
+                  setTermsAccepted(!termsAccepted);
+                  setKvkkAccepted(!kvkkAccepted);
                 }}
-                activeOpacity={0.7}
               >
-                <View style={[styles.checkbox, termsAccepted && { backgroundColor: accentColor, borderColor: accentColor }]}>
-                  {termsAccepted && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
+                <View style={[styles.checkbox, (termsAccepted && kvkkAccepted) && { backgroundColor: accentColor, borderColor: accentColor }]}>
+                  {(termsAccepted && kvkkAccepted) && <Ionicons name="checkmark" size={14} color={colors.white} />}
                 </View>
-                <Text style={styles.legalNoticeText}>
-                  <Text style={[styles.legalLink, { color: accentColor }]} onPress={(e) => { e.stopPropagation(); openLegalModal('terms'); }}>Kullanım Koşullarını</Text> ve <Text style={[styles.legalLink, { color: accentColor }]} onPress={(e) => { e.stopPropagation(); openLegalModal('kvkk'); }}>KVKK Politikasını</Text> okudum, onaylıyorum.
+                <Text style={styles.legalLabel}>
+                  <Text style={styles.legalLink} onPress={() => setLegalModal({ visible: true, type: 'TERMS' })}>Kullanım Koşullarını</Text> ve <Text style={styles.legalLink} onPress={() => setLegalModal({ visible: true, type: 'KVKK' })}>KVKK Politikasını</Text> okudum, onaylıyorum.
                 </Text>
               </TouchableOpacity>
 
@@ -539,7 +421,7 @@ export default function RegisterScreen() {
                       showAlert('⚠️ Onay Gerekli', 'Devam etmek için Kullanım Koşullarını ve KVKK Politikasını okuduğunuzu onaylamanız gerekmektedir.', 'warning');
                       return;
                     }
-                    handleGoogleRegister();
+                    handleGoogleLogin();
                   }}
                   disabled={isLoading || socialLoading !== null}
                   activeOpacity={0.85}
@@ -570,7 +452,7 @@ export default function RegisterScreen() {
                         showAlert('⚠️ Onay Gerekli', 'Devam etmek için Kullanım Koşullarını ve KVKK Politikasını okuduğunuzu onaylamanız gerekmektedir.', 'warning');
                         return;
                       }
-                      handleAppleRegister();
+                      handleAppleLogin();
                     }}
                     disabled={isLoading || socialLoading !== null}
                     activeOpacity={0.8}
@@ -718,8 +600,8 @@ export default function RegisterScreen() {
 
               <View style={styles.loginLink}>
                 <Text style={styles.loginLinkText}>Zaten hesabınız var mı? </Text>
-                <TouchableOpacity onPress={() => router.back()} disabled={isLoading}>
-                  <Text style={[styles.loginLinkButton, { color: accentColor }]}>Giriş Yap</Text>
+                <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
+                  <Text style={[styles.loginLinkHighlight, { color: accentColor }]}>Giriş Yap</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -740,23 +622,27 @@ export default function RegisterScreen() {
         visible={legalModal.visible}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setLegalModal(prev => ({ ...prev, visible: false }))}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: '#FFFFFF', height: '80%' }]}>
-            <View style={[styles.modalHeader, { padding: 20, flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#eee' }]}>
-              <Text style={[styles.modalTitle, { color: '#333' }]}>{legalModal.title}</Text>
-              <TouchableOpacity onPress={() => setLegalModal(prev => ({ ...prev, visible: false }))}>
-                <Ionicons name="close" size={24} color="#333" />
+        <View style={styles.legalModalContainer}>
+          <View style={styles.legalModalContent}>
+            <View style={styles.legalModalHeader}>
+              <Text style={styles.legalModalTitle}>
+                {legalModal.type === 'KVKK' ? 'KVKK Aydınlatma Metni' : 'Kullanım Koşulları'}
+              </Text>
+              <TouchableOpacity onPress={() => setLegalModal({ ...legalModal, visible: false })}>
+                <Ionicons name="close" size={24} color={colors.white} />
               </TouchableOpacity>
             </View>
-            <ScrollView contentContainerStyle={{ padding: 20 }}>
-              <Text style={{ fontSize: 14, lineHeight: 22, color: '#444' }}>{legalModal.content}</Text>
+            <ScrollView style={styles.legalModalBody}>
+              <Text style={styles.legalText}>
+                {/* Metinler buraya gelecek */}
+                Buraya ilgili hukuk metni gelecek...
+              </Text>
             </ScrollView>
           </View>
         </View>
       </Modal>
-    </KeyboardAvoidingView >
+    </KeyboardAvoidingView>
   );
 }
 
@@ -775,13 +661,13 @@ const styles = StyleSheet.create({
   innerContent: {
     flex: 1,
     paddingHorizontal: spacing.screenPadding,
-    paddingTop: Platform.OS === 'ios' ? spacing.xxxl : spacing.xl,
+    paddingTop: spacing.xxxl,
     paddingBottom: spacing.xl,
   },
   headerTop: {
     height: 50,
     justifyContent: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: spacing.md,
   },
   backButton: {
     width: 44,
@@ -798,122 +684,172 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
     borderRadius: 150,
-    opacity: 0.1,
+    opacity: 0.15,
   },
   header: {
     marginBottom: spacing.xl,
-    marginTop: 20,
   },
   title: {
     fontFamily: fonts.extraBold,
-    fontSize: 34,
-    color: '#FFFFFF',
-    marginBottom: 8,
+    fontSize: 32,
+    color: colors.white,
     letterSpacing: -1,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 4 },
-    textShadowRadius: 10,
   },
   subtitle: {
     fontFamily: fonts.medium,
     fontSize: 15,
     color: 'rgba(255,255,255,0.85)',
   },
-    marginBottom: spacing.md,
-    textTransform: 'uppercase',
-    letterSpacing: 2,
+  roleBadgeContainer: {
+    marginBottom: spacing.xl,
   },
-  userTypeContainer: {
+  roleBadge: {
     flexDirection: 'row',
-    gap: spacing.md,
-  },
-  userTypeButton: {
-    flex: 1,
-    height: 100,
-    borderRadius: 24,
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: 'rgba(255,255,255,0.02)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  userTypeIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  userTypeText: {
-    fontFamily: fonts.bold,
+  roleBadgeText: {
+    fontFamily: fonts.semiBold,
     fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
+    marginLeft: 8,
+    flex: 1,
+  },
+  changeRoleBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 8,
+  },
+  changeRoleText: {
+    fontFamily: fonts.bold,
+    fontSize: 12,
+    color: colors.white,
   },
   formSection: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: 30,
-    padding: spacing.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  errorContainer: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-    padding: spacing.md,
-    borderRadius: 16,
-    marginBottom: spacing.md,
-  },
-  errorText: {
-    textAlign: 'center',
-  },
-  legalSection: {
-    marginVertical: 12,
-    gap: 8,
   },
   legalCheckboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    gap: 10,
+    gap: 12,
   },
-  legalNoticeText: {
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  legalLabel: {
     flex: 1,
     fontFamily: fonts.medium,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.6)',
     lineHeight: 18,
   },
   legalLink: {
-    fontFamily: fonts.bold,
+    color: colors.white,
     textDecorationLine: 'underline',
   },
-  marketingContainer: {
+  socialSection: {
+    marginBottom: 10,
+  },
+  googleButtonWrapper: {
+    marginBottom: 14,
+    borderRadius: 18,
+    shadowColor: '#4285F4',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  googleButtonBorder: {
+    borderRadius: 18,
+    padding: 2,
+  },
+  googleButtonInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 8,
-    gap: 10,
-  },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    gap: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
   },
-  marketingText: {
+  googleIcon: {
+    width: 24,
+    height: 24,
+  },
+  googleButtonText: {
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    color: '#1F2937',
+    letterSpacing: 0.3,
+  },
+  socialButton: {
+    borderRadius: 18,
+    overflow: 'hidden',
+    marginBottom: 14,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  socialButtonApple: {
+    backgroundColor: '#000000',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  socialButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 15,
+    gap: 12,
+  },
+  socialButtonText: {
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    color: '#1F2937',
+    letterSpacing: 0.2,
+  },
+  socialButtonTextApple: {
+    color: '#FFFFFF',
+  },
+  toggleFormButton: {
+    paddingVertical: 10,
+    marginBottom: 10,
+  },
+  socialDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  socialDividerLine: {
     flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  dividerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  dividerText: {
     fontFamily: fonts.medium,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.65)',
+    marginHorizontal: 8,
   },
   registerButtonWrapper: {
-    marginTop: spacing.sm,
+    marginTop: 20,
     marginBottom: spacing.lg,
     borderRadius: 18,
     overflow: 'hidden',
@@ -932,247 +868,148 @@ const styles = StyleSheet.create({
   registerButtonText: {
     fontFamily: fonts.bold,
     fontSize: 17,
-    color: '#FFFFFF',
+    color: colors.white,
+  },
+  errorContainer: {
+    marginTop: spacing.sm,
+    padding: spacing.sm,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: 8,
+  },
+  errorText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: '#F87171',
+    textAlign: 'center',
   },
   loginLink: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 20,
+    marginBottom: 40,
   },
   loginLinkText: {
     fontFamily: fonts.medium,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.65)',
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.6)',
   },
-  loginLinkButton: {
+  loginLinkHighlight: {
     fontFamily: fonts.bold,
-    fontSize: 14,
+    fontSize: 15,
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.8)',
     justifyContent: 'center',
-    padding: spacing.xl,
+    padding: 20,
   },
   modalContent: {
-    borderRadius: 30,
-    overflow: 'hidden',
+    backgroundColor: '#1E293B',
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   modalHeader: {
-    padding: 30,
     alignItems: 'center',
-    gap: 12,
+  },
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   modalTitle: {
     fontFamily: fonts.bold,
-    fontSize: 22,
-    color: '#FFFFFF',
+    fontSize: 20,
+    color: colors.white,
+    marginBottom: 8,
+    textAlign: 'center',
   },
-  modalBody: {
+  modalSubtitle: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.6)',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  codeInput: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 16,
+    height: 64,
+    width: '100%',
+    textAlign: 'center',
+    fontSize: 28,
+    fontFamily: fonts.bold,
+    color: colors.white,
+    letterSpacing: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    marginBottom: 20,
+  },
+  verifyButton: {
+    width: '100%',
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  verifyButtonGradient: {
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  verifyButtonText: {
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    color: colors.white,
+  },
+  resendText: {
+    fontFamily: fonts.bold,
+    fontSize: 14,
+    color: colors.primary,
+  },
+  modalButton: {
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    color: colors.white,
+  },
+  legalModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'flex-end',
+  },
+  legalModalContent: {
+    backgroundColor: '#0F172A',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    height: '80%',
     padding: 24,
   },
-  phoneDisplayContainer: {
-    padding: 20,
-    borderRadius: 20,
+  legalModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
   },
-  phoneLabelText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    marginBottom: 6,
-  },
-  phoneNumberDisplay: {
+  legalModalTitle: {
     fontFamily: fonts.bold,
-    fontSize: 26,
-    letterSpacing: 1.5,
+    fontSize: 18,
+    color: colors.white,
   },
-  infoBoxRed: {
-    flexDirection: 'row',
-    padding: 16,
-    borderRadius: 18,
-    gap: 12,
-    marginBottom: 24,
-  },
-  infoBoxText: {
+  legalModalBody: {
     flex: 1,
+  },
+  legalText: {
     fontFamily: fonts.medium,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modalCancelButton: {
-    flex: 1,
-    height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 16,
-  },
-  modalCancelText: {
-    fontFamily: fonts.bold,
-    fontSize: 15,
-  },
-  modalConfirmButton: {
-    flex: 1,
-    height: 56,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  modalConfirmGradient: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalConfirmText: {
-    fontFamily: fonts.bold,
-    fontSize: 15,
-    color: '#FFFFFF',
-  },
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  categoryCard: {
-    width: '30%',
-    aspectRatio: 1,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: 'rgba(255,255,255,0.02)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.sm,
-  },
-  categoryIconBg: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  categoryText: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
-    textAlign: 'center',
-  },
-  // Role Badge Styles
-  roleBadgeContainer: {
-    marginBottom: 24,
-  },
-  roleBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 8,
-  },
-  roleBadgeText: {
-    flex: 1,
-    fontFamily: fonts.semiBold,
     fontSize: 14,
-  },
-  changeBadgeBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  changeBadgeText: {
-    fontFamily: fonts.bold,
-    fontSize: 12,
-  },
-  // ===== Google Premium Button =====
-  googleButtonWrapper: {
-    marginBottom: 14,
-    borderRadius: 18,
-    shadowColor: '#4285F4',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  googleButtonBorder: {
-    borderRadius: 18,
-    padding: 2,
-  },
-  googleButtonInner: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    gap: 12,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-  },
-  googleIcon: {
-    width: 24,
-    height: 24,
-  },
-  googleButtonText: {
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    color: '#1F2937',
-    letterSpacing: 0.3,
-  },
-  // ===== Apple Button =====
-  socialButton: {
-    borderRadius: 18,
-    overflow: 'hidden',
-    marginBottom: 14,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  socialButtonApple: {
-    backgroundColor: '#000000',
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  socialButtonInner: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    paddingVertical: 15,
-    gap: 12,
-  },
-  socialIcon: {
-    width: 22,
-    height: 22,
-  },
-  socialButtonText: {
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    color: '#1F2937',
-    letterSpacing: 0.2,
-  },
-  socialButtonTextApple: {
-    color: '#FFFFFF',
-  },
-  socialDivider: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    marginVertical: 16,
-  },
-  socialDividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  socialDividerText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.5)',
-    marginHorizontal: 16,
+    color: 'rgba(255,255,255,0.7)',
+    lineHeight: 22,
   },
 });
