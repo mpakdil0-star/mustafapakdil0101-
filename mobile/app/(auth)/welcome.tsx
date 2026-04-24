@@ -180,7 +180,7 @@ export default function WelcomeScreen() {
                                 activeOpacity={0.8}
                             >
                                 <LinearGradient
-                                    colors={['rgba(124, 58, 237, 0.2)', 'rgba(255, 255, 255, 0.05)']}
+                                    colors={['rgba(124, 58, 237, 0.45)', 'rgba(124, 58, 237, 0.15)']}
                                     style={styles.registerGradient}
                                 >
                                     <Animated.View style={[
@@ -339,21 +339,29 @@ const styles = StyleSheet.create({
         width: '100%',
         overflow: 'hidden',
         borderRadius: 16,
-        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+        backgroundColor: 'rgba(124, 58, 237, 0.1)',
+        shadowColor: '#7C3AED',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 15,
+        elevation: 8,
     },
     registerGradient: {
         width: '100%',
         paddingVertical: 16,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderWidth: 1.5,
+        borderColor: 'rgba(124, 58, 237, 0.4)',
     },
     registerText: {
         color: '#fff',
         fontSize: 16,
         fontFamily: fonts.bold,
         letterSpacing: 0.5,
+        textShadowColor: 'rgba(0, 0, 0, 0.2)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 4,
     },
     loginLink: {
         paddingVertical: 10,
