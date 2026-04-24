@@ -32,7 +32,18 @@ export default function RegisterScreen() {
   const router = useRouter();
   const { redirectTo, initialRole, serviceCategory: initialServiceCategory } = useLocalSearchParams<{ redirectTo?: string; initialRole?: 'CITIZEN' | 'ELECTRICIAN'; serviceCategory?: string }>();
   const dispatch = useAppDispatch();
-  const { isLoading, error } = useAppSelector((state) => state.auth);
+  const { isLoading, error, isAuthenticated } = useAppSelector((state) => state.auth);
+
+  // Safety net: If authenticated but still on this screen after 1.5s, force navigation
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      const timer = setTimeout(() => {
+        console.log('🛡️ [Register] Safety net triggered - forcing navigation');
+        router.replace('/(tabs)');
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, isLoading]);
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -226,9 +237,8 @@ export default function RegisterScreen() {
     try {
       await dispatch(googleLogin({ userType, serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined })).unwrap();
       
-      // Fallback: Manually trigger navigation in case _layout.tsx logic is delayed
-      console.log('✅ Google Login successful, triggering fallback navigation');
-      navigateAfterRegister();
+      // Rely on _layout.tsx for navigation
+      console.log('✅ Google Login successful, waiting for _layout.tsx to handle redirect');
     } catch (err: any) {
       console.error('Google registration error:', err);
       if (err !== 'CANCELLED') {

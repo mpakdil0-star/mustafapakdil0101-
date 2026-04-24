@@ -171,6 +171,7 @@ function RootLayoutNav() {
                 if (lastRedirectPath.current !== '/profile/edit') {
                   lastRedirectPath.current = '/profile/edit';
                   requestAnimationFrame(() => {
+                    console.log('🚀 [RootNav] EXECUTING REPLACE -> /profile/edit');
                     router.replace('/profile/edit?mandatory=true');
                   });
                 }
@@ -201,6 +202,7 @@ function RootLayoutNav() {
               if (lastRedirectPath.current !== '/(tabs)') {
                 lastRedirectPath.current = '/(tabs)';
                 requestAnimationFrame(() => {
+                  console.log('🚀 [RootNav] EXECUTING REPLACE -> /(tabs)');
                   router.replace('/(tabs)');
                 });
               }
