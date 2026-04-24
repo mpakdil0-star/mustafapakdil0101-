@@ -147,7 +147,7 @@ export default function WelcomeScreen() {
                                 onPress={() => router.push('/(auth)/role-select')}
                                 style={styles.authLink}
                             >
-                                <Text style={styles.authLinkText}>Kayıt Ol</Text>
+                                <Text style={styles.authLinkText}>Ücretsiz Kayıt Ol</Text>
                             </TouchableOpacity>
                         </View>
 
