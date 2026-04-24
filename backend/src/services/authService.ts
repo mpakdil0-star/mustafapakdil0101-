@@ -319,6 +319,9 @@ export const register = async (data: RegisterData) => {
     const fullUser = mockStorage.getFullUser(user.id, user.userType);
 
     return { user: fullUser, ...tokens };
+    }
+
+    throw error;
   }
 };
 
