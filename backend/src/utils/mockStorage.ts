@@ -261,8 +261,8 @@ export const mockStorage = {
                 creditBalance: 5,
                 experienceYears: 0,
                 specialties: [],
-                fullName: 'Test Kullanıcısı',
-                phone: '05551234567',
+                fullName: 'Yeni Kullanıcı',
+                phone: '',
                 email: userId.includes('@') ? (userId.includes('mock-user-') ? userId.split('-').filter(p => p.includes('.')).join('.') || userId : userId) : 'mock@example.com',
                 isVerified: false,
                 isActive: true, // Default active

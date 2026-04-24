@@ -521,7 +521,7 @@ export default function EditProfileScreen() {
                             placeholder="0555 555 55 55"
                             keyboardType="phone-pad"
                             containerStyle={styles.input}
-                            editable={!!mandatory || !user?.phone}
+                            editable={!!mandatory || !user?.isVerified}
                             ref={phoneInputRef}
                             helperText={mandatory
                                 ? (phoneNumber ? undefined : "Ustalar için telefon numarası zorunludur.")
