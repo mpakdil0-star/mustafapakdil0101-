@@ -141,13 +141,20 @@ export const authService = {
         await apiClient.post('/auth/logout');
       }
     } catch (error) {
-      // Only log as warning if it's not a 401 (which is expected if token is already invalid)
       if ((error as any).response?.status !== 401) {
         console.warn('Backend logout failed:', error);
       }
     }
 
-    // 2. Disconnect socket to stop receiving events for this user
+    // 2. Clear Social Auth Sessions (CRITICAL for fixing intermittent Google Login issues)
+    try {
+      const { signOutGoogle } = require('./socialAuthService');
+      await signOutGoogle();
+    } catch (e) {
+      console.log('Google Sign-Out error during logout (silent):', e);
+    }
+
+    // 3. Disconnect socket
     try {
       const { socketService } = require('./socketService');
       socketService.disconnect();
@@ -155,8 +162,9 @@ export const authService = {
       console.warn('Socket disconnect failed during logout:', e);
     }
 
-    // 3. Clear local tokens
+    // 4. Clear local tokens
     await apiService.clearTokens();
+    console.log('✅ Full logout completed (including social sessions)');
   },
 
   async registerPushToken(): Promise<'granted' | 'denied' | 'needs_settings' | undefined> {
