@@ -316,6 +316,19 @@ function RootLayoutNav() {
         }
 
         const NotifModule = await import('expo-notifications');
+
+        // --- ANDROID KANAL AYARLARI (ANLIK BİLDİRİM İÇİN ŞART) ---
+        if (Platform.OS === 'android') {
+          await NotifModule.setNotificationChannelAsync('default', {
+            name: 'Genel Bildirimler',
+            importance: NotifModule.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: '#7C3AED',
+            showBadge: true,
+            lockscreenVisibility: NotifModule.AndroidNotificationVisibility.PUBLIC,
+          });
+        }
+
         const { status } = await NotifModule.getPermissionsAsync();
 
         if (status === 'granted') {

@@ -91,6 +91,8 @@ export const pushNotificationService = {
                 badge,
                 priority: 'high',
                 channelId: 'default',
+                ttl: 3600, // Stay in queue for 1 hour if user is briefly offline
+                mutableContent: true, // Allow OS to process content immediately
             });
 
             console.log(`\n📤 SENDING PUSH NOTIFICATION:`);
