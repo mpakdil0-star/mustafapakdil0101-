@@ -175,14 +175,6 @@ export default function WelcomeScreen() {
 
                         <View style={styles.authContainer}>
                             <TouchableOpacity
-                                onPress={() => router.push('/(auth)/login')}
-                                style={styles.loginButton}
-                                activeOpacity={0.7}
-                            >
-                                <Text style={styles.loginText}>Giriş Yap</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
                                 onPress={() => router.push('/(auth)/role-select')}
                                 style={styles.registerButton}
                                 activeOpacity={0.8}
@@ -196,7 +188,7 @@ export default function WelcomeScreen() {
                                         { transform: [{ translateX: shineAnim }, { rotate: '25deg' }] }
                                     ]}>
                                         <LinearGradient
-                                            colors={['transparent', 'rgba(255, 255, 255, 0.3)', 'transparent']}
+                                            colors={['transparent', 'rgba(255, 255, 255, 0.4)', 'transparent']}
                                             start={{ x: 0, y: 0 }}
                                             end={{ x: 1, y: 0 }}
                                             style={StyleSheet.absoluteFill}
@@ -204,6 +196,16 @@ export default function WelcomeScreen() {
                                     </Animated.View>
                                     <Text style={styles.registerText}>Ücretsiz Kayıt Ol</Text>
                                 </LinearGradient>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => router.push('/(auth)/login')}
+                                style={styles.loginLink}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={styles.loginLinkText}>
+                                    Zaten hesabınız var mı? <Text style={styles.loginLinkHighlight}>Giriş Yap</Text>
+                                </Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -328,50 +330,49 @@ const styles = StyleSheet.create({
         color: 'rgba(255,255,255,0.7)',
     },
     authContainer: {
-        flexDirection: 'row',
+        width: '100%',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        marginTop: 48,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        padding: 6,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-    },
-    loginButton: {
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-    },
-    loginText: {
-        color: 'rgba(255, 255, 255, 0.7)',
-        fontSize: 15,
-        fontFamily: fonts.medium,
+        marginTop: 40,
+        gap: 20,
     },
     registerButton: {
-        flex: 1,
-        marginLeft: 8,
+        width: '100%',
         overflow: 'hidden',
-        borderRadius: 14,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.03)',
     },
     registerGradient: {
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 14,
+        width: '100%',
+        paddingVertical: 16,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
     },
     registerText: {
         color: '#fff',
-        fontSize: 15,
+        fontSize: 16,
         fontFamily: fonts.bold,
+        letterSpacing: 0.5,
+    },
+    loginLink: {
+        paddingVertical: 10,
+    },
+    loginLinkText: {
+        color: 'rgba(255, 255, 255, 0.6)',
+        fontSize: 14,
+        fontFamily: fonts.medium,
+    },
+    loginLinkHighlight: {
+        color: '#fff',
+        fontFamily: fonts.bold,
+        textDecorationLine: 'underline',
     },
     shineLayer: {
         position: 'absolute',
         top: 0,
         bottom: 0,
-        width: 60,
+        width: 30,
         backgroundColor: 'transparent',
     },
 });
