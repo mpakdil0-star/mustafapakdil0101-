@@ -180,7 +180,7 @@ export default function WelcomeScreen() {
                                 activeOpacity={0.8}
                             >
                                 <LinearGradient
-                                    colors={['rgba(16, 185, 129, 0.45)', 'rgba(16, 185, 129, 0.15)']}
+                                    colors={['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.85)']}
                                     style={styles.registerGradient}
                                 >
                                     <Text style={styles.registerText}>Ücretsiz Kayıt Ol</Text>
@@ -328,18 +328,18 @@ const styles = StyleSheet.create({
         width: '100%',
         overflow: 'hidden',
         borderRadius: 16,
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        backgroundColor: '#FFFFFF',
     },
     registerGradient: {
         width: '100%',
         paddingVertical: 16,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1.5,
-        borderColor: 'rgba(16, 185, 129, 0.4)',
+        borderWidth: 1,
+        borderColor: '#FFFFFF',
     },
     registerText: {
-        color: '#fff',
+        color: '#0F172A',
         fontSize: 16,
         fontFamily: fonts.bold,
         letterSpacing: 0.5,
