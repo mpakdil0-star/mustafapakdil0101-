@@ -17,6 +17,7 @@ import api from '../../services/api';
 import { useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { authService } from '../../services/authService';
+import { BackHandler } from 'react-native';
 
 // Uzmanlık alanları listesi
 // ... (rest of imports remains similar)
@@ -115,6 +116,29 @@ export default function EditProfileScreen() {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [isExpertiseExpanded, setIsExpertiseExpanded] = useState(true); // Default open for easier access
     const [photoLoading, setPhotoLoading] = useState(false);
+    const phoneInputRef = useRef<any>(null);
+
+    // Prevent going back if mandatory
+    useEffect(() => {
+        if (mandatory) {
+            const backAction = () => {
+                Alert.alert('Eksik Bilgiler', 'Uygulamayı kullanabilmek için profil bilgilerinizi tamamlamanız gerekmektedir.', [
+                    { text: 'Tamam' }
+                ]);
+                return true;
+            };
+
+            const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+            return () => backHandler.remove();
+        }
+    }, [mandatory]);
+
+    // Auto-focus phone if mandatory and empty
+    useEffect(() => {
+        if (mandatory && !phoneNumber) {
+            setTimeout(() => phoneInputRef.current?.focus(), 500);
+        }
+    }, []);
 
     // === Photo Upload Logic ===
     const handlePhotoOptions = () => {
@@ -391,7 +415,7 @@ export default function EditProfileScreen() {
         <View style={styles.container}>
             <PremiumHeader
                 title={mandatory ? "Profilinizi Tamamlayın" : "Profili Düzenle"}
-                showBackButton
+                showBackButton={!mandatory}
             />
 
             <ScrollView
@@ -497,7 +521,8 @@ export default function EditProfileScreen() {
                             placeholder="0555 555 55 55"
                             keyboardType="phone-pad"
                             containerStyle={styles.input}
-                            editable={!!mandatory}
+                            editable={!!mandatory || !user?.phone}
+                            ref={phoneInputRef}
                             helperText={mandatory
                                 ? (phoneNumber ? undefined : "Ustalar için telefon numarası zorunludur.")
                                 : "Bu bilgiler kayıt esnasında belirlenir ve değiştirilemez."
