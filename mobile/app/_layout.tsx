@@ -170,10 +170,25 @@ function RootLayoutNav() {
               if (isIncomplete && !isInsideProfileGroup && !profileSetupDone) {
                 if (lastRedirectPath.current !== '/profile/edit') {
                   lastRedirectPath.current = '/profile/edit';
-                  requestAnimationFrame(() => {
-                    console.log('🚀 [RootNav] EXECUTING REPLACE -> /profile/edit');
-                    router.replace('/profile/edit?mandatory=true');
-                  });
+                  
+                  const performProfileRedirect = () => {
+                    if (router.canDismiss()) {
+                      router.dismissAll();
+                    }
+                    requestAnimationFrame(() => {
+                      console.log('🚀 [RootNav] EXECUTING REPLACE -> /profile/edit');
+                      router.replace('/profile/edit?mandatory=true');
+                    });
+                  };
+
+                  performProfileRedirect();
+                  // Retry if stuck
+                  setTimeout(() => {
+                    if (segments.includes('register') || segments.includes('login')) {
+                      console.log('⚠️ [RootNav] Still on auth screen, retrying profile redirect...');
+                      performProfileRedirect();
+                    }
+                  }, 500);
                 }
                 return;
               }
@@ -199,12 +214,28 @@ function RootLayoutNav() {
             
             if (!isInApp && currentPath !== 'onboarding') {
               console.log('➡️ [RootNav] Verified user on non-app screen (' + currentPath + '), forcing redirect to TABS');
+              
               if (lastRedirectPath.current !== '/(tabs)') {
                 lastRedirectPath.current = '/(tabs)';
-                requestAnimationFrame(() => {
-                  console.log('🚀 [RootNav] EXECUTING REPLACE -> /(tabs)');
-                  router.replace('/(tabs)');
-                });
+                
+                const performRedirect = () => {
+                  if (router.canDismiss()) {
+                    router.dismissAll();
+                  }
+                  requestAnimationFrame(() => {
+                    console.log('🚀 [RootNav] EXECUTING REPLACE -> /(tabs)');
+                    router.replace('/(tabs)');
+                  });
+                };
+
+                performRedirect();
+                // If we are still here after 500ms, try once more (handling potential native UI lock)
+                setTimeout(() => {
+                  if (segments.includes('register') || segments.includes('login')) {
+                    console.log('⚠️ [RootNav] Still on auth screen, retrying redirect...');
+                    performRedirect();
+                  }
+                }, 500);
               }
             }
           } catch (err) {
