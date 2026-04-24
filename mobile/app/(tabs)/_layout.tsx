@@ -9,7 +9,7 @@ import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import api from '../../services/api';
-
+import { fetchNotifications, fetchUnreadCount } from '../../store/slices/notificationSlice';
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const { user, guestRole, isAuthenticated } = useAppSelector((state) => state.auth);
@@ -20,7 +20,7 @@ export default function TabsLayout() {
   const { notifications, unreadCount, unreadMessageCount } = useAppSelector((state) => state.notifications);
 
   const dispatch = useAppDispatch();
-  const { fetchNotifications, fetchUnreadCount } = require('../../store/slices/notificationSlice');
+
 
   useEffect(() => {
     if (isAuthenticated) {
