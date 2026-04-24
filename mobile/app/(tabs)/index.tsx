@@ -458,12 +458,7 @@ export default function HomeScreen() {
     }, [isAuthenticated, isElectrician])
   );
 
-  // Separate Effect for Featured Electricians to avoid blocking main UI
-  useEffect(() => {
-    if (isInitialized && userCities.length > 0) {
-      fetchFeaturedElectricians();
-    }
-  }, [isInitialized, userCities.length]);
+
 
   // AppState listener: auto-detect when user returns from system settings
   // If notification permission was just granted, auto-hide banner & register token
@@ -499,7 +494,7 @@ export default function HomeScreen() {
 
   // Separate useEffect for fetching featured electricians when userCities changes
   useEffect(() => {
-    if (isElectrician) return;
+    if (isElectrician || !isInitialized || userCities.length === 0) return;
 
     const fetchFeaturedElectricians = async () => {
       setIsLoadingElectricians(true);
@@ -521,7 +516,7 @@ export default function HomeScreen() {
     };
 
     fetchFeaturedElectricians();
-  }, [isElectrician, isInitialized]); // Only run after initialization, not on userCities change
+  }, [isElectrician, isInitialized, userCities]); // Refetch if city changes
 
   // Real-time refresh of new jobs count and unread count when notifications change
   useEffect(() => {
