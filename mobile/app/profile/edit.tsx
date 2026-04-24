@@ -494,13 +494,14 @@ export default function EditProfileScreen() {
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>Kişisel Bilgiler</Text>
                         </View>
                         <Input
-                            label="Ad Soyad"
+                            label="Ad Soyad *"
                             value={fullName}
                             onChangeText={setFullName}
                             placeholder="Adınız ve Soyadınız"
                             autoCapitalize="words"
                             containerStyle={styles.input}
                             editable={false}
+                            helperText={!fullName ? "Profilinizde görünmesi için ad soyad zorunludur." : undefined}
                         />
 
                         <Input
@@ -515,7 +516,7 @@ export default function EditProfileScreen() {
                         />
 
                         <Input
-                            label={mandatory ? "Telefon Numarası *" : "Telefon Numarası"}
+                            label={isElectrician ? "Telefon Numarası *" : "Telefon Numarası"}
                             value={phoneNumber}
                             onChangeText={setPhoneNumber}
                             placeholder="0555 555 55 55"
@@ -523,20 +524,21 @@ export default function EditProfileScreen() {
                             containerStyle={styles.input}
                             editable={!!mandatory || !user?.isVerified}
                             ref={phoneInputRef}
-                            helperText={mandatory
-                                ? (phoneNumber ? undefined : "Ustalar için telefon numarası zorunludur.")
+                            helperText={isElectrician 
+                                ? (phoneNumber ? "Bu numara iş teklifleri için kullanılacaktır." : "İş alabilmeniz için telefon numarası zorunludur.")
                                 : "Bu bilgiler kayıt esnasında belirlenir ve değiştirilemez."
                             }
                         />
 
                         {user?.userType === 'ELECTRICIAN' && (
                             <Input
-                                label="Deneyim (Yıl)"
+                                label="Deneyim (Yıl) *"
                                 value={experienceYears}
                                 onChangeText={setExperienceYears}
                                 placeholder="Örn: 10"
                                 keyboardType="numeric"
                                 containerStyle={styles.inputNoMargin}
+                                helperText={!experienceYears ? "Müşterilerin size güvenmesi için deneyim yılı zorunludur." : undefined}
                             />
                         )}
                     </View>
@@ -556,7 +558,7 @@ export default function EditProfileScreen() {
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.serviceAreaCardTitle}>
-                                            {isElectrician ? 'Hizmet Bölgelerimi Seç' : 'Adreslerimi Yönet'}
+                                            {isElectrician ? 'Hizmet Bölgelerimi Seç *' : 'Adreslerimi Yönet'}
                                         </Text>
                                         <Text style={styles.serviceAreaCardSubtitle}>
                                             {isElectrician
@@ -594,8 +596,10 @@ export default function EditProfileScreen() {
                                             <Ionicons name="sparkles" size={20} color={colors.primary} />
                                         </View>
                                         <View>
-                                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Uzmanlık Alanları</Text>
-                                            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>Hangi alanlarda uzmansın?</Text>
+                                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Uzmanlık Alanları *</Text>
+                                            <Text style={[styles.sectionSubtitle, { color: selectedExpertise.length > 0 ? colors.textSecondary : '#EF4444' }]}>
+                                                {selectedExpertise.length > 0 ? 'Hangi alanlarda uzmansın?' : 'Lütfen en az bir alan seçiniz.'}
+                                            </Text>
                                         </View>
                                     </View>
                                     <Ionicons
