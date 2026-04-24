@@ -530,3 +530,65 @@ export const verifyEmailController = async (
   }
 };
 
+/**
+ * DEBUG ONLY: Activate user by email (Sets isActive and isVerified to true)
+ */
+export const debugActivateController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email } = req.body;
+    if (!email) throw new ValidationError('Email is required');
+
+    let dbResult = 'not_attempted';
+    let mockResult = 'not_attempted';
+
+    // 1. Activate in Real Database
+    if (isDatabaseAvailable) {
+      try {
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (user) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { isActive: true, isVerified: true, deletedAt: null }
+          });
+          dbResult = 'success';
+          console.log(`✅ [DEBUG-ACTIVATE] Activated user in DB: ${email}`);
+        } else {
+          dbResult = 'not_found';
+        }
+      } catch (err: any) {
+        dbResult = `error: ${err.message}`;
+      }
+    }
+
+    // 2. Activate in Mock Storage
+    try {
+      const allUsers = mockStorage.getAllUsers();
+      const mockUser = allUsers.find((u: any) => u.email === email);
+      if (mockUser) {
+        mockStorage.updateProfile(mockUser.id, { isActive: true, isVerified: true });
+        mockResult = 'success';
+        console.log(`✅ [DEBUG-ACTIVATE] Activated user in MockStorage: ${email}`);
+      } else {
+        mockResult = 'not_found';
+      }
+    } catch (err: any) {
+      mockResult = `error: ${err.message}`;
+    }
+
+    res.json({
+      success: true,
+      message: 'Activation process completed',
+      results: {
+        database: dbResult,
+        mock: mockResult
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

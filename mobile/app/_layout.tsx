@@ -162,7 +162,7 @@ function RootLayoutNav() {
               const { getItemAsync, setItemAsync } = await import('expo-secure-store');
               const profileSetupDone = await getItemAsync('profile_setup_completed_' + user.id);
 
-              if (isIncomplete && !isInsideProfileGroup && !profileSetupDone && currentPath !== '(auth)/register') {
+              if (isIncomplete && !isInsideProfileGroup && !profileSetupDone) {
                 if (lastRedirectPath.current !== '/profile/edit') {
                   lastRedirectPath.current = '/profile/edit';
                   requestAnimationFrame(() => {
@@ -189,13 +189,11 @@ function RootLayoutNav() {
 
             // Case: Default redirect to TABS
             if (inAuthGroup) {
-              if (currentPath !== '(auth)/register') {
-                if (lastRedirectPath.current !== '/(tabs)') {
-                  lastRedirectPath.current = '/(tabs)';
-                  requestAnimationFrame(() => {
-                    router.replace('/(tabs)');
-                  });
-                }
+              if (lastRedirectPath.current !== '/(tabs)') {
+                lastRedirectPath.current = '/(tabs)';
+                requestAnimationFrame(() => {
+                  router.replace('/(tabs)');
+                });
               }
             }
           } finally {

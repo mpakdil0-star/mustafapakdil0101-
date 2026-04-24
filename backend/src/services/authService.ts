@@ -5,6 +5,7 @@ import { config } from '../config/env';
 import { ValidationError, UnauthorizedError, ConflictError } from '../utils/errors';
 import { UserType } from '@prisma/client';
 import { sendPasswordResetCode, verifyEmailCode } from './emailVerificationService';
+import { mockStorage } from '../utils/mockStorage';
 
 export interface RegisterData {
   email: string;
@@ -62,7 +63,6 @@ export const register = async (data: RegisterData) => {
 
   // Check if user exists (Mock check first)
   if (!isDatabaseAvailable) {
-    const { mockStorage } = require('../utils/mockStorage');
     const existingMockId = `mock-user-${email.replace(/[@.]/g, '-')}-${userType}`;
 
     // Check for duplicates in mock mode
@@ -198,7 +198,6 @@ export const register = async (data: RegisterData) => {
     // Record formal consent in UserConsent table/mock
     const acceptedVersion = data.acceptedLegalVersion || '25 Mart 2026 Tarihli Sözleşme';
     if (!isDatabaseAvailable) {
-      const { mockStorage } = require('../utils/mockStorage');
       if (mockStorage.addConsent) {
         mockStorage.addConsent({
           userId: user.id,
@@ -281,8 +280,8 @@ export const register = async (data: RegisterData) => {
     // Database error fallback
     console.warn('⚠️ Database registration failed, falling back to mock storage', error);
 
-    const { mockStorage } = require('../utils/mockStorage');
-    const existingMockId = `mock-user-${email.replace(/[@.]/g, '-')}-${userType}`;
+    if (!isDatabaseAvailable) {
+      const existingMockId = `mock-user-${email.replace(/[@.]/g, '-')}-${userType}`;
 
     // Save to mock storage
     mockStorage.updateProfile(existingMockId, {
@@ -431,7 +430,6 @@ export const login = async (data: LoginData) => {
 
     if (isConnectionError) {
       console.warn('⚠️ Database login failed, checking mock storage');
-      const { mockStorage } = require('../utils/mockStorage');
 
       // Email'den mock ID bul
       const allUsers = mockStorage.getAllUsers();
@@ -574,7 +572,6 @@ export const forgotPassword = async (email: string) => {
   let userFullName = 'Değerli Kullanıcımız';
   
   if (!isDatabaseAvailable) {
-    const { mockStorage } = require('../utils/mockStorage');
     const allUsers = mockStorage.getAllUsers();
     const user = allUsers.find((u: { email: string, fullName?: string }) => u.email === email);
     if (!user) {
@@ -609,7 +606,6 @@ export const resetPassword = async (data: any) => {
   const passwordHash = await hashPassword(newPassword);
 
   if (!isDatabaseAvailable) {
-    const { mockStorage } = require('../utils/mockStorage');
     const allUsers = mockStorage.getAllUsers();
     const user = allUsers.find((u: { id: string, email: string }) => u.email === email);
     if (!user) throw new ValidationError('Kullanıcı bulunamadı.');
