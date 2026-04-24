@@ -307,6 +307,7 @@ export const mockStorage = {
 
     updateProfile: (userId: string, data: {
         experienceYears?: number,
+        creditBalance?: number,
         specialties?: string[],
         fullName?: string,
         phone?: string,
@@ -336,6 +337,7 @@ export const mockStorage = {
         const store = mockStorage.get(userId);
         if (data.passwordHash !== undefined) store.passwordHash = data.passwordHash;
         if (data.experienceYears !== undefined) store.experienceYears = data.experienceYears;
+        if (data.creditBalance !== undefined) store.creditBalance = data.creditBalance;
         if (data.specialties !== undefined) store.specialties = data.specialties;
         if (data.fullName !== undefined) store.fullName = data.fullName;
         if (data.phone !== undefined) store.phone = data.phone;
