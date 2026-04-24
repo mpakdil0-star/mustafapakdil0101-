@@ -301,6 +301,54 @@ export default function LoginScreen() {
               ]}
             >
               <View style={styles.formCard}>
+                {/* ===== SOSYAL GİRİŞ BUTONLARI (EN ÜSTTE) ===== */}
+                <TouchableOpacity
+                  onPress={handleGoogleLogin}
+                  disabled={isLoading || socialLoading !== null}
+                  activeOpacity={0.85}
+                  style={[styles.googleButtonWrapper, socialLoading === 'google' && { opacity: 0.7 }]}
+                >
+                  <LinearGradient
+                    colors={['#EA4335', '#FBBC04', '#34A853', '#4285F4']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.googleButtonBorder}
+                  >
+                    <View style={styles.googleButtonInner}>
+                      <Image
+                        source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}
+                        style={styles.googleIcon}
+                      />
+                      <Text style={styles.googleButtonText}>
+                        {socialLoading === 'google' ? 'Bağlanıyor...' : 'Google ile devam et'}
+                      </Text>
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                {Platform.OS === 'ios' && (
+                  <TouchableOpacity
+                    onPress={handleAppleLogin}
+                    disabled={isLoading || socialLoading !== null}
+                    activeOpacity={0.8}
+                    style={[styles.socialButton, styles.socialButtonApple, socialLoading === 'apple' && { opacity: 0.7 }]}
+                  >
+                    <View style={styles.socialButtonInner}>
+                      <Ionicons name="logo-apple" size={22} color="#FFFFFF" />
+                      <Text style={[styles.socialButtonText, styles.socialButtonTextApple]}>
+                        {socialLoading === 'apple' ? 'Bağlanıyor...' : 'Apple ile devam et'}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+
+                <View style={styles.divider}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>veya e-posta ile giriş yap</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                {/* ===== MANUEL GİRİŞ FORMU ===== */}
                 <Input
                   label="E-posta Adresi"
                   placeholder="ornek@email.com"
@@ -373,66 +421,17 @@ export default function LoginScreen() {
                   </LinearGradient>
                 </TouchableOpacity>
 
-                <View style={styles.divider}>
-                  <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>veya</Text>
-                  <View style={styles.dividerLine} />
-                </View>
-
-                {/* ===== SOSYAL GİRİŞ BUTONLARI ===== */}
                 <TouchableOpacity
-                  onPress={handleGoogleLogin}
-                  disabled={isLoading || socialLoading !== null}
-                  activeOpacity={0.85}
-                  style={[styles.googleButtonWrapper, socialLoading === 'google' && { opacity: 0.7 }]}
-                >
-                  <LinearGradient
-                    colors={['#EA4335', '#FBBC04', '#34A853', '#4285F4']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.googleButtonBorder}
-                  >
-                    <View style={styles.googleButtonInner}>
-                      <Image
-                        source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}
-                        style={styles.googleIcon}
-                      />
-                      <Text style={styles.googleButtonText}>
-                        {socialLoading === 'google' ? 'Bağlanıyor...' : 'Google ile devam et'}
-                      </Text>
-                    </View>
-                  </LinearGradient>
-                </TouchableOpacity>
-
-                {Platform.OS === 'ios' && (
-                  <TouchableOpacity
-                    onPress={handleAppleLogin}
-                    disabled={isLoading || socialLoading !== null}
-                    activeOpacity={0.8}
-                    style={[styles.socialButton, styles.socialButtonApple, socialLoading === 'apple' && { opacity: 0.7 }]}
-                  >
-                    <View style={styles.socialButtonInner}>
-                      <Ionicons name="logo-apple" size={22} color="#FFFFFF" />
-                      <Text style={[styles.socialButtonText, styles.socialButtonTextApple]}>
-                        {socialLoading === 'apple' ? 'Bağlanıyor...' : 'Apple ile devam et'}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                )}
-                {/* ===== SOSYAL GİRİŞ BUTONLARI BİTİŞ ===== */}
-
-                <Button
-                  title="Kayıt Ol"
                   onPress={() => router.push({
                     pathname: '/(auth)/role-select',
                     params: { redirectTo }
                   })}
-                  variant="outline"
-                  fullWidth
-                  disabled={isLoading}
-                  style={[styles.registerBtn, { marginTop: 16 }]}
-                  textStyle={{ color: colors.white }}
-                />
+                  style={styles.registerLink}
+                >
+                  <Text style={styles.registerLinkText}>
+                    Hesabınız yok mu? <Text style={styles.registerLinkHighlight}>Kayıt Ol</Text>
+                  </Text>
+                </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={() => router.replace('/')}
@@ -686,10 +685,20 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   // ===== Sosyal Giriş Buton Stilleri Bitiş =====
-  registerBtn: {
-    borderRadius: 18,
-    height: 56,
-    borderColor: 'rgba(255,255,255,0.2)',
+  registerLink: {
+    marginTop: 8,
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  registerLinkText: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.7)',
+  },
+  registerLinkHighlight: {
+    fontFamily: fonts.bold,
+    color: colors.white,
+    textDecorationLine: 'underline',
   },
   guestLink: {
     marginTop: 24,
