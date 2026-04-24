@@ -54,6 +54,8 @@ export default function RegisterScreen() {
   const userType = initialRole === 'ELECTRICIAN' ? 'ELECTRICIAN' : 'CITIZEN';
   const serviceCategory = initialServiceCategory || 'elektrik';
   const [marketingAllowed, setMarketingAllowed] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
+  const formAnimation = useRef(new Animated.Value(0)).current;
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [kvkkAccepted, setKvkkAccepted] = useState(false);
 
@@ -88,6 +90,17 @@ export default function RegisterScreen() {
     return () => clearInterval(interval);
   }, [resendTimer]);
 
+  const toggleManualForm = () => {
+    const toValue = showManualForm ? 0 : 1;
+    setShowManualForm(!showManualForm);
+    Animated.spring(formAnimation, {
+      toValue,
+      useNativeDriver: false,
+      tension: 20,
+      friction: 7
+    }).start();
+  };
+
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
     title: string;
@@ -109,8 +122,6 @@ export default function RegisterScreen() {
     setAlertConfig({ visible: true, title, message, type, buttons });
   };
 
-  // userType and serviceCategory are now passed from role-select screen
-
   const validate = () => {
     const newErrors: Record<string, string> = {};
 
@@ -124,27 +135,14 @@ export default function RegisterScreen() {
     if (passwordErr) newErrors.password = passwordErr;
     if (phoneErr) newErrors.phone = phoneErr;
 
-    // Location is optional for registration - user can set it later in profile
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-
-  // Format phone number to E.164 (e.g. +905554443322)
-  const formatPhoneNumber = (number: string) => {
-    let cleaned = number.replace(/\D/g, '');
-    if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
-    if (!cleaned.startsWith('90')) cleaned = '90' + cleaned;
-    return '+' + cleaned;
-  };
-
   const handleSendCode = async () => {
-    // SMS flow is currently placeholder
     setIsPhoneModalVisible(true);
   };
 
-  // E-posta doğrulama kodu gönder
   const sendVerificationCode = async (emailAddr: string, name: string) => {
     try {
       const resp = await fetch(`${API_BASE_URL}auth/send-verification`, {
@@ -154,21 +152,19 @@ export default function RegisterScreen() {
       });
       const data = await resp.json();
       if (data.mockCode) {
-        setMockCode(data.mockCode); // Test modunda kodu göster
+        setMockCode(data.mockCode); 
       } else {
         setMockCode(null);
       }
-      setResendTimer(60); // Geri sayımı 60 saniyeden başlat
+      setResendTimer(60); 
       setEmailVerifyModal(true);
       setTimeout(() => codeInputRef.current?.focus(), 400);
     } catch (err) {
-      // Hata olursa doğrulamayı atla, ana sayfaya geç
       console.warn('E-posta doğrulama isteği gönderilemedi, atlanıyor.');
       navigateAfterRegister();
     }
   };
 
-  // E-posta kodunu doğrula
   const handleVerifyCode = async () => {
     if (verifyCode.length !== 6) {
       setVerifyError('Lütfen 6 haneli kodu girin.');
@@ -185,8 +181,6 @@ export default function RegisterScreen() {
       const data = await resp.json();
       if (data.success) {
         setEmailVerifyModal(false);
-        // CRITICAL: Fetch updated user info to sync `isVerified: true` in Redux 
-        // before _layout.tsx throws the user out to login screen
         await dispatch(getMe()).unwrap();
         
         showAlert('✅ Başarılı', 'E-posta adresiniz doğrulandı!', 'success', [
@@ -228,17 +222,10 @@ export default function RegisterScreen() {
     }
   };
 
-  // ============================================================
-  // SOSYAL KAYIT
-  // ============================================================
-
   const handleGoogleRegister = async () => {
     setSocialLoading('google');
     try {
       await dispatch(googleLogin({ userType, serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined })).unwrap();
-      
-      // Rely on _layout.tsx for navigation
-      console.log('✅ Google Login successful, waiting for _layout.tsx to handle redirect');
     } catch (err: any) {
       console.error('Google registration error:', err);
       if (err !== 'CANCELLED') {
@@ -253,12 +240,8 @@ export default function RegisterScreen() {
     setSocialLoading('apple');
     try {
       await dispatch(appleLogin({ userType, serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined })).unwrap();
-      
-      // Rely on _layout.tsx for navigation
-      console.log('✅ Apple Login successful, waiting for _layout.tsx to handle redirect');
     } catch (err: any) {
       if (err === 'CANCELLED') {
-        // Kullanıcı iptal etti
       } else if (typeof err === 'string') {
         showAlert('Apple Kayıt Hatası', err, 'error');
       } else {
@@ -277,7 +260,6 @@ export default function RegisterScreen() {
       return;
     }
 
-    // Show phone confirmation modal
     if (!forceRegister) {
       setIsPhoneModalVisible(true);
       return;
@@ -304,7 +286,6 @@ export default function RegisterScreen() {
         })
       ).unwrap();
 
-      // Kayıt başarılı → e-posta doğrulama modalını göster
       setRegisteredEmail(email);
       setRegisteredFullName(fullName);
       setVerifyCode('');
@@ -321,7 +302,6 @@ export default function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      {/* E-posta Doğrulama Modalı */}
       <Modal
         visible={emailVerifyModal}
         transparent={true}
@@ -346,7 +326,6 @@ export default function RegisterScreen() {
                 E-posta adresinize 6 haneli doğrulama kodu gönderdik. Lütfen kodu aşağıya girin.
               </Text>
 
-              {/* Test modu: kodu direkt göster */}
               {mockCode && (
                 <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(16,185,129,0.3)' }}>
                   <Text style={{ color: '#34D399', fontSize: 12, textAlign: 'center', marginBottom: 4 }}>🧪 Test Modu — Gerçek E-posta Gönderilmedi</Text>
@@ -354,7 +333,6 @@ export default function RegisterScreen() {
                 </View>
               )}
 
-              {/* Kod giriş kutusu */}
               <TextInput
                 ref={codeInputRef}
                 style={{
@@ -489,7 +467,6 @@ export default function RegisterScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
-          {/* Decorative Background Elements */}
           <LinearGradient
             colors={userType === 'CITIZEN' ? ['#1E1B4B', '#4C1D95', '#1E1B4B'] : ['#0F172A', '#1E3A8A', '#0F172A']}
             style={StyleSheet.absoluteFill}
@@ -497,7 +474,6 @@ export default function RegisterScreen() {
           <View style={[styles.glowBlob, { top: -100, right: -100, backgroundColor: accentColor }]} />
 
           <View style={styles.innerContent}>
-            {/* Header with Back Button */}
             <View style={styles.headerTop}>
               <TouchableOpacity
                 onPress={() => router.back()}
@@ -507,13 +483,11 @@ export default function RegisterScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>Kayıt Ol</Text>
               <Text style={styles.subtitle}>Sektörün uzmanlarını veya müşterilerini bulun</Text>
             </View>
 
-            {/* Selected Role Badge */}
             <View style={styles.roleBadgeContainer}>
               <View style={[styles.roleBadge, { backgroundColor: accentColor + '20', borderColor: accentColor }]}>
                 <Ionicons
@@ -536,10 +510,8 @@ export default function RegisterScreen() {
               </View>
             </View>
 
-            {/* Form */}
             <View style={styles.formSection}>
 
-              {/* ===== KVKK / Kullanım Koşulları Onayı (EN ÜSTTE) ===== */}
               <TouchableOpacity
                 style={styles.legalCheckboxContainer}
                 onPress={() => {
@@ -558,184 +530,191 @@ export default function RegisterScreen() {
                 </Text>
               </TouchableOpacity>
 
-              <View style={{ height: 16 }} />
+              <View style={{ height: 24 }} />
 
-              {/* ===== SOSYAL KAYIT BUTONLARI ===== */}
-              <TouchableOpacity
-                onPress={() => {
-                  if (!termsAccepted || !kvkkAccepted) {
-                    showAlert(
-                      '⚠️ Onay Gerekli',
-                      'Devam etmek için Kullanım Koşullarını ve KVKK Politikasını okuduğunuzu onaylamanız gerekmektedir.',
-                      'warning'
-                    );
-                    return;
-                  }
-                  handleGoogleRegister();
-                }}
-                disabled={isLoading || socialLoading !== null}
-                activeOpacity={0.85}
-                style={[styles.googleButtonWrapper, socialLoading === 'google' && { opacity: 0.7 }]}
-              >
-                <LinearGradient
-                  colors={['#EA4335', '#FBBC04', '#34A853', '#4285F4']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.googleButtonBorder}
-                >
-                  <View style={styles.googleButtonInner}>
-                    <Image
-                      source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}
-                      style={styles.googleIcon}
-                    />
-                    <Text style={styles.googleButtonText}>
-                      {socialLoading === 'google' ? 'Bağlanıyor...' : 'Google ile kayıt ol'}
-                    </Text>
-                  </View>
-                </LinearGradient>
-              </TouchableOpacity>
-
-              {Platform.OS === 'ios' && (
+              <View style={styles.socialSection}>
                 <TouchableOpacity
                   onPress={() => {
                     if (!termsAccepted || !kvkkAccepted) {
-                      showAlert(
-                        '⚠️ Onay Gerekli',
-                        'Devam etmek için Kullanım Koşullarını ve KVKK Politikasını okuduğunuzu onaylamanız gerekmektedir.',
-                        'warning'
-                      );
+                      showAlert('⚠️ Onay Gerekli', 'Devam etmek için Kullanım Koşullarını ve KVKK Politikasını okuduğunuzu onaylamanız gerekmektedir.', 'warning');
                       return;
                     }
-                    handleAppleRegister();
+                    handleGoogleRegister();
                   }}
                   disabled={isLoading || socialLoading !== null}
-                  activeOpacity={0.8}
-                  style={[styles.socialButton, styles.socialButtonApple, socialLoading === 'apple' && { opacity: 0.7 }]}
+                  activeOpacity={0.85}
+                  style={[styles.googleButtonWrapper, socialLoading === 'google' && { opacity: 0.7 }]}
                 >
-                  <View style={styles.socialButtonInner}>
-                    <Ionicons name="logo-apple" size={22} color="#FFFFFF" />
-                    <Text style={[styles.socialButtonText, styles.socialButtonTextApple]}>
-                      {socialLoading === 'apple' ? 'Bağlanıyor...' : 'Apple ile kayıt ol'}
-                    </Text>
-                  </View>
+                  <LinearGradient
+                    colors={['#EA4335', '#FBBC04', '#34A853', '#4285F4']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.googleButtonBorder}
+                  >
+                    <View style={styles.googleButtonInner}>
+                      <Image
+                        source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}
+                        style={styles.googleIcon}
+                      />
+                      <Text style={styles.googleButtonText}>
+                        {socialLoading === 'google' ? 'Bağlanıyor...' : 'Google ile kayıt ol'}
+                      </Text>
+                    </View>
+                  </LinearGradient>
                 </TouchableOpacity>
-              )}
 
-              <View style={styles.socialDivider}>
-                <View style={styles.socialDividerLine} />
-                <Text style={styles.socialDividerText}>veya</Text>
-                <View style={styles.socialDividerLine} />
+                {Platform.OS === 'ios' && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (!termsAccepted || !kvkkAccepted) {
+                        showAlert('⚠️ Onay Gerekli', 'Devam etmek için Kullanım Koşullarını ve KVKK Politikasını okuduğunuzu onaylamanız gerekmektedir.', 'warning');
+                        return;
+                      }
+                      handleAppleRegister();
+                    }}
+                    disabled={isLoading || socialLoading !== null}
+                    activeOpacity={0.8}
+                    style={[styles.socialButton, styles.socialButtonApple, socialLoading === 'apple' && { opacity: 0.7 }]}
+                  >
+                    <View style={styles.socialButtonInner}>
+                      <Ionicons name="logo-apple" size={22} color="#FFFFFF" />
+                      <Text style={[styles.socialButtonText, styles.socialButtonTextApple]}>
+                        {socialLoading === 'apple' ? 'Bağlanıyor...' : 'Apple ile kayıt ol'}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
               </View>
-              {/* ===== SOSYAL KAYIT BUTONLARI BİTİŞ ===== */}
-
-              <Input
-                label="Ad Soyad"
-                placeholder="Ahmet Yılmaz"
-                value={fullName}
-                onChangeText={(text: string) => {
-                  setFullName(text);
-                  setErrors({ ...errors, fullName: '' });
-                }}
-                error={errors.fullName}
-                editable={!isLoading}
-                labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
-                inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }}
-                style={{ color: '#FFFFFF' }}
-                placeholderTextColor="rgba(255,255,255,0.45)"
-              />
-
-              <Input
-                label="E-posta Adresi"
-                placeholder="ornek@email.com"
-                value={email}
-                onChangeText={(text: string) => {
-                  setEmail(text);
-                  setErrors({ ...errors, email: '' });
-                }}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="email"
-                error={errors.email}
-                editable={!isLoading}
-                labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
-                inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }}
-                style={{ color: '#FFFFFF' }}
-                placeholderTextColor="rgba(255,255,255,0.45)"
-              />
-
-              <Input
-                label="Telefon Numarası"
-                placeholder="05XX XXX XX XX"
-                value={phone}
-                onChangeText={(text: string) => {
-                  setPhone(text);
-                  setErrors({ ...errors, phone: '' });
-                }}
-                keyboardType="phone-pad"
-                error={errors.phone}
-                editable={!isLoading}
-                labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
-                inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }}
-                style={{ color: '#FFFFFF' }}
-                placeholderTextColor="rgba(255,255,255,0.45)"
-              />
-
-              <Input
-                label="Şifre"
-                placeholder="En az 6 karakter"
-                helperText="En az 6 karakter olmalıdır"
-                value={password}
-                onChangeText={(text: string) => {
-                  setPassword(text);
-                  setErrors({ ...errors, password: '' });
-                }}
-                secureTextEntry
-                autoCapitalize="none"
-                autoComplete="password"
-                error={errors.password}
-                editable={!isLoading}
-                labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
-                inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }}
-                style={{ color: '#FFFFFF' }}
-                placeholderTextColor="rgba(255,255,255,0.45)"
-              />
-
-              {error && (
-                <View style={styles.errorContainer}>
-                  <Text style={styles.errorText}>{error}</Text>
-                </View>
-              )}
 
               <TouchableOpacity
-                onPress={() => {
-                  if (!termsAccepted || !kvkkAccepted) {
-                    showAlert(
-                      '⚠️ Onay Gerekli',
-                      'Devam etmek için Kullanım Koşullarını ve KVKK Politikasını okuduğunuzu onaylamanız gerekmektedir.',
-                      'warning'
-                    );
-                    return;
-                  }
-                  handleRegister();
-                }}
-                disabled={isLoading}
-                activeOpacity={0.8}
-                style={[
-                  styles.registerButtonWrapper,
-                  { shadowColor: accentColor }
-                ]}
+                onPress={toggleManualForm}
+                style={styles.toggleFormButton}
+                activeOpacity={0.7}
               >
-                <LinearGradient
-                  colors={[accentColor, accentColor + 'CC']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.registerButtonGradient}
-                >
-                  <Text style={styles.registerButtonText}>Kayıt Ol</Text>
-                  <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
-                </LinearGradient>
+                <View style={styles.socialDivider}>
+                  <View style={styles.socialDividerLine} />
+                  <View style={styles.dividerContent}>
+                    <Text style={styles.dividerText}>veya e-posta ile kayıt ol</Text>
+                    <Ionicons
+                      name={showManualForm ? "chevron-up" : "chevron-down"}
+                      size={14}
+                      color="rgba(255,255,255,0.5)"
+                    />
+                  </View>
+                  <View style={styles.socialDividerLine} />
+                </View>
               </TouchableOpacity>
+
+              {showManualForm && (
+                <Animated.View style={{
+                  opacity: formAnimation,
+                  transform: [{
+                    translateY: formAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-20, 0]
+                    })
+                  }]
+                }}>
+                  <Input
+                    label="Ad Soyad"
+                    placeholder="Ahmet Yılmaz"
+                    value={fullName}
+                    onChangeText={(text: string) => {
+                      setFullName(text);
+                      setErrors({ ...errors, fullName: '' });
+                    }}
+                    error={errors.fullName}
+                    editable={!isLoading}
+                    labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
+                    inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }}
+                    style={{ color: '#FFFFFF' }}
+                    placeholderTextColor="rgba(255,255,255,0.45)"
+                  />
+
+                  <Input
+                    label="E-posta Adresi"
+                    placeholder="ornek@email.com"
+                    value={email}
+                    onChangeText={(text: string) => {
+                      setEmail(text);
+                      setErrors({ ...errors, email: '' });
+                    }}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="email"
+                    error={errors.email}
+                    editable={!isLoading}
+                    labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
+                    inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }}
+                    style={{ color: '#FFFFFF' }}
+                    placeholderTextColor="rgba(255,255,255,0.45)"
+                  />
+
+                  <Input
+                    label="Telefon Numarası"
+                    placeholder="05XX XXX XX XX"
+                    value={phone}
+                    onChangeText={(text: string) => {
+                      setPhone(text);
+                      setErrors({ ...errors, phone: '' });
+                    }}
+                    keyboardType="phone-pad"
+                    error={errors.phone}
+                    editable={!isLoading}
+                    labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
+                    inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }}
+                    style={{ color: '#FFFFFF' }}
+                    placeholderTextColor="rgba(255,255,255,0.45)"
+                  />
+
+                  <Input
+                    label="Şifre"
+                    placeholder="En az 6 karakter"
+                    helperText="En az 6 karakter olmalıdır"
+                    value={password}
+                    onChangeText={(text: string) => {
+                      setPassword(text);
+                      setErrors({ ...errors, password: '' });
+                    }}
+                    secureTextEntry
+                    autoCapitalize="none"
+                    autoComplete="password"
+                    error={errors.password}
+                    editable={!isLoading}
+                    labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
+                    inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }}
+                    style={{ color: '#FFFFFF' }}
+                    placeholderTextColor="rgba(255,255,255,0.45)"
+                  />
+
+                  {error && (
+                    <View style={styles.errorContainer}>
+                      <Text style={styles.errorText}>{error}</Text>
+                    </View>
+                  )}
+
+                  <TouchableOpacity
+                    onPress={() => handleRegister()}
+                    disabled={isLoading}
+                    activeOpacity={0.8}
+                    style={[
+                      styles.registerButtonWrapper,
+                      { shadowColor: accentColor }
+                    ]}
+                  >
+                    <LinearGradient
+                      colors={[accentColor, accentColor + 'CC']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.registerButtonGradient}
+                    >
+                      <Text style={styles.registerButtonText}>Kayıt Ol</Text>
+                      <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </Animated.View>
+              )}
 
               <View style={styles.loginLink}>
                 <Text style={styles.loginLinkText}>Zaten hesabınız var mı? </Text>
@@ -757,7 +736,6 @@ export default function RegisterScreen() {
         onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
       />
 
-      {/* Legal Document Modal */}
       <Modal
         visible={legalModal.visible}
         animationType="slide"
@@ -841,13 +819,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: 'rgba(255,255,255,0.85)',
   },
-  userTypeSection: {
-    marginBottom: spacing.xl,
-  },
-  sectionLabel: {
-    fontFamily: fonts.bold,
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.7)',
     marginBottom: spacing.md,
     textTransform: 'uppercase',
     letterSpacing: 2,
