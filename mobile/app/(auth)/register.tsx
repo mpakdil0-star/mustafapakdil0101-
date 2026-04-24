@@ -226,8 +226,9 @@ export default function RegisterScreen() {
     try {
       await dispatch(googleLogin({ userType, serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined })).unwrap();
       
-      // Rely on _layout.tsx for navigation
-      console.log('✅ Google Login successful, waiting for _layout.tsx to handle redirect');
+      // Fallback: Manually trigger navigation in case _layout.tsx logic is delayed
+      console.log('✅ Google Login successful, triggering fallback navigation');
+      navigateAfterRegister();
     } catch (err: any) {
       console.error('Google registration error:', err);
       if (err !== 'CANCELLED') {

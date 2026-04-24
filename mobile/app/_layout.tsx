@@ -110,7 +110,7 @@ function RootLayoutNav() {
       // CRITICAL: Wait until navigation is fully ready before performing any redirects
       if (!isNavigationReady) return;
 
-      const inAuthGroup = segments[0] === '(auth)';
+      const inAuthGroup = segments.includes('(auth)') || segments.includes('login') || segments.includes('register');
       const isOnboarding = segments[0] === 'onboarding';
       const currentPath = segments.join('/');
       const isInsideProfileGroup = segments[0] === 'profile';
@@ -193,8 +193,11 @@ function RootLayoutNav() {
             }
 
             // Case: Default redirect to TABS
-            if (inAuthGroup) {
-              console.log('➡️ [RootNav] Verified user in Auth group, redirecting to TABS');
+            // If user is verified and authenticated, but still on a non-app screen, force redirect to TABS
+            const isInApp = segments.includes('(tabs)') || segments.includes('profile') || segments.includes('admin');
+            
+            if (!isInApp && currentPath !== 'onboarding') {
+              console.log('➡️ [RootNav] Verified user on non-app screen (' + currentPath + '), forcing redirect to TABS');
               if (lastRedirectPath.current !== '/(tabs)') {
                 lastRedirectPath.current = '/(tabs)';
                 requestAnimationFrame(() => {

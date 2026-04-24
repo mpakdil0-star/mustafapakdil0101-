@@ -161,10 +161,8 @@ export const googleLogin = createAsyncThunk(
         params?.serviceCategory
       );
 
-      // Add a larger delay (1.2s) to ensure the native Google Login modal is fully closed
-      // and the UI thread is completely free before triggering Redux state updates.
-      // This is the primary fix for the "app closed" crash on Android registration.
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      // Reduced delay to 500ms to be more responsive while still avoiding UI thread collisions
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       return result;
     } catch (error: any) {
