@@ -340,11 +340,6 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         borderRadius: 16,
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
-        shadowColor: '#10B981',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 15,
-        elevation: 8,
     },
     registerGradient: {
         width: '100%',
@@ -359,9 +354,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: fonts.bold,
         letterSpacing: 0.5,
-        textShadowColor: 'rgba(0, 0, 0, 0.2)',
-        textShadowOffset: { width: 0, height: 2 },
-        textShadowRadius: 4,
     },
     loginLink: {
         paddingVertical: 10,
