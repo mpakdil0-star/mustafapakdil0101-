@@ -36,14 +36,16 @@ const getGoogleSignin = async () => {
 export const configureGoogleSignIn = async () => {
   try {
     const GS = await getGoogleSignin();
-    GS.configure({
-      // Google Cloud Console → OAuth 2.0 Client IDs → Web client ID
-      // Bu ID backend doğrulaması için gerekli (Android client ID'si değil!)
+    if (!GS) return;
+    
+    await GS.configure({
       webClientId: '850829107432-722tuskg1qbktela7q5bdj9o4d1jceav.apps.googleusercontent.com',
       offlineAccess: true,
+      forceCodeForRefreshToken: true,
     });
+    console.log('✅ Google Sign-In configured successfully');
   } catch (e) {
-    console.warn('Google Sign-In yapılandırma hatası:', e);
+    console.warn('⚠️ Google Sign-In yapılandırma hatası:', e);
   }
 };
 
@@ -52,10 +54,16 @@ export const configureGoogleSignIn = async () => {
  * @returns Google ID Token
  */
 export const signInWithGoogle = async (): Promise<string> => {
-  await configureGoogleSignIn();
-  const GS = await getGoogleSignin();
-
   try {
+    await configureGoogleSignIn();
+    const GS = await getGoogleSignin();
+    if (!GS) throw new Error('Google Sign-In kütüphanesi hazır değil.');
+
+    // ÖNEMLİ: Önceki oturumu temizle (SIGN_IN_IN_PROGRESS veya benzeri çakışmaları önler)
+    try {
+      await GS.signOut();
+    } catch (e) { /* ignore */ }
+
     await GS.hasPlayServices({ showPlayServicesUpdateDialog: true });
     const signInResult = await GS.signIn();
 

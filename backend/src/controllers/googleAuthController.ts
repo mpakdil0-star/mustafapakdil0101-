@@ -52,13 +52,21 @@ export const googleLoginController = async (
         // 2. Check Database if available
         if (isDatabaseAvailable) {
             try {
+                // Try to find by email (case-insensitive)
                 user = await prisma.user.findFirst({
-                    where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
+                    where: { 
+                        email: { equals: normalizedEmail, mode: 'insensitive' }
+                    },
                     include: { electricianProfile: true }
                 });
-                if (user) userId = user.id;
-            } catch (error) {
-                console.warn('⚠️ Prisma query failed in google auth fallback to mock', error);
+                
+                if (user) {
+                    userId = user.id;
+                    console.log(`✅ [GoogleAuth] Found DB user: ${user.email} (Type: ${user.userType})`);
+                }
+            } catch (dbError) {
+                console.error('❌ [GoogleAuth] Prisma error during lookup:', dbError);
+                // Even if DB fails, we will try MockStorage next
             }
         }
 
