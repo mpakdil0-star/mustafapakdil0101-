@@ -6,23 +6,21 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
   Animated,
   TouchableOpacity,
   Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { login, googleLogin, appleLogin } from '../../store/slices/authSlice';
-import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { validateEmail, validatePassword } from '../../utils/validation';
 import { colors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
+import { PremiumAlert } from '../../components/common/PremiumAlert';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -55,9 +53,7 @@ export default function LoginScreen() {
   const formTranslateY = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
-    // Entrance animation sequence
     Animated.sequence([
-      // Logo fade in and scale
       Animated.parallel([
         Animated.spring(logoScale, {
           toValue: 1,
@@ -71,7 +67,6 @@ export default function LoginScreen() {
           useNativeDriver: true,
         }),
       ]),
-      // Form slide up
       Animated.parallel([
         Animated.timing(formOpacity, {
           toValue: 1,
@@ -91,21 +86,16 @@ export default function LoginScreen() {
   const validate = () => {
     const emailErr = validateEmail(email);
     const passwordErr = validatePassword(password);
-
     setEmailError(emailErr || '');
     setPasswordError(passwordErr || '');
-
     return !emailErr && !passwordErr;
   };
 
   const handleLogin = async () => {
     if (!validate()) return;
-
     try {
       await dispatch(login({ email, password })).unwrap();
-      console.log('✅ Manual login successful, layout will handle redirection');
     } catch (err: any) {
-      // Check if this is a "user not found" error
       const errorMessage = err?.message || err || 'Giriş yapılamadı';
       const isUserNotFound =
         errorMessage.toLowerCase().includes('bulunamadı') ||
@@ -118,21 +108,14 @@ export default function LoginScreen() {
           'Bu e-posta adresi ile kayıtlı bir hesap bulunamadı. Yeni bir hesap oluşturmak ister misiniz?',
           'info',
           [
-            {
-              text: 'Vazgeç',
-              variant: 'ghost',
-              onPress: () => setAlertConfig(prev => ({ ...prev, visible: false }))
-            },
-            {
-              text: 'Kayıt Ol',
-              variant: 'primary',
+            { text: 'Vazgeç', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },
+            { 
+              text: 'Kayıt Ol', 
+              variant: 'primary', 
               onPress: () => {
                 setAlertConfig(prev => ({ ...prev, visible: false }));
-                router.push({
-                  pathname: '/(auth)/role-select',
-                  params: { redirectTo }
-                });
-              }
+                router.push({ pathname: '/(auth)/role-select', params: { redirectTo } });
+              } 
             }
           ]
         );
@@ -142,35 +125,28 @@ export default function LoginScreen() {
     }
   };
 
-  // ============================================================
-  // SOSYAL GİRİŞ
-  // ============================================================
-
   const handleGoogleLogin = async () => {
     setSocialLoading('google');
     try {
       await dispatch(googleLogin()).unwrap();
-
-      // Rely on _layout.tsx for navigation
-      console.log('✅ Google Login successful, waiting for _layout.tsx to handle redirect');
     } catch (err: any) {
-      if (err === 'CANCELLED') {
-        // Kullanıcı iptal etti, sessizce devam et
-      } else if (err?.code === 'USER_NOT_FOUND') {
-        showAlert(
-          'Hesap Bulunamadı',
-          'Bu Google hesabı ile kayıtlı kullanıcı bulunamadı. Kayıt olmak ister misiniz?',
-          'info',
-          [
-            { text: 'Vazgeç', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },
-            { text: 'Kayıt Ol', variant: 'primary', onPress: () => {
-              setAlertConfig(prev => ({ ...prev, visible: false }));
-              router.push({ pathname: '/(auth)/role-select', params: { redirectTo } });
-            }}
-          ]
-        );
-      } else if (typeof err === 'string') {
-        showAlert('Google Giriş Hatası', err, 'error');
+      if (err !== 'CANCELLED') {
+        if (err?.code === 'USER_NOT_FOUND') {
+          showAlert(
+            'Hesap Bulunamadı',
+            'Bu Google hesabı ile kayıtlı kullanıcı bulunamadı. Kayıt olmak ister misiniz?',
+            'info',
+            [
+              { text: 'Vazgeç', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },
+              { text: 'Kayıt Ol', variant: 'primary', onPress: () => {
+                setAlertConfig(prev => ({ ...prev, visible: false }));
+                router.push({ pathname: '/(auth)/role-select', params: { redirectTo } });
+              }}
+            ]
+          );
+        } else {
+          showAlert('Google Giriş Hatası', typeof err === 'string' ? err : 'Hata oluştu', 'error');
+        }
       }
     } finally {
       setSocialLoading(null);
@@ -180,58 +156,28 @@ export default function LoginScreen() {
   const handleAppleLogin = async () => {
     setSocialLoading('apple');
     try {
-      const result = await dispatch(appleLogin(undefined)).unwrap();
-      console.log('✅ Apple login successful, layout will handle redirection');
+      await dispatch(appleLogin(undefined)).unwrap();
     } catch (err: any) {
-      if (err === 'CANCELLED') {
-        // Kullanıcı iptal etti
-      } else if (err?.code === 'USER_NOT_FOUND') {
-        showAlert(
-          'Hesap Bulunamadı',
-          'Bu Apple hesabı ile kayıtlı kullanıcı bulunamadı. Kayıt olmak ister misiniz?',
-          'info',
-          [
-            { text: 'Vazgeç', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },
-            { text: 'Kayıt Ol', variant: 'primary', onPress: () => {
-              setAlertConfig(prev => ({ ...prev, visible: false }));
-              router.push({ pathname: '/(auth)/role-select', params: { redirectTo } });
-            }}
-          ]
-        );
-      } else if (typeof err === 'string') {
-        showAlert('Apple Giriş Hatası', err, 'error');
+      if (err !== 'CANCELLED') {
+        if (err?.code === 'USER_NOT_FOUND') {
+          showAlert(
+            'Hesap Bulunamadı',
+            'Bu Apple hesabı ile kayıtlı kullanıcı bulunamadı. Kayıt olmak ister misiniz?',
+            'info',
+            [
+              { text: 'Vazgeç', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },
+              { text: 'Kayıt Ol', variant: 'primary', onPress: () => {
+                setAlertConfig(prev => ({ ...prev, visible: false }));
+                router.push({ pathname: '/(auth)/role-select', params: { redirectTo } });
+              }}
+            ]
+          );
+        } else {
+          showAlert('Apple Giriş Hatası', typeof err === 'string' ? err : 'Hata oluştu', 'error');
+        }
       }
     } finally {
       setSocialLoading(null);
-    }
-  };
-
-  const handleTestLogin = async (role: 'citizen' | 'electrician') => {
-    // Demo hesapları - mock mode'da otomatik olarak oluşturulur
-    const testEmail = role === 'citizen' ? 'demo@vatandas.com' : 'demo@usta.com';
-    const testPassword = '123456';
-
-    setEmail(testEmail);
-    setPassword(testPassword);
-
-    try {
-      await dispatch(login({ email: testEmail, password: testPassword })).unwrap();
-      console.log('✅ Test login successful, layout will handle redirection');
-    } catch (err: any) {
-      // Eğer kullanıcı yoksa, otomatik kayıt yap
-      showAlert(
-        'Demo Giriş',
-        'Demo hesabı oluşturuluyor...',
-        'info'
-      );
-
-      // Kayıt sayfasına yönlendir ve pre-fill yap
-      router.push({
-        pathname: '/(auth)/register',
-        params: {
-          initialRole: role === 'citizen' ? 'CITIZEN' : 'ELECTRICIAN'
-        }
-      });
     }
   };
 
@@ -246,19 +192,15 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
-          {/* Decorative Background Elements */}
-          {/* Premium Background Gradient */}
           <LinearGradient
             colors={['#1E1B4B', '#4C1D95', '#1E1B4B']}
             style={StyleSheet.absoluteFill}
           />
 
-          {/* Animated Glow Blobs */}
           <View style={[styles.glowBlob, { top: -100, right: -100, backgroundColor: '#7C3AED' }]} />
           <View style={[styles.glowBlob, { bottom: -100, left: -100, backgroundColor: '#4F46E5', opacity: 0.2 }]} />
 
           <View style={styles.innerContent}>
-            {/* Header with Back Button */}
             <View style={styles.headerTop}>
               <TouchableOpacity
                 onPress={() => router.replace('/(auth)/welcome')}
@@ -268,7 +210,6 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Logo/Brand Section */}
             <Animated.View
               style={[
                 styles.brandSection,
@@ -290,7 +231,6 @@ export default function LoginScreen() {
               <Text style={styles.subtitle}>Sektörün uzmanlarıyla buluşun</Text>
             </Animated.View>
 
-            {/* Form Section */}
             <Animated.View
               style={[
                 styles.formSection,
@@ -301,7 +241,7 @@ export default function LoginScreen() {
               ]}
             >
               <View style={styles.formCard}>
-                {/* ===== SOSYAL GİRİŞ BUTONLARI (EN ÜSTTE) ===== */}
+                {/* SOSYAL GİRİŞ (ÜSTTE) */}
                 <TouchableOpacity
                   onPress={handleGoogleLogin}
                   disabled={isLoading || socialLoading !== null}
@@ -348,7 +288,7 @@ export default function LoginScreen() {
                   <View style={styles.dividerLine} />
                 </View>
 
-                {/* ===== MANUEL GİRİŞ FORMU ===== */}
+                {/* MANUEL FORM */}
                 <Input
                   label="E-posta Adresi"
                   placeholder="ornek@email.com"
@@ -359,8 +299,6 @@ export default function LoginScreen() {
                   }}
                   keyboardType="email-address"
                   autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="email"
                   error={emailError}
                   editable={!isLoading}
                   labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
@@ -379,7 +317,6 @@ export default function LoginScreen() {
                   }}
                   secureTextEntry
                   autoCapitalize="none"
-                  autoComplete="password"
                   error={passwordError}
                   editable={!isLoading}
                   labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
@@ -396,13 +333,6 @@ export default function LoginScreen() {
                     Şifremi Unuttum
                   </Text>
                 </TouchableOpacity>
-
-                {error && (
-                  <View style={styles.errorContainer}>
-                    <Ionicons name="alert-circle" size={16} color={colors.error} />
-                    <Text style={styles.errorText}>{error}</Text>
-                  </View>
-                )}
 
                 <TouchableOpacity
                   onPress={handleLogin}
@@ -439,20 +369,7 @@ export default function LoginScreen() {
                 >
                   <Text style={styles.guestLinkText}>Giriş yapmadan devam et</Text>
                 </TouchableOpacity>
-
-                <View style={styles.legalFooter}>
-                  <TouchableOpacity onPress={() => router.push('/legal/terms')}>
-                    <Text style={styles.legalFooterText}>Kullanım Koşulları</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.legalFooterDivider}>•</Text>
-                  <TouchableOpacity onPress={() => router.push('/legal/kvkk')}>
-                    <Text style={styles.legalFooterText}>KVKK Aydınlatma Metni</Text>
-                  </TouchableOpacity>
-                </View>
               </View>
-
-              {/* Test Buttons - Only in Development */}
-
             </Animated.View>
           </View>
         </View>
@@ -539,9 +456,6 @@ const styles = StyleSheet.create({
     color: colors.white,
     marginBottom: 8,
     letterSpacing: -1,
-    textShadowColor: 'rgba(124, 58, 237, 0.5)',
-    textShadowOffset: { width: 0, height: 4 },
-    textShadowRadius: 10,
   },
   subtitle: {
     fontFamily: fonts.medium,
@@ -558,21 +472,6 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-    padding: spacing.md,
-    borderRadius: 16,
-    marginBottom: spacing.md,
-    gap: 8,
-  },
-  errorText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: '#F87171',
-    flex: 1,
   },
   loginButtonWrapper: {
     marginTop: spacing.sm,
@@ -613,7 +512,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.65)',
     marginHorizontal: spacing.lg,
   },
-  // ===== Google Premium Button =====
   googleButtonWrapper: {
     marginBottom: 14,
     borderRadius: 18,
@@ -647,18 +545,12 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     letterSpacing: 0.3,
   },
-  // ===== Apple Button =====
   socialButton: {
     borderRadius: 18,
     overflow: 'hidden',
     marginBottom: 14,
     borderWidth: 1.5,
     borderColor: 'rgba(255, 255, 255, 0.15)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 8,
   },
   socialButtonApple: {
     backgroundColor: '#000000',
@@ -671,10 +563,6 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     gap: 12,
   },
-  socialIcon: {
-    width: 22,
-    height: 22,
-  },
   socialButtonText: {
     fontFamily: fonts.bold,
     fontSize: 16,
@@ -684,7 +572,6 @@ const styles = StyleSheet.create({
   socialButtonTextApple: {
     color: '#FFFFFF',
   },
-  // ===== Sosyal Giriş Buton Stilleri Bitiş =====
   registerLink: {
     marginTop: 8,
     alignItems: 'center',
@@ -701,62 +588,12 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
   guestLink: {
-    marginTop: 24,
+    marginTop: 10,
     alignItems: 'center',
   },
   guestLinkText: {
     fontFamily: fonts.semiBold,
     fontSize: 14,
     color: 'rgba(255,255,255,0.75)',
-  },
-  legalFooter: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 24,
-    gap: 8,
-  },
-  legalFooterText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.4)',
-    textDecorationLine: 'underline',
-  },
-  legalFooterDivider: {
-    color: 'rgba(255,255,255,0.2)',
-    fontSize: 12,
-  },
-  testSection: {
-    marginTop: 30,
-    backgroundColor: 'rgba(255,255,255,0.02)',
-    padding: 20,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-  },
-  testTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.3)',
-    textAlign: 'center',
-    marginBottom: 16,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-  },
-  testButtonsRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  testBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  testBtnText: {
-    color: colors.white,
-    fontFamily: fonts.bold,
-    fontSize: 13,
   },
 });
