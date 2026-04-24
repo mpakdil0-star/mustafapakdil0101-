@@ -283,42 +283,42 @@ export const register = async (data: RegisterData) => {
     if (!isDatabaseAvailable) {
       const existingMockId = `mock-user-${email.replace(/[@.]/g, '-')}-${userType}`;
 
-    // Save to mock storage
-    mockStorage.updateProfile(existingMockId, {
-      fullName: fullName || 'İsimsiz Kullanıcı',
-      phone: phone || '',
-      email: email,
-      isVerified: false, // Email verification is strictly required now
-      passwordHash: passwordHash, // Use hashed password
-      experienceYears: 0,
-      creditBalance: userType === UserType.ELECTRICIAN ? 5 : 0,
-      userType: userType, // Save userType directly
-      serviceCategory: userType === UserType.ELECTRICIAN ? (data.serviceCategory || 'elektrik') : undefined, // Save profession
-      acceptedLegalVersion: data.acceptedLegalVersion,
-      marketingAllowed: data.marketingAllowed,
-    });
+      // Save to mock storage
+      mockStorage.updateProfile(existingMockId, {
+        fullName: fullName || 'İsimsiz Kullanıcı',
+        phone: phone || '',
+        email: email,
+        isVerified: false, // Email verification is strictly required now
+        passwordHash: passwordHash, // Use hashed password
+        experienceYears: 0,
+        creditBalance: userType === UserType.ELECTRICIAN ? 5 : 0,
+        userType: userType, // Save userType directly
+        serviceCategory: userType === UserType.ELECTRICIAN ? (data.serviceCategory || 'elektrik') : undefined, // Save profession
+        acceptedLegalVersion: data.acceptedLegalVersion,
+        marketingAllowed: data.marketingAllowed,
+      });
 
-    const user = {
-      id: existingMockId,
-      email,
-      fullName: fullName || 'İsimsiz Kullanıcı',
-      phone: phone || '',
-      userType,
-      isVerified: false, // Email verification is strictly required now
-      profileImageUrl: null,
-      createdAt: new Date(),
-    };
+      const user = {
+        id: existingMockId,
+        email,
+        fullName: fullName || 'İsimsiz Kullanıcı',
+        phone: phone || '',
+        userType,
+        isVerified: false, // Email verification is strictly required now
+        profileImageUrl: null,
+        createdAt: new Date(),
+      };
 
-    const tokens = generateTokens({
-      id: user.id,
-      email: user.email,
-      userType: user.userType,
-    });
+      const tokens = generateTokens({
+        id: user.id,
+        email: user.email,
+        userType: user.userType,
+      });
 
-    // IMPORTANT: Get full user data including electricianProfile for the client
-    const fullUser = mockStorage.getFullUser(user.id, user.userType);
+      // IMPORTANT: Get full user data including electricianProfile for the client
+      const fullUser = mockStorage.getFullUser(user.id, user.userType);
 
-    return { user: fullUser, ...tokens };
+      return { user: fullUser, ...tokens };
     }
 
     throw error;
@@ -573,7 +573,7 @@ export const refreshToken = async (refreshToken: string) => {
  */
 export const forgotPassword = async (email: string) => {
   let userFullName = 'Değerli Kullanıcımız';
-  
+
   if (!isDatabaseAvailable) {
     const allUsers = mockStorage.getAllUsers();
     const user = allUsers.find((u: { email: string, fullName?: string }) => u.email === email);
@@ -601,7 +601,7 @@ export const resetPassword = async (data: any) => {
   const { email, code, newPassword } = data;
 
   const codeVerification = verifyEmailCode(email, code);
-  
+
   if (!codeVerification.valid) {
     throw new ValidationError(codeVerification.message);
   }

@@ -705,15 +705,25 @@ export default function JobDetailScreen() {
           setShowAuthModal(false);
           router.push({ pathname: '/(auth)/login', params: { redirectTo: `/jobs/${id}` } });
         }}
-        onRegister={() => {
+        onRegister={(role) => {
           setShowAuthModal(false);
-          router.push({
-            pathname: '/(auth)/register',
-            params: {
-              redirectTo: `/jobs/${id}`,
-              initialRole: isElectrician ? 'ELECTRICIAN' : 'CITIZEN'
-            }
-          });
+          if (role === 'ELECTRICIAN') {
+            router.push({
+              pathname: '/(auth)/role-select',
+              params: { 
+                initialRole: 'ELECTRICIAN',
+                redirectTo: `/jobs/${id}` 
+              }
+            });
+          } else {
+            router.push({
+              pathname: '/(auth)/register',
+              params: {
+                type: role,
+                redirectTo: `/jobs/${id}`
+              }
+            });
+          }
         }}
         title="Giriş Gerekli"
         message={isElectrician ? "Teklif verebilmek için usta olarak giriş yapmalısınız." : "İlan detaylarını görmek için giriş yapmalısınız."}

@@ -16,6 +16,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { register, googleLogin, appleLogin, getMe } from '../../store/slices/authSlice';
 import { Input } from '../../components/common/Input';
@@ -28,10 +29,11 @@ import { API_BASE_URL } from '../../services/api';
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { initialRole, initialServiceCategory, redirectTo } = useLocalSearchParams<{
+  const { initialRole, initialServiceCategory, redirectTo, type } = useLocalSearchParams<{
     initialRole?: string;
     initialServiceCategory?: string;
     redirectTo?: string;
+    type?: string;
   }>();
   const dispatch = useAppDispatch();
   const { isLoading, error } = useAppSelector((state) => state.auth);
@@ -43,13 +45,16 @@ export default function RegisterScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [socialLoading, setSocialLoading] = useState<'google' | 'apple' | null>(null);
 
-  const userType = initialRole === 'ELECTRICIAN' ? 'ELECTRICIAN' : 'CITIZEN';
+  const effectiveRole = type || initialRole;
+  const userType = effectiveRole === 'ELECTRICIAN' ? 'ELECTRICIAN' : 'CITIZEN';
   const serviceCategory = initialServiceCategory || 'elektrik';
   const [marketingAllowed, setMarketingAllowed] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
   const formAnimation = useRef(new Animated.Value(0)).current;
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [kvkkAccepted, setKvkkAccepted] = useState(false);
+  const [showLegalError, setShowLegalError] = useState(false);
+  const shakeAnimation = useRef(new Animated.Value(0)).current;
 
   // Email Verification Modal States
   const [emailVerifyModal, setEmailVerifyModal] = useState(false);
@@ -61,6 +66,21 @@ export default function RegisterScreen() {
   const [registeredFullName, setRegisteredFullName] = useState('');
   const [mockCode, setMockCode] = useState<string | null>(null);
   const codeInputRef = useRef<TextInput>(null);
+
+  const triggerLegalError = () => {
+    setShowLegalError(true);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    
+    // Shake animation
+    Animated.sequence([
+      Animated.timing(shakeAnimation, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnimation, { toValue: -10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnimation, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnimation, { toValue: 0, duration: 50, useNativeDriver: true })
+    ]).start();
+
+    setTimeout(() => setShowLegalError(false), 3000);
+  };
 
   // Phone modal states
   const [isPhoneModalVisible, setIsPhoneModalVisible] = useState(false);
@@ -184,6 +204,10 @@ export default function RegisterScreen() {
   };
 
   const handleGoogleLogin = async () => {
+    if (!termsAccepted || !kvkkAccepted) {
+      triggerLegalError();
+      return;
+    }
     setSocialLoading('google');
     try {
       await dispatch(googleLogin({ userType, serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined })).unwrap();
@@ -198,6 +222,10 @@ export default function RegisterScreen() {
   };
 
   const handleAppleLogin = async () => {
+    if (!termsAccepted || !kvkkAccepted) {
+      triggerLegalError();
+      return;
+    }
     setSocialLoading('apple');
     try {
       await dispatch(appleLogin({ userType, serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined })).unwrap();
@@ -213,7 +241,7 @@ export default function RegisterScreen() {
   const handleRegister = async (forceRegister = false) => {
     if (!validate()) return;
     if (!termsAccepted || !kvkkAccepted) {
-      showAlert('⚠️ Onay Gerekli', 'Devam etmek için Kullanım Koşullarını ve KVKK Politikasını onaylamanız gerekmektedir.', 'warning');
+      triggerLegalError();
       return;
     }
 
@@ -397,32 +425,44 @@ export default function RegisterScreen() {
             </View>
 
             <View style={styles.formSection}>
-              <TouchableOpacity
-                style={styles.legalCheckboxContainer}
-                onPress={() => {
-                  setTermsAccepted(!termsAccepted);
-                  setKvkkAccepted(!kvkkAccepted);
-                }}
-              >
-                <View style={[styles.checkbox, (termsAccepted && kvkkAccepted) && { backgroundColor: accentColor, borderColor: accentColor }]}>
-                  {(termsAccepted && kvkkAccepted) && <Ionicons name="checkmark" size={14} color={colors.white} />}
-                </View>
-                <Text style={styles.legalLabel}>
-                  <Text style={styles.legalLink} onPress={() => setLegalModal({ visible: true, type: 'TERMS' })}>Kullanım Koşullarını</Text> ve <Text style={styles.legalLink} onPress={() => setLegalModal({ visible: true, type: 'KVKK' })}>KVKK Politikasını</Text> okudum, onaylıyorum.
-                </Text>
-              </TouchableOpacity>
+              <Animated.View style={[
+                styles.legalErrorWrapper,
+                showLegalError && styles.legalErrorActive,
+                { transform: [{ translateX: shakeAnimation }] }
+              ]}>
+                <TouchableOpacity
+                  style={styles.legalCheckboxContainer}
+                  onPress={() => {
+                    setTermsAccepted(!termsAccepted);
+                    setKvkkAccepted(!kvkkAccepted);
+                    setShowLegalError(false);
+                  }}
+                >
+                  <View style={[
+                    styles.checkbox,
+                    (termsAccepted && kvkkAccepted) && { backgroundColor: accentColor, borderColor: accentColor },
+                    showLegalError && { borderColor: '#EF4444', borderWidth: 2 }
+                  ]}>
+                    {(termsAccepted && kvkkAccepted) && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.legalLabel, showLegalError && { color: '#FFFFFF' }]}>
+                      <Text style={styles.legalLink} onPress={() => setLegalModal({ visible: true, type: 'TERMS' })}>Kullanım Koşullarını</Text> ve <Text style={styles.legalLink} onPress={() => setLegalModal({ visible: true, type: 'KVKK' })}>KVKK Politikasını</Text> okudum, onaylıyorum.
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                {showLegalError && (
+                  <View style={styles.legalErrorHint}>
+                    <Text style={styles.legalErrorHintText}>Devam etmek için onayınız gerekli</Text>
+                  </View>
+                )}
+              </Animated.View>
 
               <View style={{ height: 24 }} />
 
               <View style={styles.socialSection}>
                 <TouchableOpacity
-                  onPress={() => {
-                    if (!termsAccepted || !kvkkAccepted) {
-                      showAlert('⚠️ Onay Gerekli', 'Devam etmek için Kullanım Koşullarını ve KVKK Politikasını okuduğunuzu onaylamanız gerekmektedir.', 'warning');
-                      return;
-                    }
-                    handleGoogleLogin();
-                  }}
+                  onPress={handleGoogleLogin}
                   disabled={isLoading || socialLoading !== null}
                   activeOpacity={0.85}
                   style={[styles.googleButtonWrapper, socialLoading === 'google' && { opacity: 0.7 }]}
@@ -447,13 +487,7 @@ export default function RegisterScreen() {
 
                 {Platform.OS === 'ios' && (
                   <TouchableOpacity
-                    onPress={() => {
-                      if (!termsAccepted || !kvkkAccepted) {
-                        showAlert('⚠️ Onay Gerekli', 'Devam etmek için Kullanım Koşullarını ve KVKK Politikasını okuduğunuzu onaylamanız gerekmektedir.', 'warning');
-                        return;
-                      }
-                      handleAppleLogin();
-                    }}
+                    onPress={handleAppleLogin}
                     disabled={isLoading || socialLoading !== null}
                     activeOpacity={0.8}
                     style={[styles.socialButton, styles.socialButtonApple, socialLoading === 'apple' && { opacity: 0.7 }]}
@@ -734,6 +768,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    padding: 8,
+  },
+  legalErrorWrapper: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    padding: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+  },
+  legalErrorActive: {
+    borderColor: '#F87171',
+    backgroundColor: 'rgba(248, 113, 113, 0.08)',
+    borderWidth: 1.2,
+  },
+  legalErrorHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingBottom: 6,
+    marginTop: -2,
+  },
+  legalErrorHintText: {
+    color: '#F87171',
+    fontSize: 11,
+    fontFamily: fonts.medium,
+    letterSpacing: 0.3,
   },
   checkbox: {
     width: 22,

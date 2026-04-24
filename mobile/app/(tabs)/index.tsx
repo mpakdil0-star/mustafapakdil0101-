@@ -1092,21 +1092,21 @@ export default function HomeScreen() {
               params: pendingAction ? { redirectTo: pendingAction.path } : undefined
             });
           }}
-          onRegister={() => {
+          onRegister={(role) => {
             setShowAuthModal(false);
-            if (isElectrician) {
+            if (role === 'ELECTRICIAN') {
               router.push({
                 pathname: '/(auth)/role-select',
                 params: {
                   initialRole: 'ELECTRICIAN',
-                  ...(pendingAction ? { redirectTo: pendingAction.path } : {})
+                  redirectTo: pendingAction?.path || undefined
                 }
               });
             } else {
               router.push({
                 pathname: '/(auth)/register',
                 params: {
-                  initialRole: 'CITIZEN',
+                  type: role,
                   ...(pendingAction ? { redirectTo: pendingAction.path } : {})
                 }
               });

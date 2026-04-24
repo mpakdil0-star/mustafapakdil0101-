@@ -1,5 +1,6 @@
 import apiClient from './api';
 import { API_ENDPOINTS } from '../constants/api';
+import Constants from 'expo-constants';
 import { apiService } from './api';
 
 export interface RegisterData {
@@ -147,11 +148,17 @@ export const authService = {
     }
 
     // 2. Clear Social Auth Sessions (CRITICAL for fixing intermittent Google Login issues)
+    // Only attempt social sign-out if NOT in Expo Go, as native modules won't be available
     try {
-      const { signOutGoogle } = require('./socialAuthService');
-      await signOutGoogle();
+      const isExpoGo = Constants.appOwnership === 'expo';
+      if (!isExpoGo) {
+        const { signOutGoogle } = require('./socialAuthService');
+        await signOutGoogle();
+      } else {
+        console.log('Skipping social sign-out in Expo Go environment');
+      }
     } catch (e) {
-      console.log('Google Sign-Out error during logout (silent):', e);
+      console.log('Social Sign-Out error during logout (silent):', e);
     }
 
     // 3. Disconnect socket

@@ -594,17 +594,30 @@ export default function JobsScreen() {
         onClose={() => setShowAuthModal(false)}
         onLogin={() => {
           setShowAuthModal(false);
-          router.push('/(auth)/login');
-        }}
-        onRegister={() => {
-          setShowAuthModal(false);
           router.push({
-            pathname: '/(auth)/register',
-            params: {
-              ...(pendingAction ? { redirectTo: pendingAction.path } : {}),
-              initialRole: isElectrician ? 'ELECTRICIAN' : 'CITIZEN',
-            }
+            pathname: '/(auth)/login',
+            params: pendingAction ? { redirectTo: pendingAction.path } : undefined
           });
+        }}
+        onRegister={(role) => {
+          setShowAuthModal(false);
+          if (role === 'ELECTRICIAN') {
+            router.push({
+              pathname: '/(auth)/role-select',
+              params: { 
+                initialRole: 'ELECTRICIAN',
+                redirectTo: pendingAction?.path || undefined 
+              }
+            });
+          } else {
+            router.push({
+              pathname: '/(auth)/register',
+              params: {
+                type: role,
+                ...(pendingAction ? { redirectTo: pendingAction.path } : {})
+              }
+            });
+          }
         }}
       />
     </View>

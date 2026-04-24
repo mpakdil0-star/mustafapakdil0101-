@@ -31,7 +31,10 @@ const getCategoryImage = (id: string) => {
 
 export default function RoleSelectScreen() {
     const router = useRouter();
-    const { initialRole } = useLocalSearchParams<{ initialRole?: 'CITIZEN' | 'ELECTRICIAN' }>();
+    const { initialRole, redirectTo } = useLocalSearchParams<{ 
+        initialRole?: 'CITIZEN' | 'ELECTRICIAN',
+        redirectTo?: string 
+    }>();
     const [userType, setUserType] = useState<'CITIZEN' | 'ELECTRICIAN' | null>(initialRole || null);
     const [serviceCategory, setServiceCategory] = useState<string | null>(null);
 
@@ -44,7 +47,9 @@ export default function RoleSelectScreen() {
             pathname: '/(auth)/register',
             params: {
                 initialRole: userType,
+                type: userType, // Compatibility with updated register screen
                 serviceCategory: serviceCategory || undefined,
+                redirectTo: redirectTo || undefined
             },
         });
     };

@@ -224,14 +224,19 @@ export default function ProfileScreen() {
             setShowAuthModal(false);
             router.push('/(auth)/login');
           }}
-          onRegister={() => {
+          onRegister={(role) => {
             setShowAuthModal(false);
-             router.push({
-              pathname: '/(auth)/register',
-              params: {
-                initialRole: isElectrician ? 'ELECTRICIAN' : 'CITIZEN',
-              }
-            });
+            if (role === 'ELECTRICIAN') {
+              router.push({
+                pathname: '/(auth)/role-select',
+                params: { initialRole: 'ELECTRICIAN' }
+              });
+            } else {
+              router.push({
+                pathname: '/(auth)/register',
+                params: { type: role }
+              });
+            }
           }}
         />
       </View>
