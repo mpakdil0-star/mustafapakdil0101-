@@ -24,7 +24,7 @@ import { colors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
-import { API_BASE_URL } from '../../config/api';
+import { API_BASE_URL } from '../../services/api';
 
 export default function RegisterScreen() {
   const router = useRouter();
