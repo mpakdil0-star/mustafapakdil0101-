@@ -26,7 +26,7 @@ export default function WelcomeScreen() {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(50)).current;
     const pulseAnim = useRef(new Animated.Value(1)).current;
-    const shineAnim = useRef(new Animated.Value(-150)).current;
+    const shineAnim = useRef(new Animated.Value(-100)).current;
 
     useEffect(() => {
         // Entrance Animations
@@ -62,13 +62,13 @@ export default function WelcomeScreen() {
 
         // Shine Animation Loop
         const startShine = () => {
-            shineAnim.setValue(-150);
+            shineAnim.setValue(-100);
             Animated.timing(shineAnim, {
-                toValue: 300,
-                duration: 1200,
+                toValue: 400,
+                duration: 800,
                 useNativeDriver: true,
             }).start(() => {
-                setTimeout(startShine, 3000);
+                setTimeout(startShine, 4000);
             });
         };
         startShine();
@@ -180,7 +180,7 @@ export default function WelcomeScreen() {
                                 activeOpacity={0.8}
                             >
                                 <LinearGradient
-                                    colors={['rgba(255, 255, 255, 0.15)', 'rgba(255, 255, 255, 0.05)']}
+                                    colors={['rgba(124, 58, 237, 0.2)', 'rgba(255, 255, 255, 0.05)']}
                                     style={styles.registerGradient}
                                 >
                                     <Animated.View style={[
@@ -188,7 +188,7 @@ export default function WelcomeScreen() {
                                         { transform: [{ translateX: shineAnim }, { rotate: '25deg' }] }
                                     ]}>
                                         <LinearGradient
-                                            colors={['transparent', 'rgba(255, 255, 255, 0.4)', 'transparent']}
+                                            colors={['transparent', 'rgba(255, 255, 255, 0.2)', 'transparent']}
                                             start={{ x: 0, y: 0 }}
                                             end={{ x: 1, y: 0 }}
                                             style={StyleSheet.absoluteFill}
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 0,
         bottom: 0,
-        width: 30,
+        width: 20,
         backgroundColor: 'transparent',
     },
 });
