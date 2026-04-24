@@ -108,7 +108,7 @@ function RootLayoutNav() {
     };
     const runNavigationLogic = async () => {
       // CRITICAL: Wait until navigation is fully ready before performing any redirects
-      if (!isNavigationReady || isRedirecting.current) return;
+      if (!isNavigationReady) return;
 
       const inAuthGroup = segments[0] === '(auth)';
       const isOnboarding = segments[0] === 'onboarding';
@@ -128,9 +128,11 @@ function RootLayoutNav() {
         socketService.connect();
 
         // 2. Auth-based redirection logic
-        isRedirecting.current = true;
-        InteractionManager.runAfterInteractions(async () => {
+        // Use a small delay instead of InteractionManager to ensure state stability 
+        // after native social login modals close.
+        setTimeout(async () => {
           try {
+            console.log('🔄 [RootNav] Logic Start - Path:', currentPath, 'Auth:', isAuthenticated, 'UserType:', user?.userType, 'Verified:', user?.isVerified);
             // Re-check state inside interactions to ensure accuracy
             if (user?.userType === 'ADMIN') {
               if (inAuthGroup || currentPath === '') {
@@ -146,6 +148,7 @@ function RootLayoutNav() {
 
             // Case: Unverified users
             if (user && user.isVerified === false) {
+              console.log('⏳ [RootNav] User unverified. Current path:', currentPath);
               if (currentPath === '(auth)/register') return;
               
               dispatch(logout());
@@ -161,6 +164,8 @@ function RootLayoutNav() {
               const isIncomplete = checkIsProfileIncomplete(user);
               const { getItemAsync, setItemAsync } = await import('expo-secure-store');
               const profileSetupDone = await getItemAsync('profile_setup_completed_' + user.id);
+
+              console.log('🛠️ [RootNav] Electrician check - Incomplete:', isIncomplete, 'SetupDone:', profileSetupDone);
 
               if (isIncomplete && !isInsideProfileGroup && !profileSetupDone) {
                 if (lastRedirectPath.current !== '/profile/edit') {
@@ -189,6 +194,7 @@ function RootLayoutNav() {
 
             // Case: Default redirect to TABS
             if (inAuthGroup) {
+              console.log('➡️ [RootNav] Verified user in Auth group, redirecting to TABS');
               if (lastRedirectPath.current !== '/(tabs)') {
                 lastRedirectPath.current = '/(tabs)';
                 requestAnimationFrame(() => {
@@ -196,10 +202,10 @@ function RootLayoutNav() {
                 });
               }
             }
-          } finally {
-            isRedirecting.current = false;
+          } catch (err) {
+            console.error('❌ [RootNav] Error in navigation logic:', err);
           }
-        });
+        }, 100);
       }
     };
 
