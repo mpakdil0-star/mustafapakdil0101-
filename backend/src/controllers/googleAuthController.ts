@@ -7,7 +7,6 @@ import pushNotificationService from '../services/pushNotificationService';
 import prisma, { isDatabaseAvailable } from '../config/database';
 
 // Bu ID'yi daha sonra env veya config'den alabiliriz
-// Şimdilik boş bırakıyoruz, verifyIdToken içinde audience kontrolünü esnek tutacağız veya client'tan gelen ID'yi kullanacağız
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 
 const client = new OAuth2Client(CLIENT_ID);
@@ -29,12 +28,10 @@ export const googleLoginController = async (
         try {
             const ticket = await client.verifyIdToken({
                 idToken: token,
-                audience: CLIENT_ID, // Specify the CLIENT_ID of the app that accesses the backend
+                audience: CLIENT_ID,
             });
             payload = ticket.getPayload();
         } catch (error) {
-            // Fallback for development/testing if strict verification fails or setup isn't complete
-            // In production, this should always fail. For now, we allow if payload is decoded locally if network fails
             console.error('Google verification failed:', error);
             throw new ValidationError('Invalid Google token');
         }
@@ -55,7 +52,6 @@ export const googleLoginController = async (
         // 2. Check Database if available
         if (isDatabaseAvailable) {
             try {
-                const normalizedEmail = email.toLowerCase();
                 user = await prisma.user.findFirst({
                     where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
                     include: { electricianProfile: true }
@@ -69,7 +65,6 @@ export const googleLoginController = async (
         // 3. Also check mockStorage (always, as fallback for users created during DB-down periods)
         if (!user) {
             const allUsers = mockStorage.getAllUsers();
-            const normalizedEmail = email.toLowerCase();
             const mockUserFound = allUsers.find(u => u.email?.toLowerCase() === normalizedEmail);
             if (mockUserFound) {
                 user = mockUserFound;
@@ -106,7 +101,7 @@ export const googleLoginController = async (
                                     totalReviews: profileData.totalReviews || 0,
                                     ratingAverage: profileData.ratingAverage || 0,
                                     completedJobsCount: profileData.completedJobsCount || 0,
-                                    serviceCategory: mockAny.serviceCategory || profileData.serviceCategory || 'elektrik' // default profession
+                                    serviceCategory: mockAny.serviceCategory || profileData.serviceCategory || 'elektrik'
                                 }
                             });
                         }
@@ -128,7 +123,8 @@ export const googleLoginController = async (
             }
         }
 
-            // 4. Register new user automatically (Register screen flow)
+        // 4. Register new user automatically if not found
+        if (!user) {
             console.log(`🆕 User not found for ${normalizedEmail}, checking if registration is allowed...`);
 
             if (!userType) {
@@ -145,9 +141,7 @@ export const googleLoginController = async (
 
             console.log(`🆕 Registering new Google user: ${normalizedEmail} as ${requestedUserType}`);
 
-            // Retrieve serviceCategory from request body (sent from Register screen)
             const { serviceCategory } = req.body;
-            
             const acceptedLegalVersion = req.body.acceptedLegalVersion || '25 Mart 2026 Tarihli Sözleşme';
             const marketingAllowed = req.body.marketingAllowed || false;
 
@@ -191,47 +185,40 @@ export const googleLoginController = async (
                     });
 
                     user = await prisma.user.findUnique({ where: { id: dbUser.id }, include: { electricianProfile: true } });
-                    userId = user.id;
+                    if (user) userId = user.id;
                 } catch (error) {
                     console.error('Error creating Google user in Prisma:', error);
                 }
             }
 
-            // Fallback or double save to mock storage for safety
             if (!userId) {
-                // Sanitize email for ID
                 const sanitizedEmail = email.replace(/[^a-zA-Z0-9]/g, '-');
                 userId = `mock-user-${sanitizedEmail}-${requestedUserType}-google`;
 
                 mockStorage.updateProfile(userId, {
                     fullName: name || 'Google User',
                     email,
-                    phone: '', // Google doesn't provide phone by default
-                    isVerified: true, // Google email is verified
+                    phone: '',
+                    isVerified: true,
                     userType: requestedUserType,
                     profileImageUrl: picture,
                     serviceCategory: requestedUserType === 'ELECTRICIAN' ? (serviceCategory || 'elektrik') : undefined
                 });
 
-                // Fetch the newly created user
                 user = mockStorage.getFullUser(userId, requestedUserType);
             }
 
-            // 🔔 Admin'e yeni Google kullanıcı bildirimi gönder
+            // 🔔 Notify Admins
             (async () => {
               try {
                 const userTypeLabel = requestedUserType === 'ELECTRICIAN' ? 'Usta' : 'Müşteri';
                 const adminPushTokens: string[] = [];
-
-                // Mock storage admin tokens
                 const allMockUsers = getAllMockUsers();
                 for (const [id, u] of Object.entries(allMockUsers)) {
                   if ((u as any).userType === 'ADMIN' && (u as any).pushToken) {
                     adminPushTokens.push((u as any).pushToken);
                   }
                 }
-
-                // DB admin tokens
                 if (isDatabaseAvailable) {
                   try {
                     const dbAdmins = await prisma.user.findMany({
@@ -243,7 +230,7 @@ export const googleLoginController = async (
                         adminPushTokens.push(admin.pushToken);
                       }
                     });
-                  } catch (e) { /* ignore */ }
+                  } catch (e) {}
                 }
 
                 if (adminPushTokens.length > 0) {
@@ -261,52 +248,37 @@ export const googleLoginController = async (
             })();
         }
 
-        // 5. Ensure existing user is active and has photo updated
+        // 5. Update Profile if existing
         if (user) {
-            // Reactivate user if they were inactive (e.g. soft-deleted)
             if (!user.isActive || !user.isVerified) {
                 if (isDatabaseAvailable && !user.id.startsWith('mock-')) {
                     try {
-                        const updatedUser = await prisma.user.update({
+                        await prisma.user.update({
                             where: { id: user.id },
-                            data: { 
-                                isActive: true, 
-                                isVerified: true,
-                                deletedAt: null 
-                            }
+                            data: { isActive: true, isVerified: true, deletedAt: null }
                         });
                         user.isActive = true;
                         user.isVerified = true;
-                        console.log(`✅ Fully reactivated/verified existing user: ${email}`);
-                    } catch (e) {
-                        console.error(`❌ Failed to reactivate user ${email}:`, e);
-                    }
+                    } catch (e) {}
                 } else {
                     mockStorage.updateProfile(user.id, { isActive: true, isVerified: true });
                     user.isActive = true;
                     user.isVerified = true;
                 }
             }
-
-            // Update existing user's photo if missing
             if (!user.profileImageUrl && picture) {
                 if (isDatabaseAvailable && !user.id.startsWith('mock-')) {
                     try {
-                        await prisma.user.update({
-                            where: { id: user.id },
-                            data: { profileImageUrl: picture }
-                        });
+                        await prisma.user.update({ where: { id: user.id }, data: { profileImageUrl: picture } });
                         user.profileImageUrl = picture;
                     } catch (e) {}
                 } else {
                     mockStorage.updateProfile(user.id, { profileImageUrl: picture });
                 }
             }
-            // Update userId to the potentially updated/migrated ID
             userId = user.id;
         }
 
-        // 6. Generate Tokens
         const tokens = generateTokens({ id: userId!, email, userType: user?.userType || requestedUserType });
         let fullUser = user;
         if (!isDatabaseAvailable || userId!.startsWith('mock-')) {
