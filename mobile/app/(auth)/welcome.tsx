@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     loginText: {
         color: 'rgba(255, 255, 255, 0.7)',
         fontSize: 15,
-        fontFamily: 'Inter-Medium',
+        fontFamily: fonts.medium,
     },
     registerButton: {
         flex: 1,
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
     registerText: {
         color: '#fff',
         fontSize: 15,
-        fontFamily: 'Inter-Bold',
+        fontFamily: fonts.bold,
     },
     shineLayer: {
         position: 'absolute',
