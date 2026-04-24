@@ -133,21 +133,26 @@ export default function WelcomeScreen() {
                             </View>
                         </TouchableOpacity>
 
-                        <View style={styles.authLinksContainer}>
+                        <View style={styles.authContainer}>
                             <TouchableOpacity
                                 onPress={() => router.push('/(auth)/login')}
-                                style={styles.authLink}
+                                style={styles.loginButton}
+                                activeOpacity={0.7}
                             >
-                                <Text style={styles.authLinkText}>Giriş Yap</Text>
+                                <Text style={styles.loginText}>Giriş Yap</Text>
                             </TouchableOpacity>
-
-                            <View style={styles.authDivider} />
 
                             <TouchableOpacity
                                 onPress={() => router.push('/(auth)/role-select')}
-                                style={styles.authLink}
+                                style={styles.registerButton}
+                                activeOpacity={0.8}
                             >
-                                <Text style={styles.authLinkText}>Ücretsiz Kayıt Ol</Text>
+                                <LinearGradient
+                                    colors={['rgba(255, 255, 255, 0.15)', 'rgba(255, 255, 255, 0.05)']}
+                                    style={styles.registerGradient}
+                                >
+                                    <Text style={styles.registerText}>Ücretsiz Kayıt Ol</Text>
+                                </LinearGradient>
                             </TouchableOpacity>
                         </View>
 
@@ -267,25 +272,42 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: 'rgba(255,255,255,0.7)',
     },
-    authLinksContainer: {
+    authContainer: {
         flexDirection: 'row',
-        justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 40,
-        gap: 20,
+        justifyContent: 'space-between',
+        marginTop: 48,
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        padding: 6,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
     },
-    authLink: {
-        paddingVertical: 10,
+    loginButton: {
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+    },
+    loginText: {
+        color: 'rgba(255, 255, 255, 0.7)',
+        fontSize: 15,
+        fontFamily: 'Inter-Medium',
+    },
+    registerButton: {
+        flex: 1,
+        marginLeft: 8,
+    },
+    registerGradient: {
         paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
     },
-    authLinkText: {
-        fontFamily: fonts.bold,
-        fontSize: 16,
-        color: '#FFFFFF',
-    },
-    authDivider: {
-        width: 1,
-        height: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    registerText: {
+        color: '#fff',
+        fontSize: 15,
+        fontFamily: 'Inter-Bold',
     },
 });
