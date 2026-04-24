@@ -44,9 +44,10 @@ export const googleLoginController = async (
         }
 
         const { email, name, sub: googleId, picture } = payload;
-        const requestedUserType = userType || 'CITIZEN'; // Default to CITIZEN if not specified
+        const normalizedEmail = email.toLowerCase();
+        const requestedUserType = userType || 'CITIZEN'; 
 
-        console.log(`🔌 Google Login attempt: ${email} as ${requestedUserType}`);
+        console.log(`🔌 Google Login attempt: ${normalizedEmail} as ${requestedUserType}`);
 
         let user: any = null;
         let userId: string | undefined;
@@ -54,8 +55,9 @@ export const googleLoginController = async (
         // 2. Check Database if available
         if (isDatabaseAvailable) {
             try {
+                const normalizedEmail = email.toLowerCase();
                 user = await prisma.user.findFirst({
-                    where: { email },
+                    where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
                     include: { electricianProfile: true }
                 });
                 if (user) userId = user.id;
@@ -67,7 +69,8 @@ export const googleLoginController = async (
         // 3. Also check mockStorage (always, as fallback for users created during DB-down periods)
         if (!user) {
             const allUsers = mockStorage.getAllUsers();
-            const mockUserFound = allUsers.find(u => u.email === email);
+            const normalizedEmail = email.toLowerCase();
+            const mockUserFound = allUsers.find(u => u.email?.toLowerCase() === normalizedEmail);
             if (mockUserFound) {
                 user = mockUserFound;
                 userId = user.id;
@@ -125,22 +128,22 @@ export const googleLoginController = async (
             }
         }
 
-        if (!user) {
-            // If userType was NOT explicitly provided (Login screen flow),
-            // do not auto-register. Return error so frontend can redirect to registration.
+            // 4. Register new user automatically (Register screen flow)
+            console.log(`🆕 User not found for ${normalizedEmail}, checking if registration is allowed...`);
+
             if (!userType) {
+                console.log(`❌ Auto-registration denied: No userType provided for ${normalizedEmail}`);
                 return res.status(404).json({
                     success: false,
                     error: {
                         message: 'Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı. Lütfen önce kayıt olun.',
                         code: 'USER_NOT_FOUND',
-                        email: email // Return email so frontend can pre-fill
+                        email: normalizedEmail
                     }
                 });
             }
 
-            // 4. Register new user automatically (Register screen flow)
-            console.log('🆕 New Google user, registering...');
+            console.log(`🆕 Registering new Google user: ${normalizedEmail} as ${requestedUserType}`);
 
             // Retrieve serviceCategory from request body (sent from Register screen)
             const { serviceCategory } = req.body;
@@ -309,6 +312,8 @@ export const googleLoginController = async (
         if (!isDatabaseAvailable || userId!.startsWith('mock-')) {
             fullUser = mockStorage.getFullUser(userId!, user?.userType || requestedUserType);
         }
+
+        console.log(`✅ Google Login successful for: ${normalizedEmail} (ID: ${userId})`);
 
         res.json({
             success: true,
