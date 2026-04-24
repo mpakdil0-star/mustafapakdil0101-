@@ -183,17 +183,6 @@ export default function WelcomeScreen() {
                                     colors={['rgba(16, 185, 129, 0.45)', 'rgba(16, 185, 129, 0.15)']}
                                     style={styles.registerGradient}
                                 >
-                                    <Animated.View style={[
-                                        styles.shineLayer,
-                                        { transform: [{ translateX: shineAnim }, { rotate: '25deg' }] }
-                                    ]}>
-                                        <LinearGradient
-                                            colors={['transparent', 'rgba(255, 255, 255, 0.2)', 'transparent']}
-                                            start={{ x: 0, y: 0 }}
-                                            end={{ x: 1, y: 0 }}
-                                            style={StyleSheet.absoluteFill}
-                                        />
-                                    </Animated.View>
                                     <Text style={styles.registerText}>Ücretsiz Kayıt Ol</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
@@ -367,12 +356,5 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontFamily: fonts.bold,
         textDecorationLine: 'underline',
-    },
-    shineLayer: {
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        width: 20,
-        backgroundColor: 'transparent',
     },
 });
