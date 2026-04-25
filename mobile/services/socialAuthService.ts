@@ -97,9 +97,20 @@ export const signInWithGoogle = async (): Promise<string> => {
 export const signOutGoogle = async () => {
   try {
     const GS = await getGoogleSignin();
-    await GS.signOut();
+    if (!GS) return;
+    
+    // Hem signOut hem de revokeAccess yaparak oturumu tamamen sıfırla
+    try {
+      await GS.signOut();
+    } catch (e) { /* ignore */ }
+    
+    try {
+      await GS.revokeAccess();
+    } catch (e) { /* ignore */ }
+    
+    console.log('✅ Google session cleared completely');
   } catch (e) {
-    // Sessizce devam et
+    console.log('Google Sign-Out error (silent):', e);
   }
 };
 

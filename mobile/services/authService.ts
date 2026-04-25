@@ -148,15 +148,11 @@ export const authService = {
     }
 
     // 2. Clear Social Auth Sessions (CRITICAL for fixing intermittent Google Login issues)
-    // Only attempt social sign-out if NOT in Expo Go, as native modules won't be available
     try {
-      const isExpoGo = Constants.appOwnership === 'expo';
-      if (!isExpoGo) {
-        const { signOutGoogle } = require('./socialAuthService');
-        await signOutGoogle();
-      } else {
-        console.log('Skipping social sign-out in Expo Go environment');
-      }
+      // Try to clean up social sessions regardless of environment
+      // The individual services handle their own internal errors/checks
+      const { signOutGoogle } = require('./socialAuthService');
+      await signOutGoogle();
     } catch (e) {
       console.log('Social Sign-Out error during logout (silent):', e);
     }
