@@ -9,7 +9,6 @@ import { useAppColors } from '../../hooks/useAppColors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { FeaturedElectrician } from '../../components/home/FeaturedElectrician';
-import { getFeaturedElectricians } from '../../data/mockElectricians';
 import { LinearGradient } from 'expo-linear-gradient';
 import api from '../../services/api';
 import { authService } from '../../services/authService';
@@ -492,18 +491,32 @@ export default function HomeScreen() {
     return () => subscription.remove();
   }, [isAuthenticated, showPushBanner]);
 
-  // Separate useEffect for fetching featured electricians when userCities changes
+  // Separate useEffect for fetching featured electricians
   useEffect(() => {
-    if (isElectrician || !isInitialized || userCities.length === 0) return;
+    if (isElectrician || !isInitialized) return;
 
     const fetchFeaturedElectricians = async () => {
       setIsLoadingElectricians(true);
       try {
-        const response = await userService.getElectricians({ city: userCities[0] });
+        let cityToSearch = userCities.length > 0 ? userCities[0] : undefined;
+        let response = await userService.getElectricians({ city: cityToSearch });
+
+        // Fallback: If city-specific search returns no one or no city was provided, fetch all top-rated electricians
+        if (!response.success || !response.data || (response.data as any[]).length === 0) {
+          if (cityToSearch) {
+            console.log(`[Home] No electricians in ${cityToSearch}, falling back to global search...`);
+            response = await userService.getElectricians({});
+          }
+        }
+
         if (response.success && response.data) {
           // Sort by rating and take top 5
           const sorted = (response.data as any[])
-            .sort((a, b) => (b.electricianProfile?.rating || 0) - (a.electricianProfile?.rating || 0))
+            .sort((a, b) => {
+              const ratingA = a.electricianProfile?.ratingAverage || a.electricianProfile?.rating || 0;
+              const ratingB = b.electricianProfile?.ratingAverage || b.electricianProfile?.rating || 0;
+              return ratingB - ratingA;
+            })
             .slice(0, 5);
           setFeaturedElectricians(sorted);
         }
