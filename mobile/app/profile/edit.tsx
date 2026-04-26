@@ -102,11 +102,12 @@ export default function EditProfileScreen() {
     const [fullName, setFullName] = useState(draftProfile?.fullName ?? user?.fullName ?? '');
     const [email, setEmail] = useState(draftProfile?.email ?? user?.email ?? '');
     const [phoneNumber, setPhoneNumber] = useState(draftProfile?.phone ?? user?.phone ?? '');
-    const [experienceYears, setExperienceYears] = useState(
-        draftProfile?.experienceYears ??
-        user?.electricianProfile?.experienceYears?.toString() ??
-        (user as any)?.experienceYears?.toString() ?? ''
-    );
+    const [experienceYears, setExperienceYears] = useState(() => {
+        const val = draftProfile?.experienceYears ??
+            user?.electricianProfile?.experienceYears?.toString() ??
+            (user as any)?.experienceYears?.toString() ?? '';
+        return val === '0' ? '' : val;
+    });
     const [selectedExpertise, setSelectedExpertise] = useState<string[]>(
         draftProfile?.specialties ??
         user?.electricianProfile?.specialties ??
@@ -241,7 +242,7 @@ export default function EditProfileScreen() {
                 (user as any)?.specialties ?? [];
 
             // Only update if values are actually different and non-empty from server
-            if (newExpYears && newExpYears !== '0' && experienceYears === '') {
+            if (newExpYears && newExpYears !== '0' && (experienceYears === '' || experienceYears === '0')) {
                 setExperienceYears(newExpYears);
             }
             if (newSpecialties.length > 0 && selectedExpertise.length === 0) {
