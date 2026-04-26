@@ -551,14 +551,26 @@ export default function ElectricianDetailScreen() {
                     icon={<Ionicons name="briefcase" size={20} color={colors.white} />}
                 />
 
-                {/* Report Button */}
-                {user && user.id !== electrician.id && (
-                    <ReportButton
-                        userId={electrician.id}
-                        userName={electrician.fullName}
-                        variant="full"
-                    />
-                )}
+                {/* Report Button - Visible to everyone, guarded by auth */}
+                <ReportButton
+                    userId={electrician.id}
+                    userName={electrician.fullName}
+                    variant="full"
+                    onPress={() => {
+                        if (!user) {
+                            setPendingAction(`/profile/report?userId=${electrician.id}&userName=${electrician.fullName}`);
+                            setShowAuthModal(true);
+                            return;
+                        }
+                        // If logged in, don't show the button for their own profile
+                        if (user.id === electrician.id) return;
+                        
+                        router.push({
+                            pathname: '/profile/report',
+                            params: { userId: electrician.id, userName: electrician.fullName }
+                        });
+                    }}
+                />
             </View>
 
             <AuthGuardModal
@@ -582,8 +594,8 @@ export default function ElectricianDetailScreen() {
                         });
                     }
                 }}
-                title="Giriş Gerekiyor"
-                message="Usta ile iletişime geçebilmek için giriş yapmanız veya kayıt olmanız gerekmektedir."
+                title="Devam Etmek İçin Giriş Yapın"
+                message="Bu işlemi gerçekleştirebilmek için giriş yapmanız veya yeni bir hesap oluşturmanız gerekmektedir."
             />
 
             {/* Favorite Success Modal - Glass Glow Theme */}

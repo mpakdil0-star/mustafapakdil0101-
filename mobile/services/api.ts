@@ -31,11 +31,10 @@ class ApiService {
 
         const url = config.url || '';
         const method = (config.method || 'get').toLowerCase();
-        const isPublicEndpoint = url.includes('/jobs') &&
-          !url.includes('/my-jobs') &&
-          !url.includes('/bids') &&
-          !url.includes('/admin') &&
-          method === 'get';
+        const isPublicEndpoint = 
+          (url.includes('/jobs') && !url.includes('/my-jobs') && !url.includes('/bids') && !url.includes('/admin') && method === 'get') ||
+          (url.includes('/users/electricians') && method === 'get') ||
+          (url.includes('/users/') && url.split('/').length === 4 && method === 'get'); // For /users/[id] profile view
 
         if (isPublicEndpoint) {
           delete config.headers.Authorization;

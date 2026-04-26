@@ -112,8 +112,14 @@ function RootLayoutNav() {
 
       const inAuthGroup = segments.includes('(auth)') || segments.includes('login') || segments.includes('register');
       const isOnboarding = segments[0] === 'onboarding';
+      const isWelcome = segments[0] === 'welcome';
       const currentPath = segments.join('/');
       const isInsideProfileGroup = segments[0] === 'profile';
+      const isInsideMessagesGroup = segments[0] === 'messages';
+      const isInsideNotificationsGroup = segments[0] === 'notifications';
+      const isInsideAdminGroup = segments[0] === 'admin';
+
+      console.log('🛣️ [RootNav] Path:', currentPath, '| Auth:', isAuthenticated, '| GuestRole:', guestRole);
 
       // 1. Check onboarding first
       if (!isOnboarding) {
@@ -128,11 +134,9 @@ function RootLayoutNav() {
         socketService.connect();
 
         // 2. Auth-based redirection logic
-        // Use a small delay instead of InteractionManager to ensure state stability 
-        // after native social login modals close.
         setTimeout(async () => {
           try {
-            console.log('🔄 [RootNav] Logic Start - Path:', currentPath, 'Auth:', isAuthenticated, 'UserType:', user?.userType, 'Verified:', user?.isVerified);
+            console.log('🔄 [RootNav] Logic Start - UserType:', user?.userType, 'Verified:', user?.isVerified);
             // Re-check state inside interactions to ensure accuracy
             if (user?.userType === 'ADMIN') {
               if (inAuthGroup || currentPath === '') {
@@ -242,6 +246,26 @@ function RootLayoutNav() {
             console.error('❌ [RootNav] Error in navigation logic:', err);
           }
         }, 100);
+      } else {
+        // 3. Guest/Unauthenticated redirection logic
+        // If not authenticated and NOT on allowed guest screens, redirect to welcome
+        const isPublicScreen = 
+          inAuthGroup || 
+          isOnboarding || 
+          isWelcome || 
+          segments.includes('(tabs)') || 
+          segments.includes('electricians') || 
+          segments.includes('jobs'); // Allow viewing jobs as guest too if desired
+
+        if (!isPublicScreen && currentPath !== '') {
+          console.log('🚫 [RootNav] Guest trying to access protected screen (' + currentPath + '), redirecting to welcome');
+          if (lastRedirectPath.current !== '/welcome') {
+            lastRedirectPath.current = '/welcome';
+            requestAnimationFrame(() => {
+              router.replace('/welcome');
+            });
+          }
+        }
       }
     };
 
@@ -609,6 +633,13 @@ function RootLayoutNav() {
     // Handle notification tap when app is in background or closed
     const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
       console.log('🔔 [DEEP LINK] Push notification tapped:', JSON.stringify(response.notification.request.content.data));
+
+      // CRITICAL: If not authenticated, don't try to navigate to protected notification screens
+      if (!isAuthenticated) {
+        console.log('🚫 [DEEP LINK] Ignoring tap because user is not authenticated');
+        router.push('/welcome');
+        return;
+      }
 
       const data = response.notification.request.content.data as any;
 
