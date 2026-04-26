@@ -385,9 +385,31 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      const refreshStatus = async () => {
+        try {
+          const [locRes, verRes] = await Promise.all([
+            api.get(`${API_ENDPOINTS.LOCATIONS}?t=${Date.now()}`),
+            authService.getVerificationStatus().catch(() => ({ data: { status: null } }))
+          ]);
+          
+          if (locRes.data.success) {
+            setLocationsCount(locRes.data.data.length);
+            const cities = locRes.data.data.map((l: any) => l.city).filter(Boolean);
+            setUserCities(cities);
+          }
+          
+          if (verRes.data?.status) {
+            setVerificationStatus(verRes.data.status);
+          }
+        } catch (e) {
+          console.log('Error refreshing status on focus:', e);
+        }
+      };
+
       if (initializationRef.current && isAuthenticated) {
-        // Refresh ONLY necessary data on subsequent focuses
+        // Refresh necessary data on every focus
         fetchNewJobsCount();
+        refreshStatus();
         return;
       }
 
@@ -404,7 +426,7 @@ export default function HomeScreen() {
           
           const fetchLocations = async () => {
             try {
-              const response = await api.get(API_ENDPOINTS.LOCATIONS);
+              const response = await api.get(`${API_ENDPOINTS.LOCATIONS}?t=${Date.now()}`);
               if (response.data.success && response.data.data.length > 0) {
                 const locations = response.data.data;
                 const cities = locations.map((l: any) => l.city).filter(Boolean);
