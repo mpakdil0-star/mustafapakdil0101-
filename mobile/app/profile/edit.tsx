@@ -123,9 +123,11 @@ export default function EditProfileScreen() {
     useEffect(() => {
         if (mandatory) {
             const backAction = () => {
-                Alert.alert('Eksik Bilgiler', 'Uygulamayı kullanabilmek için profil bilgilerinizi tamamlamanız gerekmektedir.', [
-                    { text: 'Tamam' }
-                ]);
+                Alert.alert(
+                    'Profil Tamamlama Zorunlu', 
+                    'Uygulamayı kullanabilmek için lütfen profil bilgilerinizi kaydedin. Bu bilgiler müşterilerin size ulaşması için gereklidir.', 
+                    [{ text: 'Anladım' }]
+                );
                 return true;
             };
 
@@ -344,6 +346,19 @@ export default function EditProfileScreen() {
             // Check service areas from API (locations state)
             if (locations.length === 0) {
                 newErrors.locations = 'Lütfen en az bir hizmet bölgesi ekleyiniz.';
+            }
+        }
+
+        // Validate experience and specialties (mandatory for experts)
+        if (isElectrician) {
+            if (!experienceYears || experienceYears === '' || experienceYears === '0') {
+                newErrors.experienceYears = 'Lütfen tecrübe yılınızı belirtiniz.';
+            }
+            if (!selectedExpertise || selectedExpertise.length === 0) {
+                newErrors.selectedExpertise = 'Lütfen en az bir uzmanlık alanı seçiniz.';
+            }
+            if (!locations || locations.length === 0) {
+                newErrors.locations = 'Hizmet verebilmeniz için en az bir hizmet bölgesi eklemelisiniz.';
             }
         }
 
@@ -717,6 +732,7 @@ export default function EditProfileScreen() {
                             style={[styles.successModalBtn, { shadowColor: colors.primary }]}
                             onPress={() => {
                                 setShowSuccessModal(false);
+                                // Always replace to home after mandatory setup or just return
                                 if (mandatory) {
                                     router.replace('/(tabs)');
                                 } else {
