@@ -519,7 +519,7 @@ export default function EditProfileScreen() {
                             label={isElectrician ? "Telefon Numarası *" : "Telefon Numarası"}
                             value={phoneNumber}
                             onChangeText={setPhoneNumber}
-                            placeholder="0555 555 55 55"
+                            placeholder=""
                             keyboardType="phone-pad"
                             containerStyle={styles.input}
                             editable={!!mandatory || !user?.isVerified}
