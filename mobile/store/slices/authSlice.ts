@@ -39,6 +39,9 @@ interface AuthState {
   error: string | null;
   guestRole: 'CITIZEN' | 'ELECTRICIAN' | null;
   draftProfile: {
+    fullName?: string;
+    email?: string;
+    phone?: string;
     experienceYears?: string;
     specialties?: string[];
   } | null;
@@ -251,7 +254,13 @@ const authSlice = createSlice({
         state.user.electricianProfile.creditBalance = action.payload;
       }
     },
-    setDraftProfile: (state, action: PayloadAction<{ experienceYears?: string; specialties?: string[] }>) => {
+    setDraftProfile: (state, action: PayloadAction<{ 
+      fullName?: string;
+      email?: string;
+      phone?: string;
+      experienceYears?: string; 
+      specialties?: string[] 
+    }>) => {
       state.draftProfile = {
         ...state.draftProfile,
         ...action.payload,

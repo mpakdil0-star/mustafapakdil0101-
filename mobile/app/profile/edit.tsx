@@ -99,9 +99,9 @@ export default function EditProfileScreen() {
     const { draftProfile } = useAppSelector((state) => state.auth);
     const isElectrician = user?.userType === 'ELECTRICIAN' || !!mandatory;
 
-    const [fullName, setFullName] = useState(user?.fullName || '');
-    const [email, setEmail] = useState(user?.email || '');
-    const [phoneNumber, setPhoneNumber] = useState(user?.phone || '');
+    const [fullName, setFullName] = useState(draftProfile?.fullName ?? user?.fullName ?? '');
+    const [email, setEmail] = useState(draftProfile?.email ?? user?.email ?? '');
+    const [phoneNumber, setPhoneNumber] = useState(draftProfile?.phone ?? user?.phone ?? '');
     const [experienceYears, setExperienceYears] = useState(
         draftProfile?.experienceYears ??
         user?.electricianProfile?.experienceYears?.toString() ??
@@ -217,15 +217,16 @@ export default function EditProfileScreen() {
         return expChanged || expertiseChanged;
     }, [experienceYears, selectedExpertise, user?.userType]);
 
-    // Sync state to Redux Draft
+    // Sync state to Redux Draft to prevent data loss when navigating
     useEffect(() => {
-        if (user?.userType === 'ELECTRICIAN') {
-            dispatch(setDraftProfile({
-                experienceYears,
-                specialties: selectedExpertise
-            }));
-        }
-    }, [experienceYears, selectedExpertise, user?.userType]);
+        dispatch(setDraftProfile({
+            fullName,
+            email,
+            phone: phoneNumber,
+            experienceYears,
+            specialties: selectedExpertise
+        }));
+    }, [fullName, email, phoneNumber, experienceYears, selectedExpertise]);
 
     // CRITICAL: Re-initialize form state when user data changes (e.g., after login)
     // useState initializers only run once, so we need this effect to sync
@@ -532,7 +533,7 @@ export default function EditProfileScreen() {
                             placeholder=""
                             keyboardType="phone-pad"
                             containerStyle={styles.input}
-                            editable={!!mandatory || !user?.isVerified}
+                            editable={!user?.phone || !!mandatory || !user?.isVerified}
                             ref={phoneInputRef}
                             error={errors.phoneNumber}
                             helperText={isElectrician && !errors.phoneNumber
