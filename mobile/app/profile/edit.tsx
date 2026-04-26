@@ -124,10 +124,11 @@ export default function EditProfileScreen() {
     useEffect(() => {
         if (mandatory) {
             const backAction = () => {
-                Alert.alert(
+                showAlert(
                     'Profil Tamamlama Zorunlu', 
                     'Uygulamayı kullanabilmek için lütfen profil bilgilerinizi kaydedin. Bu bilgiler müşterilerin size ulaşması için gereklidir.', 
-                    [{ text: 'Anladım' }]
+                    'warning',
+                    [{ text: 'Anladım', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }]
                 );
                 return true;
             };
