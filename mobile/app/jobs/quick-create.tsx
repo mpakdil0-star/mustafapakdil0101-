@@ -280,35 +280,36 @@ export default function QuickCreateScreen() {
     };
 
     const handleSubmit = async () => {
-        // Gibberish (anlamsız metin) kontrolü - açıklama alanı (öncelikli kontrol)
-        const descriptionError = validateJobText(description || '', 'Sorun açıklaması', 10);
-        if (descriptionError) {
-            showAlert('Uyarı', 'Lütfen işinizi daha detaylı ve anlamlı bir şekilde açıklayın.', 'warning');
-            return;
-        }
-
-        const validationErrors: string[] = [];
-        if (!selectedType) validationErrors.push('• Arıza tipi seçilmedi');
-        if (selectedType && !selectedSubCategory) validationErrors.push('• Lütfen spesifik bir hizmet dalı seçin');
-        if (!city) validationErrors.push('• Şehir seçilmedi');
-        if (!district) validationErrors.push('• İlçe seçilmedi');
-        if (!neighborhood) validationErrors.push('• Mahalle seçilmedi');
-        if (!address || address.trim().length < 10) validationErrors.push('• Adres en az 10 karakter olmalı');
+        const newErrors: Record<string, string> = {};
+        
+        // Gibberish (anlamsız metin) kontrolü - açıklama alanı
+        const descErr = validateJobText(description || '', 'Sorun açıklaması', 10);
+        if (descErr) newErrors.description = descErr;
+        else if (!description || description.trim().length < 10) newErrors.description = 'Açıklama en az 10 karakter olmalı';
+        if (!selectedType) newErrors.type = 'Lütfen bir hizmet alanı seçiniz';
+        if (selectedType && !selectedSubCategory) newErrors.subCategory = 'Lütfen spesifik bir hizmet dalı seçin';
+        if (!city) newErrors.city = 'Lütfen şehir seçiniz';
+        if (!district) newErrors.district = 'Lütfen ilçe seçiniz';
+        if (!neighborhood) newErrors.neighborhood = 'Lütfen mahalle seçiniz';
+        if (!address || address.trim().length < 10) newErrors.address = 'Adres en az 10 karakter olmalı';
 
         if (selectedSubCategory?.id === 'elektrik-proje') {
-            if (!projectBuildingType) validationErrors.push('• Proje için Yapı Tipi seçilmedi');
-            if (!projectArea || projectArea.trim() === '') validationErrors.push('• Proje için Toplam Alan (m²) girilmedi');
-            if (!projectPurpose) validationErrors.push('• Proje Amacı seçilmedi');
+            if (!projectBuildingType) newErrors.projectBuildingType = 'Yapı tipi seçilmelidir';
+            if (!projectArea || projectArea.trim() === '') newErrors.projectArea = 'Alan girilmelidir';
+            if (!projectPurpose) newErrors.projectPurpose = 'Proje amacı seçilmelidir';
             
             if (projectHasArchitecturePlan === true && images.length === 0) {
-                validationErrors.push('• Mimari planı fotoğraf veya ekran görüntüsü olarak yüklemeniz zorunludur (aşağıdaki fotoğraf yükleme alanından).');
+                newErrors.images = 'Mimari plan yüklenmesi zorunludur';
             }
         }
 
-        if (validationErrors.length > 0) {
-            showAlert('Eksik Bilgiler', 'Lütfen kontrol edin:\n\n' + validationErrors.join('\n'), 'warning');
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            showAlert('Eksik Bilgiler', 'Lütfen kırmızı ile işaretlenmiş zorunlu alanları doldurunuz.', 'warning');
             return;
         }
+
+        setErrors({});
 
         const typeInfo = EMERGENCY_TYPES.find(t => t.id === selectedType);
         const finalTitle = `🚨 ACİL: ${selectedSubCategory ? selectedSubCategory.name : typeInfo?.label}`;
@@ -427,6 +428,7 @@ export default function QuickCreateScreen() {
                     >
                         {EMERGENCY_TYPES.map((type) => {
                             const isSelected = selectedType === type.id;
+                            const hasError = !!errors.type && !selectedType;
                             return (
                                 <TouchableOpacity
                                     key={type.id}
@@ -434,11 +436,13 @@ export default function QuickCreateScreen() {
                                         styles.typeBtn,
                                         { borderColor: colors.border },
                                         isSelected && { borderColor: type.color, backgroundColor: type.color + '08' },
+                                        hasError && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
                                     ]}
                                     activeOpacity={0.85}
                                     onPress={() => {
                                         setSelectedType(type.id);
-                                        setSelectedSubCategory(null); // Reset sub-category on main category change
+                                        setSelectedSubCategory(null);
+                                        setErrors(prev => ({ ...prev, type: '' }));
                                     }}
                                 >
                                     <View style={[styles.typeIconBox, { backgroundColor: type.color + '14' }]}>
@@ -459,6 +463,9 @@ export default function QuickCreateScreen() {
                             );
                         })}
                     </ScrollView>
+                    {errors.type && !selectedType && (
+                        <Text style={styles.errorTextSmall}>{errors.type}</Text>
+                    )}
 
                     {/* Sub-category Bubbles */}
                     {selectedType && (
@@ -528,6 +535,9 @@ export default function QuickCreateScreen() {
                                     );
                                 })}
                             </ScrollView>
+                            {errors.subCategory && !selectedSubCategory && (
+                                <Text style={[styles.errorTextSmall, { marginTop: 8 }]}>{errors.subCategory}</Text>
+                            )}
                         </View>
                     )}
 
@@ -777,18 +787,49 @@ export default function QuickCreateScreen() {
                         />
 
                         <View style={styles.row}>
-                            <View style={{ flex: 1 }}><Picker label="Şehir" value={city} options={CITY_NAMES} onValueChange={setCity} /></View>
-                            <View style={{ flex: 1 }}><Picker label="İlçe" value={district} options={districtOptions} onValueChange={setDistrict} disabled={!city} /></View>
+                            <View style={{ flex: 1 }}>
+                                <Picker 
+                                    label="Şehir" 
+                                    value={city} 
+                                    options={CITY_NAMES} 
+                                    onValueChange={(val) => { setCity(val); setErrors(prev => ({ ...prev, city: '' })); }} 
+                                    error={errors.city}
+                                />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Picker 
+                                    label="İlçe" 
+                                    value={district} 
+                                    options={districtOptions} 
+                                    onValueChange={(val) => { setDistrict(val); setErrors(prev => ({ ...prev, district: '' })); }} 
+                                    disabled={!city} 
+                                    error={errors.district}
+                                />
+                            </View>
                         </View>
-                        <Picker label="Mahalle" value={neighborhood} options={neighborhoodOptions.length > 0 ? neighborhoodOptions : (district ? ['Merkez'] : [])} onValueChange={setNeighborhood} disabled={!district} />
-                        <TextInput
-                            style={[styles.addressInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}
-                            placeholder="Detaylı adres (bina, daire no...)"
-                            value={address}
-                            onChangeText={setAddress}
-                            multiline
-                            placeholderTextColor={colors.textLight}
+                        <Picker 
+                            label="Mahalle" 
+                            value={neighborhood} 
+                            options={neighborhoodOptions.length > 0 ? neighborhoodOptions : (district ? ['Merkez'] : [])} 
+                            onValueChange={(val) => { setNeighborhood(val); setErrors(prev => ({ ...prev, neighborhood: '' })); }} 
+                            disabled={!district} 
+                            error={errors.neighborhood}
                         />
+                        <View>
+                            <TextInput
+                                style={[
+                                    styles.addressInput, 
+                                    { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceElevated },
+                                    errors.address && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' }
+                                ]}
+                                placeholder="Detaylı adres (bina, daire no...)"
+                                value={address}
+                                onChangeText={(val) => { setAddress(val); if (val.length >= 10) setErrors(prev => ({ ...prev, address: '' })); }}
+                                multiline
+                                placeholderTextColor={colors.textLight}
+                            />
+                            {errors.address && <Text style={styles.errorTextSmall}>{errors.address}</Text>}
+                        </View>
                     </Card>
 
                     <View style={[styles.sectionBlock, styles.sectionBlockTight]}>
@@ -797,15 +838,23 @@ export default function QuickCreateScreen() {
                     </View>
 
                     <Card variant="default" style={styles.mainCard}>
-                        <TextInput
-                            style={[styles.textArea, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}
-                            placeholder={getDescriptionPlaceholder(selectedType, selectedSubCategory?.id)}
-                            value={description}
-                            onChangeText={setDescription}
-                            multiline
-                            numberOfLines={3}
-                            placeholderTextColor={colors.textLight}
-                        />
+                        <View>
+                            <TextInput
+                                style={[
+                                    styles.descriptionInput, 
+                                    { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceElevated },
+                                    errors.description && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' }
+                                ]}
+                                placeholder={getDescriptionPlaceholder(selectedType, selectedSubCategory?.id)}
+                                value={description}
+                                onChangeText={(val) => { setDescription(val); if (val.length >= 10) setErrors(prev => ({ ...prev, description: '' })); }}
+                                multiline
+                                numberOfLines={4}
+                                textAlignVertical="top"
+                                placeholderTextColor={colors.textLight}
+                            />
+                            {errors.description && <Text style={styles.errorTextSmall}>{errors.description}</Text>}
+                        </View>
                         <View style={styles.photoRow}>
                             <TouchableOpacity style={[styles.photoBtn, { backgroundColor: colors.borderLight }]} onPress={handleTakePhoto}>
                                 <Ionicons name="camera" size={18} color={colors.primary} />
@@ -1040,6 +1089,13 @@ const styles = StyleSheet.create({
     },
     choiceBtnTextActive: {
         color: '#3B82F6',
+    },
+    errorTextSmall: {
+        fontSize: 11,
+        color: '#EF4444',
+        marginTop: 4,
+        marginLeft: 4,
+        fontFamily: fonts.medium,
     },
     label: {
         fontFamily: fonts.semiBold,
