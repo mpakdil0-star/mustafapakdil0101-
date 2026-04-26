@@ -236,6 +236,10 @@ export default function HomeScreen() {
       missing.push({ id: 'fullName', label: 'Ad Soyad', icon: 'person-outline', route: '/profile/edit' });
     }
 
+    if (!user?.phone || user.phone.trim() === '') {
+      missing.push({ id: 'phone', label: 'Telefon Numarası', icon: 'call-outline', route: '/profile/edit' });
+    }
+
     if (!user?.profileImageUrl) {
       missing.push({ id: 'avatar', label: 'Profil Fotoğrafı', icon: 'camera-outline', route: '/profile/edit' });
     }
@@ -339,6 +343,7 @@ export default function HomeScreen() {
 
     if (isElectrician) {
       // Ustalar için mesleki alanlar
+      if (user?.phone) score += 10;
       if (user?.electricianProfile?.experienceYears) score += 10;
       if (user?.electricianProfile?.specialties && user.electricianProfile.specialties.length > 0) score += 10;
       if (locationsCount > 0) score += 10;
@@ -346,7 +351,7 @@ export default function HomeScreen() {
       if (user?.isVerified || verificationStatus === 'VERIFIED' || verificationStatus === 'PENDING') score += 10;
     } else {
       // Vatandaşlar için
-      if (user?.profileImageUrl) score += 10; // Extra focus on photo
+      if (user?.phone) score += 20; 
       if (locationsCount > 0) score += 30; // Strong focus on address
     }
 
