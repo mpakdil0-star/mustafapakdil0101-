@@ -99,9 +99,9 @@ export default function EditProfileScreen() {
     const { draftProfile } = useAppSelector((state) => state.auth);
     const isElectrician = user?.userType === 'ELECTRICIAN' || !!mandatory;
 
-    const [fullName, setFullName] = useState(draftProfile?.fullName ?? user?.fullName ?? '');
-    const [email, setEmail] = useState(draftProfile?.email ?? user?.email ?? '');
-    const [phoneNumber, setPhoneNumber] = useState(draftProfile?.phone ?? user?.phone ?? '');
+    const [fullName, setFullName] = useState(() => draftProfile?.fullName ?? user?.fullName ?? '');
+    const [email, setEmail] = useState(() => draftProfile?.email ?? user?.email ?? '');
+    const [phoneNumber, setPhoneNumber] = useState(() => draftProfile?.phone ?? user?.phone ?? '');
     const [experienceYears, setExperienceYears] = useState(() => {
         const val = draftProfile?.experienceYears ??
             user?.electricianProfile?.experienceYears?.toString() ??
@@ -257,6 +257,16 @@ export default function EditProfileScreen() {
             };
         }
     }, [user?.electricianProfile?.experienceYears, user?.electricianProfile?.specialties]);
+    
+    // Sync phoneNumber from draft/user if it becomes empty (data recovery)
+    useEffect(() => {
+        if (!phoneNumber || phoneNumber === '') {
+            const recoveryPhone = draftProfile?.phone ?? user?.phone;
+            if (recoveryPhone) {
+                setPhoneNumber(recoveryPhone);
+            }
+        }
+    }, [draftProfile?.phone, user?.phone]);
 
     // Service areas / locations
     const [locations, setLocations] = useState<any[]>([]);
@@ -550,7 +560,7 @@ export default function EditProfileScreen() {
                             placeholder=""
                             keyboardType="phone-pad"
                             containerStyle={styles.input}
-                            editable={!user?.phone || !!mandatory || !user?.isVerified}
+                            editable={!user?.phone || phoneNumber !== user?.phone || !!mandatory || !user?.isVerified}
                             ref={phoneInputRef}
                             error={errors.phoneNumber}
                             helperText={isElectrician && !errors.phoneNumber
