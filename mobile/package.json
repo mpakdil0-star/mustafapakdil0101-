@@ -1,6 +1,6 @@
 {
   "name": "elektrikciler-mobile",
-  "version": "1.0.92",
+  "version": "1.0.93",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start --lan --port 8082",
