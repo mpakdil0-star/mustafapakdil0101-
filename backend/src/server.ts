@@ -176,6 +176,80 @@ app.get('/api/create-dummy-reviews', async (req, res) => {
   }
 });
 
+app.get('/api/create-dummy-reviews', async (req, res) => {
+  try {
+    const electricians = [
+      { name: 'Ufuk soydan', reviews: [
+        { comment: 'Ufuk bey çok ilgiliydi, sigorta arızamızı hemen çözdü. Teşekkürler.', rating: 5 },
+        { comment: 'Zamanında geldi ve temiz çalıştı. Tavsiye ederim.', rating: 5 },
+        { comment: 'İşinin ehli bir usta. Makul fiyat.', rating: 4 }
+      ]},
+      { name: 'Hasan Yıldırım', reviews: [
+        { comment: 'Avize montajı için çağırdık, çok pratik bir şekilde halletti.', rating: 5 },
+        { comment: 'Kibar ve yardımsever bir usta.', rating: 5 }
+      ]},
+      { name: 'Said Ugan', reviews: [
+        { comment: 'Priz değişikliği ve kablo çekimi yapıldı. Gayet memnun kaldık.', rating: 5 },
+        { comment: 'Hızlı müdahale için teşekkürler.', rating: 4 }
+      ]},
+      { name: 'Mehmet Cebiş', reviews: [
+        { comment: 'Klima bakımını titizlikle yaptı. Artık çok daha iyi soğutuyor.', rating: 5 },
+        { comment: 'Beyaz eşya tamiri konusunda uzman bir usta.', rating: 5 }
+      ]}
+    ];
+
+    const citizen = await prisma.user.findFirst({ where: { userType: 'CITIZEN' } });
+    if (!citizen) return res.status(404).json({ error: 'No citizen user found' });
+
+    const results = [];
+    for (const item of electricians) {
+      const user = await prisma.user.findFirst({ where: { fullName: { equals: item.name, mode: 'insensitive' } } });
+      if (!user) { results.push(`❌ ${item.name} not found`); continue; }
+
+      // Clear old reviews if any to avoid duplication for this test
+      await prisma.review.deleteMany({ where: { reviewedId: user.id } });
+
+      for (const rev of item.reviews) {
+        const job = await prisma.jobPost.create({
+          data: {
+            citizenId: citizen.id,
+            title: `Tamamlanan İş - ${user.fullName}`,
+            description: 'Bu iş otomatik olarak tamamlanmış ve puanlanmıştır.',
+            category: 'Elektrik',
+            location: { city: 'Adana', district: 'Çukurova' },
+            status: 'COMPLETED',
+            assignedElectricianId: user.id,
+            completedAt: new Date()
+          }
+        });
+
+        await prisma.review.create({
+          data: {
+            jobPostId: job.id,
+            reviewerId: citizen.id,
+            reviewedId: user.id,
+            rating: rev.rating,
+            comment: rev.comment,
+            isVisible: true
+          }
+        });
+      }
+
+      const avgRating = item.reviews.reduce((acc, r) => acc + r.rating, 0) / item.reviews.length;
+      await prisma.electricianProfile.update({
+        where: { userId: user.id },
+        data: {
+          ratingAverage: avgRating,
+          totalReviews: item.reviews.length,
+          completedJobsCount: item.reviews.length
+        }
+      });
+      results.push(`✅ ${item.name} updated`);
+    }
+    res.json({ success: true, results });
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
 app.get('/api/debug-ahmet', async (req, res) => {
   try {
     const ahmet = await prisma.user.findFirst({
