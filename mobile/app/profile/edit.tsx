@@ -280,7 +280,7 @@ export default function EditProfileScreen() {
                 if (user) {
                     try {
                         setLocationsLoading(true);
-                        const response = await api.get(API_ENDPOINTS.LOCATIONS);
+                        const response = await api.get(`${API_ENDPOINTS.LOCATIONS}?t=${Date.now()}`);
                         setLocations(response.data.data || []);
                     } catch (error) {
                         console.error('Failed to fetch locations:', error);

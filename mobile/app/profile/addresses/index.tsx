@@ -38,7 +38,7 @@ export default function AddressesScreen() {
     const fetchLocations = async () => {
         try {
             setLoading(true);
-            const response = await apiClient.get(API_ENDPOINTS.LOCATIONS);
+            const response = await apiClient.get(`${API_ENDPOINTS.LOCATIONS}?t=${Date.now()}`);
             setLocations(response.data.data || []);
         } catch (error) {
             console.error('Failed to fetch locations:', error);
