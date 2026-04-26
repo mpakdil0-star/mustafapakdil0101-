@@ -60,6 +60,7 @@ export default function ElectricianDetailScreen() {
     const [favoriteLoading, setFavoriteLoading] = useState(false);
     const [showFavoriteModal, setShowFavoriteModal] = useState(false);
     const [favoriteModalType, setFavoriteModalType] = useState<'added' | 'removed'>('added');
+    const [showAllReviews, setShowAllReviews] = useState(false);
 
     const [alertConfig, setAlertConfig] = useState<{
         visible: boolean;
@@ -487,17 +488,22 @@ export default function ElectricianDetailScreen() {
 
             {/* Recent Reviews */}
             <View style={styles.reviewsHeaderSection}>
-                <Text style={styles.sectionTitle}>Müşteri Yorumları</Text>
-                {electrician.reviewsReceived?.length > 0 && (
-                    <TouchableOpacity onPress={() => {/* Tümünü gör */ }}>
+                <Text style={styles.sectionTitle}>Müşteri Yorumları ({electrician.reviewsReceived?.length || 0})</Text>
+                {electrician.reviewsReceived?.length > 5 && !showAllReviews && (
+                    <TouchableOpacity onPress={() => setShowAllReviews(true)}>
                         <Text style={styles.seeAllText}>Tümünü Gör</Text>
+                    </TouchableOpacity>
+                )}
+                {showAllReviews && (
+                    <TouchableOpacity onPress={() => setShowAllReviews(false)}>
+                        <Text style={styles.seeAllText}>Daha Az Gör</Text>
                     </TouchableOpacity>
                 )}
             </View>
 
             {
                 electrician.reviewsReceived?.length > 0 ? (
-                    electrician.reviewsReceived.map((review: any, index: number) => (
+                    (showAllReviews ? electrician.reviewsReceived : electrician.reviewsReceived.slice(0, 5)).map((review: any, index: number) => (
                         <Card key={index} style={styles.reviewCardSmall}>
                             <View style={styles.reviewHeader}>
                                 <Image
