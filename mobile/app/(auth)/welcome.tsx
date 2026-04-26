@@ -74,11 +74,7 @@ export default function WelcomeScreen() {
         startShine();
     }, []);
 
-    const handleGuestEntry = async (role: 'CITIZEN' | 'ELECTRICIAN', path: string) => {
-        // Clear existing tokens to prevent silent login as a previous user next time
-        const { apiService } = await import('../../services/api');
-        await apiService.clearTokens();
-        
+    const handleGuestEntry = (role: 'CITIZEN' | 'ELECTRICIAN', path: string) => {
         dispatch(setGuestRole(role));
         router.replace(path as any);
     };

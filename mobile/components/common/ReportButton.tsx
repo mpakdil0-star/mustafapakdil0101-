@@ -11,7 +11,6 @@ interface ReportButtonProps {
     jobId?: string;
     variant?: 'icon' | 'text' | 'full';
     style?: ViewStyle;
-    onPress?: () => void;
 }
 
 export const ReportButton: React.FC<ReportButtonProps> = ({
@@ -19,16 +18,11 @@ export const ReportButton: React.FC<ReportButtonProps> = ({
     userName,
     jobId,
     variant = 'icon',
-    style,
-    onPress
+    style
 }) => {
     const router = useRouter();
 
     const handlePress = () => {
-        if (onPress) {
-            onPress();
-            return;
-        }
         router.push({
             pathname: '/profile/report',
             params: { userId, userName, jobId }
