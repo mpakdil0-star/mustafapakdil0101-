@@ -88,6 +88,40 @@ app.use('/legal', legalRoutes); // For /legal/kvkk etc.
 app.get('/kvkk', (req, res) => res.redirect('/legal/kvkk'));
 app.get('/terms', (req, res) => res.redirect('/legal/terms'));
 
+app.get('/api/update-ratings', async (req, res) => {
+  try {
+    const updates = [
+      { name: 'Ufuk soydan', rating: 4.9, reviews: 12 },
+      { name: 'Hasan Yıldırım', rating: 4.8, reviews: 10 },
+      { name: 'Said Ugan', rating: 4.8, reviews: 8 },
+      { name: 'Mehmet Cebiş', rating: 4.8, reviews: 9 },
+    ];
+
+    const results = [];
+    for (const item of updates) {
+      const user = await prisma.user.findFirst({
+        where: { fullName: { equals: item.name, mode: 'insensitive' } }
+      });
+
+      if (user) {
+        await prisma.electricianProfile.update({
+          where: { userId: user.id },
+          data: {
+            ratingAverage: item.rating,
+            totalReviews: item.reviews,
+          }
+        });
+        results.push(`✅ ${item.name} updated`);
+      } else {
+        results.push(`❌ ${item.name} not found`);
+      }
+    }
+    res.json({ success: true, results });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/debug-ahmet', async (req, res) => {
   try {
     const ahmet = await prisma.user.findFirst({
