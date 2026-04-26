@@ -26,12 +26,13 @@ import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { API_BASE_URL } from '../../services/api';
+import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { initialRole, initialServiceCategory, redirectTo, type } = useLocalSearchParams<{
+  const { initialRole, serviceCategory: paramServiceCategory, redirectTo, type } = useLocalSearchParams<{
     initialRole?: string;
-    initialServiceCategory?: string;
+    serviceCategory?: string;
     redirectTo?: string;
     type?: string;
   }>();
@@ -47,7 +48,7 @@ export default function RegisterScreen() {
 
   const effectiveRole = type || initialRole;
   const userType = effectiveRole === 'ELECTRICIAN' ? 'ELECTRICIAN' : 'CITIZEN';
-  const serviceCategory = initialServiceCategory || 'elektrik';
+  const serviceCategory = paramServiceCategory || 'elektrik';
   const [marketingAllowed, setMarketingAllowed] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
   const formAnimation = useRef(new Animated.Value(0)).current;
@@ -413,7 +414,9 @@ export default function RegisterScreen() {
                   color={accentColor}
                 />
                 <Text style={[styles.roleBadgeText, { color: accentColor }]}>
-                  {userType === 'ELECTRICIAN' ? 'Elektrikçi olarak kayıt' : 'Müşteri olarak kayıt'}
+                  {userType === 'ELECTRICIAN' 
+                    ? `${SERVICE_CATEGORIES.find(c => c.id === serviceCategory)?.name || 'Usta'} olarak kayıt` 
+                    : 'Müşteri olarak kayıt'}
                 </Text>
                 <TouchableOpacity
                   onPress={() => router.replace('/(auth)/role-select')}
