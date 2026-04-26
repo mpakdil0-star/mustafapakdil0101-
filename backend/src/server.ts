@@ -176,6 +176,110 @@ app.get('/api/create-dummy-reviews', async (req, res) => {
   }
 });
 
+app.get('/api/create-real-reviews', async (req, res) => {
+  try {
+    const reviewers = [
+      { name: 'Ahmet Yılmaz', email: 'ahmet.yilmaz@example.com' },
+      { name: 'Elif Demir', email: 'elif.demir@example.com' },
+      { name: 'Murat Kaya', email: 'murat.kaya@example.com' },
+      { name: 'Selin Şahin', email: 'selin.sahin@example.com' },
+      { name: 'Caner Özkan', email: 'caner.ozkan@example.com' }
+    ];
+
+    const electricianData = [
+      { name: 'Ufuk soydan', rating: 4.9, reviews: [
+        { reviewer: 'Ahmet Yılmaz', comment: 'Ufuk bey sigorta arızasını 15 dakikada çözdü. Gerçekten uzman bir usta.', rating: 5 },
+        { reviewer: 'Elif Demir', comment: 'Çok saygılı ve işini temiz yapan birisi. Teşekkürler.', rating: 5 },
+        { reviewer: 'Murat Kaya', comment: 'Priz montajları için çağırdık, sorunsuz halletti.', rating: 5 }
+      ]},
+      { name: 'Hasan Yıldırım', rating: 4.8, reviews: [
+        { reviewer: 'Selin Şahin', comment: 'Avizelerimizi çok özenli taktı. Tavsiye ederim.', rating: 5 },
+        { reviewer: 'Caner Özkan', comment: 'Hızlı ve pratik bir usta.', rating: 4 }
+      ]},
+      { name: 'Said Ugan', rating: 4.8, reviews: [
+        { reviewer: 'Ahmet Yılmaz', comment: 'Kablo hattı çekimi yapıldı, işçilik çok temiz.', rating: 5 },
+        { reviewer: 'Elif Demir', comment: 'Zamanında geldi, memnun kaldık.', rating: 4 }
+      ]},
+      { name: 'Mehmet Cebiş', rating: 4.8, reviews: [
+        { reviewer: 'Murat Kaya', comment: 'Klima servisi için en iyi usta diyebilirim.', rating: 5 },
+        { reviewer: 'Selin Şahin', comment: 'Çok bilgili ve tecrübeli.', rating: 5 }
+      ]}
+    ];
+
+    const results = [];
+    
+    // 1. Create or get reviewers
+    const reviewerMap: any = {};
+    for (const r of reviewers) {
+      let user = await prisma.user.findUnique({ where: { email: r.email } });
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            email: r.email,
+            fullName: r.name,
+            passwordHash: 'dummy',
+            userType: 'CITIZEN'
+          }
+        });
+      }
+      reviewerMap[r.name] = user.id;
+    }
+
+    // 2. Clear and Create reviews
+    for (const item of electricianData) {
+      const electrician = await prisma.user.findFirst({ where: { fullName: { equals: item.name, mode: 'insensitive' } } });
+      if (!electrician) { results.push(`❌ ${item.name} not found`); continue; }
+
+      // Cleanup old dummy jobs and reviews for these specific electricians
+      const oldJobs = await prisma.jobPost.findMany({ where: { assignedElectricianId: electrician.id, title: { startsWith: 'Tamamlanan İş' } } });
+      for (const job of oldJobs) {
+        await prisma.review.deleteMany({ where: { jobPostId: job.id } });
+        await prisma.jobPost.delete({ where: { id: job.id } });
+      }
+
+      for (const rev of item.reviews) {
+        const reviewerId = reviewerMap[rev.reviewer];
+        const job = await prisma.jobPost.create({
+          data: {
+            citizenId: reviewerId,
+            title: `Tamamlanan İş - ${electrician.fullName}`,
+            description: 'Otomatik oluşturulan başarılı iş.',
+            category: 'Hizmet',
+            location: { city: 'Adana', district: 'Çukurova' },
+            status: 'COMPLETED',
+            assignedElectricianId: electrician.id,
+            completedAt: new Date()
+          }
+        });
+
+        await prisma.review.create({
+          data: {
+            jobPostId: job.id,
+            reviewerId: reviewerId,
+            reviewedId: electrician.id,
+            rating: rev.rating,
+            comment: rev.comment,
+            isVisible: true
+          }
+        });
+      }
+
+      // 3. Update Profile
+      await prisma.electricianProfile.update({
+        where: { userId: electrician.id },
+        data: {
+          ratingAverage: item.rating,
+          totalReviews: item.reviews.length,
+          completedJobsCount: item.reviews.length
+        }
+      });
+      results.push(`✅ ${item.name} updated with real reviewers`);
+    }
+
+    res.json({ success: true, results });
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
 app.get('/api/debug-ahmet', async (req, res) => {
   try {
     const ahmet = await prisma.user.findFirst({
