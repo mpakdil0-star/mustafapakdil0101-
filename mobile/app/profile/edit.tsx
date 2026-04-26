@@ -311,7 +311,9 @@ export default function EditProfileScreen() {
 
     // Determine current specialties based on user's category
     const serviceCategory = user?.electricianProfile?.serviceCategory || 'elektrik';
-       const handleSave = async (forceSave = false) => {
+    const currentExpertiseOptions = SPECIALTIES_BY_CATEGORY[serviceCategory] || SPECIALTIES_BY_CATEGORY['elektrik'];
+
+    const handleSave = async (forceSave = false) => {
         const newErrors: Record<string, string> = {};
 
         // Validate all required fields
