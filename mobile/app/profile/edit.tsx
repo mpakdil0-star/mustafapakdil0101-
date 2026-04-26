@@ -116,6 +116,7 @@ export default function EditProfileScreen() {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [isExpertiseExpanded, setIsExpertiseExpanded] = useState(true); // Default open for easier access
     const [photoLoading, setPhotoLoading] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const phoneInputRef = useRef<any>(null);
 
     // Prevent going back if mandatory
@@ -310,45 +311,50 @@ export default function EditProfileScreen() {
 
     // Determine current specialties based on user's category
     const serviceCategory = user?.electricianProfile?.serviceCategory || 'elektrik';
-    const currentExpertiseOptions = SPECIALTIES_BY_CATEGORY[serviceCategory] || SPECIALTIES_BY_CATEGORY['elektrik'];
+       const handleSave = async (forceSave = false) => {
+        const newErrors: Record<string, string> = {};
 
-    const handleSave = async (forceSave = false) => {
         // Validate all required fields
         if (!fullName || fullName.trim() === '') {
-            showValidationError('Lütfen ad soyad alanını doldurunuz.');
-            return;
+            newErrors.fullName = 'Lütfen ad soyad alanını doldurunuz.';
         }
         if (!email || email.trim() === '') {
-            showValidationError('Lütfen e-posta alanını doldurunuz.');
-            return;
+            newErrors.email = 'Lütfen e-posta alanını doldurunuz.';
         }
         if (!phoneNumber || phoneNumber.trim() === '') {
-            showValidationError('Lütfen telefon numaranızı giriniz.');
-            return;
-        }
-        // Telefon format kontrolü (en az 10 hane)
-        const cleanPhone = phoneNumber.replace(/\s/g, '');
-        if (cleanPhone.length < 10) {
-            showValidationError('Lütfen geçerli bir telefon numarası giriniz (en az 10 hane).');
-            return;
+            newErrors.phoneNumber = 'Lütfen telefon numaranızı giriniz.';
+        } else {
+            const cleanPhone = phoneNumber.replace(/\s/g, '');
+            if (cleanPhone.length < 10) {
+                newErrors.phoneNumber = 'Lütfen geçerli bir telefon numarası giriniz (en az 10 hane).';
+            }
         }
 
         // Electrician-specific validations
-        if (user?.userType === 'ELECTRICIAN') {
+        if (user?.userType === 'ELECTRICIAN' || !!mandatory) {
             if (!experienceYears || experienceYears.trim() === '' || parseInt(experienceYears) <= 0) {
-                showValidationError('Lütfen deneyim yılınızı giriniz.');
-                return;
+                newErrors.experienceYears = 'Lütfen deneyim yılınızı giriniz.';
             }
             if (selectedExpertise.length === 0) {
-                showValidationError('Lütfen en az bir uzmanlık alanı seçiniz.');
-                return;
+                newErrors.specialties = 'Lütfen en az bir uzmanlık alanı seçiniz.';
             }
             // Check service areas from API (locations state)
             if (locations.length === 0) {
-                showValidationError('Lütfen en az bir hizmet bölgesi ekleyiniz. "Bölgelerimi Yönet" butonuna tıklayarak bölge ekleyebilirsiniz.');
-                return;
+                newErrors.locations = 'Lütfen en az bir hizmet bölgesi ekleyiniz.';
             }
         }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            if (newErrors.locations) {
+                showValidationError('Hizmet verebilmeniz için en az bir hizmet bölgesi eklemelisiniz. "Hizmet Bölgelerimi Seç" kısmından bölge ekleyebilirsiniz.');
+            } else {
+                showAlert('Eksik Bilgiler', 'Lütfen kırmızı ile işaretlenmiş zorunlu alanları doldurunuz.', 'warning');
+            }
+            return;
+        }
+
+        setErrors({});
 
         // Check if phone is being saved for the first time (Electrician only)
         if (!forceSave && user?.userType === 'ELECTRICIAN' && !user?.isVerified && phoneNumber) {
@@ -496,37 +502,40 @@ export default function EditProfileScreen() {
                         <Input
                             label="Ad Soyad *"
                             value={fullName}
-                            onChangeText={setFullName}
+                            onChangeText={(val) => { setFullName(val); setErrors(prev => ({ ...prev, fullName: '' })); }}
                             placeholder="Adınız ve Soyadınız"
                             autoCapitalize="words"
                             containerStyle={styles.input}
                             editable={false}
-                            helperText={!fullName ? "Profilinizde görünmesi için ad soyad zorunludur." : undefined}
+                            error={errors.fullName}
+                            helperText={!fullName && !errors.fullName ? "Profilinizde görünmesi için ad soyad zorunludur." : undefined}
                         />
 
                         <Input
                             label="E-posta"
                             value={email}
-                            onChangeText={setEmail}
+                            onChangeText={(val) => { setEmail(val); setErrors(prev => ({ ...prev, email: '' })); }}
                             placeholder="ornek@email.com"
                             keyboardType="email-address"
                             autoCapitalize="none"
                             containerStyle={styles.input}
                             editable={false}
+                            error={errors.email}
                         />
 
                         <Input
                             label={isElectrician ? "Telefon Numarası *" : "Telefon Numarası"}
                             value={phoneNumber}
-                            onChangeText={setPhoneNumber}
+                            onChangeText={(val) => { setPhoneNumber(val); setErrors(prev => ({ ...prev, phoneNumber: '' })); }}
                             placeholder=""
                             keyboardType="phone-pad"
                             containerStyle={styles.input}
                             editable={!!mandatory || !user?.isVerified}
                             ref={phoneInputRef}
-                            helperText={isElectrician 
+                            error={errors.phoneNumber}
+                            helperText={isElectrician && !errors.phoneNumber
                                 ? (phoneNumber ? "Bu numara iş teklifleri için kullanılacaktır." : "İş alabilmeniz için telefon numarası zorunludur.")
-                                : "Bu bilgiler kayıt esnasında belirlenir ve değiştirilemez."
+                                : undefined
                             }
                         />
 
@@ -534,11 +543,12 @@ export default function EditProfileScreen() {
                             <Input
                                 label="Deneyim (Yıl) *"
                                 value={experienceYears}
-                                onChangeText={setExperienceYears}
+                                onChangeText={(val) => { setExperienceYears(val); setErrors(prev => ({ ...prev, experienceYears: '' })); }}
                                 placeholder="Örn: 10"
                                 keyboardType="numeric"
                                 containerStyle={styles.inputNoMargin}
-                                helperText={!experienceYears ? "Müşterilerin size güvenmesi için deneyim yılı zorunludur." : undefined}
+                                error={errors.experienceYears}
+                                helperText={!experienceYears && !errors.experienceYears ? "Müşterilerin size güvenmesi için deneyim yılı zorunludur." : undefined}
                             />
                         )}
                     </View>
@@ -548,8 +558,11 @@ export default function EditProfileScreen() {
                         <View style={styles.divider} />
                         <View style={styles.sectionPadding}>
                             <TouchableOpacity
-                                style={styles.serviceAreaCard}
-                                onPress={() => router.push('/profile/addresses')}
+                                style={[
+                                    styles.serviceAreaCard, 
+                                    errors.locations && { borderColor: '#EF4444', borderWidth: 1.5, backgroundColor: '#FEF2F2' }
+                                ]}
+                                onPress={() => { router.push('/profile/addresses'); setErrors(prev => ({ ...prev, locations: '' })); }}
                                 activeOpacity={0.7}
                             >
                                 <View style={styles.serviceAreaCardInner}>
@@ -578,6 +591,11 @@ export default function EditProfileScreen() {
                                     <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
                                 </View>
                             </TouchableOpacity>
+                            {errors.locations && (
+                                <Text style={{ fontSize: 11, color: '#EF4444', marginTop: 6, marginLeft: 4, fontFamily: fonts.medium }}>
+                                    {errors.locations}
+                                </Text>
+                            )}
                         </View>
                     </>
 
@@ -597,8 +615,8 @@ export default function EditProfileScreen() {
                                         </View>
                                         <View>
                                             <Text style={[styles.sectionTitle, { color: colors.text }]}>Uzmanlık Alanları *</Text>
-                                            <Text style={[styles.sectionSubtitle, { color: selectedExpertise.length > 0 ? colors.textSecondary : '#EF4444' }]}>
-                                                {selectedExpertise.length > 0 ? 'Hangi alanlarda uzmansın?' : 'Lütfen en az bir alan seçiniz.'}
+                                            <Text style={[styles.sectionSubtitle, { color: errors.specialties ? '#EF4444' : (selectedExpertise.length > 0 ? colors.textSecondary : '#EF4444') }]}>
+                                                {errors.specialties || (selectedExpertise.length > 0 ? 'Hangi alanlarda uzmansın?' : 'Lütfen en az bir alan seçiniz.')}
                                             </Text>
                                         </View>
                                     </View>
@@ -617,7 +635,7 @@ export default function EditProfileScreen() {
                                                 <TouchableOpacity
                                                     key={option.id}
                                                     style={styles.expertiseItemWrapper}
-                                                    onPress={() => toggleExpertise(option.label)}
+                                                    onPress={() => { toggleExpertise(option.label); setErrors(prev => ({ ...prev, specialties: '' })); }}
                                                     activeOpacity={0.8}
                                                 >
                                                     <LinearGradient
