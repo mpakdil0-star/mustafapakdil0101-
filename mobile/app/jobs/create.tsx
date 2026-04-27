@@ -1051,21 +1051,64 @@ export default function CreateJobScreen() {
                 required
                 error={errors.projectBuildingType}
               />
+              {projectBuildingType === 'diger' && (
+                <TextInput
+                  style={[styles.input, { marginTop: 10 }]}
+                  placeholder="Lütfen yapı tipini açıklayınız"
+                  value={projectOtherBuildingType}
+                  onChangeText={setProjectOtherBuildingType}
+                />
+              )}
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Toplam İnşaat Alanı (m²) *</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  errors.projectArea ? { borderColor: '#EF4444' } : {}
-                ]}
-                placeholder="Örn: 250"
-                value={projectArea}
-                onChangeText={(val) => { setProjectArea(val); setErrors(prev => ({ ...prev, projectArea: '' })); }}
-                keyboardType="numeric"
-              />
-              {errors.projectArea && <Text style={styles.errorText}>{errors.projectArea}</Text>}
+            <View style={styles.row}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <Text style={styles.label}>Toplam Alan (m²) *</Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    errors.projectArea ? { borderColor: '#EF4444' } : {}
+                  ]}
+                  placeholder="Örn: 250"
+                  value={projectArea}
+                  onChangeText={(val) => { setProjectArea(val); setErrors(prev => ({ ...prev, projectArea: '' })); }}
+                  keyboardType="numeric"
+                />
+                {errors.projectArea && <Text style={styles.errorText}>{errors.projectArea}</Text>}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.label}>Kat Sayısı</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Örn: 2"
+                  value={projectFloors}
+                  onChangeText={setProjectFloors}
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+
+            <View style={[styles.row, { marginTop: 12 }]}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <Text style={styles.label}>Kurulu Güç (kW)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Örn: 15"
+                  value={projectInstalledPower}
+                  onChangeText={setProjectInstalledPower}
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.label}>Oda/Bölüm</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Örn: 5"
+                  value={projectRoomsPerFloor}
+                  onChangeText={setProjectRoomsPerFloor}
+                  keyboardType="numeric"
+                />
+              </View>
             </View>
                 
                 <View style={[styles.btnRow, { marginTop: 24 }]}>
