@@ -728,11 +728,18 @@ export default function CreateJobScreen() {
         }
       } else if (currentStep === 3) {
         if (!projectPurpose) {
+          setErrors({ ...errors, projectPurpose: 'Lütfen projenin amacını seçiniz' });
           showAlert('Eksik Bilgi', 'Lütfen projenin amacını seçiniz', 'warning');
           return;
         }
         if (projectHasArchitecturePlan === null) {
+          setErrors({ ...errors, projectHasArchitecturePlan: 'Mimari plan durumunu belirtiniz' });
           showAlert('Eksik Bilgi', 'Mimari plan durumunu belirtiniz', 'warning');
+          return;
+        }
+        if (projectNeedsApproval === null) {
+          setErrors({ ...errors, projectNeedsApproval: 'Resmi onay takibi seçilmelidir' });
+          showAlert('Eksik Bilgi', 'Resmi onay takibi seçilmelidir', 'warning');
           return;
         }
       } else if (currentStep === 4) {
@@ -1029,71 +1036,38 @@ export default function CreateJobScreen() {
                   </View>
                 </View>
 
-                <View style={styles.inputContainer}>
-                  <Text style={[styles.label, { color: colors.textSecondary }]}>Yapı Tipi</Text>
-                  <View style={styles.pillContainer}>
-                    {BUILDING_TYPES.map((type) => (
-                      <TouchableOpacity
-                        key={type.value}
-                        style={[
-                          styles.pill,
-                          { borderColor: colors.border, backgroundColor: colors.surfaceElevated },
-                          projectBuildingType === type.value && { borderColor: colors.primary, backgroundColor: colors.primary + '0A' }
-                        ]}
-                        onPress={() => setProjectBuildingType(type.value)}
-                      >
-                        <Text style={[styles.pillText, { color: projectBuildingType === type.value ? colors.primary : colors.textSecondary }]}>
-                          {type.label}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                  {projectBuildingType === 'diger' && (
-                    <TextInput
-                      style={[styles.modernInput, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, color: colors.text, marginTop: 12 }]}
-                      placeholder="Lütfen yapı tipini açıklayınız"
-                      value={projectOtherBuildingType}
-                      onChangeText={setProjectOtherBuildingType}
-                    />
-                  )}
-                </View>
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Yapı Tipi *</Text>
+              <Picker
+                value={BUILDING_TYPES.find(b => b.value === projectBuildingType)?.label || ''}
+                options={BUILDING_TYPES.map(b => b.label)}
+                onValueChange={(val) => {
+                  const found = BUILDING_TYPES.find(b => b.label === val);
+                  if (found) {
+                    setProjectBuildingType(found.value);
+                    setErrors(prev => ({ ...prev, projectBuildingType: '' }));
+                  }
+                }}
+                required
+                error={errors.projectBuildingType}
+              />
+            </View>
 
-                <View style={styles.row}>
-                  <View style={{ flex: 1, marginRight: 8 }}>
-                    <Text style={[styles.label, { color: colors.textSecondary }]}>Toplam m²</Text>
-                    <TextInput
-                      style={[styles.modernInput, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, color: colors.text }]}
-                      placeholder="Örn: 250"
-                      keyboardType="numeric"
-                      value={projectArea}
-                      onChangeText={setProjectArea}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.label, { color: colors.textSecondary }]}>Kat Sayısı</Text>
-                    <TextInput
-                      style={[styles.modernInput, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, color: colors.text }]}
-                      placeholder="Örn: 2"
-                      keyboardType="numeric"
-                      value={projectFloors}
-                      onChangeText={setProjectFloors}
-                    />
-                  </View>
-                </View>
-
-                <View style={[styles.row, { marginTop: 12 }]}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.label, { color: colors.textSecondary }]}>Kurulu Güç (kW)</Text>
-                    <TextInput
-                      style={[styles.modernInput, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, color: colors.text }]}
-                      placeholder="Örn: 15"
-                      keyboardType="numeric"
-                      value={projectInstalledPower}
-                      onChangeText={setProjectInstalledPower}
-                    />
-                  </View>
-                </View>
-
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Toplam İnşaat Alanı (m²) *</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  errors.projectArea ? { borderColor: '#EF4444' } : {}
+                ]}
+                placeholder="Örn: 250"
+                value={projectArea}
+                onChangeText={(val) => { setProjectArea(val); setErrors(prev => ({ ...prev, projectArea: '' })); }}
+                keyboardType="numeric"
+              />
+              {errors.projectArea && <Text style={styles.errorText}>{errors.projectArea}</Text>}
+            </View>
+                
                 <View style={[styles.btnRow, { marginTop: 24 }]}>
                   <View style={styles.backBtnWrapper}>
                     <Button title="Geri" variant="outline" onPress={prevStep} fullWidth style={{ borderColor: colors.border }} />
@@ -1121,8 +1095,8 @@ export default function CreateJobScreen() {
                 </View>
 
                 <View style={styles.inputContainer}>
-                  <Text style={[styles.label, { color: colors.textSecondary }]}>Hangi amaçla çiziliyor?</Text>
-                  <View style={styles.pillContainer}>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Hangi amaçla çiziliyor? *</Text>
+                  <View style={[styles.pillContainer, errors.projectPurpose ? { padding: 4, borderRadius: 12, borderWidth: 1, borderColor: '#EF4444' } : {}]}>
                     {PROJECT_PURPOSES.map((p) => (
                       <TouchableOpacity
                         key={p.value}
@@ -1131,7 +1105,7 @@ export default function CreateJobScreen() {
                           { borderColor: colors.border, backgroundColor: colors.surfaceElevated, width: '100%' },
                           projectPurpose === p.value && { borderColor: colors.primary, backgroundColor: colors.primary + '0A' }
                         ]}
-                        onPress={() => setProjectPurpose(p.value)}
+                        onPress={() => { setProjectPurpose(p.value); setErrors(prev => ({ ...prev, projectPurpose: '' })); }}
                       >
                         <Text style={[styles.pillText, { color: projectPurpose === p.value ? colors.primary : colors.textSecondary }]}>
                           {p.label}
@@ -1139,41 +1113,35 @@ export default function CreateJobScreen() {
                       </TouchableOpacity>
                     ))}
                   </View>
+                  {errors.projectPurpose && <Text style={styles.errorText}>{errors.projectPurpose}</Text>}
                 </View>
 
                 <View style={styles.divider} />
 
                 <View style={styles.inputContainer}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                    <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 0 }]}>Mimari planınız var mı?</Text>
+                    <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 0 }]}>Mimari planınız var mı? *</Text>
                     <TouchableOpacity onPress={() => showInfoTip('Mimari Plan Nedir?', 'Proje çiziminin temelidir. Eğer DWG veya PDF formatında planınız yoksa, mühendisin yerinde rölöve (ölçüm) alması gerekir.')} style={{ marginLeft: 6 }}>
                         <Ionicons name="help-circle-outline" size={16} color={colors.primary} />
                     </TouchableOpacity>
                   </View>
-                  <View style={styles.urgencyGrid}>
+                  <View style={[styles.urgencyGrid, errors.projectHasArchitecturePlan ? { padding: 4, borderRadius: 12, borderWidth: 1, borderColor: '#EF4444' } : {}]}>
                     <TouchableOpacity
                       style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, borderColor: projectHasArchitecturePlan === true ? colors.primary : colors.border }]}
-                      onPress={() => setProjectHasArchitecturePlan(true)}
+                      onPress={() => { setProjectHasArchitecturePlan(true); setErrors(prev => ({ ...prev, projectHasArchitecturePlan: '' })); }}
                     >
                       <Ionicons name="document-attach-outline" size={20} color={projectHasArchitecturePlan === true ? colors.primary : colors.textLight} />
                       <Text style={[styles.urgencyCardLabel, projectHasArchitecturePlan === true && { color: colors.primary }]}>Evet, Var</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, borderColor: projectHasArchitecturePlan === false ? colors.primary : colors.border }]}
-                      onPress={() => setProjectHasArchitecturePlan(false)}
+                      onPress={() => { setProjectHasArchitecturePlan(false); setErrors(prev => ({ ...prev, projectHasArchitecturePlan: '' })); }}
                     >
                       <Ionicons name="pencil-outline" size={20} color={projectHasArchitecturePlan === false ? colors.primary : colors.textLight} />
                       <Text style={[styles.urgencyCardLabel, projectHasArchitecturePlan === false && { color: colors.primary }]}>Yok (Rölöve)</Text>
                     </TouchableOpacity>
                   </View>
-                  {projectHasArchitecturePlan === true && (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, backgroundColor: staticColors.error + '0D', padding: 10, borderRadius: 12, borderLeftWidth: 3, borderLeftColor: staticColors.error }}>
-                      <Ionicons name="information-circle" size={16} color={staticColors.error} style={{ marginRight: 8 }} />
-                      <Text style={{ fontFamily: fonts.medium, fontSize: 11, color: staticColors.error, flex: 1, lineHeight: 16 }}>
-                        Planınızın olduğunu belirttiniz. Bir sonraki adımda (Detaylar) plan dosyasını veya fotoğrafını eklemeyi unutmayın.
-                      </Text>
-                    </View>
-                  )}
+                  {errors.projectHasArchitecturePlan && <Text style={styles.errorText}>{errors.projectHasArchitecturePlan}</Text>}
                 </View>
 
                 <View style={[styles.btnRow, { marginTop: 16 }]}>
@@ -1202,14 +1170,36 @@ export default function CreateJobScreen() {
                   </View>
                 </View>
  
-               {isProjectCategory && projectHasArchitecturePlan === true && (
-                 <View style={{ marginBottom: 16, backgroundColor: colors.primary + '10', padding: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', borderColor: colors.primary + '30', borderWidth: 1 }}>
-                   <Ionicons name="information-circle" size={20} color={colors.primary} style={{ marginRight: 10 }} />
-                   <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: colors.primary, flex: 1, lineHeight: 18 }}>
-                     Mimari planınızın olduğunu belirttiniz. Ustaların doğru fiyat verebilmesi için lütfen en alttaki bölümden planın fotoğrafını veya ekran görüntüsünü ekleyin.
-                   </Text>
-                 </View>
-               )}
+                {isProjectCategory && projectHasArchitecturePlan === true && (
+                  <View style={{ 
+                    marginBottom: 16, 
+                    backgroundColor: (images.length > 0) ? '#10B98115' : colors.primary + '10', 
+                    padding: 12, 
+                    borderRadius: 12, 
+                    flexDirection: 'row', 
+                    alignItems: 'center', 
+                    borderColor: (images.length > 0) ? '#10B98130' : colors.primary + '30', 
+                    borderWidth: 1 
+                  }}>
+                    <Ionicons 
+                      name={(images.length > 0) ? "checkmark-circle-outline" : "information-circle"} 
+                      size={20} 
+                      color={(images.length > 0) ? "#10B981" : colors.primary} 
+                      style={{ marginRight: 10 }} 
+                    />
+                    <Text style={{ 
+                      fontFamily: fonts.medium, 
+                      fontSize: 12, 
+                      color: (images.length > 0) ? "#059669" : colors.primary, 
+                      flex: 1, 
+                      lineHeight: 18 
+                    }}>
+                      {(images.length > 0) 
+                        ? "Plan fotoğrafı/dosyası başarıyla eklendi." 
+                        : "Mimari planınızın olduğunu belirttiniz. Ustaların doğru fiyat verebilmesi için lütfen en alttaki bölümden planın fotoğrafını veya ekran görüntüsünü ekleyin."}
+                    </Text>
+                  </View>
+                )}
 
                 {isProjectCategory && (
                   <View style={{ marginBottom: 20 }}>
@@ -1250,25 +1240,26 @@ export default function CreateJobScreen() {
                     </View>
                     <View style={styles.divider} />
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                        <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 0 }]}>Resmi Onay Takibi Kimde?</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 0 }]}>Resmi Onay Takibi Kimde? *</Text>
                         <TouchableOpacity onPress={() => showInfoTip('Resmi Onay Nedir?', 'Projenin TEDAŞ veya ilgili elektrik dağıtım şirketi tarafından onaylanması sürecidir. Bu süreci mühendisin takip etmesi işleri hızlandırır.')} style={{ marginLeft: 6 }}>
                             <Ionicons name="help-circle-outline" size={16} color={colors.primary} />
                         </TouchableOpacity>
                     </View>
-                    <View style={styles.urgencyGrid}>
+                    <View style={[styles.urgencyGrid, errors.projectNeedsApproval ? { padding: 4, borderRadius: 12, borderWidth: 1, borderColor: '#EF4444' } : {}]}>
                       <TouchableOpacity
                         style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, borderColor: projectNeedsApproval === true ? colors.primary : colors.border }]}
-                        onPress={() => setProjectNeedsApproval(true)}
+                        onPress={() => { setProjectNeedsApproval(true); setErrors(prev => ({ ...prev, projectNeedsApproval: '' })); }}
                       >
                         <Text style={[styles.urgencyCardLabel, { textAlign: 'center' }, projectNeedsApproval === true && { color: colors.primary }]}>Mühendis (Hepsi Dahil)</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, borderColor: projectNeedsApproval === false ? colors.primary : colors.border }]}
-                        onPress={() => setProjectNeedsApproval(false)}
+                        onPress={() => { setProjectNeedsApproval(false); setErrors(prev => ({ ...prev, projectNeedsApproval: '' })); }}
                       >
                         <Text style={[styles.urgencyCardLabel, { textAlign: 'center' }, projectNeedsApproval === false && { color: colors.primary }]}>Müşteri (Sadece Çizim)</Text>
                       </TouchableOpacity>
                     </View>
+                    {errors.projectNeedsApproval && <Text style={styles.errorText}>{errors.projectNeedsApproval}</Text>}
                   </View>
                 )}
 
