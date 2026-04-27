@@ -212,7 +212,15 @@ function RootLayoutNav() {
 
             // Case: Default redirect to TABS
             // If user is verified and authenticated, but still on a non-app screen, force redirect to TABS
-            const isInApp = segments.includes('(tabs)') || segments.includes('profile') || segments.includes('admin');
+            const isInApp = segments.includes('(tabs)') || 
+                            segments.includes('profile') || 
+                            segments.includes('admin') || 
+                            segments.includes('jobs') || 
+                            segments.includes('messages') || 
+                            segments.includes('notifications') || 
+                            segments.includes('electricians') || 
+                            segments.includes('electrician') || 
+                            segments.includes('categories');
             
             if (!isInApp && currentPath !== 'onboarding') {
               console.log('➡️ [RootNav] Verified user on non-app screen (' + currentPath + '), forcing redirect to TABS');
