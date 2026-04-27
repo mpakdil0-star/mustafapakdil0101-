@@ -751,10 +751,31 @@ export default function QuickCreateScreen() {
                                 </View>
                                 {errors.projectHasArchitecturePlan && <Text style={styles.errorTextSmall}>{errors.projectHasArchitecturePlan}</Text>}
                                 {projectHasArchitecturePlan === true && (
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, backgroundColor: '#EF4444' + '10', padding: 8, borderRadius: 8 }}>
-                                        <Ionicons name="warning-outline" size={14} color="#EF4444" style={{ marginRight: 6 }} />
-                                        <Text style={{ fontFamily: fonts.medium, fontSize: 11, color: '#EF4444', flex: 1 }}>
-                                            Planı olduğunu belirtenlerin, aşağıdan planın en az bir fotoğrafını eklemesi zorunludur.
+                                    <View style={{ 
+                                        flexDirection: 'row', 
+                                        alignItems: 'center', 
+                                        marginTop: 8, 
+                                        backgroundColor: (images.length > 0) ? '#10B98115' : '#EF444410', 
+                                        padding: 8, 
+                                        borderRadius: 8,
+                                        borderWidth: 1,
+                                        borderColor: (images.length > 0) ? '#10B98130' : '#EF444420'
+                                    }}>
+                                        <Ionicons 
+                                            name={(images.length > 0) ? "checkmark-circle-outline" : "warning-outline"} 
+                                            size={14} 
+                                            color={(images.length > 0) ? "#10B981" : "#EF4444"} 
+                                            style={{ marginRight: 6 }} 
+                                        />
+                                        <Text style={{ 
+                                            fontFamily: fonts.medium, 
+                                            fontSize: 11, 
+                                            color: (images.length > 0) ? "#059669" : "#EF4444", 
+                                            flex: 1 
+                                        }}>
+                                            {(images.length > 0) 
+                                                ? "Plan fotoğrafı başarıyla eklendi." 
+                                                : "Planı olduğunu belirtenlerin, aşağıdan planın en az bir fotoğrafını eklemesi zorunludur."}
                                         </Text>
                                     </View>
                                 )}
