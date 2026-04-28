@@ -312,8 +312,8 @@ function RootLayoutNav() {
           // 1. First get user details (this is the most critical)
           await dispatch(getMe()).unwrap();
           
-          // 2. Small pause between heavy requests
-          await new Promise(resolve => setTimeout(resolve, 300));
+          // 2. Pause to allow navigation redirects to happen first
+          await new Promise(resolve => setTimeout(resolve, 800));
           
           // 3. Fetch notifications
           dispatch(fetchNotifications());

@@ -293,6 +293,7 @@ export default function EditProfileScreen() {
         React.useCallback(() => {
             const fetchLocations = async () => {
                 if (user) {
+                    // Prevent redundant fetching if already loading or we have data (optional: add timestamp check)
                     try {
                         setLocationsLoading(true);
                         const response = await api.get(`${API_ENDPOINTS.LOCATIONS}?t=${Date.now()}`);
@@ -305,8 +306,10 @@ export default function EditProfileScreen() {
                     }
                 }
             };
+            
+            // Execute once per focus
             fetchLocations();
-        }, [user])
+        }, [user?.id]) // Only re-run if user ID changes
     );
 
     const showValidationError = (message: string) => {
