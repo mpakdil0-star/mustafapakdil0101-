@@ -60,6 +60,8 @@ function RootLayoutNav() {
     buttons?: { text: string; onPress: () => void; variant?: 'primary' | 'secondary' | 'danger' | 'ghost' }[];
   }>({ visible: false, title: '', message: '' });
 
+  const [pendingNotificationPath, setPendingNotificationPath] = useState<string | null>(null);
+
   const showAlert = (title: string, message: string, type: any = 'info', buttons?: any[]) => {
     setAlertConfig({ visible: true, title, message, type, buttons });
   };
@@ -109,6 +111,12 @@ function RootLayoutNav() {
     const runNavigationLogic = async () => {
       // CRITICAL: Wait until navigation is fully ready before performing any redirects
       if (!isNavigationReady) return;
+
+      // NEW: If we are handling a deep link notification, skip standard redirects to avoid clobbering
+      if (pendingNotificationPath) {
+        console.log('🛑 [RootNav] Skipping standard redirect because notification path is pending:', pendingNotificationPath);
+        return;
+      }
 
       const inAuthGroup = segments.includes('(auth)') || segments.includes('login') || segments.includes('register');
       const isOnboarding = segments[0] === 'onboarding';
@@ -656,20 +664,23 @@ function RootLayoutNav() {
       const data = response.notification.request.content.data as any;
 
       // Route based on notification data
+      let targetPath: string | null = null;
       if (data?.conversationId) {
-        // Message notification
-        router.push(`/messages/${data.conversationId}`);
+        targetPath = `/messages/${data.conversationId}`;
       } else if (data?.ticketId || data?.type === 'support_ticket_updated' || data?.type === 'support_reply' || data?.type === 'support_status') {
-        // Support ticket notification
-        router.push(`/profile/support`);
+        targetPath = `/profile/support`;
       } else if (data?.jobId) {
-        // Job-related notification (new bid, bid accepted, job status, etc.)
-        router.push(`/jobs/${data.jobId}`);
+        targetPath = `/jobs/${data.jobId}`;
       } else if (data?.type === 'new_review') {
-        // Review notification
-        router.push('/(tabs)/profile');
+        targetPath = '/(tabs)/profile';
+      }
+
+      if (targetPath) {
+        setPendingNotificationPath(targetPath);
+        router.push(targetPath as any);
+        // Clear pending path after a short delay
+        setTimeout(() => setPendingNotificationPath(null), 2000);
       } else {
-        // Default: go to notifications
         router.push('/profile/notifications');
       }
     });
@@ -695,14 +706,21 @@ function RootLayoutNav() {
 
         // Small delay to ensure navigation is ready
         setTimeout(() => {
+          let targetPath: string | null = null;
           if (data?.conversationId) {
-            router.push(`/messages/${data.conversationId}`);
+            targetPath = `/messages/${data.conversationId}`;
           } else if (data?.jobId) {
-            router.push(`/jobs/${data.jobId}`);
+            targetPath = `/jobs/${data.jobId}`;
           } else if (data?.type === 'new_review') {
-            router.push('/(tabs)/profile');
+            targetPath = '/(tabs)/profile';
           }
-        }, 1000);
+
+          if (targetPath) {
+            setPendingNotificationPath(targetPath);
+            router.push(targetPath as any);
+            setTimeout(() => setPendingNotificationPath(null), 2500);
+          }
+        }, 1200);
       }
     };
 
