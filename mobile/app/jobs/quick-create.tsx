@@ -314,51 +314,58 @@ export default function QuickCreateScreen() {
         setErrors({});
 
         const typeInfo = EMERGENCY_TYPES.find(t => t.id === selectedType);
-        const finalTitle = `🚨 ACİL: ${selectedSubCategory ? selectedSubCategory.name : typeInfo?.label}`;
+        const finalTitle = `ACİL: ${selectedSubCategory ? selectedSubCategory.name : typeInfo?.label}`;
         
         try {
-            const jobData = {
-                title: finalTitle,
-                description: description.trim(),
-                category: selectedSubCategory ? selectedSubCategory.name : getCategoryFromType(selectedType!),
-                location: {
-                    address, city, district, neighborhood: neighborhood || undefined,
-                    latitude: coords?.latitude || 41.0082,
-                    longitude: coords?.longitude || 28.9784,
-                },
-                urgencyLevel: 'HIGH' as const,
-                images: images.length > 0 ? images : undefined,
-                serviceCategory: selectedType || undefined,
-            };
-
-            // Enhance description for projects
+            let finalDescription = description.trim();
             if (selectedSubCategory?.id === 'elektrik-proje') {
                 const selectedPurpose = PROJECT_PURPOSES.find(p => p.value === projectPurpose)?.label;
                 let selectedTypeLabel = BUILDING_TYPES.find(b => b.value === projectBuildingType)?.label;
                 if (projectBuildingType === 'diger' && projectOtherBuildingType.trim()) {
                     selectedTypeLabel += ` (${projectOtherBuildingType.trim()})`;
                 }
-                const allSystems = [...projectWeakCurrentSystems, ...projectModernSystems];
-                const systemLabels = allSystems.map(id => {
+
+                const systemLabels = [...projectWeakCurrentSystems, ...projectModernSystems].map(id => {
                     const found = [...WEAK_CURRENT_SYSTEMS, ...MODERN_SYSTEMS].find(s => s.id === id);
                     return found ? found.label : id;
                 }).join(', ');
-                
-                jobData.description = 
-                    `📐 ELEKTRİK PROJE DETAYLARI\n` +
+
+                finalDescription = `PROJE DETAYLARI\n` +
                     `--------------------------------\n` +
-                    `• Yapı Tipi: ${selectedTypeLabel || 'Belirtilmedi'}\n` +
-                    `• Toplam Alan: ${projectArea || '-'} m²\n` +
-                    `• Kurulu Güç: ${projectInstalledPower ? projectInstalledPower + ' kW' : 'Belirtilmedi'}\n` +
-                    `• Kat Sayısı: ${projectFloors || '1'}\n` +
-                    `• Oda/Bölüm Sayısı: ${projectRoomsPerFloor || '-'}\n` +
-                    `• Proje Amacı: ${selectedPurpose || 'Yeni Yapı'}\n` +
-                    `• Mimari Plan: ${projectHasArchitecturePlan === true ? 'Mevcut (DWG/PDF)' : projectHasArchitecturePlan === false ? 'Yok (Rölöve Gerekli)' : 'Belirtilmedi'}\n` +
-                    `• Resmi Onay: ${projectNeedsApproval === true ? 'Mühendis Takip Edecek' : projectNeedsApproval === false ? 'Müşteri Takip Edecek' : 'Belirtilmedi'}\n` +
-                    `• Ek Sistemler: ${systemLabels || 'Standart'}\n` +
+                    `Yapi Tipi: ${selectedTypeLabel || 'Belirtilmedi'}\n` +
+                    `Alan: ${projectArea} m2\n` +
+                    `Kat: ${projectFloors || '1'}\n` +
+                    `Oda: ${projectRoomsPerFloor || '-'}\n` +
+                    `Kurulu Guc: ${projectInstalledPower ? projectInstalledPower + ' kW' : 'Belirtilmedi'}\n` +
+                    `Amac: ${selectedPurpose || 'Yeni Yapi'}\n` +
+                    `Ek Sistemler: ${systemLabels || 'Standart'}\n` +
                     `--------------------------------\n\n` +
-                    `📝 MÜŞTERİ NOTU:\n` +
-                    description.trim();
+                    `NOT: ` + description.trim();
+            }
+
+            const jobData: any = {
+                title: finalTitle,
+                description: finalDescription,
+                category: selectedSubCategory?.name || 'Elektrik Tamiri',
+                location: {
+                    address: address.trim(),
+                    city: city.trim(),
+                    district: district.trim(),
+                    neighborhood: neighborhood?.trim() || '',
+                    latitude: parseFloat((coords?.latitude || 41.0082).toString()),
+                    longitude: parseFloat((coords?.longitude || 28.9784).toString()),
+                },
+                urgencyLevel: 'HIGH',
+                images: (images && images.length > 0) ? images : undefined,
+                serviceCategory: (selectedType || 'elektrik').toLowerCase(),
+            };
+
+            if (budget && budget.trim() !== '') {
+                const cleanBudget = budget.replace(',', '.');
+                const parsedBudget = parseFloat(cleanBudget);
+                if (!isNaN(parsedBudget)) {
+                    jobData.estimatedBudget = parsedBudget;
+                }
             }
 
             const newJob = await dispatch(createJob(jobData)).unwrap();
