@@ -1,5 +1,6 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, Alert, Text, TouchableOpacity, Modal, Platform, Image, ActivityIndicator } from 'react-native';
+import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { fonts } from '../../constants/typography';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -126,11 +127,11 @@ export default function EditProfileScreen() {
             const backAction = () => {
                 showAlert(
                     'Profil Tamamlama Zorunlu', 
-                    'Uygulamayı kullanabilmek için lütfen profil bilgilerinizi kaydedin. Bu bilgiler müşterilerin size ulaşması için gereklidir.', 
+                    'Uygulamayı kullanabilmek için lütfen profil bilgilerinizi eksiksiz doldurup kaydedin. Bu bilgiler müşterilerinizin size ulaşabilmesi için gereklidir.', 
                     'warning',
                     [{ text: 'Anladım', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) }]
                 );
-                return true;
+                return true; // Strictly blocks back button
             };
 
             const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
@@ -449,6 +450,15 @@ export default function EditProfileScreen() {
 
     return (
         <View style={styles.container}>
+            {/* Prevent escape via gestures or header for mandatory flow */}
+            <Stack.Screen 
+                options={{ 
+                    gestureEnabled: !mandatory,
+                    headerShown: false,
+                    swipeEnabled: !mandatory
+                }} 
+            />
+            
             <PremiumHeader
                 title={mandatory ? "Profilinizi Tamamlayın" : "Profili Düzenle"}
                 showBackButton={!mandatory}
