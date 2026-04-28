@@ -344,9 +344,9 @@ export default function EditProfileScreen() {
         if (!phoneNumber || phoneNumber.trim() === '') {
             newErrors.phoneNumber = 'Lütfen telefon numaranızı giriniz.';
         } else {
-            const cleanPhone = phoneNumber.replace(/\s/g, '');
-            if (cleanPhone.length < 10) {
-                newErrors.phoneNumber = 'Lütfen geçerli bir telefon numarası giriniz (en az 10 hane).';
+            const cleanPhone = phoneNumber.replace(/\D/g, ''); // Sadece rakamları al
+            if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+                newErrors.phoneNumber = 'Telefon numarası 10 veya 11 hane olmalıdır.';
             }
         }
 
@@ -559,13 +559,20 @@ export default function EditProfileScreen() {
                         <Input
                             label={isElectrician ? "Telefon Numarası *" : "Telefon Numarası"}
                             value={phoneNumber}
-                            onChangeText={(val) => { setPhoneNumber(val); setErrors(prev => ({ ...prev, phoneNumber: '' })); }}
-                            placeholder=""
+                            onChangeText={(val) => { 
+                                const cleanVal = val.replace(/\D/g, ''); // Sadece rakam kabul et
+                                if (cleanVal.length <= 11) {
+                                    setPhoneNumber(cleanVal);
+                                    setErrors(prev => ({ ...prev, phoneNumber: '' })); 
+                                }
+                            }}
+                            placeholder="05XX XXX XX XX"
                             keyboardType="phone-pad"
                             containerStyle={styles.input}
                             editable={!user?.phone || phoneNumber !== user?.phone || !!mandatory || !user?.isVerified}
                             ref={phoneInputRef}
                             error={errors.phoneNumber}
+                            maxLength={11}
                             helperText={isElectrician && !errors.phoneNumber
                                 ? (phoneNumber ? "Bu numara iş teklifleri için kullanılacaktır." : "İş alabilmeniz için telefon numarası zorunludur.")
                                 : undefined
