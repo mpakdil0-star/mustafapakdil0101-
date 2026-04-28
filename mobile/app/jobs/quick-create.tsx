@@ -324,22 +324,27 @@ export default function QuickCreateScreen() {
                     selectedTypeLabel += ` (${projectOtherBuildingType.trim()})`;
                 }
 
-                const systemLabels = [...projectWeakCurrentSystems, ...projectModernSystems].map(id => {
+                const allSystems = [...projectWeakCurrentSystems, ...projectModernSystems];
+                const systemLabels = allSystems.map(id => {
                     const found = [...WEAK_CURRENT_SYSTEMS, ...MODERN_SYSTEMS].find(s => s.id === id);
                     return found ? found.label : id;
                 }).join(', ');
-
-                finalDescription = `PROJE DETAYLARI\n` +
+                
+                finalDescription = 
+                    `📐 ELEKTRİK PROJE DETAYLARI\n` +
                     `--------------------------------\n` +
-                    `Yapi Tipi: ${selectedTypeLabel || 'Belirtilmedi'}\n` +
-                    `Alan: ${projectArea} m2\n` +
-                    `Kat: ${projectFloors || '1'}\n` +
-                    `Oda: ${projectRoomsPerFloor || '-'}\n` +
-                    `Kurulu Guc: ${projectInstalledPower ? projectInstalledPower + ' kW' : 'Belirtilmedi'}\n` +
-                    `Amac: ${selectedPurpose || 'Yeni Yapi'}\n` +
-                    `Ek Sistemler: ${systemLabels || 'Standart'}\n` +
+                    `• Yapı Tipi: ${selectedTypeLabel || 'Belirtilmedi'}\n` +
+                    `• Toplam Alan: ${projectArea || '-'} m²\n` +
+                    `• Kurulu Güç: ${projectInstalledPower ? projectInstalledPower + ' kW' : 'Belirtilmedi'}\n` +
+                    `• Kat Sayısı: ${projectFloors || '1'}\n` +
+                    `• Oda/Bölüm Sayısı: ${projectRoomsPerFloor || '-'}\n` +
+                    `• Proje Amacı: ${selectedPurpose || 'Yeni Yapı'}\n` +
+                    `• Mimari Plan: ${projectHasArchitecturePlan === true ? 'Mevcut (DWG/PDF)' : projectHasArchitecturePlan === false ? 'Yok (Rölöve Gerekli)' : 'Belirtilmedi'}\n` +
+                    `• Resmi Onay: ${projectNeedsApproval === true ? 'Mühendis Takip Edecek' : projectNeedsApproval === false ? 'Müşteri Takip Edecek' : 'Belirtilmedi'}\n` +
+                    `• Ek Sistemler: ${systemLabels || 'Standart'}\n` +
                     `--------------------------------\n\n` +
-                    `NOT: ` + description.trim();
+                    `📝 MÜŞTERİ NOTU:\n` +
+                    description.trim();
             }
 
             const jobData: any = {
