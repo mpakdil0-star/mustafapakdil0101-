@@ -315,7 +315,6 @@ export default function QuickCreateScreen() {
 
         const typeInfo = EMERGENCY_TYPES.find(t => t.id === selectedType);
         const finalTitle = `ACİL: ${selectedSubCategory ? selectedSubCategory.name : typeInfo?.label}`;
-        
         try {
             let finalDescription = description.trim();
             if (selectedSubCategory?.id === 'elektrik-proje') {
