@@ -293,23 +293,20 @@ export default function EditProfileScreen() {
         React.useCallback(() => {
             const fetchLocations = async () => {
                 if (user) {
-                    // Prevent redundant fetching if already loading or we have data (optional: add timestamp check)
                     try {
                         setLocationsLoading(true);
                         const response = await api.get(`${API_ENDPOINTS.LOCATIONS}?t=${Date.now()}`);
                         setLocations(response.data.data || []);
                     } catch (error) {
                         console.error('Failed to fetch locations:', error);
-                        setLocations([]);
                     } finally {
                         setLocationsLoading(false);
                     }
                 }
             };
             
-            // Execute once per focus
             fetchLocations();
-        }, [user?.id]) // Only re-run if user ID changes
+        }, [user]) // Re-run when user object changes or on focus
     );
 
     const showValidationError = (message: string) => {
