@@ -50,7 +50,7 @@ export default function AddressesScreen() {
     useFocusEffect(
         useCallback(() => {
             fetchLocations();
-        }, [])
+        }, [user?.id]) // Refresh when user is available or focus changes
     );
 
     const handleEdit = (id: string) => {
