@@ -1038,19 +1038,27 @@ export default function CreateJobScreen() {
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Yapı Tipi *</Text>
-              <Picker
-                value={BUILDING_TYPES.find(b => b.value === projectBuildingType)?.label || ''}
-                options={BUILDING_TYPES.map(b => b.label)}
-                onValueChange={(val) => {
-                  const found = BUILDING_TYPES.find(b => b.label === val);
-                  if (found) {
-                    setProjectBuildingType(found.value);
-                    setErrors(prev => ({ ...prev, projectBuildingType: '' }));
-                  }
-                }}
-                required
-                error={errors.projectBuildingType}
-              />
+              <View style={[styles.pillContainer, errors.projectBuildingType ? { padding: 4, borderRadius: 12, borderWidth: 1, borderColor: '#EF4444' } : {}]}>
+                {BUILDING_TYPES.map((type) => (
+                  <TouchableOpacity
+                    key={type.value}
+                    style={[
+                      styles.pill,
+                      { borderColor: colors.border, backgroundColor: colors.surfaceElevated, width: '48%' },
+                      projectBuildingType === type.value && { borderColor: colors.primary, backgroundColor: colors.primary + '0A' }
+                    ]}
+                    onPress={() => {
+                      setProjectBuildingType(type.value);
+                      setErrors(prev => ({ ...prev, projectBuildingType: '' }));
+                    }}
+                  >
+                    <Text style={[styles.pillText, { color: projectBuildingType === type.value ? colors.primary : colors.textSecondary }]}>
+                      {type.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {errors.projectBuildingType && <Text style={styles.errorText}>{errors.projectBuildingType}</Text>}
               {projectBuildingType === 'diger' && (
                 <TextInput
                   style={[styles.input, { marginTop: 10 }]}
@@ -1126,26 +1134,26 @@ export default function CreateJobScreen() {
           {/* ADIM 3: PROJE AMACI VE SİSTEMLER (SADECE PROJE) */}
           {isProjectCategory && currentStep === 3 && (
             <View>
-              <Card variant="glass" style={[styles.sectionCard, { borderColor: colors.border }]}>
-                <View style={styles.sectionHeader}>
-                  <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12' }]}>
-                    <Ionicons name="options-outline" size={18} color={colors.primary} />
+              <Card variant="glass" style={[styles.sectionCard, { borderColor: colors.border, padding: 12, paddingBottom: 12 }]}>
+                <View style={[styles.sectionHeader, { marginBottom: 6 }]}>
+                  <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12', width: 28, height: 28 }]}>
+                    <Ionicons name="options-outline" size={16} color={colors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.sectionKicker, { color: colors.textLight, fontSize: 8 }]}>Adım 3</Text>
-                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 18 }]}>Proje Amacı ve Teknik</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16 }]}>Proje Amacı ve Teknik</Text>
                   </View>
                 </View>
 
                 <View style={styles.inputContainer}>
                   <Text style={[styles.label, { color: colors.textSecondary }]}>Hangi amaçla çiziliyor? *</Text>
-                  <View style={[styles.pillContainer, errors.projectPurpose ? { padding: 4, borderRadius: 12, borderWidth: 1, borderColor: '#EF4444' } : {}]}>
+                  <View style={[styles.pillContainer, { marginBottom: 0 }]}>
                     {PROJECT_PURPOSES.map((p) => (
                       <TouchableOpacity
                         key={p.value}
                         style={[
                           styles.pill,
-                          { borderColor: colors.border, backgroundColor: colors.surfaceElevated, width: '100%' },
+                          { borderColor: colors.border, backgroundColor: colors.surfaceElevated, width: '100%', paddingVertical: 6, marginBottom: 4 },
                           projectPurpose === p.value && { borderColor: colors.primary, backgroundColor: colors.primary + '0A' }
                         ]}
                         onPress={() => { setProjectPurpose(p.value); setErrors(prev => ({ ...prev, projectPurpose: '' })); }}
@@ -1159,7 +1167,7 @@ export default function CreateJobScreen() {
                   {errors.projectPurpose && <Text style={styles.errorText}>{errors.projectPurpose}</Text>}
                 </View>
 
-                <View style={styles.divider} />
+                <View style={{ height: 1, backgroundColor: colors.border + '15', marginVertical: 6 }} />
 
                 <View style={styles.inputContainer}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
@@ -1168,23 +1176,49 @@ export default function CreateJobScreen() {
                         <Ionicons name="help-circle-outline" size={16} color={colors.primary} />
                     </TouchableOpacity>
                   </View>
-                  <View style={[styles.urgencyGrid, errors.projectHasArchitecturePlan ? { padding: 4, borderRadius: 12, borderWidth: 1, borderColor: '#EF4444' } : {}]}>
+                  <View style={[styles.urgencyGrid, { gap: 6, marginTop: 2 }, errors.projectHasArchitecturePlan ? { padding: 4, borderRadius: 12, borderWidth: 1, borderColor: '#EF4444' } : {}]}>
                     <TouchableOpacity
-                      style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, borderColor: projectHasArchitecturePlan === true ? colors.primary : colors.border }]}
+                      style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, height: 40, borderColor: projectHasArchitecturePlan === true ? colors.primary : colors.border }]}
                       onPress={() => { setProjectHasArchitecturePlan(true); setErrors(prev => ({ ...prev, projectHasArchitecturePlan: '' })); }}
                     >
-                      <Ionicons name="document-attach-outline" size={20} color={projectHasArchitecturePlan === true ? colors.primary : colors.textLight} />
+                      <Ionicons name="document-attach-outline" size={16} color={projectHasArchitecturePlan === true ? colors.primary : colors.textLight} />
                       <Text style={[styles.urgencyCardLabel, projectHasArchitecturePlan === true && { color: colors.primary }]}>Evet, Var</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, borderColor: projectHasArchitecturePlan === false ? colors.primary : colors.border }]}
+                      style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, height: 40, borderColor: projectHasArchitecturePlan === false ? colors.primary : colors.border }]}
                       onPress={() => { setProjectHasArchitecturePlan(false); setErrors(prev => ({ ...prev, projectHasArchitecturePlan: '' })); }}
                     >
-                      <Ionicons name="pencil-outline" size={20} color={projectHasArchitecturePlan === false ? colors.primary : colors.textLight} />
+                      <Ionicons name="pencil-outline" size={16} color={projectHasArchitecturePlan === false ? colors.primary : colors.textLight} />
                       <Text style={[styles.urgencyCardLabel, projectHasArchitecturePlan === false && { color: colors.primary }]}>Yok (Rölöve)</Text>
                     </TouchableOpacity>
                   </View>
                   {errors.projectHasArchitecturePlan && <Text style={styles.errorText}>{errors.projectHasArchitecturePlan}</Text>}
+                </View>
+
+                <View style={{ height: 1, backgroundColor: colors.border + '15', marginVertical: 6 }} />
+
+                <View style={styles.inputContainer}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 0 }]}>Resmi onay takibi kimde? *</Text>
+                    <TouchableOpacity onPress={() => showInfoTip('Resmi Onay Nedir?', 'Projenin TEDAŞ veya ilgili elektrik dağıtım şirketi tarafından onaylanması sürecidir. Bu süreci mühendisin takip etmesi işleri hızlandırır.')} style={{ marginLeft: 6 }}>
+                        <Ionicons name="help-circle-outline" size={16} color={colors.primary} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={[styles.urgencyGrid, { marginTop: 4 }, errors.projectNeedsApproval ? { padding: 4, borderRadius: 12, borderWidth: 1, borderColor: '#EF4444' } : {}]}>
+                    <TouchableOpacity
+                      style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, height: 40, borderColor: projectNeedsApproval === true ? colors.primary : colors.border }]}
+                      onPress={() => { setProjectNeedsApproval(true); setErrors(prev => ({ ...prev, projectNeedsApproval: '' })); }}
+                    >
+                      <Text style={[styles.urgencyCardLabel, { textAlign: 'center' }, projectNeedsApproval === true && { color: colors.primary }]}>Mühendis (Dahil)</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, height: 40, borderColor: projectNeedsApproval === false ? colors.primary : colors.border }]}
+                      onPress={() => { setProjectNeedsApproval(false); setErrors(prev => ({ ...prev, projectNeedsApproval: '' })); }}
+                    >
+                      <Text style={[styles.urgencyCardLabel, { textAlign: 'center' }, projectNeedsApproval === false && { color: colors.primary }]}>Müşteri (Sadece Çizim)</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {errors.projectNeedsApproval && <Text style={styles.errorText}>{errors.projectNeedsApproval}</Text>}
                 </View>
 
                 <View style={[styles.btnRow, { marginTop: 16 }]}>
@@ -1281,28 +1315,6 @@ export default function CreateJobScreen() {
                         );
                       })}
                     </View>
-                    <View style={styles.divider} />
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                        <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 0 }]}>Resmi Onay Takibi Kimde? *</Text>
-                        <TouchableOpacity onPress={() => showInfoTip('Resmi Onay Nedir?', 'Projenin TEDAŞ veya ilgili elektrik dağıtım şirketi tarafından onaylanması sürecidir. Bu süreci mühendisin takip etmesi işleri hızlandırır.')} style={{ marginLeft: 6 }}>
-                            <Ionicons name="help-circle-outline" size={16} color={colors.primary} />
-                        </TouchableOpacity>
-                    </View>
-                    <View style={[styles.urgencyGrid, errors.projectNeedsApproval ? { padding: 4, borderRadius: 12, borderWidth: 1, borderColor: '#EF4444' } : {}]}>
-                      <TouchableOpacity
-                        style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, borderColor: projectNeedsApproval === true ? colors.primary : colors.border }]}
-                        onPress={() => { setProjectNeedsApproval(true); setErrors(prev => ({ ...prev, projectNeedsApproval: '' })); }}
-                      >
-                        <Text style={[styles.urgencyCardLabel, { textAlign: 'center' }, projectNeedsApproval === true && { color: colors.primary }]}>Mühendis (Hepsi Dahil)</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.urgencyCard, { borderStyle: 'solid', flex: 1, borderColor: projectNeedsApproval === false ? colors.primary : colors.border }]}
-                        onPress={() => { setProjectNeedsApproval(false); setErrors(prev => ({ ...prev, projectNeedsApproval: '' })); }}
-                      >
-                        <Text style={[styles.urgencyCardLabel, { textAlign: 'center' }, projectNeedsApproval === false && { color: colors.primary }]}>Müşteri (Sadece Çizim)</Text>
-                      </TouchableOpacity>
-                    </View>
-                    {errors.projectNeedsApproval && <Text style={styles.errorText}>{errors.projectNeedsApproval}</Text>}
                   </View>
                 )}
 

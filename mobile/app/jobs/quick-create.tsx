@@ -401,13 +401,14 @@ export default function QuickCreateScreen() {
 
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 40}
             >
                 <ScrollView
                     style={styles.scrollView}
-                    contentContainerStyle={styles.content}
+                    contentContainerStyle={[styles.content, { paddingBottom: 150 }]}
                     showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
                 >
                     <LinearGradient
                         colors={emergencyGradient}
