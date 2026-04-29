@@ -157,10 +157,22 @@ function RootLayoutNav() {
             // Case: Unverified users
             if (user && user.isVerified === false) {
               console.log('⏳ [RootNav] User unverified. Current path:', currentPath);
-              if (currentPath === '(auth)/register') return;
               
+              // NEW: If we are in the middle of registration or on the verify screen, DO NOT logout.
+              // Just let the app handle the verification flow.
+              const isProcessingAuth = currentPath === '(auth)/register' || 
+                                       currentPath === '(auth)/verify' || 
+                                       currentPath === '(auth)/login' ||
+                                       segments.includes('verify');
+                                       
+              if (isProcessingAuth) {
+                console.log('🛡️ [RootNav] Auth in progress, skipping auto-logout for unverified user');
+                return;
+              }
+              
+              console.log('🚫 [RootNav] Unverified user on unauthorized path, logging out');
               dispatch(logout());
-              showAlert('E-posta Doğrulaması Eksik', 'Güvenliğiniz için kayıt sırasında e-postanızı doğrulamanız zorunludur.', 'error');
+              showAlert('E-posta Doğrulaması Eksik', 'Güvenliğiniz için e-postanızı doğrulamanız zorunludur.', 'error');
               requestAnimationFrame(() => {
                 router.replace('/(auth)/login');
               });
