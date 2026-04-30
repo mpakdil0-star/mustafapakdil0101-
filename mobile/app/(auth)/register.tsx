@@ -12,6 +12,7 @@ import {
   Image,
   Modal,
   TextInput,
+  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -450,7 +451,7 @@ export default function RegisterScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.legalLabel, showLegalError && { color: '#FFFFFF' }]}>
-                      <Text style={styles.legalLink} onPress={() => setLegalModal({ visible: true, type: 'TERMS' })}>Kullanım Koşullarını</Text> ve <Text style={styles.legalLink} onPress={() => setLegalModal({ visible: true, type: 'KVKK' })}>KVKK Politikasını</Text> okudum, onaylıyorum.
+                      <Text style={styles.legalLink} onPress={() => Linking.openURL('https://elektrikciler-backend.onrender.com/api/v1/legal/terms')}>Kullanım Koşullarını</Text> ve <Text style={styles.legalLink} onPress={() => Linking.openURL('https://elektrikciler-backend.onrender.com/api/v1/legal/kvkk')}>KVKK Politikasını</Text> okudum, onaylıyorum.
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -655,30 +656,15 @@ export default function RegisterScreen() {
         onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
       />
 
-      <Modal
-        visible={legalModal.visible}
-        animationType="slide"
-        transparent={true}
-      >
-        <View style={styles.legalModalContainer}>
-          <View style={styles.legalModalContent}>
-            <View style={styles.legalModalHeader}>
-              <Text style={styles.legalModalTitle}>
-                {legalModal.type === 'KVKK' ? 'KVKK Aydınlatma Metni' : 'Kullanım Koşulları'}
-              </Text>
-              <TouchableOpacity onPress={() => setLegalModal({ ...legalModal, visible: false })}>
-                <Ionicons name="close" size={24} color={colors.white} />
-              </TouchableOpacity>
-            </View>
-            <ScrollView style={styles.legalModalBody}>
-              <Text style={styles.legalText}>
-                {/* Metinler buraya gelecek */}
-                Buraya ilgili hukuk metni gelecek...
-              </Text>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      <PremiumAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        buttons={alertConfig.buttons}
+        onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+      />
+
     </KeyboardAvoidingView>
   );
 }
