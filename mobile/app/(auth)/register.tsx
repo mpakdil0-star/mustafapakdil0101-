@@ -28,6 +28,7 @@ import { fonts } from '../../constants/typography';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { API_BASE_URL } from '../../services/api';
 import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
+import { LEGAL_TEXTS } from '../../constants/legalTexts';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -276,7 +277,6 @@ export default function RegisterScreen() {
   };
 
   const accentColor = userType === 'CITIZEN' ? '#7C3AED' : '#3B82F6';
-
   const [legalModal, setLegalModal] = useState<{ visible: boolean; type: 'KVKK' | 'TERMS' }>({ visible: false, type: 'KVKK' });
 
   return (
@@ -451,7 +451,7 @@ export default function RegisterScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.legalLabel, showLegalError && { color: '#FFFFFF' }]}>
-                      <Text style={styles.legalLink} onPress={() => Linking.openURL('https://elektrikciler-backend.onrender.com/api/v1/legal/terms')}>Kullanım Koşullarını</Text> ve <Text style={styles.legalLink} onPress={() => Linking.openURL('https://elektrikciler-backend.onrender.com/api/v1/legal/kvkk')}>KVKK Politikasını</Text> okudum, onaylıyorum.
+                      <Text style={styles.legalLink} onPress={() => setLegalModal({ visible: true, type: 'TERMS' })}>Kullanım Koşullarını</Text> ve <Text style={styles.legalLink} onPress={() => setLegalModal({ visible: true, type: 'KVKK' })}>KVKK Politikasını</Text> okudum, onaylıyorum.
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -656,14 +656,30 @@ export default function RegisterScreen() {
         onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
       />
 
-      <PremiumAlert
-        visible={alertConfig.visible}
-        title={alertConfig.title}
-        message={alertConfig.message}
-        type={alertConfig.type}
-        buttons={alertConfig.buttons}
-        onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
-      />
+      <Modal
+        visible={legalModal.visible}
+        animationType="slide"
+        transparent={true}
+      >
+        <View style={styles.legalModalContainer}>
+          <View style={styles.legalModalContent}>
+            <View style={styles.legalModalHeader}>
+              <Text style={styles.legalModalTitle}>
+                {legalModal.type === 'KVKK' ? 'KVKK Aydınlatma Metni' : 'Kullanım Koşulları'}
+              </Text>
+              <TouchableOpacity onPress={() => setLegalModal({ ...legalModal, visible: false })}>
+                <Ionicons name="close" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.legalModalBody} showsVerticalScrollIndicator={true}>
+              <Text style={styles.legalText}>
+                {legalModal.type === 'KVKK' ? LEGAL_TEXTS.KVKK : LEGAL_TEXTS.TERMS}
+              </Text>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
 
     </KeyboardAvoidingView>
   );
@@ -1056,9 +1072,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   legalText: {
-    fontFamily: fonts.medium,
+    fontFamily: fonts.regular,
     fontSize: 14,
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(255,255,255,0.8)',
     lineHeight: 22,
+    paddingBottom: 40,
   },
 });
