@@ -118,7 +118,7 @@ export default function NotificationsScreen() {
                         <Text style={styles.notificationTitle} numberOfLines={1}>{item.title}</Text>
                         <Text style={styles.timeText}>{timeAgo}</Text>
                     </View>
-                    <Text style={styles.notificationMessage} numberOfLines={2}>{item.message}</Text>
+                    <Text style={styles.notificationMessage}>{item.message}</Text>
                 </View>
 
                 {!item.isRead && <View style={styles.unreadDot} />}
