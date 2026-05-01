@@ -718,12 +718,16 @@ export default function CreateJobScreen() {
     } else if (isProjectCategory) {
       // Elektrik Proje Çizimi Özel Adımları Doğrulaması
       if (currentStep === 2) {
+        const step2Errors: any = {};
         if (!projectBuildingType) {
-          showAlert('Eksik Bilgi', 'Lütfen bina tipini seçiniz', 'warning');
-          return;
+          step2Errors.projectBuildingType = 'Bina tipi seçiniz';
         }
         if (!projectArea || isNaN(parseFloat(projectArea))) {
-          showAlert('Eksik Bilgi', 'Lütfen geçerli bir inşaat alanı (m²) giriniz', 'warning');
+          step2Errors.projectArea = 'Geçerli bir alan giriniz';
+        }
+        if (Object.keys(step2Errors).length > 0) {
+          setErrors({ ...errors, ...step2Errors });
+          showAlert('Eksik Bilgi', 'Lütfen zorunlu alanları doldurunuz.', 'warning');
           return;
         }
       } else if (currentStep === 3) {
