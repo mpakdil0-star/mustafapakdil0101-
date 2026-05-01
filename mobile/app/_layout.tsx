@@ -800,7 +800,7 @@ function RootLayoutNav() {
       <Slot />
 
       {user?.isImpersonated && (
-        <View style={[styles.impersonationBanner, { paddingTop: insets.top + 8 }]}>
+        <View style={[styles.impersonationBanner, { paddingTop: insets.top }]}>
           <View style={styles.impersonationContent}>
             <Ionicons name="shield-checkmark" size={18} color="#FFF" />
             <Text style={styles.impersonationText}>ADMİN MODU: {user.fullName?.toUpperCase()}</Text>
@@ -853,7 +853,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#7C3AED', // Premium Purple instead of red, or maybe admin red? User said "ince bir bar". Let's use a distinct color.
-    paddingBottom: 8,
+    paddingBottom: 4,
     paddingHorizontal: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
