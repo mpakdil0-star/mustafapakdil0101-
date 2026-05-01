@@ -800,18 +800,15 @@ function RootLayoutNav() {
       <Slot />
 
       {user?.isImpersonated && (
-        <View style={[styles.impersonationBanner, { paddingTop: insets.top }]}>
-          <View style={styles.impersonationContent}>
-            <Ionicons name="shield-checkmark" size={18} color="#FFF" />
-            <Text style={styles.impersonationText}>ADMİN MODU: {user.fullName?.toUpperCase()}</Text>
-          </View>
+        <View style={[styles.impersonationBanner, { top: insets.top + 2 }]}>
+          <Ionicons name="shield-checkmark" size={14} color="#FFF" />
+          <Text style={styles.impersonationText} numberOfLines={1}>{user.fullName?.split(' ')[0]?.toUpperCase()}</Text>
           <TouchableOpacity
             style={styles.impersonationLogoutBtn}
             onPress={() => dispatch(logout())}
             activeOpacity={0.7}
           >
-            <Text style={styles.impersonationLogoutText}>Çıkış</Text>
-            <Ionicons name="log-out-outline" size={16} color="#FFF" />
+            <Ionicons name="close" size={14} color="#FFF" />
           </TouchableOpacity>
         </View>
       )}
@@ -849,45 +846,34 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   impersonationBanner: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#7C3AED', // Premium Purple instead of red, or maybe admin red? User said "ince bir bar". Let's use a distinct color.
-    paddingBottom: 4,
-    paddingHorizontal: 16,
+    left: 6,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: '#7C3AED',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 20,
+    gap: 5,
     zIndex: 9999,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
     elevation: 8,
-  },
-  impersonationContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
   },
   impersonationText: {
     color: '#FFF',
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: fonts.bold,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
+    maxWidth: 100,
   },
   impersonationLogoutBtn: {
-    flexDirection: 'row',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 4,
   },
-  impersonationLogoutText: {
-    color: '#FFF',
-    fontSize: 11,
-    fontFamily: fonts.bold,
-  }
 });
