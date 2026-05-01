@@ -111,10 +111,32 @@ export default function NotificationsScreen() {
         }
     }, [preferences]);
 
-    // Load preferences on mount + check system permission
+    // Load preferences on mount + check system permission + auto-register token if needed
     useEffect(() => {
         loadPreferences();
         checkSystemPermission();
+
+        // 🔄 Auto-register push token on page load if system permission is granted
+        // This catches cases where the token was lost from backend (server restart, etc.)
+        const autoSyncToken = async () => {
+            try {
+                const { Platform: RNPlatform } = await import('react-native');
+                const Constants = (await import('expo-constants')).default;
+                if (Constants.appOwnership === 'expo' && RNPlatform.OS === 'android') return;
+
+                const Notifications = await import('expo-notifications');
+                const { status } = await Notifications.getPermissionsAsync();
+
+                if (status === 'granted' && !user?.isImpersonated) {
+                    console.log('🔄 [NotifSettings] System permission granted — ensuring push token is registered...');
+                    await authService.registerPushToken();
+                }
+            } catch (e) {
+                console.warn('🔄 [NotifSettings] Auto-sync token failed (non-blocking):', e);
+            }
+        };
+
+        autoSyncToken();
     }, []);
 
     // Listen to AppState changes (user returns from system settings)

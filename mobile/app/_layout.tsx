@@ -5,7 +5,7 @@ import { Provider, useSelector } from 'react-redux';
 import { store } from '../store/store';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { InteractionManager, View, Text, Platform, StyleSheet, TouchableOpacity } from 'react-native';
+import { InteractionManager, View, Text, Platform, StyleSheet, TouchableOpacity, AppState } from 'react-native';
 import { RootState } from '../store/store';
 import { useFonts } from 'expo-font';
 import { fontFiles, fonts } from '../constants/typography';
@@ -466,6 +466,33 @@ function RootLayoutNav() {
 
     requestNotificationPermission();
 
+    // 🔄 PUSH TOKEN KEEP-ALIVE: Re-register token every time app comes to foreground
+    // This ensures the token stays valid on the backend even after:
+    // - Server restarts (mockStorage cleared on Render free tier)
+    // - Expo token refresh
+    // - Long periods of app inactivity
+    const handleAppStateForPush = async (nextAppState: string) => {
+      if (nextAppState === 'active' && !user?.isImpersonated) {
+        try {
+          const { Platform } = await import('react-native');
+          const Constants = (await import('expo-constants')).default;
+          if (Platform.OS === 'android' && Constants.appOwnership === 'expo') return;
+
+          const Notifications = await import('expo-notifications');
+          const { status } = await Notifications.getPermissionsAsync();
+          
+          if (status === 'granted') {
+            console.log('🔄 [PushKeepAlive] App foregrounded — re-registering push token...');
+            await authService.registerPushToken();
+          }
+        } catch (e) {
+          console.warn('🔄 [PushKeepAlive] Token refresh failed (non-blocking):', e);
+        }
+      }
+    };
+
+    const appStateSubscription = AppState.addEventListener('change', handleAppStateForPush);
+
     // Listen for new notifications via socket
     const unsubscribe = socketService.onNotification((notification) => {
       console.log('🔔 [_layout] Socket notification received:', JSON.stringify(notification));
@@ -657,6 +684,7 @@ function RootLayoutNav() {
       unsubscribeBid();
       unsubscribeJobStatus();
       unsubscribeReview();
+      appStateSubscription.remove();
     };
   }, [isAuthenticated, dispatch, router]);
 
