@@ -1069,55 +1069,69 @@ export default function CreateJobScreen() {
               )}
             </View>
 
-            <View style={styles.row}>
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <Text style={styles.label}>Toplam Alan (m²) *</Text>
+            <View style={styles.buildingInfoGrid}>
+              <View style={[styles.buildingInfoCard, { borderColor: errors.projectArea ? '#EF4444' : colors.border, backgroundColor: colors.surfaceElevated }]}>
+                <View style={[styles.buildingInfoIconWrap, { backgroundColor: colors.primary + '12' }]}>
+                  <Ionicons name="resize-outline" size={18} color={colors.primary} />
+                </View>
+                <Text style={[styles.buildingInfoLabel, { color: colors.textSecondary }]}>Toplam Alan (m²) *</Text>
                 <TextInput
-                  style={[
-                    styles.input,
-                    errors.projectArea ? { borderColor: '#EF4444' } : {}
-                  ]}
+                  style={[styles.buildingInfoInput, { color: colors.text, borderColor: errors.projectArea ? '#EF4444' : colors.border }]}
                   placeholder="Örn: 250"
+                  placeholderTextColor={colors.textLight}
                   value={projectArea}
                   onChangeText={(val) => { setProjectArea(val); setErrors(prev => ({ ...prev, projectArea: '' })); }}
                   keyboardType="numeric"
                 />
                 {errors.projectArea && <Text style={styles.errorText}>{errors.projectArea}</Text>}
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.label}>Kat Sayısı</Text>
+
+              <View style={[styles.buildingInfoCard, { borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}>
+                <View style={[styles.buildingInfoIconWrap, { backgroundColor: '#3B82F6' + '12' }]}>
+                  <Ionicons name="layers-outline" size={18} color="#3B82F6" />
+                </View>
+                <Text style={[styles.buildingInfoLabel, { color: colors.textSecondary }]}>Kat Sayısı</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.buildingInfoInput, { color: colors.text, borderColor: colors.border }]}
                   placeholder="Örn: 2"
+                  placeholderTextColor={colors.textLight}
                   value={projectFloors}
                   onChangeText={setProjectFloors}
                   keyboardType="numeric"
                 />
               </View>
-            </View>
 
-            <View style={[styles.row, { marginTop: 12 }]}>
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <Text style={styles.label}>Kurulu Güç (kW)</Text>
+              <View style={[styles.buildingInfoCard, { borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}>
+                <View style={[styles.buildingInfoIconWrap, { backgroundColor: '#F59E0B' + '12' }]}>
+                  <Ionicons name="flash-outline" size={18} color="#F59E0B" />
+                </View>
+                <Text style={[styles.buildingInfoLabel, { color: colors.textSecondary }]}>Kurulu Güç (kW)</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.buildingInfoInput, { color: colors.text, borderColor: colors.border }]}
                   placeholder="Örn: 15"
+                  placeholderTextColor={colors.textLight}
                   value={projectInstalledPower}
                   onChangeText={setProjectInstalledPower}
                   keyboardType="numeric"
                 />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.label}>Oda/Bölüm</Text>
+
+              <View style={[styles.buildingInfoCard, { borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}>
+                <View style={[styles.buildingInfoIconWrap, { backgroundColor: '#10B981' + '12' }]}>
+                  <Ionicons name="grid-outline" size={18} color="#10B981" />
+                </View>
+                <Text style={[styles.buildingInfoLabel, { color: colors.textSecondary }]}>Oda / Bölüm</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.buildingInfoInput, { color: colors.text, borderColor: colors.border }]}
                   placeholder="Örn: 5"
+                  placeholderTextColor={colors.textLight}
                   value={projectRoomsPerFloor}
                   onChangeText={setProjectRoomsPerFloor}
                   keyboardType="numeric"
                 />
               </View>
             </View>
+
                 
                 <View style={[styles.btnRow, { marginTop: 24 }]}>
                   <View style={styles.backBtnWrapper}>
@@ -1981,6 +1995,43 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 12,
     lineHeight: 16,
+  },
+  buildingInfoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 4,
+  },
+  buildingInfoCard: {
+    width: '47%',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    padding: 12,
+    alignItems: 'center',
+    gap: 6,
+  },
+  buildingInfoIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  buildingInfoLabel: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    textAlign: 'center',
+    letterSpacing: -0.2,
+  },
+  buildingInfoInput: {
+    width: '100%',
+    textAlign: 'center',
+    fontFamily: fonts.extraBold,
+    fontSize: 18,
+    borderBottomWidth: 1.5,
+    paddingBottom: 4,
+    paddingTop: 2,
   },
   row: {
     flexDirection: 'row',
