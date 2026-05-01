@@ -725,6 +725,9 @@ export default function CreateJobScreen() {
         if (!projectArea || isNaN(parseFloat(projectArea))) {
           step2Errors.projectArea = 'Geçerli bir alan giriniz';
         }
+        if (projectBuildingType === 'diger' && (!projectOtherBuildingType || !projectOtherBuildingType.trim())) {
+          step2Errors.projectOtherBuildingType = 'Lütfen diğer yapı tipini açıklayınız';
+        }
         if (Object.keys(step2Errors).length > 0) {
           setErrors({ ...errors, ...step2Errors });
           showAlert('Eksik Bilgi', 'Lütfen zorunlu alanları doldurunuz.', 'warning');
@@ -1064,12 +1067,28 @@ export default function CreateJobScreen() {
               </View>
               {errors.projectBuildingType && <Text style={styles.errorText}>{errors.projectBuildingType}</Text>}
               {projectBuildingType === 'diger' && (
-                <TextInput
-                  style={[styles.input, { marginTop: 10 }]}
-                  placeholder="Lütfen yapı tipini açıklayınız"
-                  value={projectOtherBuildingType}
-                  onChangeText={setProjectOtherBuildingType}
-                />
+                <View style={{ marginTop: 12 }}>
+                  <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 6 }]}>Diğer Yapı Tipi Açıklaması *</Text>
+                  <TextInput
+                    style={[
+                      styles.modernInput,
+                      {
+                        height: 48,
+                        backgroundColor: colors.surfaceElevated,
+                        borderColor: errors.projectOtherBuildingType ? staticColors.error : colors.border,
+                        color: colors.text,
+                      }
+                    ]}
+                    placeholder="Lütfen yapı tipini açıklayınız"
+                    placeholderTextColor={colors.textLight}
+                    value={projectOtherBuildingType}
+                    onChangeText={(val) => {
+                      setProjectOtherBuildingType(val);
+                      setErrors(prev => ({ ...prev, projectOtherBuildingType: '' }));
+                    }}
+                  />
+                  {errors.projectOtherBuildingType && <Text style={styles.errorText}>{errors.projectOtherBuildingType}</Text>}
+                </View>
               )}
             </View>
 
