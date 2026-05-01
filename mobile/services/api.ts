@@ -5,6 +5,8 @@ import { API_BASE_URL, API_ENDPOINTS } from '../constants/api';
 
 const API_TOKEN_KEY = 'auth_token';
 const API_REFRESH_TOKEN_KEY = 'refresh_token';
+const ADMIN_TOKEN_FALLBACK_KEY = 'admin_token_fallback';
+const ADMIN_REFRESH_FALLBACK_KEY = 'admin_refresh_fallback';
 
 class ApiService {
   private client: AxiosInstance;
@@ -158,6 +160,27 @@ class ApiService {
   async clearTokens() {
     await SecureStore.deleteItemAsync(API_TOKEN_KEY);
     await SecureStore.deleteItemAsync(API_REFRESH_TOKEN_KEY);
+    await SecureStore.deleteItemAsync(ADMIN_TOKEN_FALLBACK_KEY);
+    await SecureStore.deleteItemAsync(ADMIN_REFRESH_FALLBACK_KEY);
+  }
+
+  async saveAdminFallback() {
+    const token = await SecureStore.getItemAsync(API_TOKEN_KEY);
+    const refresh = await SecureStore.getItemAsync(API_REFRESH_TOKEN_KEY);
+    if (token) await SecureStore.setItemAsync(ADMIN_TOKEN_FALLBACK_KEY, token);
+    if (refresh) await SecureStore.setItemAsync(ADMIN_REFRESH_FALLBACK_KEY, refresh);
+  }
+
+  async restoreAdminFallback() {
+    const token = await SecureStore.getItemAsync(ADMIN_TOKEN_FALLBACK_KEY);
+    const refresh = await SecureStore.getItemAsync(ADMIN_REFRESH_FALLBACK_KEY);
+    if (token && refresh) {
+      await this.setTokens(token, refresh);
+      await SecureStore.deleteItemAsync(ADMIN_TOKEN_FALLBACK_KEY);
+      await SecureStore.deleteItemAsync(ADMIN_REFRESH_FALLBACK_KEY);
+      return true;
+    }
+    return false;
   }
 
   async getToken(): Promise<string | null> {

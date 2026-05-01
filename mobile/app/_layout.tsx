@@ -14,7 +14,7 @@ import { authService } from '../services/authService';
 import { PremiumAlert } from '../components/common/PremiumAlert';
 import { useAppDispatch } from '../hooks/redux';
 import { addNotification, fetchNotifications, incrementUnreadCount, fetchUnreadCount } from '../store/slices/notificationSlice';
-import { getMe, setRequiredLegalVersion, logout } from '../store/slices/authSlice';
+import { getMe, setRequiredLegalVersion, logout, stopImpersonation } from '../store/slices/authSlice';
 import LegalUpdateModal from '../components/legal/LegalUpdateModal';
 import { Alert } from 'react-native';
 import * as Notifications from 'expo-notifications';
@@ -805,7 +805,7 @@ function RootLayoutNav() {
           <Text style={styles.impersonationText} numberOfLines={1}>{user.fullName?.split(' ')[0]?.toUpperCase()}</Text>
           <TouchableOpacity
             style={styles.impersonationLogoutBtn}
-            onPress={() => dispatch(logout())}
+            onPress={() => dispatch(stopImpersonation())}
             activeOpacity={0.7}
           >
             <Ionicons name="close" size={14} color="#FFF" />

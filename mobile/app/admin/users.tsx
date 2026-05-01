@@ -298,6 +298,8 @@ export default function AdminUsersScreen() {
                             const response = await api.post(`/admin/impersonate/${targetUser.id}`);
                             if (response.data.success) {
                                 const { accessToken, user } = response.data.data;
+                                // Admin token'ını yedekle
+                                await apiService.saveAdminFallback();
                                 // Token'ı SecureStore'a kaydet
                                 await apiService.setTokens(accessToken, accessToken); // refresh olarak da aynısını koy (4 saat geçerli)
                                 // Redux store'u atomik olarak güncelle (user + token birlikte)

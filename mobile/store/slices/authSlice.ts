@@ -146,6 +146,26 @@ export const logout = createAsyncThunk(
   }
 );
 
+export const stopImpersonation = createAsyncThunk(
+  'auth/stopImpersonation',
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      const { apiService } = await import('../../services/api');
+      const restored = await apiService.restoreAdminFallback();
+      if (restored) {
+        // Fetch original admin user data
+        const user = await authService.getMe();
+        return user;
+      }
+      // If no fallback, just logout as safety
+      await authService.logout();
+      return null;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Geri dönülemedi');
+    }
+  }
+);
+
 // ============================================================
 // SOSYAL GİRİŞ THUNK'LARI
 // ============================================================
@@ -381,6 +401,22 @@ const authSlice = createSlice({
         state.error = null;
         state.requiredLegalVersion = null;
         state.guestRole = null;
+      })
+      .addCase(stopImpersonation.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.user = action.payload;
+          state.isAuthenticated = true;
+          state.error = null;
+        } else {
+          state.user = null;
+          state.token = null;
+          state.isAuthenticated = false;
+        }
+      })
+      .addCase(stopImpersonation.rejected, (state) => {
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
       });
   },
 });
