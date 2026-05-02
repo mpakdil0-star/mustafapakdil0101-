@@ -22,6 +22,7 @@ export default function AddressesScreen() {
 
     const [locations, setLocations] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
     const [alertConfig, setAlertConfig] = useState<{
         visible: boolean;
@@ -35,22 +36,34 @@ export default function AddressesScreen() {
         setAlertConfig({ visible: true, title, message, type, buttons });
     };
 
-    const fetchLocations = async () => {
+    const fetchLocations = async (isRefresh = false) => {
         try {
-            setLoading(true);
-            const response = await apiClient.get(`${API_ENDPOINTS.LOCATIONS}?t=${Date.now()}`);
+            if (isRefresh) {
+                setRefreshing(true);
+            } else if (locations.length === 0) {
+                setLoading(true);
+            }
+            
+            // Added headers to strictly bypass any caching
+            const response = await apiClient.get(`${API_ENDPOINTS.LOCATIONS}?t=${Date.now()}`, {
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            });
             setLocations(response.data.data || []);
         } catch (error) {
             console.error('Failed to fetch locations:', error);
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
     useFocusEffect(
         useCallback(() => {
-            fetchLocations();
-        }, [user?.id]) // Refresh when user is available or focus changes
+            fetchLocations(true); // Treat focus like a refresh to show indicator if needed
+        }, [user?.id])
     );
 
     const handleEdit = (id: string) => {
@@ -144,6 +157,8 @@ export default function AddressesScreen() {
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
+                    refreshing={refreshing}
+                    onRefresh={() => fetchLocations(true)}
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
                             <View style={[styles.emptyIconContainer, { shadowColor: colors.primary }]}>

@@ -92,12 +92,12 @@ export default function LedgerScreen() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
         {/* Summary Cards */}
         <View style={styles.summaryRow}>
-          <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.summaryCard}>
+          <LinearGradient colors={(colors as any).gradientPrimary || [colors.primary, colors.primaryDark]} style={styles.summaryCard}>
             <Ionicons name="arrow-down-circle" size={24} color="rgba(255,255,255,0.8)" />
             <Text style={styles.summaryLabel}>Toplam Alacak</Text>
             <Text style={styles.summaryValue}>{formatCurrency(summary.pendingReceivables)}</Text>
           </LinearGradient>
-          <LinearGradient colors={['#EF4444', '#DC2626']} style={styles.summaryCard}>
+          <LinearGradient colors={(colors as any).gradientDark || ['#1E3A8A', '#0F172A']} style={styles.summaryCard}>
             <Ionicons name="arrow-up-circle" size={24} color="rgba(255,255,255,0.8)" />
             <Text style={styles.summaryLabel}>Toplam Borç</Text>
             <Text style={styles.summaryValue}>{formatCurrency(summary.pendingPayables)}</Text>
@@ -107,17 +107,17 @@ export default function LedgerScreen() {
         {/* Tabs */}
         <View style={styles.tabRow}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'receivable' && styles.tabActive]}
+            style={[styles.tab, activeTab === 'receivable' && { borderColor: colors.primary, backgroundColor: colors.primary + '10' }]}
             onPress={() => setActiveTab('receivable')}
           >
-            <Ionicons name="arrow-down-circle" size={18} color={activeTab === 'receivable' ? '#F59E0B' : staticColors.textLight} />
+            <Ionicons name="arrow-down-circle" size={18} color={activeTab === 'receivable' ? colors.primary : staticColors.textLight} />
             <Text style={[styles.tabText, activeTab === 'receivable' && styles.tabTextActive]}>Alacaklarım</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'payable' && styles.tabActive]}
+            style={[styles.tab, activeTab === 'payable' && { borderColor: colors.primaryDark, backgroundColor: colors.primaryDark + '10' }]}
             onPress={() => setActiveTab('payable')}
           >
-            <Ionicons name="arrow-up-circle" size={18} color={activeTab === 'payable' ? '#EF4444' : staticColors.textLight} />
+            <Ionicons name="arrow-up-circle" size={18} color={activeTab === 'payable' ? colors.primaryDark : staticColors.textLight} />
             <Text style={[styles.tabText, activeTab === 'payable' && styles.tabTextActive]}>Ödemelerim</Text>
           </TouchableOpacity>
         </View>
@@ -164,7 +164,7 @@ export default function LedgerScreen() {
 
       {/* FAB */}
       <TouchableOpacity style={styles.fab} onPress={openAddModal} activeOpacity={0.85}>
-        <LinearGradient colors={activeTab === 'receivable' ? ['#F59E0B', '#D97706'] : ['#EF4444', '#DC2626']} style={styles.fabGrad}>
+        <LinearGradient colors={activeTab === 'receivable' ? ((colors as any).gradientPrimary || [colors.primary, colors.primaryDark]) : ((colors as any).gradientDark || ['#1E3A8A', '#0F172A'])} style={styles.fabGrad}>
           <Ionicons name="add" size={28} color="#FFF" />
         </LinearGradient>
       </TouchableOpacity>
@@ -180,13 +180,13 @@ export default function LedgerScreen() {
 
             {/* Type Selector */}
             <View style={styles.typeRow}>
-              <TouchableOpacity style={[styles.typeBtn, entryType === 'receivable' && styles.typeBtnActiveR]} onPress={() => setEntryType('receivable')}>
-                <Ionicons name="arrow-down-circle" size={20} color={entryType === 'receivable' ? '#F59E0B' : staticColors.textLight} />
-                <Text style={[styles.typeText, entryType === 'receivable' && { color: '#F59E0B', fontFamily: fonts.bold }]}>Alacak</Text>
+              <TouchableOpacity style={[styles.typeBtn, entryType === 'receivable' && { borderColor: colors.primary, backgroundColor: colors.primary + '10' }]} onPress={() => setEntryType('receivable')}>
+                <Ionicons name="arrow-down-circle" size={20} color={entryType === 'receivable' ? colors.primary : staticColors.textLight} />
+                <Text style={[styles.typeText, entryType === 'receivable' && { color: colors.primary, fontFamily: fonts.bold }]}>Alacak</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.typeBtn, entryType === 'payable' && styles.typeBtnActiveP]} onPress={() => setEntryType('payable')}>
-                <Ionicons name="arrow-up-circle" size={20} color={entryType === 'payable' ? '#EF4444' : staticColors.textLight} />
-                <Text style={[styles.typeText, entryType === 'payable' && { color: '#EF4444', fontFamily: fonts.bold }]}>Borç</Text>
+              <TouchableOpacity style={[styles.typeBtn, entryType === 'payable' && { borderColor: colors.primaryDark, backgroundColor: colors.primaryDark + '10' }]} onPress={() => setEntryType('payable')}>
+                <Ionicons name="arrow-up-circle" size={20} color={entryType === 'payable' ? colors.primaryDark : staticColors.textLight} />
+                <Text style={[styles.typeText, entryType === 'payable' && { color: colors.primaryDark, fontFamily: fonts.bold }]}>Borç</Text>
               </TouchableOpacity>
             </View>
 
@@ -200,7 +200,7 @@ export default function LedgerScreen() {
             <TextInput style={[styles.input, { height: 70, textAlignVertical: 'top' }]} value={entryNote} onChangeText={setEntryNote} placeholder="Açıklama..." placeholderTextColor={staticColors.textLight} multiline />
 
             <TouchableOpacity onPress={handleSave} disabled={saving} activeOpacity={0.85}>
-              <LinearGradient colors={entryType === 'receivable' ? ['#F59E0B', '#D97706'] : ['#EF4444', '#DC2626']} style={styles.saveBtn}>
+              <LinearGradient colors={entryType === 'receivable' ? ((colors as any).gradientPrimary || [colors.primary, colors.primaryDark]) : ((colors as any).gradientDark || ['#1E3A8A', '#0F172A'])} style={styles.saveBtn}>
                 {saving ? <ActivityIndicator color="#FFF" /> : (
                   <><Ionicons name="checkmark" size={20} color="#FFF" /><Text style={styles.saveBtnText}>Kaydet</Text></>
                 )}
