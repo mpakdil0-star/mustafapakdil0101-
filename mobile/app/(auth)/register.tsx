@@ -144,7 +144,7 @@ export default function RegisterScreen() {
 
   const sendVerificationCode = async (emailAddr: string, name: string) => {
     try {
-      const resp = await fetch(`${API_BASE_URL}auth/send-verification`, {
+      const resp = await fetch(`${API_BASE_URL}/auth/send-verification`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: emailAddr, fullName: name }),
@@ -159,8 +159,10 @@ export default function RegisterScreen() {
       setEmailVerifyModal(true);
       setTimeout(() => codeInputRef.current?.focus(), 400);
     } catch (err) {
-      console.warn('E-posta doğrulama isteği gönderilemedi, atlanıyor.');
-      navigateAfterRegister();
+      console.warn('E-posta doğrulama isteği gönderilemedi:', err);
+      // Still show the modal so user can retry with "Tekrar Gönder" button
+      setResendTimer(0);
+      setEmailVerifyModal(true);
     }
   };
 
@@ -174,7 +176,7 @@ export default function RegisterScreen() {
     setVerifyError('');
 
     try {
-      const resp = await fetch(`${API_BASE_URL}auth/verify-email`, {
+      const resp = await fetch(`${API_BASE_URL}/auth/verify-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: registeredEmail, code: verifyCode }),
