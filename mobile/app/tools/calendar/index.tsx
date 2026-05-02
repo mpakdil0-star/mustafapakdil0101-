@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { PremiumHeader } from '../../../components/common/PremiumHeader';
 import { Card } from '../../../components/common/Card';
 import { colors as staticColors } from '../../../constants/colors';
@@ -26,7 +27,8 @@ export default function CalendarScreen() {
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  // FIX #3: Auto-select today so events show immediately on mount
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date(today.getFullYear(), today.getMonth(), today.getDate()));
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -40,6 +42,10 @@ export default function CalendarScreen() {
   const [addToLedger, setAddToLedger] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+
+  // FIX #2: Native time picker state
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedTime, setSelectedTime] = useState<Date>(new Date());
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
@@ -63,10 +69,10 @@ export default function CalendarScreen() {
     });
   };
 
-  const getEventsForDay = (day: number) => {
+  const getEventsForDay = (date: Date) => {
     return events.filter(e => {
       const d = new Date(e.eventDate);
-      return d.getDate() === day && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      return d.getDate() === date.getDate() && d.getMonth() === date.getMonth() && d.getFullYear() === date.getFullYear();
     });
   };
 
@@ -83,8 +89,13 @@ export default function CalendarScreen() {
     else setCurrentMonth(m => m + 1);
   };
 
-  const openAddModal = (day: number) => {
+  // FIX #1 & #3: Tap on day only SELECTS, doesn't open modal
+  const selectDay = (day: number) => {
     setSelectedDate(new Date(currentYear, currentMonth, day));
+  };
+
+  const openAddModal = () => {
+    if (!selectedDate) return;
     setEditingEvent(null);
     setTitle(''); setNote(''); setEventTime(''); setHasReminder(false); setAmount(''); setAddToLedger(false);
     setShowModal(true);
@@ -100,6 +111,17 @@ export default function CalendarScreen() {
     setAmount(event.amount ? String(event.amount) : '');
     setAddToLedger(false);
     setShowModal(true);
+  };
+
+  // FIX #2: Handle native time picker change
+  const onTimePickerChange = (event: any, date?: Date) => {
+    setShowTimePicker(Platform.OS === 'ios'); // iOS keeps picker open
+    if (date) {
+      setSelectedTime(date);
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      setEventTime(`${hours}:${minutes}`);
+    }
   };
 
   const handleSave = async () => {
@@ -136,7 +158,8 @@ export default function CalendarScreen() {
       }
 
       setShowModal(false);
-      loadEvents();
+      // FIX #3: Reload events immediately after save
+      await loadEvents();
     } catch (error) {
       Alert.alert('Hata', 'Kayıt sırasında bir sorun oluştu.');
     } finally {
@@ -151,7 +174,8 @@ export default function CalendarScreen() {
         text: 'Sil', style: 'destructive', onPress: async () => {
           try {
             await calendarService.deleteEvent(event.id);
-            loadEvents();
+            // FIX #3: Reload events immediately after delete
+            await loadEvents();
           } catch { Alert.alert('Hata', 'Silinemedi.'); }
         }
       },
@@ -161,7 +185,8 @@ export default function CalendarScreen() {
   const handleComplete = async (event: CalendarEvent) => {
     try {
       await calendarService.completeEvent(event.id, !!event.amount);
-      loadEvents();
+      // FIX #3: Reload events immediately after complete
+      await loadEvents();
     } catch { Alert.alert('Hata', 'Güncellenemedi.'); }
   };
 
@@ -174,7 +199,7 @@ export default function CalendarScreen() {
 
   const selectedDay = selectedDate?.getMonth() === currentMonth && selectedDate?.getFullYear() === currentYear
     ? selectedDate.getDate() : null;
-  const dayEvents = selectedDay ? getEventsForDay(selectedDay) : [];
+  const dayEvents = selectedDate ? getEventsForDay(selectedDate) : [];
 
   return (
     <View style={styles.container}>
@@ -204,9 +229,9 @@ export default function CalendarScreen() {
                   style={[
                     styles.dayCell,
                     day === selectedDay && styles.dayCellSelected,
-                    isToday(day || 0) && !selectedDay && styles.dayCellToday,
+                    isToday(day || 0) && day !== selectedDay && styles.dayCellToday,
                   ]}
-                  onPress={() => day && openAddModal(day)}
+                  onPress={() => day && selectDay(day)}
                   disabled={!day}
                   activeOpacity={0.7}
                 >
@@ -216,9 +241,9 @@ export default function CalendarScreen() {
                         styles.dayText,
                         { color: colors.text },
                         day === selectedDay && styles.dayTextSelected,
-                        isToday(day) && styles.dayTextToday,
+                        isToday(day) && day !== selectedDay && styles.dayTextToday,
                       ]}>{day}</Text>
-                      {hasEventOnDay(day) && <View style={styles.eventDot} />}
+                      {hasEventOnDay(day) && <View style={[styles.eventDot, day === selectedDay && { backgroundColor: '#FFF' }]} />}
                     </>
                   ) : null}
                 </TouchableOpacity>
@@ -234,7 +259,7 @@ export default function CalendarScreen() {
               <Text style={[styles.eventsSectionTitle, { color: colors.text }]}>
                 {selectedDay} {MONTHS[currentMonth]} Etkinlikleri
               </Text>
-              <TouchableOpacity onPress={() => openAddModal(selectedDay)} style={styles.addBtn}>
+              <TouchableOpacity onPress={openAddModal} style={styles.addBtn}>
                 <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.addBtnGrad}>
                   <Ionicons name="add" size={20} color="#FFF" />
                 </LinearGradient>
@@ -308,8 +333,43 @@ export default function CalendarScreen() {
               <Text style={styles.label}>Not (İsteğe Bağlı)</Text>
               <TextInput style={[styles.input, { height: 80, textAlignVertical: 'top' }]} value={note} onChangeText={setNote} placeholder="Detay ekle..." placeholderTextColor={staticColors.textLight} multiline />
 
+              {/* FIX #2: Native Time Picker */}
               <Text style={styles.label}>Saat (İsteğe Bağlı)</Text>
-              <TextInput style={styles.input} value={eventTime} onChangeText={setEventTime} placeholder="14:30" placeholderTextColor={staticColors.textLight} keyboardType="numbers-and-punctuation" />
+              <TouchableOpacity
+                style={[styles.input, styles.timePickerButton]}
+                onPress={() => setShowTimePicker(true)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="time-outline" size={20} color={eventTime ? '#8B5CF6' : staticColors.textLight} />
+                <Text style={[styles.timePickerText, eventTime ? { color: '#1E293B' } : { color: staticColors.textLight }]}>
+                  {eventTime || 'Saat seçmek için dokun'}
+                </Text>
+                {eventTime ? (
+                  <TouchableOpacity onPress={() => { setEventTime(''); setHasReminder(false); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <Ionicons name="close-circle" size={20} color={staticColors.textLight} />
+                  </TouchableOpacity>
+                ) : (
+                  <Ionicons name="chevron-down" size={18} color={staticColors.textLight} />
+                )}
+              </TouchableOpacity>
+
+              {showTimePicker && (
+                <View style={styles.timePickerContainer}>
+                  <DateTimePicker
+                    value={selectedTime}
+                    mode="time"
+                    is24Hour={true}
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={onTimePickerChange}
+                    locale="tr-TR"
+                  />
+                  {Platform.OS === 'ios' && (
+                    <TouchableOpacity onPress={() => setShowTimePicker(false)} style={styles.timePickerDoneBtn}>
+                      <Text style={styles.timePickerDoneText}>Tamam</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
 
               {eventTime.length > 0 && (
                 <View style={styles.switchRow}>
@@ -401,6 +461,12 @@ const styles = StyleSheet.create({
   modalTitle: { fontFamily: fonts.bold, fontSize: 20, color: staticColors.text },
   label: { fontFamily: fonts.semiBold, fontSize: 13, color: staticColors.textSecondary, marginBottom: 6, marginTop: 12 },
   input: { height: 50, borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 16, fontFamily: fonts.medium, fontSize: 15, backgroundColor: '#F8FAFC' },
+  // FIX #2: Time picker button styles
+  timePickerButton: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  timePickerText: { flex: 1, fontFamily: fonts.medium, fontSize: 15 },
+  timePickerContainer: { backgroundColor: '#F1F5F9', borderRadius: 12, marginTop: 8, padding: 8, alignItems: 'center' },
+  timePickerDoneBtn: { paddingVertical: 8, paddingHorizontal: 24, backgroundColor: '#8B5CF6', borderRadius: 10, marginTop: 4 },
+  timePickerDoneText: { fontFamily: fonts.bold, fontSize: 14, color: '#FFF' },
   switchRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12, paddingVertical: 8 },
   switchLabel: { fontFamily: fonts.semiBold, fontSize: 14, color: staticColors.text },
   switchDesc: { fontFamily: fonts.regular, fontSize: 12, color: staticColors.textSecondary, marginTop: 2 },

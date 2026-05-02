@@ -240,7 +240,8 @@ function RootLayoutNav() {
                             segments.includes('notifications') || 
                             segments.includes('electricians') || 
                             segments.includes('electrician') || 
-                            segments.includes('categories');
+                            segments.includes('categories') ||
+                            segments.includes('tools');
             
             if (!isInApp && currentPath !== 'onboarding') {
               console.log('➡️ [RootNav] Verified user on non-app screen (' + currentPath + '), forcing redirect to TABS');
@@ -705,7 +706,9 @@ function RootLayoutNav() {
 
       // Route based on notification data
       let targetPath: string | null = null;
-      if (data?.conversationId) {
+      if (data?.type === 'calendar_reminder') {
+        targetPath = '/tools/calendar';
+      } else if (data?.conversationId) {
         targetPath = `/messages/${data.conversationId}`;
       } else if (data?.ticketId || data?.type === 'support_ticket_updated' || data?.type === 'support_reply' || data?.type === 'support_status') {
         targetPath = `/profile/support`;
@@ -747,7 +750,9 @@ function RootLayoutNav() {
         // Small delay to ensure navigation is ready
         setTimeout(() => {
           let targetPath: string | null = null;
-          if (data?.conversationId) {
+          if (data?.type === 'calendar_reminder') {
+            targetPath = '/tools/calendar';
+          } else if (data?.conversationId) {
             targetPath = `/messages/${data.conversationId}`;
           } else if (data?.jobId) {
             targetPath = `/jobs/${data.jobId}`;
