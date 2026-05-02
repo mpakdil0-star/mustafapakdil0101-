@@ -1,6 +1,6 @@
 {
   "name": "elektrikciler-backend",
-  "version": "1.0.0",
+  "version": "1.2.8",
   "description": "Elektrikçiler Platform Backend API",
   "main": "dist/server.js",
   "scripts": {
