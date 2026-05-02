@@ -43,6 +43,16 @@ export const validateEmail = (email: string): string | null => {
   return null;
 };
 
+export const validateFullName = (fullName: string): string | null => {
+  if (!fullName.trim()) {
+    return 'Ad Soyad gereklidir';
+  }
+  if (fullName.trim().length < 3) {
+    return 'Ad Soyad en az 3 karakter olmalıdır';
+  }
+  return null;
+};
+
 export const validatePassword = (password: string): string | null => {
   if (!password) {
     return 'Şifre gereklidir';
