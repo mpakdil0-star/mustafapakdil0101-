@@ -125,6 +125,17 @@ export const API_ENDPOINTS = {
   CREDIT_PACKAGES: '/payments/packages',
   PURCHASE_CREDITS: '/payments/purchase',
   TRANSACTION_HISTORY: '/payments/transactions',
+
+  // Calendar
+  CALENDAR: '/calendar',
+  CALENDAR_DETAIL: (id: string) => `/calendar/${encodeURIComponent(id)}`,
+  CALENDAR_COMPLETE: (id: string) => `/calendar/${encodeURIComponent(id)}/complete`,
+
+  // Ledger
+  LEDGER: '/ledger',
+  LEDGER_SUMMARY: '/ledger/summary',
+  LEDGER_DETAIL: (id: string) => `/ledger/${encodeURIComponent(id)}`,
+  LEDGER_PAID: (id: string) => `/ledger/${encodeURIComponent(id)}/paid`,
 };
 
 // Helper function to get full file URL

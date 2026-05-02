@@ -15,6 +15,8 @@ import supportRoutes from './supportRoutes';
 import legalRoutes from './legalRoutes';
 import reportRoutes from './reportRoutes';
 import blockRoutes from './blockRoutes';
+import calendarRoutes from './calendarRoutes';
+import ledgerRoutes from './ledgerRoutes';
 
 const router = Router();
 
@@ -51,5 +53,7 @@ router.use('/legal', legalRoutes);
 router.use('/support', supportRoutes);
 router.use('/reports', reportRoutes);
 router.use('/blocks', blockRoutes);
+router.use('/calendar', calendarRoutes);
+router.use('/ledger', ledgerRoutes);
 
 export default router;

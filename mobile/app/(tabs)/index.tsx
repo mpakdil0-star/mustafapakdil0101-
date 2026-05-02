@@ -911,6 +911,30 @@ export default function HomeScreen() {
                 <Text style={styles.toolCardTitle}>Teklif Hazırla</Text>
                 <Text style={styles.toolCardDesc}>PDF oluştur ve paylaş</Text>
               </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.toolCardHalf}
+                onPress={() => handleActionWithAuth('/tools/calendar')}
+                activeOpacity={0.85}
+              >
+                <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.toolIconBox}>
+                  <Ionicons name="calendar" size={28} color="#FFF" />
+                </LinearGradient>
+                <Text style={styles.toolCardTitle}>İş Takvimim</Text>
+                <Text style={styles.toolCardDesc}>Planla ve hatırlat</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.toolCardHalf}
+                onPress={() => handleActionWithAuth('/tools/ledger')}
+                activeOpacity={0.85}
+              >
+                <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.toolIconBox}>
+                  <Ionicons name="wallet" size={28} color="#FFF" />
+                </LinearGradient>
+                <Text style={styles.toolCardTitle}>Hesap Defteri</Text>
+                <Text style={styles.toolCardDesc}>Alacak-verecek takibi</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -2416,11 +2440,13 @@ const styles = StyleSheet.create({
   },
   toolsGridTwo: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
     marginTop: 8,
   },
   toolCardHalf: {
-    flex: 1,
+    width: '30%',
+    flexGrow: 1,
     backgroundColor: staticColors.white,
     borderRadius: 16,
     padding: 16,

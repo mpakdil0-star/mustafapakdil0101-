@@ -119,6 +119,8 @@ model User {
   reportsReceived    Report[]            @relation("ReportsReceived")
   blocksSent         Block[]             @relation("BlocksSent")
   blocksReceived     Block[]             @relation("BlocksReceived")
+  calendarEvents     CalendarEvent[]
+  ledgerEntries      LedgerEntry[]
 
   @@index([email])
   @@index([phone])
@@ -592,4 +594,52 @@ model Block {
   @@index([blockerId])
   @@index([blockedId])
   @@map("blocks")
+}
+
+// İş Takvimi - Ustanın kişisel not/randevu defteri
+model CalendarEvent {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  title       String
+  note        String?   @db.Text
+  eventDate   DateTime  @map("event_date")
+  eventTime   String?   @map("event_time")
+  hasReminder Boolean   @default(false) @map("has_reminder")
+  reminderAt  DateTime? @map("reminder_at")
+  amount      Decimal?  @db.Decimal(10, 2)
+  isPaid      Boolean   @default(false) @map("is_paid")
+  status      String    @default("pending")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([eventDate])
+  @@index([status])
+  @@map("calendar_events")
+}
+
+// Hesap Defteri - Alacak/Verecek takibi
+model LedgerEntry {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  personName      String    @map("person_name")
+  amount          Decimal   @db.Decimal(10, 2)
+  type            String
+  status          String    @default("pending")
+  note            String?   @db.Text
+  dueDate         DateTime? @map("due_date")
+  paidAt          DateTime? @map("paid_at")
+  calendarEventId String?   @map("calendar_event_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@map("ledger_entries")
 }

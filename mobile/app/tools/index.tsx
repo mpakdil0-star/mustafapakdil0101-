@@ -37,6 +37,22 @@ export default function ToolsScreen() {
             color: '#10B981',
             route: '/tools/quote',
         },
+        {
+            id: 'calendar',
+            title: 'İş Takvimim',
+            description: 'Randevularını planla, hatırlatıcı kur',
+            icon: 'calendar',
+            color: '#8B5CF6',
+            route: '/tools/calendar',
+        },
+        {
+            id: 'ledger',
+            title: 'Hesap Defteri',
+            description: 'Alacak ve vereceklerini takip et',
+            icon: 'wallet',
+            color: '#F59E0B',
+            route: '/tools/ledger',
+        },
     ];
 
     return (
