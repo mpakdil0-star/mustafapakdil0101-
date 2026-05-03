@@ -92,12 +92,12 @@ export default function LedgerScreen() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
         {/* Summary Cards */}
         <View style={styles.summaryRow}>
-          <LinearGradient colors={(colors as any).gradientPrimary || [colors.primary, colors.primaryDark]} style={styles.summaryCard}>
+          <LinearGradient colors={['#10B981', '#059669']} style={styles.summaryCard}>
             <Ionicons name="arrow-down-circle" size={24} color="rgba(255,255,255,0.8)" />
             <Text style={styles.summaryLabel}>Toplam Alacak</Text>
             <Text style={styles.summaryValue}>{formatCurrency(summary.pendingReceivables)}</Text>
           </LinearGradient>
-          <LinearGradient colors={(colors as any).gradientDark || ['#1E3A8A', '#0F172A']} style={styles.summaryCard}>
+          <LinearGradient colors={['#EF4444', '#B91C1C']} style={styles.summaryCard}>
             <Ionicons name="arrow-up-circle" size={24} color="rgba(255,255,255,0.8)" />
             <Text style={styles.summaryLabel}>Toplam Borç</Text>
             <Text style={styles.summaryValue}>{formatCurrency(summary.pendingPayables)}</Text>
