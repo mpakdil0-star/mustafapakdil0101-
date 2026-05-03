@@ -46,6 +46,9 @@ export default function CalendarScreen() {
   // FIX #2: Native time picker state
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedTime, setSelectedTime] = useState<Date>(new Date());
+  
+  // FIX #4: Show all events toggle
+  const [showAllEvents, setShowAllEvents] = useState(false);
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
@@ -200,6 +203,10 @@ export default function CalendarScreen() {
   const selectedDay = selectedDate?.getMonth() === currentMonth && selectedDate?.getFullYear() === currentYear
     ? selectedDate.getDate() : null;
   const dayEvents = selectedDate ? getEventsForDay(selectedDate) : [];
+  
+  const displayedEvents = showAllEvents 
+    ? [...events].sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
+    : dayEvents;
 
   return (
     <View style={styles.container}>
@@ -252,28 +259,38 @@ export default function CalendarScreen() {
           )}
         </Card>
 
-        {/* Selected Day Events */}
-        {selectedDay && (
-          <View style={styles.eventsSection}>
-            <View style={styles.eventsSectionHeader}>
-              <Text style={[styles.eventsSectionTitle, { color: colors.text }]}>
-                {selectedDay} {MONTHS[currentMonth]} Etkinlikleri
-              </Text>
+        {/* Events Section */}
+        <View style={styles.eventsSection}>
+          <View style={styles.eventsSectionHeader}>
+            <Text style={[styles.eventsSectionTitle, { color: colors.text, flex: 1 }]}>
+              {showAllEvents ? `${MONTHS[currentMonth]} Ayı Tüm İşler` : (selectedDay ? `${selectedDay} ${MONTHS[currentMonth]} Etkinlikleri` : 'Etkinlikler')}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <TouchableOpacity 
+                onPress={() => setShowAllEvents(!showAllEvents)} 
+                style={{ backgroundColor: showAllEvents ? '#EDE9FE' : '#F1F5F9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 4 }}
+              >
+                <Ionicons name={showAllEvents ? "calendar" : "list"} size={16} color={showAllEvents ? "#8B5CF6" : staticColors.textSecondary} />
+                <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: showAllEvents ? "#8B5CF6" : staticColors.textSecondary }}>
+                  {showAllEvents ? 'Takvim' : 'Tümü'}
+                </Text>
+              </TouchableOpacity>
               <TouchableOpacity onPress={openAddModal} style={styles.addBtn}>
                 <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.addBtnGrad}>
                   <Ionicons name="add" size={20} color="#FFF" />
                 </LinearGradient>
               </TouchableOpacity>
             </View>
+          </View>
 
-            {dayEvents.length === 0 ? (
+          {displayedEvents.length === 0 ? (
               <Card style={styles.emptyCard}>
                 <Ionicons name="calendar-outline" size={32} color={staticColors.textLight} />
                 <Text style={styles.emptyText}>Bu gün için kayıt yok</Text>
                 <Text style={styles.emptySubtext}>Yukarıdaki + butonuna dokunarak ekle</Text>
               </Card>
             ) : (
-              dayEvents.map(event => (
+              displayedEvents.map(event => (
                 <Card key={event.id} style={styles.eventCard}>
                   <View style={styles.eventCardHeader}>
                     <View style={[styles.statusDot, { backgroundColor: event.status === 'completed' ? '#10B981' : '#8B5CF6' }]} />
@@ -314,8 +331,7 @@ export default function CalendarScreen() {
               ))
             )}
           </View>
-        )}
-      </ScrollView>
+        </ScrollView>
 
       {/* Add/Edit Modal */}
       <Modal visible={showModal} animationType="slide" transparent>
