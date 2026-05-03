@@ -119,11 +119,28 @@ export default function CalendarScreen() {
   // FIX #2: Handle native time picker change
   const onTimePickerChange = (event: any, date?: Date) => {
     setShowTimePicker(Platform.OS === 'ios'); // iOS keeps picker open
+    if (event.type === 'dismissed') return;
+    
     if (date) {
       setSelectedTime(date);
       const hours = String(date.getHours()).padStart(2, '0');
       const minutes = String(date.getMinutes()).padStart(2, '0');
-      setEventTime(`${hours}:${minutes}`);
+      const newTimeStr = `${hours}:${minutes}`;
+      
+      if (newTimeStr !== eventTime) {
+        setEventTime(newTimeStr);
+        
+        if (!hasReminder) {
+          Alert.alert(
+            'Hatırlatıcı',
+            `Saat ${newTimeStr} için etkinlik hatırlatıcısı kurmak ister misiniz?`,
+            [
+              { text: 'Hayır', style: 'cancel' },
+              { text: 'Evet, Kur', onPress: () => setHasReminder(true) }
+            ]
+          );
+        }
+      }
     }
   };
 
