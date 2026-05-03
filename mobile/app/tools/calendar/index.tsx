@@ -362,7 +362,7 @@ export default function CalendarScreen() {
                     value={selectedTime}
                     mode="time"
                     is24Hour={true}
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    display="spinner"
                     onChange={onTimePickerChange}
                     locale="tr-TR"
                   />
