@@ -36,15 +36,14 @@ export default function AddressesScreen() {
         setAlertConfig({ visible: true, title, message, type, buttons });
     };
 
-    const fetchLocations = async (isRefresh = false) => {
+    const fetchLocations = useCallback(async (isRefresh = false) => {
         try {
             if (isRefresh) {
                 setRefreshing(true);
-            } else if (locations.length === 0) {
+            } else {
                 setLoading(true);
             }
             
-            // Added headers to strictly bypass any caching
             const response = await apiClient.get(`${API_ENDPOINTS.LOCATIONS}?t=${Date.now()}`, {
                 headers: {
                     'Cache-Control': 'no-cache',
@@ -58,12 +57,12 @@ export default function AddressesScreen() {
             setLoading(false);
             setRefreshing(false);
         }
-    };
+    }, []);
 
     useFocusEffect(
         useCallback(() => {
-            fetchLocations(true); // Treat focus like a refresh to show indicator if needed
-        }, [user?.id])
+            fetchLocations(true);
+        }, [fetchLocations])
     );
 
     const handleEdit = (id: string) => {
@@ -143,7 +142,13 @@ export default function AddressesScreen() {
             <PremiumHeader
                 title={isElectrician ? 'Hizmet Bölgeleri' : 'Adreslerim'}
                 showBackButton
-                onBackPress={() => router.back()}
+                onBackPress={() => {
+                    if (router.canGoBack()) {
+                        router.back();
+                    } else {
+                        router.push('/profile/edit');
+                    }
+                }}
             />
 
             {loading && locations.length === 0 ? (
