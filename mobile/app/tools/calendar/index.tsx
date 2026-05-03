@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
   actionText: { fontFamily: fonts.medium, fontSize: 13 },
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: Platform.OS === 'android' ? 32 : 34, maxHeight: '85%' },
+  modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: Platform.OS === 'android' ? 60 : 40, maxHeight: '85%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontFamily: fonts.bold, fontSize: 20, color: staticColors.text },
   label: { fontFamily: fonts.semiBold, fontSize: 13, color: staticColors.textSecondary, marginBottom: 6, marginTop: 12 },
