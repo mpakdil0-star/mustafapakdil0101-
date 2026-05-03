@@ -26,7 +26,8 @@ import { colors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
-import { API_BASE_URL } from '../../services/api';
+import { API_BASE_URL } from '../../constants/api';
+import api from '../../services/api';
 import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
 import { LEGAL_TEXTS } from '../../constants/legalTexts';
 
@@ -144,18 +145,14 @@ export default function RegisterScreen() {
 
   const sendVerificationCode = async (emailAddr: string, name: string) => {
     try {
-      const resp = await fetch(`${API_BASE_URL}/auth/send-verification`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailAddr, fullName: name }),
-      });
-      const data = await resp.json();
+      const resp = await api.post('/auth/send-verification', { email: emailAddr, fullName: name });
+      const data = resp.data;
       if (data.mockCode) {
         setMockCode(data.mockCode); 
       } else {
         setMockCode(null);
       }
-      setResendTimer(60); 
+      setResendTimer(120); 
       setEmailVerifyModal(true);
       setTimeout(() => codeInputRef.current?.focus(), 400);
     } catch (err) {
@@ -176,13 +173,8 @@ export default function RegisterScreen() {
     setVerifyError('');
 
     try {
-      const resp = await fetch(`${API_BASE_URL}/auth/verify-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: registeredEmail, code: verifyCode }),
-      });
-
-      const data = await resp.json();
+      const resp = await api.post('/auth/verify-email', { email: registeredEmail, code: verifyCode });
+      const data = resp.data;
       if (data.success) {
         setEmailVerifyModal(false);
         await dispatch(getMe()).unwrap();
