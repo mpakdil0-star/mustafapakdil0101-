@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   entryNote: { fontFamily: fonts.regular, fontSize: 13, color: staticColors.textSecondary, marginTop: 8 },
   deleteRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
   deleteText: { fontFamily: fonts.medium, fontSize: 13, color: '#EF4444' },
-  fab: { position: 'absolute', bottom: 30, right: 20, borderRadius: 28, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+  fab: { position: 'absolute', bottom: 90, right: 20, borderRadius: 28, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
   fabGrad: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center' },
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
