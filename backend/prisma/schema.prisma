@@ -629,6 +629,8 @@ model LedgerEntry {
   type            String
   status          String    @default("pending")
   note            String?   @db.Text
+  eventTime       String?   @map("event_time")
+  hasReminder     Boolean   @default(false) @map("has_reminder")
   dueDate         DateTime? @map("due_date")
   paidAt          DateTime? @map("paid_at")
   calendarEventId String?   @map("calendar_event_id")

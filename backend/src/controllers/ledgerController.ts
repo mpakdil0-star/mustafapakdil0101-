@@ -69,7 +69,7 @@ export const getSummary = async (req: Request, res: Response) => {
 export const createEntry = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { personName, amount, type, note, dueDate } = req.body;
+    const { personName, amount, type, note, dueDate, eventTime, hasReminder } = req.body;
 
     if (!personName || !amount || !type) {
       return res.status(400).json({
@@ -93,6 +93,8 @@ export const createEntry = async (req: Request, res: Response) => {
         type,
         note: note || null,
         dueDate: dueDate ? new Date(dueDate) : null,
+        eventTime: eventTime || null,
+        hasReminder: !!hasReminder,
       },
     });
 
@@ -108,7 +110,7 @@ export const updateEntry = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
     const { id } = req.params;
-    const { personName, amount, type, note, dueDate, status } = req.body;
+    const { personName, amount, type, note, dueDate, status, eventTime, hasReminder } = req.body;
 
     const existing = await prisma.ledgerEntry.findFirst({
       where: { id, userId },
@@ -125,6 +127,8 @@ export const updateEntry = async (req: Request, res: Response) => {
     if (note !== undefined) updateData.note = note;
     if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
     if (status !== undefined) updateData.status = status;
+    if (eventTime !== undefined) updateData.eventTime = eventTime;
+    if (hasReminder !== undefined) updateData.hasReminder = !!hasReminder;
 
     const entry = await prisma.ledgerEntry.update({
       where: { id },

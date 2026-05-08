@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal,
-  TextInput, Alert, ActivityIndicator, Platform, KeyboardAvoidingView,
+  TextInput, Alert, ActivityIndicator, Platform, Switch, KeyboardAvoidingView,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
@@ -13,6 +14,7 @@ import { spacing } from '../../../constants/spacing';
 import { fonts } from '../../../constants/typography';
 import { useAppColors } from '../../../hooks/useAppColors';
 import { ledgerService, LedgerEntry, LedgerSummary } from '../../../services/ledgerService';
+import { scheduleReminder } from '../../../services/reminderService';
 
 export default function LedgerScreen() {
   const colors = useAppColors();
@@ -28,6 +30,36 @@ export default function LedgerScreen() {
   const [amount, setAmount] = useState('');
   const [entryType, setEntryType] = useState<'receivable' | 'payable'>('receivable');
   const [entryNote, setEntryNote] = useState('');
+  const [eventTime, setEventTime] = useState('');
+  const [hasReminder, setHasReminder] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedTime, setSelectedTime] = useState<Date>(new Date());
+
+  const onTimePickerChange = (event: any, date?: Date) => {
+    setShowTimePicker(Platform.OS === 'ios');
+    if (event.type === 'dismissed') return;
+    
+    if (date) {
+      setSelectedTime(date);
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const newTimeStr = `${hours}:${minutes}`;
+      
+      if (newTimeStr !== eventTime) {
+        setEventTime(newTimeStr);
+        if (!hasReminder) {
+          Alert.alert(
+            'Hatırlatıcı',
+            `Saat ${newTimeStr} için hatırlatıcı kurmak ister misiniz?`,
+            [
+              { text: 'Hayır', style: 'cancel' },
+              { text: 'Evet, Kur', onPress: () => setHasReminder(true) }
+            ]
+          );
+        }
+      }
+    }
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -46,6 +78,7 @@ export default function LedgerScreen() {
 
   const openAddModal = () => {
     setPersonName(''); setAmount(''); setEntryType(activeTab); setEntryNote('');
+    setEventTime(''); setHasReminder(false);
     setShowModal(true);
   };
 
@@ -55,12 +88,31 @@ export default function LedgerScreen() {
 
     setSaving(true);
     try {
+      let reminderAt: string | undefined;
+      if (hasReminder && eventTime) {
+        const [h, m] = eventTime.split(':').map(Number);
+        const rd = new Date();
+        rd.setHours(h, m, 0, 0);
+        reminderAt = rd.toISOString();
+      }
+
       await ledgerService.createEntry({
         personName: personName.trim(),
         amount: Number(amount),
         type: entryType,
         note: entryNote.trim() || undefined,
+        eventTime: eventTime || undefined,
+        hasReminder: hasReminder,
       });
+
+      if (hasReminder && reminderAt) {
+        await scheduleReminder(
+          `Hesap Defteri: ${personName}`, 
+          `${entryType === 'receivable' ? 'Alacak' : 'Borç'}: ${amount} TL`, 
+          new Date(reminderAt)
+        );
+      }
+
       setShowModal(false);
       loadData();
     } catch { Alert.alert('Hata', 'Kayıt eklenemedi.'); }
@@ -139,6 +191,7 @@ export default function LedgerScreen() {
                   <Text style={[styles.entryName, { color: colors.text }]}>{entry.personName}</Text>
                   <Text style={styles.entryDate}>
                     {new Date(entry.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {entry.eventTime ? ` • ${entry.eventTime}` : ''}
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
@@ -202,6 +255,46 @@ export default function LedgerScreen() {
             <Text style={styles.label}>Not (İsteğe Bağlı)</Text>
             <TextInput style={[styles.input, { height: 70, textAlignVertical: 'top' }]} value={entryNote} onChangeText={setEntryNote} placeholder="Açıklama..." placeholderTextColor={staticColors.textLight} multiline />
 
+            <View style={styles.timeReminderRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.label}>Saat (İsteğe Bağlı)</Text>
+                <TouchableOpacity 
+                  style={styles.timeSelector} 
+                  onPress={() => setShowTimePicker(true)}
+                >
+                  <Ionicons name="time-outline" size={20} color={colors.primary} />
+                  <Text style={[styles.timeText, !eventTime && { color: staticColors.textLight }]}>
+                    {eventTime || 'Saat Seç'}
+                  </Text>
+                  {eventTime ? (
+                    <TouchableOpacity onPress={() => setEventTime('')}>
+                      <Ionicons name="close-circle" size={16} color={staticColors.textLight} />
+                    </TouchableOpacity>
+                  ) : null}
+                </TouchableOpacity>
+              </View>
+
+              <View style={{ width: 100, alignItems: 'flex-end' }}>
+                <Text style={styles.label}>Hatırlatıcı</Text>
+                <Switch
+                  value={hasReminder}
+                  onValueChange={setHasReminder}
+                  trackColor={{ false: '#CBD5E1', true: colors.primary + '80' }}
+                  thumbColor={hasReminder ? colors.primary : '#F4F4F5'}
+                />
+              </View>
+            </View>
+
+            {showTimePicker && (
+              <DateTimePicker
+                value={selectedTime}
+                mode="time"
+                is24Hour={true}
+                display="default"
+                onChange={onTimePickerChange}
+              />
+            )}
+
             <TouchableOpacity onPress={handleSave} disabled={saving} activeOpacity={0.85}>
               <LinearGradient colors={entryType === 'receivable' ? ((colors as any).gradientPrimary || [colors.primary, colors.primaryDark]) : ((colors as any).gradientDark || ['#1E3A8A', '#0F172A'])} style={styles.saveBtn}>
                 {saving ? <ActivityIndicator color="#FFF" /> : (
@@ -257,6 +350,9 @@ const styles = StyleSheet.create({
   typeText: { fontFamily: fonts.medium, fontSize: 14, color: staticColors.textSecondary },
   label: { fontFamily: fonts.semiBold, fontSize: 13, color: staticColors.textSecondary, marginBottom: 6, marginTop: 12 },
   input: { height: 50, borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 16, fontFamily: fonts.medium, fontSize: 15, backgroundColor: '#F8FAFC' },
+  timeReminderRow: { flexDirection: 'row', gap: 12, marginTop: 4 },
+  timeSelector: { height: 50, borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#F8FAFC' },
+  timeText: { fontFamily: fonts.medium, fontSize: 14, color: staticColors.text, flex: 1 },
   saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52, borderRadius: 16, marginTop: 20 },
   saveBtnText: { fontFamily: fonts.bold, fontSize: 16, color: '#FFF' },
 });

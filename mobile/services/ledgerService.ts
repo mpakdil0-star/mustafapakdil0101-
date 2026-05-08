@@ -12,6 +12,8 @@ export interface LedgerEntry {
   dueDate?: string;
   paidAt?: string;
   calendarEventId?: string;
+  eventTime?: string;
+  hasReminder?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -60,6 +62,8 @@ export const ledgerService = {
     type: 'receivable' | 'payable';
     note?: string;
     dueDate?: string;
+    eventTime?: string;
+    hasReminder?: boolean;
   }): Promise<LedgerEntry | null> {
     try {
       const response = await apiClient.post(API_ENDPOINTS.LEDGER, data);
