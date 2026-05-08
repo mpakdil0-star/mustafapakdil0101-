@@ -138,7 +138,11 @@ export default function AdminJobsScreen() {
     });
 
     const renderItem = ({ item }: { item: any }) => (
-        <View style={styles.card}>
+        <TouchableOpacity 
+            style={styles.card}
+            activeOpacity={0.7}
+            onPress={() => router.push(`/jobs/${item.id}`)}
+        >
             <View style={styles.cardHeader}>
                 <View style={styles.headerLeft}>
                     <Text style={styles.jobTitle} numberOfLines={1}>{item.title}</Text>
@@ -188,7 +192,7 @@ export default function AdminJobsScreen() {
                     )}
                 </TouchableOpacity>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 
     const renderFooter = () => {
