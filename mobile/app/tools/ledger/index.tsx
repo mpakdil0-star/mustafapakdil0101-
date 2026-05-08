@@ -255,45 +255,59 @@ export default function LedgerScreen() {
             <Text style={styles.label}>Not (İsteğe Bağlı)</Text>
             <TextInput style={[styles.input, { height: 70, textAlignVertical: 'top' }]} value={entryNote} onChangeText={setEntryNote} placeholder="Açıklama..." placeholderTextColor={staticColors.textLight} multiline />
 
-            <View style={styles.timeReminderRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.label}>Saat (İsteğe Bağlı)</Text>
-                <TouchableOpacity 
-                  style={styles.timeSelector} 
-                  onPress={() => setShowTimePicker(true)}
-                >
-                  <Ionicons name="time-outline" size={20} color={colors.primary} />
-                  <Text style={[styles.timeText, !eventTime && { color: staticColors.textLight }]}>
-                    {eventTime || 'Saat Seç'}
-                  </Text>
-                  {eventTime ? (
-                    <TouchableOpacity onPress={() => setEventTime('')}>
-                      <Ionicons name="close-circle" size={16} color={staticColors.textLight} />
-                    </TouchableOpacity>
-                  ) : null}
+            <Text style={styles.label}>Saat (İsteğe Bağlı)</Text>
+            <TouchableOpacity
+              style={[styles.input, styles.timePickerButton]}
+              onPress={() => setShowTimePicker(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="time-outline" size={20} color={eventTime ? colors.primary : staticColors.textLight} />
+              <Text style={[styles.timePickerText, eventTime ? { color: '#1E293B' } : { color: staticColors.textLight }]}>
+                {eventTime || 'Saat seçmek için dokun'}
+              </Text>
+              {eventTime ? (
+                <TouchableOpacity onPress={() => { setEventTime(''); setHasReminder(false); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Ionicons name="close-circle" size={20} color={staticColors.textLight} />
                 </TouchableOpacity>
-              </View>
-
-              <View style={{ width: 100, alignItems: 'flex-end' }}>
-                <Text style={styles.label}>Hatırlatıcı</Text>
-                <Switch
-                  value={hasReminder}
-                  onValueChange={setHasReminder}
-                  trackColor={{ false: '#CBD5E1', true: colors.primary + '80' }}
-                  thumbColor={hasReminder ? colors.primary : '#F4F4F5'}
-                />
-              </View>
-            </View>
+              ) : (
+                <Ionicons name="chevron-down" size={18} color={staticColors.textLight} />
+              )}
+            </TouchableOpacity>
 
             {showTimePicker && (
-              <DateTimePicker
-                value={selectedTime}
-                mode="time"
-                is24Hour={true}
-                display="default"
-                onChange={onTimePickerChange}
-              />
+              <View style={styles.timePickerContainer}>
+                <DateTimePicker
+                  value={selectedTime}
+                  mode="time"
+                  is24Hour={true}
+                  display="spinner"
+                  onChange={onTimePickerChange}
+                  locale="tr-TR"
+                />
+                {Platform.OS === 'ios' && (
+                  <TouchableOpacity onPress={() => setShowTimePicker(false)} style={styles.timePickerDoneBtn}>
+                    <Text style={styles.timePickerDoneText}>Tamam</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             )}
+
+            {eventTime.length > 0 && (
+              <View style={styles.switchRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.switchLabel}>Hatırlatıcı Kur</Text>
+                  <Text style={styles.switchDesc}>Belirlenen saatte bildirim gönder</Text>
+                </View>
+                <Switch 
+                  value={hasReminder} 
+                  onValueChange={setHasReminder} 
+                  trackColor={{ true: colors.primary }} 
+                  thumbColor={hasReminder ? '#FFF' : '#F1F5F9'} 
+                />
+              </View>
+            )}
+
+
 
             <TouchableOpacity onPress={handleSave} disabled={saving} activeOpacity={0.85}>
               <LinearGradient colors={entryType === 'receivable' ? ((colors as any).gradientPrimary || [colors.primary, colors.primaryDark]) : ((colors as any).gradientDark || ['#1E3A8A', '#0F172A'])} style={styles.saveBtn}>
@@ -350,9 +364,14 @@ const styles = StyleSheet.create({
   typeText: { fontFamily: fonts.medium, fontSize: 14, color: staticColors.textSecondary },
   label: { fontFamily: fonts.semiBold, fontSize: 13, color: staticColors.textSecondary, marginBottom: 6, marginTop: 12 },
   input: { height: 50, borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 16, fontFamily: fonts.medium, fontSize: 15, backgroundColor: '#F8FAFC' },
-  timeReminderRow: { flexDirection: 'row', gap: 12, marginTop: 4 },
-  timeSelector: { height: 50, borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#F8FAFC' },
-  timeText: { fontFamily: fonts.medium, fontSize: 14, color: staticColors.text, flex: 1 },
+  timePickerButton: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  timePickerText: { flex: 1, fontFamily: fonts.medium, fontSize: 15 },
+  timePickerContainer: { backgroundColor: '#F1F5F9', borderRadius: 12, marginTop: 8, padding: 8, alignItems: 'center' },
+  timePickerDoneBtn: { paddingVertical: 8, paddingHorizontal: 24, backgroundColor: '#8B5CF6', borderRadius: 10, marginTop: 4 },
+  timePickerDoneText: { fontFamily: fonts.bold, fontSize: 14, color: '#FFF' },
+  switchRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12, paddingVertical: 8 },
+  switchLabel: { fontFamily: fonts.semiBold, fontSize: 14, color: staticColors.text },
+  switchDesc: { fontFamily: fonts.regular, fontSize: 12, color: staticColors.textSecondary, marginTop: 2 },
   saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52, borderRadius: 16, marginTop: 20 },
   saveBtnText: { fontFamily: fonts.bold, fontSize: 16, color: '#FFF' },
 });
