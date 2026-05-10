@@ -1005,35 +1005,42 @@ export default function HomeScreen() {
             </View>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.vitrinScroller}>
-              {[
-                { id: 1, title: 'Elektrik Tesisat', desc: 'Güvenli ve profesyonel', icon: 'flash', serviceCategory: 'elektrik', image: require('../../assets/images/vitrin_elektrik.png') },
-                { id: 2, title: 'Güvenlik Kamera', desc: 'Kurulum ve bakım', icon: 'videocam', serviceCategory: 'elektrik', image: require('../../assets/images/vitrin_kamera.png') },
-                { id: 3, title: 'Klima Servisi', desc: 'Montaj ve temizlik', icon: 'snow', serviceCategory: 'klima', image: require('../../assets/images/vitrin_klima.png') },
-                { id: 4, title: 'Tesisat & Su', desc: 'Acil müdahale', icon: 'water', serviceCategory: 'tesisat', image: require('../../assets/images/vitrin_tesisat.png') },
-                { id: 5, title: 'Çilingir', desc: 'Kapı açma ve kilit', icon: 'key', serviceCategory: 'cilingir', image: require('../../assets/images/vitrin_cilingir.png') },
-                { id: 6, title: 'Beyaz Eşya', desc: 'Tamir ve bakım', icon: 'construct', serviceCategory: 'beyaz-esya', image: require('../../assets/images/vitrin_beyaz_esya.png') },
-              ].map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  activeOpacity={0.85}
-                  onPress={() => handleActionWithAuth('/jobs/create', { serviceCategory: item.serviceCategory })}
-                  style={styles.vitrinCard}
-                >
-                  <ImageBackground source={item.image} style={styles.vitrinCardBg} imageStyle={styles.vitrinCardBgImage}>
-                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.85)']} style={styles.vitrinCardGradient}>
-                      <View style={styles.vitrinCardContentRow}>
-                        <View style={styles.vitrinIconCircleSm}>
-                          <Ionicons name={item.icon as any} size={20} color="#FFF" />
-                        </View>
-                        <View style={styles.vitrinCardTextCol}>
-                          <Text style={styles.vitrinCardTitle} numberOfLines={2}>{item.title}</Text>
-                          <Text style={styles.vitrinCardDesc} numberOfLines={1}>{item.desc}</Text>
-                        </View>
-                      </View>
-                    </LinearGradient>
-                  </ImageBackground>
-                </TouchableOpacity>
-              ))}
+              {Array.from({ length: 3 }).map((_, colIndex) => {
+                const vitrinItems = [
+                  { id: 1, title: 'Elektrik Tesisat', desc: 'Güvenli ve profesyonel', icon: 'flash', serviceCategory: 'elektrik', image: require('../../assets/images/vitrin_elektrik.png') },
+                  { id: 2, title: 'Güvenlik Kamera', desc: 'Kurulum ve bakım', icon: 'videocam', serviceCategory: 'elektrik', image: require('../../assets/images/vitrin_kamera.png') },
+                  { id: 3, title: 'Klima Servisi', desc: 'Montaj ve temizlik', icon: 'snow', serviceCategory: 'klima', image: require('../../assets/images/vitrin_klima.png') },
+                  { id: 4, title: 'Tesisat & Su', desc: 'Acil müdahale', icon: 'water', serviceCategory: 'tesisat', image: require('../../assets/images/vitrin_tesisat.png') },
+                  { id: 5, title: 'Çilingir', desc: 'Kapı açma ve kilit', icon: 'key', serviceCategory: 'cilingir', image: require('../../assets/images/vitrin_cilingir.png') },
+                  { id: 6, title: 'Beyaz Eşya', desc: 'Tamir ve bakım', icon: 'construct', serviceCategory: 'beyaz-esya', image: require('../../assets/images/vitrin_beyaz_esya.png') },
+                ];
+                return (
+                  <View key={colIndex} style={styles.vitrinColumn}>
+                    {vitrinItems.slice(colIndex * 2, colIndex * 2 + 2).map((item) => (
+                      <TouchableOpacity
+                        key={item.id}
+                        activeOpacity={0.85}
+                        onPress={() => handleActionWithAuth('/jobs/create', { serviceCategory: item.serviceCategory })}
+                        style={styles.vitrinCardSmall}
+                      >
+                        <ImageBackground source={item.image} style={styles.vitrinCardBg} imageStyle={styles.vitrinCardBgImage}>
+                          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.85)']} style={styles.vitrinCardGradient}>
+                            <View style={styles.vitrinCardContentRow}>
+                              <View style={styles.vitrinIconCircleSm}>
+                                <Ionicons name={item.icon as any} size={20} color="#FFF" />
+                              </View>
+                              <View style={styles.vitrinCardTextCol}>
+                                <Text style={styles.vitrinCardTitle} numberOfLines={2}>{item.title}</Text>
+                                <Text style={styles.vitrinCardDesc} numberOfLines={1}>{item.desc}</Text>
+                              </View>
+                            </View>
+                          </LinearGradient>
+                        </ImageBackground>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                );
+              })}
             </ScrollView>
           </View>
         )}
@@ -1084,133 +1091,67 @@ export default function HomeScreen() {
 
 
 
-        {/* Tab Toggle: Son İş İlanları / Öne Çıkan Ustalar (Citizen Only) */}
+        {/* Son İş İlanları Section (Citizen Only) */}
         {
           !isElectrician && (
-            <View style={styles.section}>
-              {/* Tab Headers */}
-              <View style={styles.homeTabRow}>
-                <TouchableOpacity
-                  style={[styles.homeTabButton, activeHomeTab === 'ilanlar' && styles.homeTabButtonActive]}
-                  onPress={() => setActiveHomeTab('ilanlar')}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="briefcase-outline" size={16} color={activeHomeTab === 'ilanlar' ? colors.primary : colors.textLight} />
-                  <Text style={[styles.homeTabText, activeHomeTab === 'ilanlar' && { color: colors.primary, fontFamily: fonts.bold }]}>Son İş İlanları</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.homeTabButton, activeHomeTab === 'ustalar' && styles.homeTabButtonActive]}
-                  onPress={() => setActiveHomeTab('ustalar')}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="people-outline" size={16} color={activeHomeTab === 'ustalar' ? colors.primary : colors.textLight} />
-                  <Text style={[styles.homeTabText, activeHomeTab === 'ustalar' && { color: colors.primary, fontFamily: fonts.bold }]}>Öne Çıkan Ustalar</Text>
+            <View style={[styles.section, { paddingBottom: 20 }]}>
+              <View style={[styles.sectionHeaderRow, { marginBottom: 16 }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16, textTransform: 'uppercase' }]}>SON İŞ İLANLARI</Text>
+                </View>
+                <TouchableOpacity onPress={() => router.push('/electricians')} style={styles.seeAllBtn}>
+                  <Text style={[styles.seeAll, { color: colors.textSecondary }]}>ÖNE ÇIKAN USTALAR</Text>
+                  <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
 
-              {/* Tab Content: Öne Çıkan Ustalar */}
-              {activeHomeTab === 'ustalar' && (
-                <>
-                  {isLoadingElectricians ? (
-                    <View style={{ padding: 40, alignItems: 'center' }}>
-                      <ActivityIndicator size="small" color={colors.primary} />
-                      <Text style={{ marginTop: 10, color: staticColors.textSecondary, fontFamily: fonts.medium }}>Ustalar yükleniyor...</Text>
-                    </View>
-                  ) : featuredElectricians.length > 0 ? (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredHorizontalScroller}>
-                      {featuredElectricians.map((elec) => (
-                        <TouchableOpacity
-                          key={elec.id}
-                          style={styles.featuredHorizontalCard}
-                          activeOpacity={0.85}
-                          onPress={() => router.push(`/electricians/${elec.id}` as any)}
-                        >
-                          {elec.profileImageUrl ? (
-                            <Image source={{ uri: getFileUrl(elec.profileImageUrl) || '' }} style={styles.featuredHCardImage} />
-                          ) : (
-                            <View style={[styles.featuredHCardImage, styles.featuredHCardImagePlaceholder]}>
-                              <Ionicons name="person" size={32} color={colors.primary} />
-                            </View>
-                          )}
-                          <View style={styles.featuredHCardContent}>
-                            <View style={styles.featuredHCardNameRow}>
-                              <Text style={styles.featuredHCardName} numberOfLines={1}>{elec.fullName || 'Usta'}</Text>
-                              {elec.isVerified === true && elec.electricianProfile?.verificationStatus === 'VERIFIED' && (
-                                <Ionicons name="shield-checkmark" size={14} color="#10B981" />
-                              )}
-                            </View>
-                            <Text style={styles.featuredHCardSpecialty}>{getUstaCategory(elec)}</Text>
-                            <View style={styles.featuredHCardRatingRow}>
-                              <Ionicons name="star" size={12} color="#F59E0B" />
-                              <Text style={styles.featuredHCardRating}>
-                                {Number(elec.electricianProfile?.ratingAverage || 0).toFixed(1)}
-                              </Text>
-                              <Text style={styles.featuredHCardReviews}>
-                                ({elec.electricianProfile?.totalReviews || 0})
-                              </Text>
-                            </View>
-                            <Text style={styles.featuredHCardLocation} numberOfLines={1}>
-                              <Ionicons name="location-outline" size={10} color={staticColors.textLight} />
-                              {' '}{elec.locations?.[0] ? `${elec.locations[0].district || ''}, ${elec.locations[0].city || ''}`.replace(/^, /, '').replace(/, $/, '') || 'Türkiye' : 'Türkiye'}
-                            </Text>
+              {isLoadingRecentJobs ? (
+                <View style={{ padding: 40, alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={{ marginTop: 10, color: staticColors.textSecondary, fontFamily: fonts.medium }}>İlanlar yükleniyor...</Text>
+                </View>
+              ) : recentJobs.length > 0 ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentJobsHorizontalScroller}>
+                  {recentJobs.map((job) => (
+                    <TouchableOpacity
+                      key={job.id}
+                      style={styles.recentJobCardHorizontal}
+                      activeOpacity={0.85}
+                      onPress={() => router.push(`/jobs/${job.id}` as any)}
+                    >
+                      <View style={styles.recentJobUserAvatar}>
+                         {/* Avatar placeholder mimicking profile images from the screenshot */}
+                         <Image source={{ uri: `https://i.pravatar.cc/150?img=${(job.id?.charCodeAt(0) || 1) % 70}` }} style={{width: '100%', height: '100%', borderRadius: 12}} />
+                      </View>
+                      
+                      <View style={styles.recentJobInfoHorizontal}>
+                        <View style={styles.recentJobHeaderHorizontal}>
+                          <View style={{ flex: 1, paddingRight: 8 }}>
+                            <Text style={styles.recentJobTitleHorizontal} numberOfLines={1}>{job.serviceCategory ? getUstaCategory({ serviceCategory: job.serviceCategory }) : 'Genel'}</Text>
+                            <Text style={styles.recentJobSubtextHorizontal} numberOfLines={1}>{job.title}</Text>
+                            <Text style={styles.recentJobCategoryTextHorizontal} numberOfLines={1}>{job.location?.city || 'Türkiye'}</Text>
                           </View>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  ) : (
-                    <View style={{ padding: 40, alignItems: 'center' }}>
-                      <Ionicons name="people-outline" size={36} color={colors.textLight} />
-                      <Text style={{ marginTop: 12, color: colors.textSecondary, fontFamily: fonts.medium, textAlign: 'center' }}>
-                        Şu an için öne çıkan usta bulunmuyor.
-                      </Text>
-                    </View>
-                  )}
-                </>
-              )}
-
-              {/* Tab Content: Son İş İlanları */}
-              {activeHomeTab === 'ilanlar' && (
-                <>
-                  {isLoadingRecentJobs ? (
-                    <View style={{ padding: 40, alignItems: 'center' }}>
-                      <ActivityIndicator size="small" color={colors.primary} />
-                      <Text style={{ marginTop: 10, color: staticColors.textSecondary, fontFamily: fonts.medium }}>İlanlar yükleniyor...</Text>
-                    </View>
-                  ) : recentJobs.length > 0 ? (
-                    <View style={styles.recentJobsList}>
-                      {recentJobs.map((job) => (
-                        <TouchableOpacity
-                          key={job.id}
-                          style={styles.recentJobCard}
-                          activeOpacity={0.85}
-                          onPress={() => router.push(`/jobs/${job.id}` as any)}
-                        >
-                          <View style={[styles.recentJobIconBg, { backgroundColor: colors.primary + '12' }]}>
-                            <Ionicons name="briefcase" size={22} color={colors.primary} />
-                          </View>
-                          <View style={styles.recentJobInfo}>
-                            <Text style={styles.recentJobTitle} numberOfLines={1}>{job.title}</Text>
-                            <Text style={styles.recentJobMeta} numberOfLines={1}>
-                              {job.serviceCategory ? getUstaCategory({ serviceCategory: job.serviceCategory }) : 'Genel'}
-                              {job.location?.city ? ` • ${job.location.city}` : ''}
-                            </Text>
-                          </View>
-                          <View style={styles.recentJobBidBadge}>
-                            <Text style={styles.recentJobBidCount}>{job.bidCount || 0}</Text>
-                            <Text style={styles.recentJobBidLabel}>Teklif</Text>
-                          </View>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  ) : (
-                    <View style={{ padding: 40, alignItems: 'center' }}>
-                      <Ionicons name="briefcase-outline" size={36} color={colors.textLight} />
-                      <Text style={{ marginTop: 12, color: colors.textSecondary, fontFamily: fonts.medium, textAlign: 'center' }}>
-                        Henüz iş ilanı bulunmuyor.
-                      </Text>
-                    </View>
-                  )}
-                </>
+                        </View>
+                        
+                        <View style={styles.timerBadge}>
+                          <Ionicons name="time-outline" size={10} color="#D97706" style={{ marginRight: 2 }} />
+                          <Text style={styles.timerBadgeText}>SÜRELİ FİYATLANDIRMA</Text>
+                        </View>
+                        <View style={styles.priceTextContainer}>
+                           <Text style={styles.priceTextLarge}>00:30:56</Text>
+                           <Text style={styles.priceTextSmall}>Teklif Bekliyor</Text>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              ) : (
+                <View style={{ padding: 40, alignItems: 'center' }}>
+                  <Ionicons name="briefcase-outline" size={36} color={colors.textLight} />
+                  <Text style={{ marginTop: 12, color: colors.textSecondary, fontFamily: fonts.medium, textAlign: 'center' }}>
+                    Henüz iş ilanı bulunmuyor.
+                  </Text>
+                </View>
               )}
             </View>
           )
@@ -2753,16 +2694,19 @@ const styles = StyleSheet.create({
     paddingRight: 16,
     gap: 12,
   },
-  vitrinCard: {
-    width: 280,
-    height: 220,
-    borderRadius: 20,
+  vitrinColumn: {
+    gap: 12,
+  },
+  vitrinCardSmall: {
+    width: 250,
+    height: 125,
+    borderRadius: 16,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowRadius: 10,
+    elevation: 5,
   },
   vitrinCardBg: {
     flex: 1,
@@ -2882,46 +2826,18 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: staticColors.textLight,
   },
-  // Home Tab Toggle
-  homeTabRow: {
+  // Recent Job Cards (Horizontal Compact)
+  recentJobsHorizontalScroller: {
+    paddingRight: 16,
+    gap: 12,
+    paddingVertical: 4,
+  },
+  recentJobCardHorizontal: {
+    width: 320,
     flexDirection: 'row',
-    backgroundColor: '#F1F5F9',
-    borderRadius: 14,
-    padding: 4,
-    marginBottom: 16,
-  },
-  homeTabButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 11,
-    gap: 6,
-  },
-  homeTabButtonActive: {
-    backgroundColor: staticColors.white,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  homeTabText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: staticColors.textLight,
-  },
-  // Recent Job Cards
-  recentJobsList: {
-    gap: 10,
-  },
-  recentJobCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: staticColors.white,
     borderRadius: 16,
-    padding: 14,
+    padding: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -2929,46 +2845,73 @@ const styles = StyleSheet.create({
     elevation: 2,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.04)',
+    alignItems: 'flex-start',
   },
-  recentJobIconBg: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+  recentJobUserAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  recentJobInfo: {
+  recentJobInfoHorizontal: {
     flex: 1,
+    height: '100%',
   },
-  recentJobTitle: {
+  recentJobHeaderHorizontal: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  recentJobTitleHorizontal: {
     fontFamily: fonts.bold,
-    fontSize: 14,
+    fontSize: 15,
     color: staticColors.text,
-    marginBottom: 3,
+    marginBottom: 2,
   },
-  recentJobMeta: {
+  recentJobSubtextHorizontal: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: staticColors.textSecondary,
+    marginBottom: 2,
+  },
+  recentJobCategoryTextHorizontal: {
     fontFamily: fonts.regular,
     fontSize: 11,
-    color: staticColors.textSecondary,
+    color: staticColors.textLight,
   },
-  recentJobBidBadge: {
+  timerBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0FDF4',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#BBF7D0',
+    backgroundColor: 'rgba(245, 158, 11, 0.1)', // Light Amber
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    position: 'absolute',
+    top: 0,
+    right: 0,
   },
-  recentJobBidCount: {
+  timerBadgeText: {
     fontFamily: fonts.bold,
-    fontSize: 16,
-    color: '#16A34A',
+    fontSize: 8,
+    color: '#D97706',
   },
-  recentJobBidLabel: {
+  priceTextContainer: {
+    position: 'absolute',
+    bottom: -4,
+    right: 0,
+    alignItems: 'flex-end',
+  },
+  priceTextLarge: {
+    fontFamily: fonts.bold,
+    fontSize: 12,
+    color: '#3B82F6',
+  },
+  priceTextSmall: {
     fontFamily: fonts.medium,
-    fontSize: 9,
-    color: '#16A34A',
+    fontSize: 10,
+    color: staticColors.textSecondary,
   },
 });
