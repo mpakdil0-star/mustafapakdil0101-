@@ -1000,8 +1000,7 @@ export default function HomeScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeaderRow}>
               <View style={styles.sectionTitleContainer}>
-                <Text style={[styles.sectionKicker, { color: colors.textLight }]}>VİTRİN</Text>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Öne Çıkan Hizmetler</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>REELS</Text>
               </View>
             </View>
 
@@ -1045,8 +1044,7 @@ export default function HomeScreen() {
             <View style={styles.section}>
               <View style={styles.sectionHeaderRow}>
                 <View style={styles.sectionTitleContainer}>
-                  <Text style={[styles.sectionKicker, { color: colors.textLight }]}>KEŞFET</Text>
-                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Usta bul</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>KEŞFET</Text>
                 </View>
                 <TouchableOpacity
                   activeOpacity={0.8}
