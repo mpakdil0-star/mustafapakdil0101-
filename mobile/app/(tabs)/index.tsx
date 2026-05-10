@@ -965,10 +965,10 @@ export default function HomeScreen() {
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.vitrinScroller}>
               {[
-                { id: 1, title: 'Elektrik Tesisat', desc: 'Güvenli ve profesyonel', icon: 'flash', gradient: ['#7C3AED', '#5B21B6'] as [string, string] },
-                { id: 2, title: 'Güvenlik Kamera', desc: 'Kurulum ve bakım', icon: 'videocam', gradient: ['#3B82F6', '#1D4ED8'] as [string, string] },
-                { id: 3, title: 'Klima Servisi', desc: 'Montaj ve temizlik', icon: 'snow', gradient: ['#0EA5E9', '#0369A1'] as [string, string] },
-                { id: 4, title: 'Tesisat & Su', desc: 'Acil müdahale', icon: 'water', gradient: ['#10B981', '#047857'] as [string, string] },
+                { id: 1, title: 'Elektrik Tesisat', desc: 'Güvenli ve profesyonel', icon: 'flash', gradient: ['#8B5CF6', '#6D28D9'] as [string, string] },
+                { id: 2, title: 'Güvenlik Kamera', desc: 'Kurulum ve bakım', icon: 'videocam', gradient: ['#3B82F6', '#2563EB'] as [string, string] },
+                { id: 3, title: 'Klima Servisi', desc: 'Montaj ve temizlik', icon: 'snow', gradient: ['#06B6D4', '#0891B2'] as [string, string] },
+                { id: 4, title: 'Tesisat & Su', desc: 'Acil müdahale', icon: 'water', gradient: ['#10B981', '#059669'] as [string, string] },
               ].map((item) => (
                 <TouchableOpacity
                   key={item.id}
@@ -1039,60 +1039,6 @@ export default function HomeScreen() {
           )
         }
 
-
-
-        {
-          !isElectrician && (
-            <View style={styles.section}>
-              <View style={styles.sectionBlock}>
-                <Text style={[styles.sectionKicker, { color: colors.textLight }]}>Popüler</Text>
-                <View style={styles.sectionHeaderRow}>
-                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Hızlı erişim</Text>
-                  <TouchableOpacity onPress={() => router.push('/categories')}>
-                    <Text style={[styles.seeAll, { color: colors.primary }]}>Tümü</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.categoryScroller}
-              >
-                <TouchableOpacity
-                  style={styles.categoryItemMatch}
-                  onPress={() => handleActionWithAuth('/jobs/create', { category: 'Elektrik Proje Çizimi', serviceCategory: 'elektrik' })}
-                  activeOpacity={0.85}
-                >
-                  <View style={[styles.categoryIconCircleMinimal, { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }]}>
-                    <Ionicons name="document-text" size={22} color="#7C3AED" />
-                  </View>
-                  <Text style={[styles.categoryLabelMatch, { color: colors.textSecondary }]}>Elektrik Proje</Text>
-                </TouchableOpacity>
-
-                {[
-                  { id: 'avize-montaj', name: 'Avize Montajı', icon: 'bulb', color: colors.primary }, // filled
-                  { id: 'kapi-acma', name: 'Kapı Açma', icon: 'lock-open', color: '#F59E0B' }, // filled
-                  { id: 'klima-montaj', name: 'Klima Montaj', icon: 'snow', color: '#3B82F6' }, // filled
-                  { id: 'tikaniklik', name: 'Tıkanıklık Açma', icon: 'water', color: '#0284C7' }, // filled
-                  { id: 'buzdolabi', name: 'Buzdolabı Tamiri', icon: 'cube', color: '#16A34A' }, // filled
-                ].map((cat, idx) => (
-                  <TouchableOpacity
-                    key={idx}
-                    style={styles.categoryItemMatch}
-                    onPress={() => handleActionWithAuth('/jobs/create', { category: cat.name })}
-                    activeOpacity={0.85}
-                  >
-                    <View style={[styles.categoryIconCircleMinimal, { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }]}>
-                      <Ionicons name={cat.icon as any} size={22} color={cat.color} />
-                    </View>
-                    <Text style={[styles.categoryLabelMatch, { color: colors.textSecondary }]}>{cat.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )
-        }
 
 
         {
