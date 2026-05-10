@@ -1122,10 +1122,10 @@ export default function HomeScreen() {
         {/* Toggleable Section: Son İş İlanları / Öne Çıkan Ustalar (Citizen Only) */}
         {
           !isElectrician && (
-            <View style={[styles.section, { paddingBottom: 10, marginTop: -12 }]}>
-              <View style={{ flexDirection: 'row', marginBottom: 8, borderBottomWidth: 1, borderBottomColor: colors.borderLight }}>
+            <View style={[styles.section, { paddingBottom: 10, marginTop: -6 }]}>
+              <View style={{ flexDirection: 'row', marginBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.borderLight }}>
                 <TouchableOpacity
-                  style={{ flex: 1, paddingVertical: 8, alignItems: 'center', borderBottomWidth: activeHomeTab === 'ustalar' ? 2 : 0, borderBottomColor: colors.primary }}
+                  style={{ flex: 1, paddingVertical: 10, alignItems: 'center', borderBottomWidth: activeHomeTab === 'ustalar' ? 2 : 0, borderBottomColor: colors.primary }}
                   onPress={() => setActiveHomeTab('ustalar')}
                   activeOpacity={0.7}
                 >
@@ -1133,7 +1133,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
                 
                 <TouchableOpacity
-                  style={{ flex: 1, paddingVertical: 8, alignItems: 'center', borderBottomWidth: activeHomeTab === 'ilanlar' ? 2 : 0, borderBottomColor: colors.primary }}
+                  style={{ flex: 1, paddingVertical: 10, alignItems: 'center', borderBottomWidth: activeHomeTab === 'ilanlar' ? 2 : 0, borderBottomColor: colors.primary }}
                   onPress={() => setActiveHomeTab('ilanlar')}
                   activeOpacity={0.7}
                 >
