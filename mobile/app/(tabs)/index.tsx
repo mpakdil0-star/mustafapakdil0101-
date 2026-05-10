@@ -1132,13 +1132,24 @@ export default function HomeScreen() {
                   <Text style={[styles.sectionTitle, { color: activeHomeTab === 'ustalar' ? colors.text : colors.textSecondary, fontSize: 13, textTransform: 'uppercase' }]}>ÖNE ÇIKAN USTALAR</Text>
                 </TouchableOpacity>
                 
-                <TouchableOpacity
-                  style={{ flex: 1, paddingVertical: 10, alignItems: 'center', borderBottomWidth: activeHomeTab === 'ilanlar' ? 2 : 0, borderBottomColor: colors.primary }}
-                  onPress={() => setActiveHomeTab('ilanlar')}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.sectionTitle, { color: activeHomeTab === 'ilanlar' ? colors.text : colors.textSecondary, fontSize: 13, textTransform: 'uppercase' }]}>SON İŞ İLANLARI</Text>
-                </TouchableOpacity>
+                <View style={{ flex: 1 }}>
+                  <TouchableOpacity
+                    style={{ flex: 1, paddingVertical: 10, alignItems: 'center', borderBottomWidth: activeHomeTab === 'ilanlar' ? 2 : 0, borderBottomColor: colors.primary }}
+                    onPress={() => setActiveHomeTab('ilanlar')}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.sectionTitle, { color: activeHomeTab === 'ilanlar' ? colors.text : colors.textSecondary, fontSize: 13, textTransform: 'uppercase' }]}>SON İŞ İLANLARI</Text>
+                  </TouchableOpacity>
+
+                  {activeHomeTab === 'ustalar' && (
+                    <TouchableOpacity 
+                      style={{ position: 'absolute', bottom: -20, alignSelf: 'center', zIndex: 10, paddingHorizontal: 10 }}
+                      onPress={() => router.push('/electricians' as any)}
+                    >
+                      <Text style={{ color: colors.primary, fontFamily: fonts.bold, fontSize: 11 }}>Tüm Ustalar &gt;</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
 
               {activeHomeTab === 'ilanlar' ? (
