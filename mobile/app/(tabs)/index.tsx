@@ -153,6 +153,9 @@ export default function HomeScreen() {
   const [hideHowItWorks, setHideHowItWorks] = useState(false);
   const [showPushBanner, setShowPushBanner] = useState(false);
   const [pushBannerLoading, setPushBannerLoading] = useState(false);
+  const [activeHomeTab, setActiveHomeTab] = useState<'ustalar' | 'ilanlar'>('ustalar');
+  const [recentJobs, setRecentJobs] = useState<any[]>([]);
+  const [isLoadingRecentJobs, setIsLoadingRecentJobs] = useState(false);
 
   // Pulse animation for health action buttons
   const healthPulseAnim = useRef(new Animated.Value(1)).current;
@@ -557,6 +560,28 @@ export default function HomeScreen() {
 
     fetchFeaturedElectricians();
   }, [isElectrician, isInitialized, userCities]); // Refetch if city changes
+
+  // Fetch recent jobs for citizen home tab
+  useEffect(() => {
+    if (isElectrician || !isInitialized) return;
+
+    const fetchRecentJobs = async () => {
+      setIsLoadingRecentJobs(true);
+      try {
+        const result = await jobService.getJobs({ limit: 5 });
+        if (result && result.jobs) {
+          setRecentJobs(result.jobs.slice(0, 5));
+        }
+      } catch (error) {
+        console.log('Error fetching recent jobs:', error);
+        setRecentJobs([]);
+      } finally {
+        setIsLoadingRecentJobs(false);
+      }
+    };
+
+    fetchRecentJobs();
+  }, [isElectrician, isInitialized]);
 
   // Real-time refresh of new jobs count and unread count when notifications change
   useEffect(() => {
@@ -965,10 +990,10 @@ export default function HomeScreen() {
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.vitrinScroller}>
               {[
-                { id: 1, title: 'Elektrik Tesisat', desc: 'Güvenli ve profesyonel', icon: 'flash', gradient: ['#8B5CF6', '#6D28D9'] as [string, string] },
-                { id: 2, title: 'Güvenlik Kamera', desc: 'Kurulum ve bakım', icon: 'videocam', gradient: ['#3B82F6', '#2563EB'] as [string, string] },
-                { id: 3, title: 'Klima Servisi', desc: 'Montaj ve temizlik', icon: 'snow', gradient: ['#06B6D4', '#0891B2'] as [string, string] },
-                { id: 4, title: 'Tesisat & Su', desc: 'Acil müdahale', icon: 'water', gradient: ['#10B981', '#059669'] as [string, string] },
+                { id: 1, title: 'Elektrik Tesisat', desc: 'Güvenli ve profesyonel', icon: 'flash', image: require('../../assets/images/vitrin_elektrik.png'), gradient: ['rgba(139,92,246,0.85)', 'rgba(109,40,217,0.95)'] as [string, string] },
+                { id: 2, title: 'Güvenlik Kamera', desc: 'Kurulum ve bakım', icon: 'videocam', image: require('../../assets/images/vitrin_kamera.png'), gradient: ['rgba(59,130,246,0.85)', 'rgba(37,99,235,0.95)'] as [string, string] },
+                { id: 3, title: 'Klima Servisi', desc: 'Montaj ve temizlik', icon: 'snow', image: require('../../assets/images/vitrin_klima.png'), gradient: ['rgba(6,182,212,0.85)', 'rgba(8,145,178,0.95)'] as [string, string] },
+                { id: 4, title: 'Tesisat & Su', desc: 'Acil müdahale', icon: 'water', image: require('../../assets/images/vitrin_tesisat.png'), gradient: ['rgba(16,185,129,0.85)', 'rgba(5,150,105,0.95)'] as [string, string] },
               ].map((item) => (
                 <TouchableOpacity
                   key={item.id}
@@ -976,18 +1001,19 @@ export default function HomeScreen() {
                   onPress={() => handleActionWithAuth('/jobs/create', { category: item.title })}
                   style={styles.vitrinCard}
                 >
-                  <LinearGradient colors={item.gradient} style={styles.vitrinCardGradient}>
-                    <View style={styles.vitrinCardOverlay} />
-                    <View style={styles.vitrinIconCircle}>
-                      <Ionicons name={item.icon as any} size={28} color="#FFF" />
-                    </View>
-                    <Text style={styles.vitrinCardTitle}>{item.title}</Text>
-                    <Text style={styles.vitrinCardDesc}>{item.desc}</Text>
-                    <View style={styles.vitrinCardAction}>
-                      <Text style={styles.vitrinCardActionText}>İlan Ver</Text>
-                      <Ionicons name="arrow-forward" size={14} color="#FFF" />
-                    </View>
-                  </LinearGradient>
+                  <ImageBackground source={item.image} style={styles.vitrinCardBg} imageStyle={styles.vitrinCardBgImage}>
+                    <LinearGradient colors={item.gradient} style={styles.vitrinCardGradient}>
+                      <View style={styles.vitrinIconCircle}>
+                        <Ionicons name={item.icon as any} size={24} color="#FFF" />
+                      </View>
+                      <Text style={styles.vitrinCardTitle}>{item.title}</Text>
+                      <Text style={styles.vitrinCardDesc}>{item.desc}</Text>
+                      <View style={styles.vitrinCardAction}>
+                        <Text style={styles.vitrinCardActionText}>İlan Ver</Text>
+                        <Ionicons name="arrow-forward" size={14} color="#FFF" />
+                      </View>
+                    </LinearGradient>
+                  </ImageBackground>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -1041,76 +1067,133 @@ export default function HomeScreen() {
 
 
 
+        {/* Tab Toggle: Son İş İlanları / Öne Çıkan Ustalar (Citizen Only) */}
         {
           !isElectrician && (
             <View style={styles.section}>
-              <View style={styles.sectionBlock}>
-                <Text style={[styles.sectionKicker, { color: colors.textLight }]}>ÖNE ÇIKAN</Text>
-                <View style={styles.sectionHeaderRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Ustalar</Text>
-                    <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>En yüksek puanlı ve güvenilir uzmanlar</Text>
-                  </View>
-                  <TouchableOpacity onPress={() => router.push('/electricians')} style={styles.seeAllBtn}>
-                    <Text style={[styles.seeAll, { color: colors.primary }]}>Tümü</Text>
-                    <Ionicons name="chevron-forward" size={14} color={colors.primary} />
-                  </TouchableOpacity>
-                </View>
+              {/* Tab Headers */}
+              <View style={styles.homeTabRow}>
+                <TouchableOpacity
+                  style={[styles.homeTabButton, activeHomeTab === 'ilanlar' && styles.homeTabButtonActive]}
+                  onPress={() => setActiveHomeTab('ilanlar')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="briefcase-outline" size={16} color={activeHomeTab === 'ilanlar' ? colors.primary : colors.textLight} />
+                  <Text style={[styles.homeTabText, activeHomeTab === 'ilanlar' && { color: colors.primary, fontFamily: fonts.bold }]}>Son İş İlanları</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.homeTabButton, activeHomeTab === 'ustalar' && styles.homeTabButtonActive]}
+                  onPress={() => setActiveHomeTab('ustalar')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="people-outline" size={16} color={activeHomeTab === 'ustalar' ? colors.primary : colors.textLight} />
+                  <Text style={[styles.homeTabText, activeHomeTab === 'ustalar' && { color: colors.primary, fontFamily: fonts.bold }]}>Öne Çıkan Ustalar</Text>
+                </TouchableOpacity>
               </View>
 
-              {isLoadingElectricians ? (
-                <View style={{ padding: 40, alignItems: 'center' }}>
-                  <ActivityIndicator size="small" color={colors.primary} />
-                  <Text style={{ marginTop: 10, color: staticColors.textSecondary, fontFamily: fonts.medium }}>Ustalar yükleniyor...</Text>
-                </View>
-              ) : featuredElectricians.length > 0 ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredHorizontalScroller}>
-                  {featuredElectricians.map((elec) => (
-                    <TouchableOpacity
-                      key={elec.id}
-                      style={styles.featuredHorizontalCard}
-                      activeOpacity={0.85}
-                      onPress={() => router.push(`/electricians/${elec.id}` as any)}
-                    >
-                      {elec.profileImageUrl ? (
-                        <Image source={{ uri: getFileUrl(elec.profileImageUrl) || '' }} style={styles.featuredHCardImage} />
-                      ) : (
-                        <View style={[styles.featuredHCardImage, styles.featuredHCardImagePlaceholder]}>
-                          <Ionicons name="person" size={32} color={colors.primary} />
-                        </View>
-                      )}
-                      <View style={styles.featuredHCardContent}>
-                        <View style={styles.featuredHCardNameRow}>
-                          <Text style={styles.featuredHCardName} numberOfLines={1}>{elec.fullName || 'Usta'}</Text>
-                          {elec.isVerified === true && elec.electricianProfile?.verificationStatus === 'VERIFIED' && (
-                            <Ionicons name="shield-checkmark" size={14} color="#10B981" />
+              {/* Tab Content: Öne Çıkan Ustalar */}
+              {activeHomeTab === 'ustalar' && (
+                <>
+                  {isLoadingElectricians ? (
+                    <View style={{ padding: 40, alignItems: 'center' }}>
+                      <ActivityIndicator size="small" color={colors.primary} />
+                      <Text style={{ marginTop: 10, color: staticColors.textSecondary, fontFamily: fonts.medium }}>Ustalar yükleniyor...</Text>
+                    </View>
+                  ) : featuredElectricians.length > 0 ? (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredHorizontalScroller}>
+                      {featuredElectricians.map((elec) => (
+                        <TouchableOpacity
+                          key={elec.id}
+                          style={styles.featuredHorizontalCard}
+                          activeOpacity={0.85}
+                          onPress={() => router.push(`/electricians/${elec.id}` as any)}
+                        >
+                          {elec.profileImageUrl ? (
+                            <Image source={{ uri: getFileUrl(elec.profileImageUrl) || '' }} style={styles.featuredHCardImage} />
+                          ) : (
+                            <View style={[styles.featuredHCardImage, styles.featuredHCardImagePlaceholder]}>
+                              <Ionicons name="person" size={32} color={colors.primary} />
+                            </View>
                           )}
-                        </View>
-                        <Text style={styles.featuredHCardSpecialty}>{getUstaCategory(elec)}</Text>
-                        <View style={styles.featuredHCardRatingRow}>
-                          <Ionicons name="star" size={12} color="#F59E0B" />
-                          <Text style={styles.featuredHCardRating}>
-                            {Number(elec.electricianProfile?.ratingAverage || 0).toFixed(1)}
-                          </Text>
-                          <Text style={styles.featuredHCardReviews}>
-                            ({elec.electricianProfile?.totalReviews || 0})
-                          </Text>
-                        </View>
-                        <Text style={styles.featuredHCardLocation} numberOfLines={1}>
-                          <Ionicons name="location-outline" size={10} color={staticColors.textLight} />
-                          {' '}{elec.locations?.[0] ? `${elec.locations[0].district || ''}, ${elec.locations[0].city || ''}`.replace(/^, /, '').replace(/, $/, '') || 'Türkiye' : 'Türkiye'}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              ) : (
-                <View style={{ padding: 40, alignItems: 'center' }}>
-                  <Ionicons name="people-outline" size={36} color={colors.textLight} />
-                  <Text style={{ marginTop: 12, color: colors.textSecondary, fontFamily: fonts.medium, textAlign: 'center' }}>
-                    Şu an için öne çıkan usta bulunmuyor.
-                  </Text>
-                </View>
+                          <View style={styles.featuredHCardContent}>
+                            <View style={styles.featuredHCardNameRow}>
+                              <Text style={styles.featuredHCardName} numberOfLines={1}>{elec.fullName || 'Usta'}</Text>
+                              {elec.isVerified === true && elec.electricianProfile?.verificationStatus === 'VERIFIED' && (
+                                <Ionicons name="shield-checkmark" size={14} color="#10B981" />
+                              )}
+                            </View>
+                            <Text style={styles.featuredHCardSpecialty}>{getUstaCategory(elec)}</Text>
+                            <View style={styles.featuredHCardRatingRow}>
+                              <Ionicons name="star" size={12} color="#F59E0B" />
+                              <Text style={styles.featuredHCardRating}>
+                                {Number(elec.electricianProfile?.ratingAverage || 0).toFixed(1)}
+                              </Text>
+                              <Text style={styles.featuredHCardReviews}>
+                                ({elec.electricianProfile?.totalReviews || 0})
+                              </Text>
+                            </View>
+                            <Text style={styles.featuredHCardLocation} numberOfLines={1}>
+                              <Ionicons name="location-outline" size={10} color={staticColors.textLight} />
+                              {' '}{elec.locations?.[0] ? `${elec.locations[0].district || ''}, ${elec.locations[0].city || ''}`.replace(/^, /, '').replace(/, $/, '') || 'Türkiye' : 'Türkiye'}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  ) : (
+                    <View style={{ padding: 40, alignItems: 'center' }}>
+                      <Ionicons name="people-outline" size={36} color={colors.textLight} />
+                      <Text style={{ marginTop: 12, color: colors.textSecondary, fontFamily: fonts.medium, textAlign: 'center' }}>
+                        Şu an için öne çıkan usta bulunmuyor.
+                      </Text>
+                    </View>
+                  )}
+                </>
+              )}
+
+              {/* Tab Content: Son İş İlanları */}
+              {activeHomeTab === 'ilanlar' && (
+                <>
+                  {isLoadingRecentJobs ? (
+                    <View style={{ padding: 40, alignItems: 'center' }}>
+                      <ActivityIndicator size="small" color={colors.primary} />
+                      <Text style={{ marginTop: 10, color: staticColors.textSecondary, fontFamily: fonts.medium }}>İlanlar yükleniyor...</Text>
+                    </View>
+                  ) : recentJobs.length > 0 ? (
+                    <View style={styles.recentJobsList}>
+                      {recentJobs.map((job) => (
+                        <TouchableOpacity
+                          key={job.id}
+                          style={styles.recentJobCard}
+                          activeOpacity={0.85}
+                          onPress={() => router.push(`/jobs/${job.id}` as any)}
+                        >
+                          <View style={[styles.recentJobIconBg, { backgroundColor: colors.primary + '12' }]}>
+                            <Ionicons name="briefcase" size={22} color={colors.primary} />
+                          </View>
+                          <View style={styles.recentJobInfo}>
+                            <Text style={styles.recentJobTitle} numberOfLines={1}>{job.title}</Text>
+                            <Text style={styles.recentJobMeta} numberOfLines={1}>
+                              {job.serviceCategory ? getUstaCategory({ serviceCategory: job.serviceCategory }) : 'Genel'}
+                              {job.location?.city ? ` • ${job.location.city}` : ''}
+                            </Text>
+                          </View>
+                          <View style={styles.recentJobBidBadge}>
+                            <Text style={styles.recentJobBidCount}>{job.bidCount || 0}</Text>
+                            <Text style={styles.recentJobBidLabel}>Teklif</Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  ) : (
+                    <View style={{ padding: 40, alignItems: 'center' }}>
+                      <Ionicons name="briefcase-outline" size={36} color={colors.textLight} />
+                      <Text style={{ marginTop: 12, color: colors.textSecondary, fontFamily: fonts.medium, textAlign: 'center' }}>
+                        Henüz iş ilanı bulunmuyor.
+                      </Text>
+                    </View>
+                  )}
+                </>
               )}
             </View>
           )
@@ -2622,8 +2705,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   vitrinCard: {
-    width: 160,
-    height: 200,
+    width: 280,
+    height: 220,
     borderRadius: 20,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -2632,15 +2715,16 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
   },
+  vitrinCardBg: {
+    flex: 1,
+  },
+  vitrinCardBgImage: {
+    borderRadius: 20,
+  },
   vitrinCardGradient: {
     flex: 1,
     padding: 16,
     justifyContent: 'flex-end',
-    position: 'relative',
-  },
-  vitrinCardOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.1)',
   },
   vitrinIconCircle: {
     width: 52,
@@ -2756,5 +2840,94 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 10,
     color: staticColors.textLight,
+  },
+  // Home Tab Toggle
+  homeTabRow: {
+    flexDirection: 'row',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 16,
+  },
+  homeTabButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 11,
+    gap: 6,
+  },
+  homeTabButtonActive: {
+    backgroundColor: staticColors.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  homeTabText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
+    color: staticColors.textLight,
+  },
+  // Recent Job Cards
+  recentJobsList: {
+    gap: 10,
+  },
+  recentJobCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: staticColors.white,
+    borderRadius: 16,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
+  },
+  recentJobIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  recentJobInfo: {
+    flex: 1,
+  },
+  recentJobTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 14,
+    color: staticColors.text,
+    marginBottom: 3,
+  },
+  recentJobMeta: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    color: staticColors.textSecondary,
+  },
+  recentJobBidBadge: {
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  recentJobBidCount: {
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    color: '#16A34A',
+  },
+  recentJobBidLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 9,
+    color: '#16A34A',
   },
 });
