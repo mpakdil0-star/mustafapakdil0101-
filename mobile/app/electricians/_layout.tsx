@@ -23,8 +23,8 @@ export default function ElectriciansLayout() {
       <Stack.Screen
         name="index"
         options={{
+          headerShown: false,
           title: 'Ustalar',
-          headerTitle: 'Öne Çıkan Ustalar'
         }}
       />
       <Stack.Screen

@@ -205,7 +205,7 @@ export default function ElectriciansListScreen() {
 
     return (
         <View style={styles.container}>
-            <PremiumHeader title="Tüm Ustalar" showBackButton />
+            <PremiumHeader title="Öne Çıkan Ustalar" showBackButton />
 
             {/* Search and Filters Header */}
             <View style={styles.filterSection}>
