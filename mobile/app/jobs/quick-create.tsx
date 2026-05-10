@@ -417,7 +417,7 @@ export default function QuickCreateScreen() {
                         style={styles.emergencyBanner}
                     >
                         <View style={styles.emergencyIconWrapper}>
-                            <Ionicons name="flash" size={18} color="#FFF" />
+                            <Ionicons name="flash" size={22} color="#FFF" />
                         </View>
                         <View style={styles.bannerTextBlock}>
                             <Text style={styles.bannerTitle}>Hızlı müdahale</Text>
@@ -429,6 +429,12 @@ export default function QuickCreateScreen() {
                             <Text style={styles.bannerBadgeText}>7/24</Text>
                         </View>
                     </LinearGradient>
+
+                    {/* Section: Hizmet */}
+                    <View style={styles.sectionLabelRow}>
+                        <Ionicons name="construct-outline" size={16} color={colors.primary} />
+                        <Text style={[styles.sectionLabelText, { color: colors.text }]}>Hizmet Seçin</Text>
+                    </View>
 
                     <ScrollView
                         horizontal
@@ -799,7 +805,11 @@ export default function QuickCreateScreen() {
                         </Card>
                     )}
 
-
+                    {/* Section: Konum */}
+                    <View style={styles.sectionLabelRow}>
+                        <Ionicons name="location-outline" size={16} color={colors.primary} />
+                        <Text style={[styles.sectionLabelText, { color: colors.text }]}>Konum Bilgisi</Text>
+                    </View>
 
                     <Card variant="default" style={styles.mainCard}>
                         {savedAddresses.length > 0 && (
@@ -887,6 +897,12 @@ export default function QuickCreateScreen() {
 
 
 
+                    {/* Section: Açıklama */}
+                    <View style={styles.sectionLabelRow}>
+                        <Ionicons name="create-outline" size={16} color={colors.primary} />
+                        <Text style={[styles.sectionLabelText, { color: colors.text }]}>Sorunu Anlatın</Text>
+                    </View>
+
                     <Card variant="default" style={styles.mainCard}>
                         <View>
                             <TextInput
@@ -906,13 +922,17 @@ export default function QuickCreateScreen() {
                             {errors.description && <Text style={styles.errorTextSmall}>{errors.description}</Text>}
                         </View>
                         <View style={styles.photoRow}>
-                            <TouchableOpacity style={[styles.photoBtn, { backgroundColor: colors.borderLight }]} onPress={handleTakePhoto}>
-                                <Ionicons name="camera" size={18} color={colors.primary} />
-                                <Text style={[styles.photoBtnText, { color: colors.primary }]}>Çek</Text>
+                            <TouchableOpacity style={[styles.photoBtn, { borderColor: colors.primary + '30', backgroundColor: colors.primary + '08' }]} onPress={handleTakePhoto}>
+                                <View style={[styles.photoBtnIconWrap, { backgroundColor: colors.primary + '15' }]}>
+                                    <Ionicons name="camera" size={16} color={colors.primary} />
+                                </View>
+                                <Text style={[styles.photoBtnText, { color: colors.primary }]}>Fotoğraf Çek</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={[styles.photoBtn, { backgroundColor: colors.borderLight }]} onPress={handlePickImage}>
-                                <Ionicons name="images" size={18} color={colors.primary} />
-                                <Text style={[styles.photoBtnText, { color: colors.primary }]}>Galeri</Text>
+                            <TouchableOpacity style={[styles.photoBtn, { borderColor: colors.primary + '30', backgroundColor: colors.primary + '08' }]} onPress={handlePickImage}>
+                                <View style={[styles.photoBtnIconWrap, { backgroundColor: colors.primary + '15' }]}>
+                                    <Ionicons name="images" size={16} color={colors.primary} />
+                                </View>
+                                <Text style={[styles.photoBtnText, { color: colors.primary }]}>Galeriden Seç</Text>
                             </TouchableOpacity>
                             {images.map((img, i) => (
                                 <View key={i} style={styles.imgPreview}>
@@ -938,14 +958,17 @@ export default function QuickCreateScreen() {
                     </Card>
 
                     <Button
-                        title="Hemen usta çağır"
+                        title="Hemen Usta Çağır"
                         onPress={handleSubmit}
                         loading={isLoading}
                         variant="primary"
                         style={styles.submitBtn}
-                        icon={<Ionicons name="flash" size={18} color="#FFF" />}
+                        icon={<Ionicons name="flash" size={20} color="#FFF" />}
                     />
-                    <Text style={[styles.safetyHint, { color: colors.textLight }]}>Güvenliğiniz için ödemeyi uygulama üzerinden yapın.</Text>
+                    <View style={styles.safetyRow}>
+                        <Ionicons name="shield-checkmark" size={14} color={colors.textLight} />
+                        <Text style={[styles.safetyHint, { color: colors.textLight }]}>Güvenliğiniz için ödemeyi uygulama üzerinden yapın.</Text>
+                    </View>
                 </ScrollView>
             </KeyboardAvoidingView>
 
@@ -999,19 +1022,19 @@ export default function QuickCreateScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     scrollView: { flex: 1 },
-    content: { paddingHorizontal: 14, paddingTop: 8, paddingBottom: 28 },
+    content: { paddingHorizontal: 16, paddingTop: 6, paddingBottom: 28 },
     emergencyBanner: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-        borderRadius: 18,
-        marginBottom: 10,
-        elevation: 8,
+        paddingVertical: 16,
+        paddingHorizontal: 18,
+        borderRadius: 16,
+        marginBottom: 14,
+        elevation: 6,
         shadowColor: '#EF4444',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
     },
     emergencyIconWrapper: {
         width: 44,
@@ -1032,12 +1055,25 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         marginLeft: 8,
     },
-    bannerBadgeText: { fontFamily: fonts.bold, fontSize: 12, color: '#FFF', letterSpacing: 0.5 },
+    bannerBadgeText: { fontFamily: fonts.bold, fontSize: 13, color: '#FFF', letterSpacing: 0.8 },
+    sectionLabelRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 10,
+        marginTop: 4,
+        paddingHorizontal: 2,
+    },
+    sectionLabelText: {
+        fontFamily: fonts.bold,
+        fontSize: 15,
+        letterSpacing: -0.2,
+    },
     sectionBlock: { marginBottom: 6, marginTop: 2 },
     sectionBlockTight: { marginTop: 6 },
     sectionKicker: { fontFamily: fonts.bold, fontSize: 12, letterSpacing: 1, marginBottom: 2, textTransform: 'uppercase', opacity: 0.6 },
     sectionTitle: { fontFamily: fonts.bold, fontSize: 16, letterSpacing: -0.3 },
-    typeScrollContent: { gap: 10, paddingVertical: 4, paddingRight: 4, marginBottom: 6 },
+    typeScrollContent: { gap: 10, paddingVertical: 2, paddingRight: 4, marginBottom: 8 },
     typeBtn: {
         width: 108,
         height: 120,
@@ -1071,26 +1107,28 @@ const styles = StyleSheet.create({
     row: { flexDirection: 'row', gap: 10, marginBottom: 6 },
     addressInput: { borderRadius: 16, borderWidth: 1.5, padding: 14, fontFamily: fonts.medium, fontSize: 14, marginTop: 12, minHeight: 64, textAlignVertical: 'top' },
     textArea: { borderRadius: 16, borderWidth: 1.5, padding: 14, fontFamily: fonts.medium, fontSize: 15, minHeight: 80, textAlignVertical: 'top' },
-    photoRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginTop: 16 },
-    photoBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14 },
-    photoBtnText: { fontFamily: fonts.bold, fontSize: 13 },
-    imgPreview: { width: 50, height: 50, borderRadius: 12, position: 'relative' },
-    img: { width: '100%', height: '100%', borderRadius: 12 },
-    imgRemove: { position: 'absolute', top: -6, right: -6, backgroundColor: '#FFF', borderRadius: 12, elevation: 2 },
-    budgetRow: { flexDirection: 'row', alignItems: 'center', marginTop: 16, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1.5 },
+    photoRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginTop: 14 },
+    photoBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5 },
+    photoBtnIconWrap: { width: 30, height: 30, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+    photoBtnText: { fontFamily: fonts.bold, fontSize: 12 },
+    imgPreview: { width: 54, height: 54, borderRadius: 12, position: 'relative', borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.06)' },
+    img: { width: '100%', height: '100%', borderRadius: 11 },
+    imgRemove: { position: 'absolute', top: -7, right: -7, backgroundColor: '#FFF', borderRadius: 12, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 3 },
+    budgetRow: { flexDirection: 'row', alignItems: 'center', marginTop: 14, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1.5 },
     budgetInput: { flex: 1, paddingHorizontal: 8, fontFamily: fonts.bold, fontSize: 15 },
     currency: { fontFamily: fonts.bold, fontSize: 16 },
     submitBtn: { 
-        marginTop: 8, 
+        marginTop: 16, 
         minHeight: 56, 
-        borderRadius: 18, 
+        borderRadius: 16, 
         shadowColor: '#EF4444', 
-        shadowOffset: { width: 0, height: 6 }, 
-        shadowOpacity: 0.35, 
-        shadowRadius: 12, 
+        shadowOffset: { width: 0, height: 4 }, 
+        shadowOpacity: 0.3, 
+        shadowRadius: 10, 
         elevation: 8 
     },
-    safetyHint: { textAlign: 'center', fontFamily: fonts.medium, fontSize: 12, marginTop: 14, lineHeight: 18, paddingHorizontal: 12, opacity: 0.7 },
+    safetyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12, paddingHorizontal: 16 },
+    safetyHint: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 16, opacity: 0.65 },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 },
     successModal: { width: '100%', borderRadius: 32, padding: 32, alignItems: 'center' },
     successIconBox: { marginBottom: 24 },
