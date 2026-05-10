@@ -660,7 +660,7 @@ export default function HomeScreen() {
             <View style={[styles.headerDecorativeCircle2, !isElectrician && { backgroundColor: colors.glassPurple || 'rgba(139, 92, 246, 0.15)' }]} />
             <View style={[styles.headerDecorativeCircle3, !isElectrician && { backgroundColor: colors.glowAmethyst || 'rgba(139, 92, 246, 0.3)' }]} />
 
-            <View style={styles.headerTopRow}>
+            <View style={[styles.headerTopRow, !isElectrician && { marginBottom: 0 }]}>
               {!isAuthenticated && (
                 <TouchableOpacity
                   style={styles.headerIconButton}
@@ -671,56 +671,73 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               )}
 
-              <View style={[styles.headerTitleContainer, isAuthenticated && { marginLeft: 0 }]}>
-                <Text style={styles.welcomeName}>Merhaba, {user?.fullName?.split(' ')[0] || 'Misafir'}</Text>
-              </View>
-
-
-              {/* Always show notification button for debugging */}
-              <TouchableOpacity
-                style={styles.headerLinkButton}
-                activeOpacity={0.7}
-                onPress={() => handleActionWithAuth('/profile/notifications')}
-              >
-                <Ionicons name="notifications-outline" size={24} color={colors.white} />
-                {unreadCount > 0 && (
-                  <Animated.View style={[styles.notificationBadge, { transform: [{ scale: badgePulseAnim }] }]}>
-                    <Text style={styles.notificationBadgeText}>
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </Text>
-                  </Animated.View>
-                )}
-              </TouchableOpacity>
-
-
-              <TouchableOpacity
-                style={styles.profileAvatarButton}
-                activeOpacity={0.7}
-                onPress={() => handleActionWithAuth('/profile')}
-              >
-                {user?.profileImageUrl ? (
-                  <Image source={{ uri: getFileUrl(user.profileImageUrl) || '' }} style={styles.headerAvatar} />
-                ) : (
-                  <View style={styles.headerAvatarPlaceholder}>
-                    <Ionicons name="person" size={20} color={colors.primary} />
+              {isElectrician ? (
+                <>
+                  <View style={[styles.headerTitleContainer, isAuthenticated && { marginLeft: 0 }]}>
+                    <Text style={styles.welcomeName}>Merhaba, {user?.fullName?.split(' ')[0] || 'Misafir'}</Text>
                   </View>
-                )}
-              </TouchableOpacity>
-            </View>
 
-            {/* Search Bar - Citizen Only */}
-            {!isElectrician && (
-              <TouchableOpacity
-                style={styles.searchBarContainer}
-                activeOpacity={0.8}
-                onPress={() => handleActionWithAuth('/electricians')}
-              >
-                <View style={styles.searchBarInner}>
-                  <Ionicons name="search" size={18} color="rgba(255,255,255,0.7)" />
-                  <Text style={styles.searchBarPlaceholder}>Usta veya hizmet ara...</Text>
-                </View>
-              </TouchableOpacity>
-            )}
+                  <TouchableOpacity
+                    style={styles.headerLinkButton}
+                    activeOpacity={0.7}
+                    onPress={() => handleActionWithAuth('/profile/notifications')}
+                  >
+                    <Ionicons name="notifications-outline" size={24} color={colors.white} />
+                    {unreadCount > 0 && (
+                      <Animated.View style={[styles.notificationBadge, { transform: [{ scale: badgePulseAnim }] }]}>
+                        <Text style={styles.notificationBadgeText}>
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </Text>
+                      </Animated.View>
+                    )}
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.profileAvatarButton}
+                    activeOpacity={0.7}
+                    onPress={() => handleActionWithAuth('/profile')}
+                  >
+                    {user?.profileImageUrl ? (
+                      <Image source={{ uri: getFileUrl(user.profileImageUrl) || '' }} style={styles.headerAvatar} />
+                    ) : (
+                      <View style={styles.headerAvatarPlaceholder}>
+                        <Ionicons name="person" size={20} color={colors.primary} />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  {/* Citizen Compact Header */}
+                  <TouchableOpacity 
+                    style={styles.compactSearchButton}
+                    activeOpacity={0.8}
+                    onPress={() => handleActionWithAuth('/electricians')}
+                  >
+                    <Ionicons name="search" size={16} color="rgba(255,255,255,0.7)" />
+                    <Text style={styles.compactSearchText}>Ara...</Text>
+                  </TouchableOpacity>
+                  
+                  <View style={styles.citizenTitleContainer}>
+                    <Text style={styles.citizenTitleText}>İşBitir</Text>
+                  </View>
+
+                  <View style={styles.citizenRightIcons}>
+                    <TouchableOpacity style={styles.headerLinkButton} activeOpacity={0.7} onPress={() => handleActionWithAuth('/profile')}>
+                      <Ionicons name="person-outline" size={26} color={colors.white} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.headerLinkButton} activeOpacity={0.7} onPress={() => handleActionWithAuth('/profile/notifications')}>
+                      <Ionicons name="notifications-outline" size={24} color={colors.white} />
+                      {unreadCount > 0 && (
+                        <Animated.View style={[styles.notificationBadge, { transform: [{ scale: badgePulseAnim }] }]}>
+                          <Text style={styles.notificationBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                        </Animated.View>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </View>
           </ImageBackground>
         </View>
 
@@ -1496,6 +1513,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 20,
+  },
+  compactSearchButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    width: 90,
+    gap: 6,
+  },
+  compactSearchText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+  },
+  citizenTitleContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  citizenTitleText: {
+    fontFamily: fonts.extraBold,
+    fontSize: 22,
+    color: staticColors.white,
+    letterSpacing: 0.5,
+  },
+  citizenRightIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   headerIconButton: {
     padding: 4,
