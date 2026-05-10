@@ -998,7 +998,7 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   key={item.id}
                   activeOpacity={0.85}
-                  onPress={() => handleActionWithAuth('/jobs/create', { category: item.title, serviceCategory: item.serviceCategory })}
+                  onPress={() => handleActionWithAuth('/jobs/create', { serviceCategory: item.serviceCategory })}
                   style={styles.vitrinCard}
                 >
                   <ImageBackground source={item.image} style={styles.vitrinCardBg} imageStyle={styles.vitrinCardBgImage}>
