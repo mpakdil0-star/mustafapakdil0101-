@@ -1134,9 +1134,9 @@ export default function HomeScreen() {
                       >
                         <View style={styles.recentJobUserAvatar}>
                            {job.citizen?.profileImageUrl ? (
-                              <Image source={{ uri: getFileUrl(job.citizen.profileImageUrl) || '' }} style={{width: '100%', height: '100%', borderRadius: 12}} />
+                              <Image source={{ uri: getFileUrl(job.citizen.profileImageUrl) || '' }} style={{width: '100%', height: '100%', borderRadius: 16}} />
                             ) : (
-                              <Ionicons name="person" size={24} color={colors.primary} />
+                              <Ionicons name="person" size={28} color={colors.primary} />
                             )}
                         </View>
                         
@@ -1182,9 +1182,9 @@ export default function HomeScreen() {
                       >
                         <View style={styles.recentJobUserAvatar}>
                            {elec.profileImageUrl ? (
-                              <Image source={{ uri: getFileUrl(elec.profileImageUrl) || '' }} style={{width: '100%', height: '100%', borderRadius: 12}} />
+                              <Image source={{ uri: getFileUrl(elec.profileImageUrl) || '' }} style={{width: '100%', height: '100%', borderRadius: 16}} />
                             ) : (
-                              <Ionicons name="person" size={24} color={colors.primary} />
+                              <Ionicons name="person" size={28} color={colors.primary} />
                             )}
                         </View>
                         
@@ -2918,13 +2918,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   recentJobUserAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
+    width: 70,
+    height: 70,
+    borderRadius: 16,
     backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
   recentJobInfoHorizontal: {
     flex: 1,
