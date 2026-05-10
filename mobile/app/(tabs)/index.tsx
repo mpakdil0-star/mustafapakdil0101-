@@ -718,7 +718,7 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                   
                   <View style={styles.citizenTitleContainer}>
-                    <Text style={styles.citizenTitleText}>İşBitir</Text>
+                    <Text style={styles.citizenTitleText}>İşbitir</Text>
                   </View>
 
                   <View style={styles.citizenRightIcons}>
