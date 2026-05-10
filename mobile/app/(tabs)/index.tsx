@@ -1123,34 +1123,31 @@ export default function HomeScreen() {
         {
           !isElectrician && (
             <View style={[styles.section, { paddingBottom: 20 }]}>
-              <View style={{ flexDirection: 'row', marginBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.borderLight }}>
+              <View style={{ flexDirection: 'row', marginBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.borderLight }}>
                 <TouchableOpacity
-                  style={{ flex: 1, paddingVertical: 10, alignItems: 'center', borderBottomWidth: activeHomeTab === 'ustalar' ? 2 : 0, borderBottomColor: colors.primary }}
+                  style={{ flex: 1.2, paddingVertical: 10, alignItems: 'center', borderBottomWidth: activeHomeTab === 'ustalar' ? 2 : 0, borderBottomColor: colors.primary }}
                   onPress={() => setActiveHomeTab('ustalar')}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.sectionTitle, { color: activeHomeTab === 'ustalar' ? colors.text : colors.textSecondary, fontSize: 13, textTransform: 'uppercase' }]}>ÖNE ÇIKAN USTALAR</Text>
+                  <Text style={[styles.sectionTitle, { color: activeHomeTab === 'ustalar' ? colors.text : colors.textSecondary, fontSize: 12, textTransform: 'uppercase' }]} numberOfLines={1}>ÖNE ÇIKAN USTALAR</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{ flex: 0.8, paddingVertical: 10, alignItems: 'center', justifyContent: 'center' }}
+                  onPress={() => router.push('/electricians' as any)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ color: colors.primary, fontFamily: fonts.bold, fontSize: 12 }} numberOfLines={1}>TÜM USTALAR</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity
-                  style={{ flex: 1, paddingVertical: 10, alignItems: 'center', borderBottomWidth: activeHomeTab === 'ilanlar' ? 2 : 0, borderBottomColor: colors.primary }}
+                  style={{ flex: 1.2, paddingVertical: 10, alignItems: 'center', borderBottomWidth: activeHomeTab === 'ilanlar' ? 2 : 0, borderBottomColor: colors.primary }}
                   onPress={() => setActiveHomeTab('ilanlar')}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.sectionTitle, { color: activeHomeTab === 'ilanlar' ? colors.text : colors.textSecondary, fontSize: 13, textTransform: 'uppercase' }]}>SON İŞ İLANLARI</Text>
+                  <Text style={[styles.sectionTitle, { color: activeHomeTab === 'ilanlar' ? colors.text : colors.textSecondary, fontSize: 12, textTransform: 'uppercase' }]} numberOfLines={1}>SON İŞ İLANLARI</Text>
                 </TouchableOpacity>
               </View>
-
-              {activeHomeTab === 'ustalar' && (
-                <View style={{ flexDirection: 'row', marginBottom: 8, marginTop: -10 }}>
-                  <View style={{ flex: 1, alignItems: 'center' }}>
-                    <TouchableOpacity onPress={() => router.push('/electricians' as any)} style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
-                      <Text style={{ color: colors.primary, fontFamily: fonts.bold, fontSize: 12 }}>Tüm Ustalar &gt;</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <View style={{ flex: 1 }} />
-                </View>
-              )}
 
               {activeHomeTab === 'ilanlar' ? (
                 isLoadingRecentJobs ? (
