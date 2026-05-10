@@ -990,15 +990,15 @@ export default function HomeScreen() {
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.vitrinScroller}>
               {[
-                { id: 1, title: 'Elektrik Tesisat', desc: 'Güvenli ve profesyonel', icon: 'flash', image: require('../../assets/images/vitrin_elektrik.png'), gradient: ['rgba(139,92,246,0.85)', 'rgba(109,40,217,0.95)'] as [string, string] },
-                { id: 2, title: 'Güvenlik Kamera', desc: 'Kurulum ve bakım', icon: 'videocam', image: require('../../assets/images/vitrin_kamera.png'), gradient: ['rgba(59,130,246,0.85)', 'rgba(37,99,235,0.95)'] as [string, string] },
-                { id: 3, title: 'Klima Servisi', desc: 'Montaj ve temizlik', icon: 'snow', image: require('../../assets/images/vitrin_klima.png'), gradient: ['rgba(6,182,212,0.85)', 'rgba(8,145,178,0.95)'] as [string, string] },
-                { id: 4, title: 'Tesisat & Su', desc: 'Acil müdahale', icon: 'water', image: require('../../assets/images/vitrin_tesisat.png'), gradient: ['rgba(16,185,129,0.85)', 'rgba(5,150,105,0.95)'] as [string, string] },
+                { id: 1, title: 'Elektrik Tesisat', desc: 'Güvenli ve profesyonel', icon: 'flash', serviceCategory: 'elektrik', image: require('../../assets/images/vitrin_elektrik.png'), gradient: ['rgba(139,92,246,0.85)', 'rgba(109,40,217,0.95)'] as [string, string] },
+                { id: 2, title: 'Güvenlik Kamera', desc: 'Kurulum ve bakım', icon: 'videocam', serviceCategory: 'elektrik', image: require('../../assets/images/vitrin_kamera.png'), gradient: ['rgba(59,130,246,0.85)', 'rgba(37,99,235,0.95)'] as [string, string] },
+                { id: 3, title: 'Klima Servisi', desc: 'Montaj ve temizlik', icon: 'snow', serviceCategory: 'klima', image: require('../../assets/images/vitrin_klima.png'), gradient: ['rgba(6,182,212,0.85)', 'rgba(8,145,178,0.95)'] as [string, string] },
+                { id: 4, title: 'Tesisat & Su', desc: 'Acil müdahale', icon: 'water', serviceCategory: 'tesisat', image: require('../../assets/images/vitrin_tesisat.png'), gradient: ['rgba(16,185,129,0.85)', 'rgba(5,150,105,0.95)'] as [string, string] },
               ].map((item) => (
                 <TouchableOpacity
                   key={item.id}
                   activeOpacity={0.85}
-                  onPress={() => handleActionWithAuth('/jobs/create', { category: item.title })}
+                  onPress={() => handleActionWithAuth('/jobs/create', { category: item.title, serviceCategory: item.serviceCategory })}
                   style={styles.vitrinCard}
                 >
                   <ImageBackground source={item.image} style={styles.vitrinCardBg} imageStyle={styles.vitrinCardBgImage}>
