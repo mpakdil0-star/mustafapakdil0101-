@@ -1143,7 +1143,7 @@ export default function HomeScreen() {
 
                   {activeHomeTab === 'ustalar' && (
                     <TouchableOpacity 
-                      style={{ position: 'absolute', bottom: -20, alignSelf: 'center', zIndex: 10, paddingHorizontal: 10 }}
+                      style={{ position: 'absolute', bottom: -10, alignSelf: 'center', zIndex: 10, paddingHorizontal: 10 }}
                       onPress={() => router.push('/electricians' as any)}
                     >
                       <Text style={{ color: colors.primary, fontFamily: fonts.bold, fontSize: 11 }}>Tüm Ustalar &gt;</Text>
