@@ -439,6 +439,8 @@ export default function QuickCreateScreen() {
                         horizontal
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.typeScrollContent}
+                        decelerationRate="fast"
+                        snapToInterval={108}
                     >
                         {EMERGENCY_TYPES.map((type) => {
                             const isSelected = selectedType === type.id;
@@ -451,6 +453,7 @@ export default function QuickCreateScreen() {
                                         { borderColor: colors.border },
                                         isSelected && { borderColor: type.color, backgroundColor: type.color + '08' },
                                         hasError && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
+                                        isSelected && styles.typeBtnSelected
                                     ]}
                                     activeOpacity={0.85}
                                     onPress={() => {
@@ -469,9 +472,12 @@ export default function QuickCreateScreen() {
                                         {type.label}
                                     </Text>
                                     {isSelected && (
-                                        <View style={[styles.checkIndicator, { backgroundColor: type.color }]}>
-                                            <Ionicons name="checkmark" size={9} color="#FFF" />
-                                        </View>
+                                        <LinearGradient
+                                            colors={[type.color, type.color + 'CC']}
+                                            style={styles.checkIndicator}
+                                        >
+                                            <Ionicons name="checkmark" size={10} color="#FFF" />
+                                        </LinearGradient>
                                     )}
                                 </TouchableOpacity>
                             );
@@ -484,9 +490,12 @@ export default function QuickCreateScreen() {
                     {/* Sub-category Bubbles */}
                     {selectedType && (
                         <View style={styles.subCategoryContainer}>
-                            <Text style={[styles.subCategoryHeading, { color: colors.textSecondary }]}>
-                                {selectedType === 'elektrik' ? 'Hangi konuda proje veya detaylı servis lazım?' : 'Hızlı detay seçin (opsiyonel)'}
-                            </Text>
+                            <View style={styles.subCategoryHeader}>
+                                <View style={[styles.dot, { backgroundColor: EMERGENCY_TYPES.find(t => t.id === selectedType)?.color }]} />
+                                <Text style={[styles.subCategoryHeading, { color: colors.textSecondary }]}>
+                                    {selectedType === 'elektrik' ? 'Hangi konuda proje veya detaylı servis lazım?' : 'Hızlı detay seçin (opsiyonel)'}
+                                </Text>
+                            </View>
                             <ScrollView
                                 horizontal
                                 showsHorizontalScrollIndicator={false}
@@ -1001,131 +1010,160 @@ export default function QuickCreateScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     scrollView: { flex: 1 },
-    content: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 28 },
+    content: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 28 },
     emergencyBanner: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderRadius: 14,
-        marginBottom: 12,
-        elevation: 3,
-        shadowColor: '#DC2626',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.22,
-        shadowRadius: 6,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        marginBottom: 20,
+        elevation: 8,
+        shadowColor: '#EF4444',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
     },
     emergencyIconWrapper: {
-        width: 36,
-        height: 36,
-        borderRadius: 10,
-        backgroundColor: 'rgba(255,255,255,0.22)',
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        backgroundColor: 'rgba(255,255,255,0.25)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 10,
+        marginRight: 14,
     },
     bannerTextBlock: { flex: 1, minWidth: 0 },
-    bannerTitle: { fontFamily: fonts.bold, fontSize: 15, color: '#FFF', letterSpacing: -0.2 },
-    bannerSubtitle: { fontFamily: fonts.medium, fontSize: 12, color: 'rgba(255,255,255,0.88)', marginTop: 2, lineHeight: 16 },
+    bannerTitle: { fontFamily: fonts.bold, fontSize: 17, color: '#FFF', letterSpacing: -0.3 },
+    bannerSubtitle: { fontFamily: fonts.medium, fontSize: 13, color: 'rgba(255,255,255,0.9)', marginTop: 2, lineHeight: 18 },
     bannerBadge: {
-        backgroundColor: 'rgba(0,0,0,0.18)',
-        paddingHorizontal: 9,
-        paddingVertical: 5,
-        borderRadius: 20,
-        marginLeft: 6,
+        backgroundColor: 'rgba(0,0,0,0.2)',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 12,
+        marginLeft: 8,
     },
-    bannerBadgeText: { fontFamily: fonts.bold, fontSize: 11, color: '#FFF', letterSpacing: 0.3 },
-    sectionBlock: { marginBottom: 8, marginTop: 4 },
-    sectionBlockTight: { marginTop: 10 },
-    sectionKicker: { fontFamily: fonts.semiBold, fontSize: 11, letterSpacing: 0.4, marginBottom: 2, textTransform: 'uppercase' },
-    sectionTitle: { fontFamily: fonts.bold, fontSize: 15, letterSpacing: -0.2 },
-    typeScrollContent: { gap: 8, paddingVertical: 2, paddingRight: 4, marginBottom: 12 },
+    bannerBadgeText: { fontFamily: fonts.bold, fontSize: 12, color: '#FFF', letterSpacing: 0.5 },
+    sectionBlock: { marginBottom: 12, marginTop: 4 },
+    sectionBlockTight: { marginTop: 16 },
+    sectionKicker: { fontFamily: fonts.bold, fontSize: 12, letterSpacing: 1, marginBottom: 4, textTransform: 'uppercase', opacity: 0.6 },
+    sectionTitle: { fontFamily: fonts.bold, fontSize: 18, letterSpacing: -0.4 },
+    typeScrollContent: { gap: 12, paddingVertical: 8, paddingRight: 4, marginBottom: 12 },
     typeBtn: {
-        width: 100,
-        minHeight: 96,
+        width: 108,
+        height: 116,
         backgroundColor: '#FFF',
-        borderRadius: 14,
+        borderRadius: 20,
         borderWidth: 1.5,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 6,
+        paddingVertical: 10,
+        paddingHorizontal: 8,
         position: 'relative',
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
     },
-    typeIconBox: { width: 52, height: 52, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
-    type3dImage: { width: 42, height: 42 },
-    typeLabel: { fontFamily: fonts.semiBold, fontSize: 11, textAlign: 'center', lineHeight: 14 },
-    checkIndicator: { position: 'absolute', top: 6, right: 6, width: 16, height: 16, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
-    mainCard: { padding: 10, borderRadius: 16, marginBottom: 12 },
-    addressScroll: { flexDirection: 'row', marginBottom: 10 },
-    addressChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1, marginRight: 8 },
-    addressChipText: { fontFamily: fonts.bold, fontSize: 11 },
-    row: { flexDirection: 'row', gap: 8, marginBottom: 4 },
-    addressInput: { borderRadius: 12, borderWidth: 1, padding: 10, fontFamily: fonts.medium, fontSize: 13, marginTop: 8, minHeight: 56, textAlignVertical: 'top' },
-    textArea: { borderRadius: 12, borderWidth: 1, padding: 10, fontFamily: fonts.medium, fontSize: 14, minHeight: 72, textAlignVertical: 'top' },
-    photoRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 10 },
-    photoBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 11 },
-    photoBtnText: { fontFamily: fonts.bold, fontSize: 12 },
-    imgPreview: { width: 40, height: 40, borderRadius: 8, position: 'relative' },
-    img: { width: '100%', height: '100%', borderRadius: 8 },
-    imgRemove: { position: 'absolute', top: -5, right: -5, backgroundColor: '#FFF', borderRadius: 10 },
-    budgetRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 8, borderWidth: 1 },
-    budgetInput: { flex: 1, paddingHorizontal: 6, fontFamily: fonts.semiBold, fontSize: 14 },
-    currency: { fontFamily: fonts.bold, fontSize: 14 },
-    submitBtn: { marginTop: 6, minHeight: 50, borderRadius: 14, shadowColor: '#EF4444', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6, elevation: 5 },
-    safetyHint: { textAlign: 'center', fontFamily: fonts.medium, fontSize: 11, marginTop: 10, lineHeight: 15, paddingHorizontal: 8 },
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.8)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-    successModal: { width: '100%', borderRadius: 28, padding: 24, alignItems: 'center' },
-    successIconBox: { marginBottom: 20 },
-    iconCircle: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center' },
-    successTitle: { fontFamily: fonts.extraBold, fontSize: 24, color: '#FFF', marginBottom: 8 },
-    successMessage: { fontFamily: fonts.medium, fontSize: 14, color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginBottom: 24 },
+    typeBtnSelected: {
+        elevation: 8,
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+    },
+    typeIconBox: { width: 56, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+    type3dImage: { width: 44, height: 44 },
+    typeLabel: { fontFamily: fonts.bold, fontSize: 12, textAlign: 'center', lineHeight: 15 },
+    checkIndicator: { position: 'absolute', top: 10, right: 10, width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+    mainCard: { padding: 16, borderRadius: 24, marginBottom: 16, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
+    addressScroll: { flexDirection: 'row', marginBottom: 14 },
+    addressChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1.5, marginRight: 10 },
+    addressChipText: { fontFamily: fonts.bold, fontSize: 12 },
+    row: { flexDirection: 'row', gap: 10, marginBottom: 6 },
+    addressInput: { borderRadius: 16, borderWidth: 1.5, padding: 14, fontFamily: fonts.medium, fontSize: 14, marginTop: 12, minHeight: 64, textAlignVertical: 'top' },
+    textArea: { borderRadius: 16, borderWidth: 1.5, padding: 14, fontFamily: fonts.medium, fontSize: 15, minHeight: 80, textAlignVertical: 'top' },
+    photoRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginTop: 16 },
+    photoBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14 },
+    photoBtnText: { fontFamily: fonts.bold, fontSize: 13 },
+    imgPreview: { width: 50, height: 50, borderRadius: 12, position: 'relative' },
+    img: { width: '100%', height: '100%', borderRadius: 12 },
+    imgRemove: { position: 'absolute', top: -6, right: -6, backgroundColor: '#FFF', borderRadius: 12, elevation: 2 },
+    budgetRow: { flexDirection: 'row', alignItems: 'center', marginTop: 16, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1.5 },
+    budgetInput: { flex: 1, paddingHorizontal: 8, fontFamily: fonts.bold, fontSize: 15 },
+    currency: { fontFamily: fonts.bold, fontSize: 16 },
+    submitBtn: { 
+        marginTop: 8, 
+        minHeight: 56, 
+        borderRadius: 18, 
+        shadowColor: '#EF4444', 
+        shadowOffset: { width: 0, height: 6 }, 
+        shadowOpacity: 0.35, 
+        shadowRadius: 12, 
+        elevation: 8 
+    },
+    safetyHint: { textAlign: 'center', fontFamily: fonts.medium, fontSize: 12, marginTop: 14, lineHeight: 18, paddingHorizontal: 12, opacity: 0.7 },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+    successModal: { width: '100%', borderRadius: 32, padding: 32, alignItems: 'center' },
+    successIconBox: { marginBottom: 24 },
+    iconCircle: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', elevation: 12, shadowColor: '#EF4444', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 16 },
+    successTitle: { fontFamily: fonts.extraBold, fontSize: 26, color: '#FFF', marginBottom: 10 },
+    successMessage: { fontFamily: fonts.medium, fontSize: 15, color: 'rgba(255,255,255,0.8)', textAlign: 'center', marginBottom: 32, lineHeight: 22 },
     subCategoryContainer: {
-        marginBottom: 16,
+        marginBottom: 20,
         marginTop: 4,
-        paddingHorizontal: 4,
+        paddingHorizontal: 2,
     },
-    subCategoryHeading: {
-        fontFamily: fonts.semiBold,
-        fontSize: 12,
-        marginBottom: 10,
+    subCategoryHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
         marginLeft: 4,
     },
+    dot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        marginRight: 8,
+    },
+    subCategoryHeading: {
+        fontFamily: fonts.bold,
+        fontSize: 13,
+    },
     subCategoryScrollContent: {
-        paddingRight: 20,
-        gap: 8,
+        paddingRight: 24,
+        gap: 10,
     },
     subCategoryChip: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 14,
         borderWidth: 1.5,
         backgroundColor: '#FFF',
     },
     subCategoryText: {
-        fontFamily: fonts.medium,
-        fontSize: 12,
+        fontFamily: fonts.bold,
+        fontSize: 13,
     },
     smallInput: {
-        height: 40,
-        borderRadius: 8,
-        borderWidth: 1,
-        paddingHorizontal: 10,
-        fontFamily: fonts.medium,
-        fontSize: 13,
+        height: 44,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        paddingHorizontal: 12,
+        fontFamily: fonts.bold,
+        fontSize: 14,
     },
     choiceRow: {
         flexDirection: 'row',
-        marginTop: 8,
+        marginTop: 10,
         gap: 12,
     },
     choiceBtn: {
         flex: 1,
-        paddingVertical: 10,
-        borderRadius: 10,
-        borderWidth: 1.5,
+        paddingVertical: 12,
+        borderRadius: 14,
+        borderWidth: 2,
         borderColor: '#E2E8F0',
         backgroundColor: '#FFF',
         alignItems: 'center',
@@ -1135,42 +1173,51 @@ const styles = StyleSheet.create({
         backgroundColor: '#EFF6FF',
     },
     choiceBtnText: {
-        fontFamily: fonts.semiBold,
-        fontSize: 12,
+        fontFamily: fonts.bold,
+        fontSize: 13,
         color: '#64748B',
     },
     choiceBtnTextActive: {
         color: '#3B82F6',
     },
     errorTextSmall: {
-        fontSize: 11,
+        fontSize: 12,
         color: '#EF4444',
-        marginTop: 4,
-        marginLeft: 4,
-        fontFamily: fonts.medium,
+        marginTop: 6,
+        marginLeft: 6,
+        fontFamily: fonts.bold,
     },
     label: {
-        fontFamily: fonts.semiBold,
-        fontSize: 13,
-        marginBottom: 6,
+        fontFamily: fonts.bold,
+        fontSize: 14,
+        marginBottom: 8,
     },
     pillContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 8,
-        marginTop: 4,
+        gap: 10,
+        marginTop: 6,
     },
     pill: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 10,
-        paddingVertical: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
         borderRadius: 20,
         borderWidth: 1.5,
-        gap: 4,
+        gap: 6,
     },
     pillText: {
-        fontFamily: fonts.semiBold,
-        fontSize: 11,
+        fontFamily: fonts.bold,
+        fontSize: 12,
+    },
+    descriptionInput: {
+        borderRadius: 20,
+        borderWidth: 1.5,
+        padding: 16,
+        fontFamily: fonts.medium,
+        fontSize: 15,
+        minHeight: 100,
+        textAlignVertical: 'top',
     },
 });
