@@ -1020,12 +1020,12 @@ export default function HomeScreen() {
             >
               {Array.from({ length: 3 }).map((_, colIndex) => {
                 const vitrinItems = [
-                  { id: 1, title: 'Elektrik Tesisat', desc: 'Güvenli ve profesyonel', icon: 'flash', serviceCategory: 'elektrik', image: require('../../assets/images/vitrin_elektrik.jpg') },
-                  { id: 2, title: 'Güvenlik Kamera', desc: 'Kurulum ve bakım', icon: 'videocam', serviceCategory: 'elektrik', image: require('../../assets/images/vitrin_kamera.jpg') },
-                  { id: 3, title: 'Klima Servisi', desc: 'Montaj ve temizlik', icon: 'snow', serviceCategory: 'klima', image: require('../../assets/images/vitrin_klima.jpg') },
-                  { id: 4, title: 'Tesisat & Su', desc: 'Acil müdahale', icon: 'water', serviceCategory: 'tesisat', image: require('../../assets/images/vitrin_tesisat.jpg') },
-                  { id: 5, title: 'Çilingir', desc: 'Kapı açma ve kilit', icon: 'key', serviceCategory: 'cilingir', image: require('../../assets/images/vitrin_cilingir.jpg') },
-                  { id: 6, title: 'Beyaz Eşya', desc: 'Tamir ve bakım', icon: 'construct', serviceCategory: 'beyaz-esya', image: require('../../assets/images/vitrin_beyaz_esya.jpg') },
+                  { id: 1, title: 'Elektrik Tesisat', desc: 'Güvenli ve profesyonel', icon: 'flash', serviceCategory: 'elektrik', image: require('../../assets/images/v_vitrin_elektrik.jpg') },
+                  { id: 2, title: 'Güvenlik Kamera', desc: 'Kurulum ve bakım', icon: 'videocam', serviceCategory: 'elektrik', image: require('../../assets/images/v_vitrin_kamera.jpg') },
+                  { id: 3, title: 'Klima Servisi', desc: 'Montaj ve temizlik', icon: 'snow', serviceCategory: 'klima', image: require('../../assets/images/v_vitrin_klima.jpg') },
+                  { id: 4, title: 'Tesisat & Su', desc: 'Acil müdahale', icon: 'water', serviceCategory: 'tesisat', image: require('../../assets/images/v_vitrin_tesisat.jpg') },
+                  { id: 5, title: 'Çilingir', desc: 'Kapı açma ve kilit', icon: 'key', serviceCategory: 'cilingir', image: require('../../assets/images/v_vitrin_cilingir.jpg') },
+                  { id: 6, title: 'Beyaz Eşya', desc: 'Tamir ve bakım', icon: 'construct', serviceCategory: 'beyaz-esya', image: require('../../assets/images/v_vitrin_beyaz_esya.jpg') },
                 ];
                 return (
                   <View key={colIndex} style={styles.vitrinColumn}>
