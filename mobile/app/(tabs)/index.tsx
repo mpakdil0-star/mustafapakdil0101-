@@ -386,6 +386,54 @@ export default function HomeScreen() {
   // Kullanıcının konumunu/şehrini ve hizmet bölgelerini yükle
   const initializationRef = useRef(false);
 
+  // Define fetching functions using useCallback to reuse in useEffect and useFocusEffect
+  const fetchRecentJobs = useCallback(async () => {
+    if (isElectrician || !isInitialized) return;
+    setIsLoadingRecentJobs(true);
+    try {
+      const result = await jobService.getJobs({ limit: 5 });
+      if (result && result.jobs) {
+        setRecentJobs(result.jobs.slice(0, 5));
+      }
+    } catch (error) {
+      console.log('Error fetching recent jobs:', error);
+      setRecentJobs([]);
+    } finally {
+      setIsLoadingRecentJobs(false);
+    }
+  }, [isElectrician, isInitialized]);
+
+  const fetchFeaturedElectricians = useCallback(async () => {
+    if (isElectrician || !isInitialized) return;
+    setIsLoadingElectricians(true);
+    try {
+      let cityToSearch = userCities.length > 0 ? userCities[0] : undefined;
+      let response = await userService.getElectricians({ city: cityToSearch });
+
+      if (!response.success || !response.data || (response.data as any[]).length === 0) {
+        if (cityToSearch) {
+          response = await userService.getElectricians({});
+        }
+      }
+
+      if (response.success && response.data) {
+        const sorted = (response.data as any[])
+          .sort((a, b) => {
+            const ratingA = a.electricianProfile?.ratingAverage || a.electricianProfile?.rating || 0;
+            const ratingB = b.electricianProfile?.ratingAverage || b.electricianProfile?.rating || 0;
+            return ratingB - ratingA;
+          })
+          .slice(0, 5);
+        setFeaturedElectricians(sorted);
+      }
+    } catch (error) {
+      console.log('Error fetching featured electricians:', error);
+      setFeaturedElectricians([]);
+    } finally {
+      setIsLoadingElectricians(false);
+    }
+  }, [isElectrician, isInitialized, userCities]);
+
   useFocusEffect(
     useCallback(() => {
       const refreshStatus = async () => {
@@ -413,6 +461,10 @@ export default function HomeScreen() {
         // Refresh necessary data on every focus
         fetchNewJobsCount();
         refreshStatus();
+        if (!isElectrician) {
+          fetchRecentJobs();
+          fetchFeaturedElectricians();
+        }
         return;
       }
 
@@ -521,67 +573,13 @@ export default function HomeScreen() {
     return () => subscription.remove();
   }, [isAuthenticated, showPushBanner]);
 
-  // Separate useEffect for fetching featured electricians
+  // Separate useEffect for initial fetching
   useEffect(() => {
-    if (isElectrician || !isInitialized) return;
-
-    const fetchFeaturedElectricians = async () => {
-      setIsLoadingElectricians(true);
-      try {
-        let cityToSearch = userCities.length > 0 ? userCities[0] : undefined;
-        let response = await userService.getElectricians({ city: cityToSearch });
-
-        // Fallback: If city-specific search returns no one or no city was provided, fetch all top-rated electricians
-        if (!response.success || !response.data || (response.data as any[]).length === 0) {
-          if (cityToSearch) {
-            console.log(`[Home] No electricians in ${cityToSearch}, falling back to global search...`);
-            response = await userService.getElectricians({});
-          }
-        }
-
-        if (response.success && response.data) {
-          // Sort by rating and take top 5
-          const sorted = (response.data as any[])
-            .sort((a, b) => {
-              const ratingA = a.electricianProfile?.ratingAverage || a.electricianProfile?.rating || 0;
-              const ratingB = b.electricianProfile?.ratingAverage || b.electricianProfile?.rating || 0;
-              return ratingB - ratingA;
-            })
-            .slice(0, 5);
-          setFeaturedElectricians(sorted);
-        }
-      } catch (error) {
-        console.log('Error fetching featured electricians:', error);
-        setFeaturedElectricians([]);
-      } finally {
-        setIsLoadingElectricians(false);
-      }
-    };
-
-    fetchFeaturedElectricians();
-  }, [isElectrician, isInitialized, userCities]); // Refetch if city changes
-
-  // Fetch recent jobs for citizen home tab
-  useEffect(() => {
-    if (isElectrician || !isInitialized) return;
-
-    const fetchRecentJobs = async () => {
-      setIsLoadingRecentJobs(true);
-      try {
-        const result = await jobService.getJobs({ limit: 5 });
-        if (result && result.jobs) {
-          setRecentJobs(result.jobs.slice(0, 5));
-        }
-      } catch (error) {
-        console.log('Error fetching recent jobs:', error);
-        setRecentJobs([]);
-      } finally {
-        setIsLoadingRecentJobs(false);
-      }
-    };
-
-    fetchRecentJobs();
-  }, [isElectrician, isInitialized]);
+    if (!isElectrician && isInitialized) {
+      fetchFeaturedElectricians();
+      fetchRecentJobs();
+    }
+  }, [isElectrician, isInitialized, fetchFeaturedElectricians, fetchRecentJobs]);
 
   // Real-time refresh of new jobs count and unread count when notifications change
   useEffect(() => {
@@ -1135,8 +1133,11 @@ export default function HomeScreen() {
                         onPress={() => router.push(`/jobs/${job.id}` as any)}
                       >
                         <View style={styles.recentJobUserAvatar}>
-                           {/* Avatar placeholder mimicking profile images from the screenshot */}
-                           <Image source={{ uri: `https://i.pravatar.cc/150?img=${(job.id?.charCodeAt(0) || 1) % 70}` }} style={{width: '100%', height: '100%', borderRadius: 12}} />
+                           {job.citizen?.profileImageUrl ? (
+                              <Image source={{ uri: getFileUrl(job.citizen.profileImageUrl) || '' }} style={{width: '100%', height: '100%', borderRadius: 12}} />
+                            ) : (
+                              <Ionicons name="person" size={24} color={colors.primary} />
+                            )}
                         </View>
                         
                         <View style={styles.recentJobInfoHorizontal}>
@@ -1148,13 +1149,9 @@ export default function HomeScreen() {
                             </View>
                           </View>
                           
-                          <View style={styles.timerBadge}>
-                            <Ionicons name="time-outline" size={10} color="#D97706" style={{ marginRight: 2 }} />
-                            <Text style={styles.timerBadgeText}>SÜRELİ FİYATLANDIRMA</Text>
-                          </View>
                           <View style={styles.priceTextContainer}>
-                             <Text style={styles.priceTextLarge}>00:30:56</Text>
-                             <Text style={styles.priceTextSmall}>Teklif Bekliyor</Text>
+                             <Text style={[styles.priceTextLarge, { color: '#16A34A' }]}>{job.bidCount || 0}</Text>
+                             <Text style={styles.priceTextSmall}>Teklif</Text>
                           </View>
                         </View>
                       </TouchableOpacity>
