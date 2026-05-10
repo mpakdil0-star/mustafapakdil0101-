@@ -1123,34 +1123,31 @@ export default function HomeScreen() {
         {
           !isElectrician && (
             <View style={[styles.section, { paddingBottom: 20 }]}>
-              <View style={[styles.sectionHeaderRow, { marginBottom: 16 }]}>
-                {activeHomeTab === 'ilanlar' ? (
-                  <>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16, textTransform: 'uppercase' }]}>SON İŞ İLANLARI</Text>
-                    </View>
-                    <TouchableOpacity onPress={() => setActiveHomeTab('ustalar')} style={styles.seeAllBtn} activeOpacity={0.7}>
-                      <Text style={[styles.seeAll, { color: colors.textSecondary }]}>ÖNE ÇIKAN USTALAR</Text>
-                      <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
-                    </TouchableOpacity>
-                  </>
-                ) : (
-                  <>
-                    <View style={{ flex: 1, justifyContent: 'center' }}>
-                      <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16, textTransform: 'uppercase' }]}>ÖNE ÇIKAN USTALAR</Text>
-                    </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <TouchableOpacity onPress={() => setActiveHomeTab('ilanlar')} style={styles.seeAllBtn} activeOpacity={0.7}>
-                        <Text style={[styles.seeAll, { color: colors.textSecondary }]}>SON İŞ İLANLARI</Text>
-                        <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => router.push('/electricians' as any)} style={{ marginTop: 4, marginRight: 2 }}>
-                        <Text style={{ color: colors.text, fontFamily: fonts.medium, fontSize: 11 }}>Tümü</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </>
-                )}
+              <View style={{ flexDirection: 'row', marginBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.borderLight }}>
+                <TouchableOpacity
+                  style={{ flex: 1, paddingVertical: 10, alignItems: 'center', borderBottomWidth: activeHomeTab === 'ustalar' ? 2 : 0, borderBottomColor: colors.primary }}
+                  onPress={() => setActiveHomeTab('ustalar')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.sectionTitle, { color: activeHomeTab === 'ustalar' ? colors.text : colors.textSecondary, fontSize: 13, textTransform: 'uppercase' }]}>ÖNE ÇIKAN USTALAR</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={{ flex: 1, paddingVertical: 10, alignItems: 'center', borderBottomWidth: activeHomeTab === 'ilanlar' ? 2 : 0, borderBottomColor: colors.primary }}
+                  onPress={() => setActiveHomeTab('ilanlar')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.sectionTitle, { color: activeHomeTab === 'ilanlar' ? colors.text : colors.textSecondary, fontSize: 13, textTransform: 'uppercase' }]}>SON İŞ İLANLARI</Text>
+                </TouchableOpacity>
               </View>
+
+              {activeHomeTab === 'ustalar' && (
+                <View style={{ alignItems: 'flex-end', marginBottom: 8, marginTop: -8 }}>
+                  <TouchableOpacity onPress={() => router.push('/electricians' as any)} style={{ paddingHorizontal: 8, paddingVertical: 2 }}>
+                    <Text style={{ color: colors.text, fontFamily: fonts.medium, fontSize: 12 }}>Tümü</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
 
               {activeHomeTab === 'ilanlar' ? (
                 isLoadingRecentJobs ? (
