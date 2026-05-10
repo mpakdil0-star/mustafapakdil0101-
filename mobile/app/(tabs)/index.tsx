@@ -1136,19 +1136,18 @@ export default function HomeScreen() {
                   </>
                 ) : (
                   <>
-                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16, textTransform: 'uppercase', marginRight: 8 }]}>ÖNE ÇIKAN USTALAR</Text>
-                      <TouchableOpacity 
-                        onPress={() => router.push('/electricians' as any)}
-                        style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: colors.primary + '15', borderRadius: 8 }}
-                      >
-                        <Text style={{ color: colors.primary, fontFamily: fonts.bold, fontSize: 11 }}>TÜMÜ</Text>
+                    <View style={{ flex: 1, justifyContent: 'center' }}>
+                      <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16, textTransform: 'uppercase' }]}>ÖNE ÇIKAN USTALAR</Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <TouchableOpacity onPress={() => setActiveHomeTab('ilanlar')} style={styles.seeAllBtn} activeOpacity={0.7}>
+                        <Text style={[styles.seeAll, { color: colors.textSecondary }]}>SON İŞ İLANLARI</Text>
+                        <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => router.push('/electricians' as any)} style={{ marginTop: 4, marginRight: 2 }}>
+                        <Text style={{ color: colors.text, fontFamily: fonts.medium, fontSize: 11 }}>Tümü</Text>
                       </TouchableOpacity>
                     </View>
-                    <TouchableOpacity onPress={() => setActiveHomeTab('ilanlar')} style={styles.seeAllBtn} activeOpacity={0.7}>
-                      <Text style={[styles.seeAll, { color: colors.textSecondary }]}>SON İŞ İLANLARI</Text>
-                      <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
-                    </TouchableOpacity>
                   </>
                 )}
               </View>
