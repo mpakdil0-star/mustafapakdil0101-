@@ -1142,10 +1142,13 @@ export default function HomeScreen() {
               </View>
 
               {activeHomeTab === 'ustalar' && (
-                <View style={{ alignItems: 'flex-end', marginBottom: 8, marginTop: -8 }}>
-                  <TouchableOpacity onPress={() => router.push('/electricians' as any)} style={{ paddingHorizontal: 8, paddingVertical: 2 }}>
-                    <Text style={{ color: colors.text, fontFamily: fonts.medium, fontSize: 12 }}>Tümü</Text>
-                  </TouchableOpacity>
+                <View style={{ flexDirection: 'row', marginBottom: 8, marginTop: -10 }}>
+                  <View style={{ flex: 1, alignItems: 'center' }}>
+                    <TouchableOpacity onPress={() => router.push('/electricians' as any)} style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
+                      <Text style={{ color: colors.primary, fontFamily: fonts.bold, fontSize: 12 }}>Tüm Ustalar &gt;</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={{ flex: 1 }} />
                 </View>
               )}
 
