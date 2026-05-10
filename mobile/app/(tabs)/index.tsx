@@ -152,6 +152,7 @@ export default function HomeScreen() {
   const [isLoadingElectricians, setIsLoadingElectricians] = useState(false);
   const [hideHowItWorks, setHideHowItWorks] = useState(false);
   const [showPushBanner, setShowPushBanner] = useState(false);
+  const [activeReelsIndex, setActiveReelsIndex] = useState(0);
   const [pushBannerLoading, setPushBannerLoading] = useState(false);
   const [activeHomeTab, setActiveHomeTab] = useState<'ustalar' | 'ilanlar'>('ustalar');
   const [recentJobs, setRecentJobs] = useState<any[]>([]);
@@ -1002,7 +1003,21 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.vitrinScroller}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              contentContainerStyle={styles.vitrinScroller}
+              snapToInterval={262} // vitrinCardSmall width (250) + gap (12)
+              decelerationRate="fast"
+              scrollEventThrottle={16}
+              onScroll={(e) => {
+                const scrollPosition = e.nativeEvent.contentOffset.x;
+                const index = Math.max(0, Math.min(2, Math.round(scrollPosition / 262)));
+                if (activeReelsIndex !== index) {
+                  setActiveReelsIndex(index);
+                }
+              }}
+            >
               {Array.from({ length: 3 }).map((_, colIndex) => {
                 const vitrinItems = [
                   { id: 1, title: 'Elektrik Tesisat', desc: 'Güvenli ve profesyonel', icon: 'flash', serviceCategory: 'elektrik', image: require('../../assets/images/vitrin_elektrik.png') },
@@ -1040,6 +1055,21 @@ export default function HomeScreen() {
                 );
               })}
             </ScrollView>
+
+            {/* Pagination Indicators */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 12, gap: 6 }}>
+              {[0, 1, 2].map((i) => (
+                <View 
+                  key={i} 
+                  style={{
+                    width: activeReelsIndex === i ? 20 : 6,
+                    height: 6,
+                    borderRadius: 3,
+                    backgroundColor: activeReelsIndex === i ? colors.primary : colors.primary + '30',
+                  }}
+                />
+              ))}
+            </View>
           </View>
         )}
 
