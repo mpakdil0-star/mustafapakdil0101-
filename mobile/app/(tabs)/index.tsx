@@ -688,7 +688,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 style={styles.searchBarContainer}
                 activeOpacity={0.8}
-                onPress={() => handleActionWithAuth('/jobs/create')}
+                onPress={() => handleActionWithAuth('/electricians')}
               >
                 <View style={styles.searchBarInner}>
                   <Ionicons name="search" size={18} color="rgba(255,255,255,0.7)" />
