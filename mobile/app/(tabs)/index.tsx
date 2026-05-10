@@ -1429,66 +1429,7 @@ export default function HomeScreen() {
         }
       </ScrollView >
 
-      {/* Floating Emergency Button (Citizen Only) */}
-      {!isElectrician && (
-        <Animated.View
-          {...panResponder.panHandlers}
-          style={[
-            styles.floatingEmergencyWrapper,
-            {
-              transform: [
-                { translateX: pan.x },
-                { translateY: pan.y },
-                { scale: pulseAnim }
-              ]
-            }
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.floatingEmergencyButton}
-            activeOpacity={0.9}
-            // Delay press slightly to prioritize drag if moving
-            delayPressIn={100}
-            onPress={() => router.push('/jobs/quick-create')}
-          >
-            <LinearGradient
-              colors={['#EF4444', '#DC2626']}
-              style={styles.floatingEmergencyGradient}
-            >
-              {/* Sliding Shimmer Reflection */}
-              <Animated.View
-                style={[
-                  styles.shimmerWrapper,
-                  {
-                    transform: [
-                      {
-                        translateX: shimmerAnim.interpolate({
-                          inputRange: [-1, 2],
-                          outputRange: [-150, 200]
-                        })
-                      },
-                      { rotate: '25 deg' }
-                    ]
-                  }
-                ]}
-              >
-                <LinearGradient
-                  colors={['transparent', 'rgba(255, 255, 255, 0.4)', 'transparent']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={StyleSheet.absoluteFill}
-                />
-              </Animated.View>
-
-              {/* Static Glassy Highlight */}
-              <View style={styles.staticGlassHighlight} />
-
-              <Ionicons name="flash" size={28} color={staticColors.white} />
-              <Text style={styles.floatingEmergencyText}>ACİL USTA</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-      )}
+      {/* ACİL USTA button is now integrated into the center tab bar */}
 
       {/* Toast Notification */}
       {toastVisible && (
