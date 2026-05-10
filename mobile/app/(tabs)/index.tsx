@@ -418,14 +418,30 @@ export default function HomeScreen() {
       }
 
       if (response.success && response.data) {
-        const sorted = (response.data as any[])
+        let sorted = (response.data as any[])
           .sort((a, b) => {
             const ratingA = a.electricianProfile?.ratingAverage || a.electricianProfile?.rating || 0;
             const ratingB = b.electricianProfile?.ratingAverage || b.electricianProfile?.rating || 0;
             return ratingB - ratingA;
           })
-          .slice(0, 5);
-        setFeaturedElectricians(sorted);
+          .slice(0, 10); // Daha fazla veri çekip içinden bulalım
+
+        // Özel istek: Ufuk Soydan ve Mehmet Cebiş yer değiştirsin (Ufuk ilk sırada olsun)
+        const ufukIndex = sorted.findIndex(e => e.fullName?.toLowerCase() === 'ufuk soydan');
+        const mehmetIndex = sorted.findIndex(e => e.fullName?.toLowerCase() === 'mehmet cebiş');
+
+        if (ufukIndex !== -1 && mehmetIndex !== -1) {
+          // İkisi de varsa yerlerini değiştir
+          const temp = sorted[ufukIndex];
+          sorted[ufukIndex] = sorted[mehmetIndex];
+          sorted[mehmetIndex] = temp;
+        } else if (ufukIndex !== -1) {
+          // Sadece Ufuk varsa onu en başa çek
+          const [ufuk] = sorted.splice(ufukIndex, 1);
+          sorted.unshift(ufuk);
+        }
+
+        setFeaturedElectricians(sorted.slice(0, 5));
       }
     } catch (error) {
       console.log('Error fetching featured electricians:', error);
