@@ -406,7 +406,7 @@ export default function QuickCreateScreen() {
             >
                 <ScrollView
                     style={styles.scrollView}
-                    contentContainerStyle={[styles.content, { paddingBottom: 150 }]}
+                    contentContainerStyle={[styles.content, { paddingBottom: 20 }]}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                 >
@@ -922,17 +922,13 @@ export default function QuickCreateScreen() {
                             {errors.description && <Text style={styles.errorTextSmall}>{errors.description}</Text>}
                         </View>
                         <View style={styles.photoRow}>
-                            <TouchableOpacity style={[styles.photoBtn, { borderColor: colors.primary + '30', backgroundColor: colors.primary + '08' }]} onPress={handleTakePhoto}>
-                                <View style={[styles.photoBtnIconWrap, { backgroundColor: colors.primary + '15' }]}>
-                                    <Ionicons name="camera" size={16} color={colors.primary} />
-                                </View>
-                                <Text style={[styles.photoBtnText, { color: colors.primary }]}>Fotoğraf Çek</Text>
+                            <TouchableOpacity style={[styles.photoBtn, { backgroundColor: colors.borderLight }]} onPress={handleTakePhoto}>
+                                <Ionicons name="camera" size={16} color={colors.primary} />
+                                <Text style={[styles.photoBtnText, { color: colors.primary }]}>Çek</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={[styles.photoBtn, { borderColor: colors.primary + '30', backgroundColor: colors.primary + '08' }]} onPress={handlePickImage}>
-                                <View style={[styles.photoBtnIconWrap, { backgroundColor: colors.primary + '15' }]}>
-                                    <Ionicons name="images" size={16} color={colors.primary} />
-                                </View>
-                                <Text style={[styles.photoBtnText, { color: colors.primary }]}>Galeriden Seç</Text>
+                            <TouchableOpacity style={[styles.photoBtn, { backgroundColor: colors.borderLight }]} onPress={handlePickImage}>
+                                <Ionicons name="images" size={16} color={colors.primary} />
+                                <Text style={[styles.photoBtnText, { color: colors.primary }]}>Galeri</Text>
                             </TouchableOpacity>
                             {images.map((img, i) => (
                                 <View key={i} style={styles.imgPreview}>
@@ -1022,113 +1018,113 @@ export default function QuickCreateScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     scrollView: { flex: 1 },
-    content: { paddingHorizontal: 16, paddingTop: 6, paddingBottom: 28 },
+    content: { paddingHorizontal: 12, paddingTop: 4, paddingBottom: 10 },
     emergencyBanner: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 16,
-        paddingHorizontal: 18,
-        borderRadius: 16,
-        marginBottom: 14,
-        elevation: 6,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 14,
+        marginBottom: 8,
+        elevation: 4,
         shadowColor: '#EF4444',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
     },
     emergencyIconWrapper: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
+        width: 38,
+        height: 38,
+        borderRadius: 12,
         backgroundColor: 'rgba(255,255,255,0.25)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 14,
+        marginRight: 10,
     },
     bannerTextBlock: { flex: 1, minWidth: 0 },
-    bannerTitle: { fontFamily: fonts.bold, fontSize: 17, color: '#FFF', letterSpacing: -0.3 },
-    bannerSubtitle: { fontFamily: fonts.medium, fontSize: 13, color: 'rgba(255,255,255,0.9)', marginTop: 2, lineHeight: 18 },
+    bannerTitle: { fontFamily: fonts.bold, fontSize: 15, color: '#FFF', letterSpacing: -0.2 },
+    bannerSubtitle: { fontFamily: fonts.medium, fontSize: 12, color: 'rgba(255,255,255,0.9)', marginTop: 1, lineHeight: 15 },
     bannerBadge: {
         backgroundColor: 'rgba(0,0,0,0.2)',
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 12,
-        marginLeft: 8,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 10,
+        marginLeft: 6,
     },
-    bannerBadgeText: { fontFamily: fonts.bold, fontSize: 13, color: '#FFF', letterSpacing: 0.8 },
+    bannerBadgeText: { fontFamily: fonts.bold, fontSize: 11, color: '#FFF', letterSpacing: 0.5 },
     sectionLabelRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        marginBottom: 10,
-        marginTop: 4,
+        gap: 6,
+        marginBottom: 6,
+        marginTop: 2,
         paddingHorizontal: 2,
     },
     sectionLabelText: {
         fontFamily: fonts.bold,
-        fontSize: 15,
+        fontSize: 13,
         letterSpacing: -0.2,
     },
-    sectionBlock: { marginBottom: 6, marginTop: 2 },
-    sectionBlockTight: { marginTop: 6 },
-    sectionKicker: { fontFamily: fonts.bold, fontSize: 12, letterSpacing: 1, marginBottom: 2, textTransform: 'uppercase', opacity: 0.6 },
-    sectionTitle: { fontFamily: fonts.bold, fontSize: 16, letterSpacing: -0.3 },
-    typeScrollContent: { gap: 10, paddingVertical: 2, paddingRight: 4, marginBottom: 8 },
+    sectionBlock: { marginBottom: 4, marginTop: 0 },
+    sectionBlockTight: { marginTop: 4 },
+    sectionKicker: { fontFamily: fonts.bold, fontSize: 11, letterSpacing: 0.5, marginBottom: 2, textTransform: 'uppercase', opacity: 0.6 },
+    sectionTitle: { fontFamily: fonts.bold, fontSize: 14, letterSpacing: -0.2 },
+    typeScrollContent: { gap: 8, paddingVertical: 2, paddingRight: 4, marginBottom: 6 },
     typeBtn: {
-        width: 108,
-        height: 120,
+        width: 86,
+        height: 94,
         backgroundColor: '#FFF',
-        borderRadius: 18,
+        borderRadius: 14,
         borderWidth: 1.5,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 6,
+        paddingVertical: 6,
+        paddingHorizontal: 4,
         position: 'relative',
-        elevation: 4,
+        elevation: 3,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
-        shadowRadius: 8,
+        shadowRadius: 6,
     },
     typeBtnSelected: {
-        elevation: 8,
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
+        elevation: 6,
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
     },
-    typeIconBox: { width: 72, height: 72, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
-    type3dImage: { width: 56, height: 56 },
-    typeLabel: { fontFamily: fonts.bold, fontSize: 12, textAlign: 'center', lineHeight: 15 },
-    checkIndicator: { position: 'absolute', top: 8, right: 8, width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-    mainCard: { padding: 14, borderRadius: 20, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
-    addressScroll: { flexDirection: 'row', marginBottom: 14 },
-    addressChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1.5, marginRight: 10 },
-    addressChipText: { fontFamily: fonts.bold, fontSize: 12 },
-    row: { flexDirection: 'row', gap: 10, marginBottom: 6 },
-    addressInput: { borderRadius: 16, borderWidth: 1.5, padding: 14, fontFamily: fonts.medium, fontSize: 14, marginTop: 12, minHeight: 64, textAlignVertical: 'top' },
-    textArea: { borderRadius: 16, borderWidth: 1.5, padding: 14, fontFamily: fonts.medium, fontSize: 15, minHeight: 80, textAlignVertical: 'top' },
-    photoRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginTop: 14 },
-    photoBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5 },
-    photoBtnIconWrap: { width: 30, height: 30, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
-    photoBtnText: { fontFamily: fonts.bold, fontSize: 12 },
-    imgPreview: { width: 54, height: 54, borderRadius: 12, position: 'relative', borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.06)' },
-    img: { width: '100%', height: '100%', borderRadius: 11 },
-    imgRemove: { position: 'absolute', top: -7, right: -7, backgroundColor: '#FFF', borderRadius: 12, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 3 },
-    budgetRow: { flexDirection: 'row', alignItems: 'center', marginTop: 14, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1.5 },
-    budgetInput: { flex: 1, paddingHorizontal: 8, fontFamily: fonts.bold, fontSize: 15 },
-    currency: { fontFamily: fonts.bold, fontSize: 16 },
+    typeIconBox: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+    type3dImage: { width: 34, height: 34 },
+    typeLabel: { fontFamily: fonts.bold, fontSize: 11, textAlign: 'center', lineHeight: 13 },
+    checkIndicator: { position: 'absolute', top: 6, right: 6, width: 16, height: 16, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+    mainCard: { padding: 12, borderRadius: 16, marginBottom: 8, elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 6 },
+    addressScroll: { flexDirection: 'row', marginBottom: 10 },
+    addressChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1, marginRight: 8 },
+    addressChipText: { fontFamily: fonts.bold, fontSize: 11 },
+    row: { flexDirection: 'row', gap: 8, marginBottom: 4 },
+    addressInput: { borderRadius: 12, borderWidth: 1, padding: 12, fontFamily: fonts.medium, fontSize: 13, marginTop: 8, minHeight: 48, textAlignVertical: 'top' },
+    textArea: { borderRadius: 12, borderWidth: 1, padding: 12, fontFamily: fonts.medium, fontSize: 13, minHeight: 60, textAlignVertical: 'top' },
+    photoRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+    photoBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: 'transparent' },
+    photoBtnIconWrap: { width: 0, height: 0 }, // no longer used but kept for safety if referenced elsewhere
+    photoBtnText: { fontFamily: fonts.bold, fontSize: 11 },
+    imgPreview: { width: 44, height: 44, borderRadius: 10, position: 'relative', borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)' },
+    img: { width: '100%', height: '100%', borderRadius: 9 },
+    imgRemove: { position: 'absolute', top: -5, right: -5, backgroundColor: '#FFF', borderRadius: 10, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2 },
+    budgetRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, borderWidth: 1 },
+    budgetInput: { flex: 1, paddingHorizontal: 6, fontFamily: fonts.bold, fontSize: 13 },
+    currency: { fontFamily: fonts.bold, fontSize: 14 },
     submitBtn: { 
-        marginTop: 16, 
-        minHeight: 56, 
-        borderRadius: 16, 
+        marginTop: 10, 
+        minHeight: 48, 
+        borderRadius: 14, 
         shadowColor: '#EF4444', 
-        shadowOffset: { width: 0, height: 4 }, 
-        shadowOpacity: 0.3, 
-        shadowRadius: 10, 
-        elevation: 8 
+        shadowOffset: { width: 0, height: 3 }, 
+        shadowOpacity: 0.25, 
+        shadowRadius: 8, 
+        elevation: 6 
     },
-    safetyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12, paddingHorizontal: 16 },
-    safetyHint: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 16, opacity: 0.65 },
+    safetyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 8, paddingHorizontal: 16 },
+    safetyHint: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 14, opacity: 0.65 },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 },
     successModal: { width: '100%', borderRadius: 32, padding: 32, alignItems: 'center' },
     successIconBox: { marginBottom: 24 },
@@ -1239,12 +1235,12 @@ const styles = StyleSheet.create({
         fontSize: 12,
     },
     descriptionInput: {
-        borderRadius: 20,
-        borderWidth: 1.5,
-        padding: 16,
+        borderRadius: 16,
+        borderWidth: 1,
+        padding: 12,
         fontFamily: fonts.medium,
-        fontSize: 15,
-        minHeight: 100,
+        fontSize: 13,
+        minHeight: 60,
         textAlignVertical: 'top',
     },
 });
