@@ -990,10 +990,12 @@ export default function HomeScreen() {
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.vitrinScroller}>
               {[
-                { id: 1, title: 'Elektrik Tesisat', desc: 'Güvenli ve profesyonel', icon: 'flash', serviceCategory: 'elektrik', image: require('../../assets/images/vitrin_elektrik.png'), gradient: ['rgba(139,92,246,0.85)', 'rgba(109,40,217,0.95)'] as [string, string] },
-                { id: 2, title: 'Güvenlik Kamera', desc: 'Kurulum ve bakım', icon: 'videocam', serviceCategory: 'elektrik', image: require('../../assets/images/vitrin_kamera.png'), gradient: ['rgba(59,130,246,0.85)', 'rgba(37,99,235,0.95)'] as [string, string] },
-                { id: 3, title: 'Klima Servisi', desc: 'Montaj ve temizlik', icon: 'snow', serviceCategory: 'klima', image: require('../../assets/images/vitrin_klima.png'), gradient: ['rgba(6,182,212,0.85)', 'rgba(8,145,178,0.95)'] as [string, string] },
-                { id: 4, title: 'Tesisat & Su', desc: 'Acil müdahale', icon: 'water', serviceCategory: 'tesisat', image: require('../../assets/images/vitrin_tesisat.png'), gradient: ['rgba(16,185,129,0.85)', 'rgba(5,150,105,0.95)'] as [string, string] },
+                { id: 1, title: 'Elektrik Tesisat', desc: 'Güvenli ve profesyonel', icon: 'flash', serviceCategory: 'elektrik', image: require('../../assets/images/vitrin_elektrik.png') },
+                { id: 2, title: 'Güvenlik Kamera', desc: 'Kurulum ve bakım', icon: 'videocam', serviceCategory: 'elektrik', image: require('../../assets/images/vitrin_kamera.png') },
+                { id: 3, title: 'Klima Servisi', desc: 'Montaj ve temizlik', icon: 'snow', serviceCategory: 'klima', image: require('../../assets/images/vitrin_klima.png') },
+                { id: 4, title: 'Tesisat & Su', desc: 'Acil müdahale', icon: 'water', serviceCategory: 'tesisat', image: require('../../assets/images/vitrin_tesisat.png') },
+                { id: 5, title: 'Çilingir', desc: 'Kapı açma ve kilit', icon: 'key', serviceCategory: 'cilingir', image: require('../../assets/images/vitrin_cilingir.png') },
+                { id: 6, title: 'Beyaz Eşya', desc: 'Tamir ve bakım', icon: 'construct', serviceCategory: 'beyaz-esya', image: require('../../assets/images/vitrin_beyaz_esya.png') },
               ].map((item) => (
                 <TouchableOpacity
                   key={item.id}
@@ -1002,15 +1004,15 @@ export default function HomeScreen() {
                   style={styles.vitrinCard}
                 >
                   <ImageBackground source={item.image} style={styles.vitrinCardBg} imageStyle={styles.vitrinCardBgImage}>
-                    <LinearGradient colors={item.gradient} style={styles.vitrinCardGradient}>
-                      <View style={styles.vitrinIconCircle}>
-                        <Ionicons name={item.icon as any} size={24} color="#FFF" />
-                      </View>
-                      <Text style={styles.vitrinCardTitle}>{item.title}</Text>
-                      <Text style={styles.vitrinCardDesc}>{item.desc}</Text>
-                      <View style={styles.vitrinCardAction}>
-                        <Text style={styles.vitrinCardActionText}>İlan Ver</Text>
-                        <Ionicons name="arrow-forward" size={14} color="#FFF" />
+                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.85)']} style={styles.vitrinCardGradient}>
+                      <View style={styles.vitrinCardContentRow}>
+                        <View style={styles.vitrinIconCircleSm}>
+                          <Ionicons name={item.icon as any} size={20} color="#FFF" />
+                        </View>
+                        <View style={styles.vitrinCardTextCol}>
+                          <Text style={styles.vitrinCardTitle} numberOfLines={2}>{item.title}</Text>
+                          <Text style={styles.vitrinCardDesc} numberOfLines={1}>{item.desc}</Text>
+                        </View>
                       </View>
                     </LinearGradient>
                   </ImageBackground>
@@ -2723,23 +2725,31 @@ const styles = StyleSheet.create({
   },
   vitrinCardGradient: {
     flex: 1,
-    padding: 16,
+    padding: 12,
     justifyContent: 'flex-end',
   },
-  vitrinIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
+  vitrinCardContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  vitrinIconCircleSm: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    borderColor: 'rgba(255,255,255,0.4)',
+  },
+  vitrinCardTextCol: {
+    flex: 1,
+    justifyContent: 'center',
   },
   vitrinCardTitle: {
     fontFamily: fonts.bold,
-    fontSize: 15,
+    fontSize: 14,
     color: '#FFF',
     marginBottom: 2,
   },
@@ -2747,22 +2757,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 11,
     color: 'rgba(255,255,255,0.8)',
-    marginBottom: 10,
-  },
-  vitrinCardAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    alignSelf: 'flex-start',
-  },
-  vitrinCardActionText: {
-    fontFamily: fonts.bold,
-    fontSize: 11,
-    color: '#FFF',
   },
   // See All Button
   seeAllBtn: {
