@@ -682,6 +682,20 @@ export default function HomeScreen() {
                 )}
               </TouchableOpacity>
             </View>
+
+            {/* Search Bar - Citizen Only */}
+            {!isElectrician && (
+              <TouchableOpacity
+                style={styles.searchBarContainer}
+                activeOpacity={0.8}
+                onPress={() => handleActionWithAuth('/jobs/create')}
+              >
+                <View style={styles.searchBarInner}>
+                  <Ionicons name="search" size={18} color="rgba(255,255,255,0.7)" />
+                  <Text style={styles.searchBarPlaceholder}>Usta veya hizmet ara...</Text>
+                </View>
+              </TouchableOpacity>
+            )}
           </ImageBackground>
         </View>
 
@@ -939,13 +953,54 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Main Service Categories Section (Citizen Only) - NEW */}
+        {/* Vitrin / Showcase Section (Citizen Only) */}
+        {!isElectrician && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeaderRow}>
+              <View style={styles.sectionTitleContainer}>
+                <Text style={[styles.sectionKicker, { color: colors.textLight }]}>VİTRİN</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Öne Çıkan Hizmetler</Text>
+              </View>
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.vitrinScroller}>
+              {[
+                { id: 1, title: 'Elektrik Tesisat', desc: 'Güvenli ve profesyonel', icon: 'flash', gradient: ['#7C3AED', '#5B21B6'] as [string, string] },
+                { id: 2, title: 'Güvenlik Kamera', desc: 'Kurulum ve bakım', icon: 'videocam', gradient: ['#3B82F6', '#1D4ED8'] as [string, string] },
+                { id: 3, title: 'Klima Servisi', desc: 'Montaj ve temizlik', icon: 'snow', gradient: ['#0EA5E9', '#0369A1'] as [string, string] },
+                { id: 4, title: 'Tesisat & Su', desc: 'Acil müdahale', icon: 'water', gradient: ['#10B981', '#047857'] as [string, string] },
+              ].map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  activeOpacity={0.85}
+                  onPress={() => handleActionWithAuth('/jobs/create', { category: item.title })}
+                  style={styles.vitrinCard}
+                >
+                  <LinearGradient colors={item.gradient} style={styles.vitrinCardGradient}>
+                    <View style={styles.vitrinCardOverlay} />
+                    <View style={styles.vitrinIconCircle}>
+                      <Ionicons name={item.icon as any} size={28} color="#FFF" />
+                    </View>
+                    <Text style={styles.vitrinCardTitle}>{item.title}</Text>
+                    <Text style={styles.vitrinCardDesc}>{item.desc}</Text>
+                    <View style={styles.vitrinCardAction}>
+                      <Text style={styles.vitrinCardActionText}>İlan Ver</Text>
+                      <Ionicons name="arrow-forward" size={14} color="#FFF" />
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* KEŞFET - Main Service Categories Section (Citizen Only) */}
         {
           !isElectrician && (
             <View style={styles.section}>
               <View style={styles.sectionHeaderRow}>
                 <View style={styles.sectionTitleContainer}>
-                  <Text style={[styles.sectionKicker, { color: colors.textLight }]}>Hizmet Seçimi</Text>
+                  <Text style={[styles.sectionKicker, { color: colors.textLight }]}>KEŞFET</Text>
                   <Text style={[styles.sectionTitle, { color: colors.text }]}>Usta bul</Text>
                 </View>
                 <TouchableOpacity
@@ -954,7 +1009,7 @@ export default function HomeScreen() {
                   onPress={() => handleActionWithAuth('/jobs/create', { category: 'Elektrik Proje Çizimi', serviceCategory: 'elektrik' })}
                 >
                   <LinearGradient
-                    colors={['#A78BFA', '#7C3AED']} // Matches Electric Category
+                    colors={['#A78BFA', '#7C3AED']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.headerProjectGradient}
@@ -1044,48 +1099,73 @@ export default function HomeScreen() {
           !isElectrician && (
             <View style={styles.section}>
               <View style={styles.sectionBlock}>
-                <Text style={[styles.sectionKicker, { color: colors.textLight }]}>Öne Çıkan</Text>
+                <Text style={[styles.sectionKicker, { color: colors.textLight }]}>ÖNE ÇIKAN</Text>
                 <View style={styles.sectionHeaderRow}>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>Ustalar</Text>
                     <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>En yüksek puanlı ve güvenilir uzmanlar</Text>
                   </View>
-                  <TouchableOpacity onPress={() => router.push('/electricians')}>
+                  <TouchableOpacity onPress={() => router.push('/electricians')} style={styles.seeAllBtn}>
                     <Text style={[styles.seeAll, { color: colors.primary }]}>Tümü</Text>
+                    <Ionicons name="chevron-forward" size={14} color={colors.primary} />
                   </TouchableOpacity>
                 </View>
               </View>
 
-              <View style={styles.featuredVerticalList}>
-                {isLoadingElectricians ? (
-                  <View style={{ padding: 40, alignItems: 'center' }}>
-                    <ActivityIndicator size="small" color={colors.primary} />
-                    <Text style={{ marginTop: 10, color: staticColors.textSecondary, fontFamily: fonts.medium }}>Ustalar yükleniyor...</Text>
-                  </View>
-                ) : featuredElectricians.length > 0 ? (
-                  featuredElectricians.map((elec) => (
-                    <FeaturedElectrician
+              {isLoadingElectricians ? (
+                <View style={{ padding: 40, alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={{ marginTop: 10, color: staticColors.textSecondary, fontFamily: fonts.medium }}>Ustalar yükleniyor...</Text>
+                </View>
+              ) : featuredElectricians.length > 0 ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredHorizontalScroller}>
+                  {featuredElectricians.map((elec) => (
+                    <TouchableOpacity
                       key={elec.id}
-                      name={elec.fullName || 'Usta'}
-                      rating={elec.electricianProfile?.ratingAverage || elec.electricianProfile?.rating || 0}
-                      reviewCount={elec.electricianProfile?.totalReviews || elec.electricianProfile?.reviewCount || 0}
-                      specialty={getUstaCategory(elec)}
-                      isVerified={elec.isVerified === true && elec.electricianProfile?.verificationStatus === 'VERIFIED'}
-                      imageUrl={elec.profileImageUrl ? getFileUrl(elec.profileImageUrl) || undefined : undefined}
-                      location={elec.locations?.[0] ? `${elec.locations[0].district || ''}, ${elec.locations[0].city || ''}`.replace(/^, /, '').replace(/, $/, '') || 'Türkiye' : 'Türkiye'}
+                      style={styles.featuredHorizontalCard}
+                      activeOpacity={0.85}
                       onPress={() => router.push(`/electricians/${elec.id}` as any)}
-                      onBook={() => handleActionWithAuth('/jobs/create', { electricianId: elec.id })}
-                    />
-                  ))
-                ) : (
-                  <View style={{ padding: 40, alignItems: 'center' }}>
-                    <Ionicons name="people-outline" size={36} color={colors.textLight} />
-                    <Text style={{ marginTop: 12, color: colors.textSecondary, fontFamily: fonts.medium, textAlign: 'center' }}>
-                      Şu an için öne çıkan usta bulunmuyor.
-                    </Text>
-                  </View>
-                )}
-              </View>
+                    >
+                      {elec.profileImageUrl ? (
+                        <Image source={{ uri: getFileUrl(elec.profileImageUrl) || '' }} style={styles.featuredHCardImage} />
+                      ) : (
+                        <View style={[styles.featuredHCardImage, styles.featuredHCardImagePlaceholder]}>
+                          <Ionicons name="person" size={32} color={colors.primary} />
+                        </View>
+                      )}
+                      <View style={styles.featuredHCardContent}>
+                        <View style={styles.featuredHCardNameRow}>
+                          <Text style={styles.featuredHCardName} numberOfLines={1}>{elec.fullName || 'Usta'}</Text>
+                          {elec.isVerified === true && elec.electricianProfile?.verificationStatus === 'VERIFIED' && (
+                            <Ionicons name="shield-checkmark" size={14} color="#10B981" />
+                          )}
+                        </View>
+                        <Text style={styles.featuredHCardSpecialty}>{getUstaCategory(elec)}</Text>
+                        <View style={styles.featuredHCardRatingRow}>
+                          <Ionicons name="star" size={12} color="#F59E0B" />
+                          <Text style={styles.featuredHCardRating}>
+                            {Number(elec.electricianProfile?.ratingAverage || 0).toFixed(1)}
+                          </Text>
+                          <Text style={styles.featuredHCardReviews}>
+                            ({elec.electricianProfile?.totalReviews || 0})
+                          </Text>
+                        </View>
+                        <Text style={styles.featuredHCardLocation} numberOfLines={1}>
+                          <Ionicons name="location-outline" size={10} color={staticColors.textLight} />
+                          {' '}{elec.locations?.[0] ? `${elec.locations[0].district || ''}, ${elec.locations[0].city || ''}`.replace(/^, /, '').replace(/, $/, '') || 'Türkiye' : 'Türkiye'}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              ) : (
+                <View style={{ padding: 40, alignItems: 'center' }}>
+                  <Ionicons name="people-outline" size={36} color={colors.textLight} />
+                  <Text style={{ marginTop: 12, color: colors.textSecondary, fontFamily: fonts.medium, textAlign: 'center' }}>
+                    Şu an için öne çıkan usta bulunmuyor.
+                  </Text>
+                </View>
+              )}
             </View>
           )
         }
@@ -2567,5 +2647,168 @@ const styles = StyleSheet.create({
     fontFamily: fonts.extraBold,
     letterSpacing: 0.3,
     textTransform: 'uppercase',
+  },
+  // Search Bar
+  searchBarContainer: {
+    marginTop: 16,
+    marginBottom: 4,
+  },
+  searchBarInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    height: 44,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  searchBarPlaceholder: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.65)',
+    flex: 1,
+  },
+  // Vitrin / Showcase Carousel
+  vitrinScroller: {
+    paddingRight: 16,
+    gap: 12,
+  },
+  vitrinCard: {
+    width: 160,
+    height: 200,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  vitrinCardGradient: {
+    flex: 1,
+    padding: 16,
+    justifyContent: 'flex-end',
+    position: 'relative',
+  },
+  vitrinCardOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  vitrinIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  vitrinCardTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    color: '#FFF',
+    marginBottom: 2,
+  },
+  vitrinCardDesc: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.8)',
+    marginBottom: 10,
+  },
+  vitrinCardAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
+  },
+  vitrinCardActionText: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    color: '#FFF',
+  },
+  // See All Button
+  seeAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  // Featured Electricians - Horizontal Card Style
+  featuredHorizontalScroller: {
+    paddingRight: 16,
+    gap: 12,
+    paddingVertical: 4,
+  },
+  featuredHorizontalCard: {
+    width: 150,
+    backgroundColor: staticColors.white,
+    borderRadius: 18,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
+  },
+  featuredHCardImage: {
+    width: '100%',
+    height: 110,
+    backgroundColor: '#F1F5F9',
+  },
+  featuredHCardImagePlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+  },
+  featuredHCardContent: {
+    padding: 10,
+  },
+  featuredHCardNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
+  },
+  featuredHCardName: {
+    fontFamily: fonts.bold,
+    fontSize: 13,
+    color: staticColors.text,
+    flex: 1,
+  },
+  featuredHCardSpecialty: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: staticColors.textSecondary,
+    marginBottom: 4,
+  },
+  featuredHCardRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginBottom: 3,
+  },
+  featuredHCardRating: {
+    fontFamily: fonts.bold,
+    fontSize: 12,
+    color: '#D97706',
+  },
+  featuredHCardReviews: {
+    fontFamily: fonts.regular,
+    fontSize: 10,
+    color: staticColors.textLight,
+  },
+  featuredHCardLocation: {
+    fontFamily: fonts.regular,
+    fontSize: 10,
+    color: staticColors.textLight,
   },
 });
