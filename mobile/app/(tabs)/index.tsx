@@ -1157,6 +1157,76 @@ export default function HomeScreen() {
           )
         }
 
+        {/* Öne Çıkan Ustalar Section (Citizen Only) */}
+        {
+          !isElectrician && (
+            <View style={[styles.section, { paddingBottom: 20 }]}>
+              <View style={[styles.sectionHeaderRow, { marginBottom: 16 }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16, textTransform: 'uppercase' }]}>ÖNE ÇIKAN USTALAR</Text>
+                </View>
+              </View>
+
+              {isLoadingElectricians ? (
+                <View style={{ padding: 40, alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={{ marginTop: 10, color: staticColors.textSecondary, fontFamily: fonts.medium }}>Ustalar yükleniyor...</Text>
+                </View>
+              ) : featuredElectricians.length > 0 ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentJobsHorizontalScroller}>
+                  {featuredElectricians.map((elec) => (
+                    <TouchableOpacity
+                      key={elec.id}
+                      style={styles.recentJobCardHorizontal}
+                      activeOpacity={0.85}
+                      onPress={() => router.push(`/electricians/${elec.id}` as any)}
+                    >
+                      <View style={styles.recentJobUserAvatar}>
+                         {elec.profileImageUrl ? (
+                            <Image source={{ uri: getFileUrl(elec.profileImageUrl) || '' }} style={{width: '100%', height: '100%', borderRadius: 12}} />
+                          ) : (
+                            <Ionicons name="person" size={24} color={colors.primary} />
+                          )}
+                      </View>
+                      
+                      <View style={styles.recentJobInfoHorizontal}>
+                        <View style={styles.recentJobHeaderHorizontal}>
+                          <View style={{ flex: 1, paddingRight: 8 }}>
+                            <View style={{flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2}}>
+                               <Text style={[styles.recentJobTitleHorizontal, {marginBottom: 0}]} numberOfLines={1}>{elec.fullName || 'Usta'}</Text>
+                               {elec.isVerified === true && elec.electricianProfile?.verificationStatus === 'VERIFIED' && (
+                                  <Ionicons name="shield-checkmark" size={14} color="#10B981" />
+                               )}
+                            </View>
+                            <Text style={styles.recentJobSubtextHorizontal} numberOfLines={1}>{getUstaCategory(elec)}</Text>
+                            <Text style={styles.recentJobCategoryTextHorizontal} numberOfLines={1}>{elec.locations?.[0] ? `${elec.locations[0].district || ''}, ${elec.locations[0].city || ''}`.replace(/^, /, '').replace(/, $/, '') || 'Türkiye' : 'Türkiye'}</Text>
+                          </View>
+                        </View>
+                        
+                        <View style={[styles.timerBadge, { backgroundColor: 'rgba(16, 185, 129, 0.1)' }]}>
+                          <Ionicons name="star" size={10} color="#10B981" style={{ marginRight: 2 }} />
+                          <Text style={[styles.timerBadgeText, { color: '#10B981' }]}>{Number(elec.electricianProfile?.ratingAverage || 0).toFixed(1)} Puan</Text>
+                        </View>
+                        <View style={styles.priceTextContainer}>
+                           <Text style={styles.priceTextLarge}>{elec.electricianProfile?.totalReviews || 0}</Text>
+                           <Text style={styles.priceTextSmall}>Değerlendirme</Text>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              ) : (
+                <View style={{ padding: 40, alignItems: 'center' }}>
+                  <Ionicons name="people-outline" size={36} color={colors.textLight} />
+                  <Text style={{ marginTop: 12, color: colors.textSecondary, fontFamily: fonts.medium, textAlign: 'center' }}>
+                    Şu an için öne çıkan usta bulunmuyor.
+                  </Text>
+                </View>
+              )}
+            </View>
+          )
+        }
+
         {/* How It Works Modal */}
         <Modal
           visible={isHowItWorksVisible}
