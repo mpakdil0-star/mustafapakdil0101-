@@ -1091,137 +1091,140 @@ export default function HomeScreen() {
 
 
 
-        {/* Son İş İlanları Section (Citizen Only) */}
+        {/* Toggleable Section: Son İş İlanları / Öne Çıkan Ustalar (Citizen Only) */}
         {
           !isElectrician && (
             <View style={[styles.section, { paddingBottom: 20 }]}>
               <View style={[styles.sectionHeaderRow, { marginBottom: 16 }]}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16, textTransform: 'uppercase' }]}>SON İŞ İLANLARI</Text>
-                </View>
-                <TouchableOpacity onPress={() => router.push('/electricians')} style={styles.seeAllBtn}>
-                  <Text style={[styles.seeAll, { color: colors.textSecondary }]}>ÖNE ÇIKAN USTALAR</Text>
-                  <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
-                </TouchableOpacity>
+                {activeHomeTab === 'ilanlar' ? (
+                  <>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16, textTransform: 'uppercase' }]}>SON İŞ İLANLARI</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => setActiveHomeTab('ustalar')} style={styles.seeAllBtn} activeOpacity={0.7}>
+                      <Text style={[styles.seeAll, { color: colors.textSecondary }]}>ÖNE ÇIKAN USTALAR</Text>
+                      <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16, textTransform: 'uppercase' }]}>ÖNE ÇIKAN USTALAR</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => setActiveHomeTab('ilanlar')} style={styles.seeAllBtn} activeOpacity={0.7}>
+                      <Text style={[styles.seeAll, { color: colors.textSecondary }]}>SON İŞ İLANLARI</Text>
+                      <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                  </>
+                )}
               </View>
 
-              {isLoadingRecentJobs ? (
-                <View style={{ padding: 40, alignItems: 'center' }}>
-                  <ActivityIndicator size="small" color={colors.primary} />
-                  <Text style={{ marginTop: 10, color: staticColors.textSecondary, fontFamily: fonts.medium }}>İlanlar yükleniyor...</Text>
-                </View>
-              ) : recentJobs.length > 0 ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentJobsHorizontalScroller}>
-                  {recentJobs.map((job) => (
-                    <TouchableOpacity
-                      key={job.id}
-                      style={styles.recentJobCardHorizontal}
-                      activeOpacity={0.85}
-                      onPress={() => router.push(`/jobs/${job.id}` as any)}
-                    >
-                      <View style={styles.recentJobUserAvatar}>
-                         {/* Avatar placeholder mimicking profile images from the screenshot */}
-                         <Image source={{ uri: `https://i.pravatar.cc/150?img=${(job.id?.charCodeAt(0) || 1) % 70}` }} style={{width: '100%', height: '100%', borderRadius: 12}} />
-                      </View>
-                      
-                      <View style={styles.recentJobInfoHorizontal}>
-                        <View style={styles.recentJobHeaderHorizontal}>
-                          <View style={{ flex: 1, paddingRight: 8 }}>
-                            <Text style={styles.recentJobTitleHorizontal} numberOfLines={1}>{job.serviceCategory ? getUstaCategory({ serviceCategory: job.serviceCategory }) : 'Genel'}</Text>
-                            <Text style={styles.recentJobSubtextHorizontal} numberOfLines={1}>{job.title}</Text>
-                            <Text style={styles.recentJobCategoryTextHorizontal} numberOfLines={1}>{job.location?.city || 'Türkiye'}</Text>
-                          </View>
+              {activeHomeTab === 'ilanlar' ? (
+                isLoadingRecentJobs ? (
+                  <View style={{ padding: 40, alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                    <Text style={{ marginTop: 10, color: staticColors.textSecondary, fontFamily: fonts.medium }}>İlanlar yükleniyor...</Text>
+                  </View>
+                ) : recentJobs.length > 0 ? (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentJobsHorizontalScroller}>
+                    {recentJobs.map((job) => (
+                      <TouchableOpacity
+                        key={job.id}
+                        style={styles.recentJobCardHorizontal}
+                        activeOpacity={0.85}
+                        onPress={() => router.push(`/jobs/${job.id}` as any)}
+                      >
+                        <View style={styles.recentJobUserAvatar}>
+                           {/* Avatar placeholder mimicking profile images from the screenshot */}
+                           <Image source={{ uri: `https://i.pravatar.cc/150?img=${(job.id?.charCodeAt(0) || 1) % 70}` }} style={{width: '100%', height: '100%', borderRadius: 12}} />
                         </View>
                         
-                        <View style={styles.timerBadge}>
-                          <Ionicons name="time-outline" size={10} color="#D97706" style={{ marginRight: 2 }} />
-                          <Text style={styles.timerBadgeText}>SÜRELİ FİYATLANDIRMA</Text>
-                        </View>
-                        <View style={styles.priceTextContainer}>
-                           <Text style={styles.priceTextLarge}>00:30:56</Text>
-                           <Text style={styles.priceTextSmall}>Teklif Bekliyor</Text>
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              ) : (
-                <View style={{ padding: 40, alignItems: 'center' }}>
-                  <Ionicons name="briefcase-outline" size={36} color={colors.textLight} />
-                  <Text style={{ marginTop: 12, color: colors.textSecondary, fontFamily: fonts.medium, textAlign: 'center' }}>
-                    Henüz iş ilanı bulunmuyor.
-                  </Text>
-                </View>
-              )}
-            </View>
-          )
-        }
-
-        {/* Öne Çıkan Ustalar Section (Citizen Only) */}
-        {
-          !isElectrician && (
-            <View style={[styles.section, { paddingBottom: 20 }]}>
-              <View style={[styles.sectionHeaderRow, { marginBottom: 16 }]}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16, textTransform: 'uppercase' }]}>ÖNE ÇIKAN USTALAR</Text>
-                </View>
-              </View>
-
-              {isLoadingElectricians ? (
-                <View style={{ padding: 40, alignItems: 'center' }}>
-                  <ActivityIndicator size="small" color={colors.primary} />
-                  <Text style={{ marginTop: 10, color: staticColors.textSecondary, fontFamily: fonts.medium }}>Ustalar yükleniyor...</Text>
-                </View>
-              ) : featuredElectricians.length > 0 ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentJobsHorizontalScroller}>
-                  {featuredElectricians.map((elec) => (
-                    <TouchableOpacity
-                      key={elec.id}
-                      style={styles.recentJobCardHorizontal}
-                      activeOpacity={0.85}
-                      onPress={() => router.push(`/electricians/${elec.id}` as any)}
-                    >
-                      <View style={styles.recentJobUserAvatar}>
-                         {elec.profileImageUrl ? (
-                            <Image source={{ uri: getFileUrl(elec.profileImageUrl) || '' }} style={{width: '100%', height: '100%', borderRadius: 12}} />
-                          ) : (
-                            <Ionicons name="person" size={24} color={colors.primary} />
-                          )}
-                      </View>
-                      
-                      <View style={styles.recentJobInfoHorizontal}>
-                        <View style={styles.recentJobHeaderHorizontal}>
-                          <View style={{ flex: 1, paddingRight: 8 }}>
-                            <View style={{flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2}}>
-                               <Text style={[styles.recentJobTitleHorizontal, {marginBottom: 0}]} numberOfLines={1}>{elec.fullName || 'Usta'}</Text>
-                               {elec.isVerified === true && elec.electricianProfile?.verificationStatus === 'VERIFIED' && (
-                                  <Ionicons name="shield-checkmark" size={14} color="#10B981" />
-                               )}
+                        <View style={styles.recentJobInfoHorizontal}>
+                          <View style={styles.recentJobHeaderHorizontal}>
+                            <View style={{ flex: 1, paddingRight: 8 }}>
+                              <Text style={styles.recentJobTitleHorizontal} numberOfLines={1}>{job.serviceCategory ? getUstaCategory({ serviceCategory: job.serviceCategory }) : 'Genel'}</Text>
+                              <Text style={styles.recentJobSubtextHorizontal} numberOfLines={1}>{job.title}</Text>
+                              <Text style={styles.recentJobCategoryTextHorizontal} numberOfLines={1}>{job.location?.city || 'Türkiye'}</Text>
                             </View>
-                            <Text style={styles.recentJobSubtextHorizontal} numberOfLines={1}>{getUstaCategory(elec)}</Text>
-                            <Text style={styles.recentJobCategoryTextHorizontal} numberOfLines={1}>{elec.locations?.[0] ? `${elec.locations[0].district || ''}, ${elec.locations[0].city || ''}`.replace(/^, /, '').replace(/, $/, '') || 'Türkiye' : 'Türkiye'}</Text>
+                          </View>
+                          
+                          <View style={styles.timerBadge}>
+                            <Ionicons name="time-outline" size={10} color="#D97706" style={{ marginRight: 2 }} />
+                            <Text style={styles.timerBadgeText}>SÜRELİ FİYATLANDIRMA</Text>
+                          </View>
+                          <View style={styles.priceTextContainer}>
+                             <Text style={styles.priceTextLarge}>00:30:56</Text>
+                             <Text style={styles.priceTextSmall}>Teklif Bekliyor</Text>
                           </View>
                         </View>
-                        
-                        <View style={[styles.timerBadge, { backgroundColor: 'rgba(16, 185, 129, 0.1)' }]}>
-                          <Ionicons name="star" size={10} color="#10B981" style={{ marginRight: 2 }} />
-                          <Text style={[styles.timerBadgeText, { color: '#10B981' }]}>{Number(elec.electricianProfile?.ratingAverage || 0).toFixed(1)} Puan</Text>
-                        </View>
-                        <View style={styles.priceTextContainer}>
-                           <Text style={styles.priceTextLarge}>{elec.electricianProfile?.totalReviews || 0}</Text>
-                           <Text style={styles.priceTextSmall}>Değerlendirme</Text>
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <View style={{ padding: 40, alignItems: 'center' }}>
+                    <Ionicons name="briefcase-outline" size={36} color={colors.textLight} />
+                    <Text style={{ marginTop: 12, color: colors.textSecondary, fontFamily: fonts.medium, textAlign: 'center' }}>
+                      Henüz iş ilanı bulunmuyor.
+                    </Text>
+                  </View>
+                )
               ) : (
-                <View style={{ padding: 40, alignItems: 'center' }}>
-                  <Ionicons name="people-outline" size={36} color={colors.textLight} />
-                  <Text style={{ marginTop: 12, color: colors.textSecondary, fontFamily: fonts.medium, textAlign: 'center' }}>
-                    Şu an için öne çıkan usta bulunmuyor.
-                  </Text>
-                </View>
+                isLoadingElectricians ? (
+                  <View style={{ padding: 40, alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                    <Text style={{ marginTop: 10, color: staticColors.textSecondary, fontFamily: fonts.medium }}>Ustalar yükleniyor...</Text>
+                  </View>
+                ) : featuredElectricians.length > 0 ? (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentJobsHorizontalScroller}>
+                    {featuredElectricians.map((elec) => (
+                      <TouchableOpacity
+                        key={elec.id}
+                        style={styles.recentJobCardHorizontal}
+                        activeOpacity={0.85}
+                        onPress={() => router.push(`/electricians/${elec.id}` as any)}
+                      >
+                        <View style={styles.recentJobUserAvatar}>
+                           {elec.profileImageUrl ? (
+                              <Image source={{ uri: getFileUrl(elec.profileImageUrl) || '' }} style={{width: '100%', height: '100%', borderRadius: 12}} />
+                            ) : (
+                              <Ionicons name="person" size={24} color={colors.primary} />
+                            )}
+                        </View>
+                        
+                        <View style={styles.recentJobInfoHorizontal}>
+                          <View style={styles.recentJobHeaderHorizontal}>
+                            <View style={{ flex: 1, paddingRight: 8 }}>
+                              <View style={{flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2}}>
+                                 <Text style={[styles.recentJobTitleHorizontal, {marginBottom: 0}]} numberOfLines={1}>{elec.fullName || 'Usta'}</Text>
+                                 {elec.isVerified === true && elec.electricianProfile?.verificationStatus === 'VERIFIED' && (
+                                    <Ionicons name="shield-checkmark" size={14} color="#10B981" />
+                                 )}
+                              </View>
+                              <Text style={styles.recentJobSubtextHorizontal} numberOfLines={1}>{getUstaCategory(elec)}</Text>
+                              <Text style={styles.recentJobCategoryTextHorizontal} numberOfLines={1}>{elec.locations?.[0] ? `${elec.locations[0].district || ''}, ${elec.locations[0].city || ''}`.replace(/^, /, '').replace(/, $/, '') || 'Türkiye' : 'Türkiye'}</Text>
+                            </View>
+                          </View>
+                          
+                          <View style={[styles.timerBadge, { backgroundColor: 'rgba(16, 185, 129, 0.1)' }]}>
+                            <Ionicons name="star" size={10} color="#10B981" style={{ marginRight: 2 }} />
+                            <Text style={[styles.timerBadgeText, { color: '#10B981' }]}>{Number(elec.electricianProfile?.ratingAverage || 0).toFixed(1)} Puan</Text>
+                          </View>
+                          <View style={styles.priceTextContainer}>
+                             <Text style={styles.priceTextLarge}>{elec.electricianProfile?.totalReviews || 0}</Text>
+                             <Text style={styles.priceTextSmall}>Değerlendirme</Text>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <View style={{ padding: 40, alignItems: 'center' }}>
+                    <Ionicons name="people-outline" size={36} color={colors.textLight} />
+                    <Text style={{ marginTop: 12, color: colors.textSecondary, fontFamily: fonts.medium, textAlign: 'center' }}>
+                      Şu an için öne çıkan usta bulunmuyor.
+                    </Text>
+                  </View>
+                )
               )}
             </View>
           )
