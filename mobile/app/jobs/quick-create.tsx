@@ -430,11 +430,6 @@ export default function QuickCreateScreen() {
                         </View>
                     </LinearGradient>
 
-                    <View style={styles.sectionBlock}>
-                        <Text style={[styles.sectionKicker, { color: colors.textLight }]}>1 · Hizmet</Text>
-                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Hangi alanda usta lazım?</Text>
-                    </View>
-
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
@@ -804,10 +799,7 @@ export default function QuickCreateScreen() {
                         </Card>
                     )}
 
-                    <View style={[styles.sectionBlock, styles.sectionBlockTight]}>
-                        <Text style={[styles.sectionKicker, { color: colors.textLight }]}>2 · Konum</Text>
-                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Nerede?</Text>
-                    </View>
+
 
                     <Card variant="default" style={styles.mainCard}>
                         {savedAddresses.length > 0 && (
@@ -893,10 +885,7 @@ export default function QuickCreateScreen() {
                         </View>
                     </Card>
 
-                    <View style={[styles.sectionBlock, styles.sectionBlockTight]}>
-                        <Text style={[styles.sectionKicker, { color: colors.textLight }]}>3 · Açıklama</Text>
-                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Sorunu anlat</Text>
-                    </View>
+
 
                     <Card variant="default" style={styles.mainCard}>
                         <View>
@@ -1010,14 +999,14 @@ export default function QuickCreateScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     scrollView: { flex: 1 },
-    content: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 28 },
+    content: { paddingHorizontal: 14, paddingTop: 8, paddingBottom: 28 },
     emergencyBanner: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 14,
         paddingHorizontal: 16,
-        borderRadius: 20,
-        marginBottom: 20,
+        borderRadius: 18,
+        marginBottom: 10,
         elevation: 8,
         shadowColor: '#EF4444',
         shadowOffset: { width: 0, height: 4 },
@@ -1044,21 +1033,21 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
     bannerBadgeText: { fontFamily: fonts.bold, fontSize: 12, color: '#FFF', letterSpacing: 0.5 },
-    sectionBlock: { marginBottom: 12, marginTop: 4 },
-    sectionBlockTight: { marginTop: 16 },
-    sectionKicker: { fontFamily: fonts.bold, fontSize: 12, letterSpacing: 1, marginBottom: 4, textTransform: 'uppercase', opacity: 0.6 },
-    sectionTitle: { fontFamily: fonts.bold, fontSize: 18, letterSpacing: -0.4 },
-    typeScrollContent: { gap: 12, paddingVertical: 8, paddingRight: 4, marginBottom: 12 },
+    sectionBlock: { marginBottom: 6, marginTop: 2 },
+    sectionBlockTight: { marginTop: 6 },
+    sectionKicker: { fontFamily: fonts.bold, fontSize: 12, letterSpacing: 1, marginBottom: 2, textTransform: 'uppercase', opacity: 0.6 },
+    sectionTitle: { fontFamily: fonts.bold, fontSize: 16, letterSpacing: -0.3 },
+    typeScrollContent: { gap: 10, paddingVertical: 4, paddingRight: 4, marginBottom: 6 },
     typeBtn: {
         width: 108,
-        height: 116,
+        height: 120,
         backgroundColor: '#FFF',
-        borderRadius: 20,
+        borderRadius: 18,
         borderWidth: 1.5,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 8,
+        paddingVertical: 8,
+        paddingHorizontal: 6,
         position: 'relative',
         elevation: 4,
         shadowColor: '#000',
@@ -1071,11 +1060,11 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.15,
         shadowRadius: 12,
     },
-    typeIconBox: { width: 56, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-    type3dImage: { width: 44, height: 44 },
+    typeIconBox: { width: 72, height: 72, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+    type3dImage: { width: 56, height: 56 },
     typeLabel: { fontFamily: fonts.bold, fontSize: 12, textAlign: 'center', lineHeight: 15 },
-    checkIndicator: { position: 'absolute', top: 10, right: 10, width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-    mainCard: { padding: 16, borderRadius: 24, marginBottom: 16, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
+    checkIndicator: { position: 'absolute', top: 8, right: 8, width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+    mainCard: { padding: 14, borderRadius: 20, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
     addressScroll: { flexDirection: 'row', marginBottom: 14 },
     addressChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1.5, marginRight: 10 },
     addressChipText: { fontFamily: fonts.bold, fontSize: 12 },
