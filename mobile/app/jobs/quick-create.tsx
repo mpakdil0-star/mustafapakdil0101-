@@ -463,7 +463,7 @@ export default function QuickCreateScreen() {
                                         setErrors(prev => ({ ...prev, type: '' }));
                                     }}
                                 >
-                                    <View style={[styles.typeIconBox, { backgroundColor: type.color + '14' }]}>
+                                    <View style={styles.typeIconBox}>
                                         <Image source={getCategoryImage(type.id)} style={styles.type3dImage} resizeMode="contain" />
                                     </View>
                                     <Text
@@ -1071,30 +1071,30 @@ const styles = StyleSheet.create({
     sectionTitle: { fontFamily: fonts.bold, fontSize: 14, letterSpacing: -0.2 },
     typeScrollContent: { gap: 8, paddingVertical: 2, paddingRight: 4, marginBottom: 6 },
     typeBtn: {
-        width: 86,
-        height: 94,
+        width: 74,
+        height: 104,
         backgroundColor: '#FFF',
-        borderRadius: 14,
+        borderRadius: 18,
         borderWidth: 1.5,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 6,
+        paddingVertical: 10,
         paddingHorizontal: 4,
         position: 'relative',
-        elevation: 3,
+        elevation: 5,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
     },
     typeBtnSelected: {
-        elevation: 6,
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
+        elevation: 8,
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
     },
-    typeIconBox: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
-    type3dImage: { width: 34, height: 34 },
-    typeLabel: { fontFamily: fonts.bold, fontSize: 11, textAlign: 'center', lineHeight: 13 },
+    typeIconBox: { width: 48, height: 48, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+    type3dImage: { width: '100%', height: '100%' },
+    typeLabel: { fontFamily: fonts.semiBold, fontSize: 11, textAlign: 'center', lineHeight: 14, width: '100%' },
     checkIndicator: { position: 'absolute', top: 6, right: 6, width: 16, height: 16, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
     mainCard: { padding: 12, borderRadius: 16, marginBottom: 8, elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 6 },
     addressScroll: { flexDirection: 'row', marginBottom: 10 },
