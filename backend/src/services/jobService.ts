@@ -467,21 +467,32 @@ export const jobService = {
           skip: (lat && lng && radius) ? 0 : skip, // Map fetch usually wants all points in view
           take: queryLimit,
           orderBy: { createdAt: 'desc' },
-          include: {
-            citizen: {
-              select: {
-                id: true,
-                fullName: true,
-                profileImageUrl: true,
-                phone: true,
+            include: {
+              citizen: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  profileImageUrl: true,
+                  phone: true,
+                },
+              },
+              bids: {
+                where: {
+                  expiresAt: { not: null },
+                  status: { in: ['PENDING', 'ACCEPTED'] as any }
+                },
+                select: {
+                  id: true,
+                  expiresAt: true
+                },
+                take: 1
+              },
+              _count: {
+                select: {
+                  bids: true,
+                },
               },
             },
-            _count: {
-              select: {
-                bids: true,
-              },
-            },
-          },
         }),
         prisma.jobPost.count({ where }),
       ]);
@@ -495,11 +506,15 @@ export const jobService = {
           distance = calculateDistance(lat, lng, location.latitude, location.longitude);
         }
 
+        const { bids, ...jobWithoutBids } = job;
+        const hasTimedBids = bids && bids.length > 0;
+
         return {
-          ...job,
+          ...jobWithoutBids,
           bidCount: job._count.bids,
           estimatedBudget: job.estimatedBudget ? job.estimatedBudget.toString() : null,
           distance: distance ? parseFloat(distance.toFixed(2)) : null,
+          hasTimedBids,
         };
       });
 
