@@ -486,9 +486,11 @@ export default function JobDetailScreen() {
           )}
         </Card>
 
-        {isOwner && jobData.status !== 'COMPLETED' && !jobData.assignedElectricianId && (
+        {(isOwner || hasBidOnJob) && jobData.status !== 'COMPLETED' && !jobData.assignedElectricianId && (
           <View style={styles.bidsSection}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Gelen Teklifler ({jobBids.length})</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              {isOwner ? `Gelen Teklifler (${jobBids.length})` : 'Teklifiniz'}
+            </Text>
             {jobBids.length === 0 ? (
               <View style={styles.emptyBids}>
                 <Ionicons name="time-outline" size={32} color={colors.textLight} />
@@ -551,7 +553,7 @@ export default function JobDetailScreen() {
                   )}
 
                   <View style={styles.bidActions}>
-                    {bid.status === 'PENDING' && jobData.status !== 'CANCELLED' && (
+                    {isOwner && bid.status === 'PENDING' && jobData.status !== 'CANCELLED' && (
                       (bid.expiresAt && (new Date(bid.expiresAt).getTime() <= Date.now() || expiredBids.has(bid.id))) ? (
                         <Button
                           title="Güncel Fiyat İste"

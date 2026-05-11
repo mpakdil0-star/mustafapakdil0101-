@@ -407,7 +407,8 @@ export const jobService = {
       }
 
       // FIX: Handle 'ACTIVE' status to show both OPEN and BIDDING jobs
-      if (status === 'ACTIVE' as any) {
+      // For discovery, we usually want to see both statuses.
+      if (!status || status === 'ACTIVE' as any || status === JobStatus.OPEN) {
         where.status = {
           in: [JobStatus.OPEN, JobStatus.BIDDING],
         };

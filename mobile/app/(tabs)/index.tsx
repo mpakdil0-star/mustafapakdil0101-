@@ -392,9 +392,9 @@ export default function HomeScreen() {
     if (isElectrician || !isInitialized) return;
     setIsLoadingRecentJobs(true);
     try {
-      const result = await jobService.getJobs({ limit: 5 });
+      const result = await jobService.getJobs({ limit: 10 });
       if (result && result.jobs) {
-        setRecentJobs(result.jobs.slice(0, 5));
+        setRecentJobs(result.jobs.slice(0, 10));
       }
     } catch (error) {
       console.log('Error fetching recent jobs:', error);
