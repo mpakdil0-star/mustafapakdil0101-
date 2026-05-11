@@ -467,23 +467,16 @@ export const jobService = {
           skip: (lat && lng && radius) ? 0 : skip, // Map fetch usually wants all points in view
           take: queryLimit,
           orderBy: { createdAt: 'desc' },
-            include: {
-              citizen: {
-                select: {
-                  id: true,
-                  fullName: true,
-                  profileImageUrl: true,
-                  phone: true,
-                },
-              },
               bids: {
                 where: {
                   expiresAt: { not: null },
                   status: { in: ['PENDING', 'ACCEPTED'] as any }
                 },
                 select: {
-                  id: true,
                   expiresAt: true
+                },
+                orderBy: {
+                  expiresAt: 'asc'
                 },
                 take: 1
               },
@@ -507,14 +500,15 @@ export const jobService = {
         }
 
         const { bids, ...jobWithoutBids } = job;
-        const hasTimedBids = bids && bids.length > 0;
+        const earliestBidExpiresAt = bids && bids.length > 0 ? bids[0].expiresAt : null;
 
         return {
           ...jobWithoutBids,
           bidCount: job._count.bids,
           estimatedBudget: job.estimatedBudget ? job.estimatedBudget.toString() : null,
           distance: distance ? parseFloat(distance.toFixed(2)) : null,
-          hasTimedBids,
+          hasTimedBids: !!earliestBidExpiresAt,
+          earliestBidExpiresAt,
         };
       });
 

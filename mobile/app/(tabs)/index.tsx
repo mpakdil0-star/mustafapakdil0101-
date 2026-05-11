@@ -19,6 +19,7 @@ import { AuthGuardModal } from '../../components/common/AuthGuardModal';
 import { JOB_CATEGORIES } from '../../constants/jobCategories';
 import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CountdownTimer } from '../../components/common/CountdownTimer';
 
 
 // --- Premium Service Category Component ---
@@ -1198,10 +1199,13 @@ export default function HomeScreen() {
                               <Text style={styles.recentJobSubtextHorizontal} numberOfLines={1}>{job.title}</Text>
                               <Text style={styles.recentJobCategoryTextHorizontal} numberOfLines={1}>{job.location?.city || 'Türkiye'}</Text>
                             </View>
-                            {job.hasTimedBids && (
-                              <View style={styles.timerBadge}>
-                                <Ionicons name="time" size={10} color="#D97706" style={{ marginRight: 2 }} />
-                                <Text style={styles.timerBadgeText}>Süreli Teklif</Text>
+                            {job.hasTimedBids && job.earliestBidExpiresAt && (
+                              <View style={[styles.timerBadge, { backgroundColor: 'transparent', paddingHorizontal: 0, top: -2, right: -4 }]}>
+                                <CountdownTimer 
+                                  expiresAt={job.earliestBidExpiresAt} 
+                                  showBadgeOnly={false} 
+                                  size="small"
+                                />
                               </View>
                             )}
                           </View>
