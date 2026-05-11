@@ -22,6 +22,7 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CITY_NAMES, getDistrictsByCity } from '../../constants/locations';
 import { formatRelativeTime } from '../../utils/date';
+import { CountdownTimer } from '../../components/common/CountdownTimer';
 
 type TabType = 'all' | 'my' | 'bids';
 
@@ -440,6 +441,9 @@ export default function JobsScreen() {
                         {getBidStatusLabel()}
                       </Text>
                     </View>
+                    {bid.expiresAt && bid.status === 'PENDING' && (
+                      <CountdownTimer expiresAt={bid.expiresAt} size="small" />
+                    )}
                   </View>
                   <Text style={styles.jobTitleText} numberOfLines={1}>{job.title}</Text>
                 </Card>

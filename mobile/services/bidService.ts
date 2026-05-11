@@ -4,7 +4,7 @@ import { API_ENDPOINTS } from '../constants/api';
 export interface CreateBidData {
   jobPostId: string;
   amount: number;
-  estimatedDuration: number; // in hours
+  validityDays: number; // 3, 7, or 30
   estimatedStartDate?: string;
   message: string;
   costItems?: any[];
@@ -16,6 +16,7 @@ export interface Bid {
   electricianId: string;
   amount: number | string;
   estimatedDuration: number;
+  expiresAt?: string | null;
   estimatedStartDate?: string | null;
   message: string;
   costItems?: any;

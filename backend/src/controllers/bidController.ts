@@ -180,7 +180,8 @@ export const createBidController = async (
             jobPostId: bidData.jobPostId,
             electricianId: req.user.id,
             amount: String(bidData.amount),
-            estimatedDuration: bidData.estimatedDuration,
+            estimatedDuration: (bidData.validityDays || 7) * 24, // backward compat
+            expiresAt: new Date(Date.now() + (bidData.validityDays || 7) * 24 * 60 * 60 * 1000).toISOString(),
             estimatedStartDate: bidData.estimatedStartDate || new Date(),
             message: bidData.message,
             costItems: bidData.costItems || null,

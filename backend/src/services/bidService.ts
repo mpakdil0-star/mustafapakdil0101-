@@ -9,7 +9,7 @@ export interface CreateBidData {
   jobPostId: string;
   electricianId: string;
   amount: number;
-  estimatedDuration: number; // in hours
+  validityDays?: number; // 3, 7, or 30 (default 7)
   estimatedStartDate?: Date;
   message: string;
   costItems?: any[];
@@ -29,7 +29,7 @@ export const bidService = {
       jobPostId,
       electricianId,
       amount,
-      estimatedDuration,
+      validityDays,
       estimatedStartDate,
       message,
     } = data;
@@ -39,8 +39,9 @@ export const bidService = {
       throw new ValidationError('Amount must be greater than 0');
     }
 
-    if (!estimatedDuration || estimatedDuration <= 0) {
-      throw new ValidationError('Estimated duration must be greater than 0');
+    // Validate validityDays if provided
+    if (validityDays && ![3, 7, 30].includes(validityDays)) {
+      throw new ValidationError('Geçersiz teklif geçerlilik süresi');
     }
 
     if (!message || message.trim().length === 0) {
@@ -129,13 +130,19 @@ export const bidService = {
         }
       }
 
+      // Calculate expiresAt from validityDays (default 7 days)
+      const days = validityDays || 7;
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + days);
+
       // Create bid
       const bid = await prisma.bid.create({
         data: {
           jobPostId,
           electricianId,
           amount: amount.toString(),
-          estimatedDuration,
+          estimatedDuration: days * 24, // backward compat
+          expiresAt,
           estimatedStartDate: parsedStartDate,
           message,
           costItems: data.costItems || null,

@@ -37,7 +37,7 @@ import { PremiumHeader } from '../../../components/common/PremiumHeader';
 import { StatusStepper } from '../../../components/common/StatusStepper';
 import { AuthGuardModal } from '../../../components/common/AuthGuardModal';
 import { socketService } from '../../../services/socketService';
-
+import { CountdownTimer } from '../../../components/common/CountdownTimer';
 export default function JobDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -58,6 +58,8 @@ export default function JobDetailScreen() {
   // Bid Acceptance Modal States
   const [showBidAcceptModal, setShowBidAcceptModal] = useState(false);
   const [acceptingBid, setAcceptingBid] = useState<{ id: string; electricianId: string; electricianName: string; amount: number; phone?: string } | null>(null);
+
+  const [expiredBids, setExpiredBids] = useState<Set<string>>(new Set());
   const [isAcceptingBid, setIsAcceptingBid] = useState(false);
   const [isBidAccepted, setIsBidAccepted] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false); // İlan iptal state'i
@@ -520,8 +522,16 @@ export default function JobDetailScreen() {
                         )}
                       </View>
                     </View>
-                    <View style={[styles.bidPriceBox, { backgroundColor: colors.primary + '10' }]}>
-                      <Text style={[styles.bidPrice, { color: colors.primary }]}>{(parseFloat(bid.amount.toString()) || 0).toFixed(0)} ₺</Text>
+                    <View style={{ alignItems: 'flex-end', gap: 6 }}>
+                      {bid.expiresAt && (
+                        <CountdownTimer 
+                          expiresAt={bid.expiresAt} 
+                          onExpired={() => setExpiredBids(prev => new Set(prev).add(bid.id))}
+                        />
+                      )}
+                      <View style={[styles.bidPriceBox, { backgroundColor: colors.primary + '10' }]}>
+                        <Text style={[styles.bidPrice, { color: colors.primary }]}>{(parseFloat(bid.amount.toString()) || 0).toFixed(0)} ₺</Text>
+                      </View>
                     </View>
                   </View>
 
@@ -542,21 +552,42 @@ export default function JobDetailScreen() {
 
                   <View style={styles.bidActions}>
                     {bid.status === 'PENDING' && jobData.status !== 'CANCELLED' && (
-                      <Button
-                        title="Teklifi Kabul Et"
-                        onPress={() => {
-                          setAcceptingBid({
-                            id: bid.id,
-                            electricianId: bid.electricianId,
-                            electricianName: bid.electrician?.fullName || 'Usta',
-                            amount: parseFloat(bid.amount.toString()) || 0,
-                            phone: (bid.electrician as any)?.phone
-                          });
-                          setShowBidAcceptModal(true);
-                        }}
-                        variant="primary"
-                        fullWidth
-                      />
+                      (bid.expiresAt && (new Date(bid.expiresAt).getTime() <= Date.now() || expiredBids.has(bid.id))) ? (
+                        <Button
+                          title="Güncel Fiyat İste"
+                          onPress={() => {
+                            Alert.alert(
+                              "Güncel Fiyat İste",
+                              "Usta ile iletişime geçerek teklifini güncellemesini isteyebilirsiniz.",
+                              [
+                                { text: "İptal", style: "cancel" },
+                                { 
+                                  text: "Usta Profiline Git", 
+                                  onPress: () => router.push(`/electricians/${bid.electricianId}`) 
+                                }
+                              ]
+                            );
+                          }}
+                          variant="outline"
+                          fullWidth
+                        />
+                      ) : (
+                        <Button
+                          title="Teklifi Kabul Et"
+                          onPress={() => {
+                            setAcceptingBid({
+                              id: bid.id,
+                              electricianId: bid.electricianId,
+                              electricianName: bid.electrician?.fullName || 'Usta',
+                              amount: parseFloat(bid.amount.toString()) || 0,
+                              phone: (bid.electrician as any)?.phone
+                            });
+                            setShowBidAcceptModal(true);
+                          }}
+                          variant="primary"
+                          fullWidth
+                        />
+                      )
                     )}
                   </View>
                 </Card>

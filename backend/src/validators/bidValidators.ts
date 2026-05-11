@@ -20,11 +20,10 @@ export const createBidValidation = [
             return true;
         }),
 
-    body('estimatedDuration')
-        .notEmpty()
-        .withMessage('Tahmini süre gerekli')
-        .isInt({ min: 1 })
-        .withMessage('Tahmini süre en az 1 saat olmalıdır'),
+    body('validityDays')
+        .optional()
+        .isInt({ min: 1, max: 30 })
+        .withMessage('Geçerlilik süresi 1-30 gün arasında olmalıdır'),
 
     body('message')
         .notEmpty()
@@ -54,10 +53,10 @@ export const updateBidValidation = [
             return true;
         }),
 
-    body('estimatedDuration')
+    body('validityDays')
         .optional()
-        .isInt({ min: 1 })
-        .withMessage('Tahmini süre en az 1 saat olmalıdır'),
+        .isInt({ min: 1, max: 30 })
+        .withMessage('Geçerlilik süresi 1-30 gün arasında olmalıdır'),
 
     body('message')
         .optional()

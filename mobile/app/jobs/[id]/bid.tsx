@@ -45,7 +45,7 @@ export default function CreateBidScreen() {
   const colors = useAppColors();
 
   const [amount, setAmount] = useState('');
-  const [estimatedDuration, setEstimatedDuration] = useState('2');
+  const [validityDays, setValidityDays] = useState(7);
   const [estimatedStartDate, setEstimatedStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [message, setMessage] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -83,12 +83,10 @@ export default function CreateBidScreen() {
     setAlertConfig({ visible: true, title, message, type, buttons });
   };
 
-  const DURATION_OPTIONS = [
-    { label: '1s', value: '1' },
-    { label: '2s', value: '2' },
-    { label: '4s', value: '4' },
-    { label: '8s', value: '8' },
-    { label: '1G', value: '16' },
+  const VALIDITY_OPTIONS = [
+    { label: '3 Gün', value: 3 },
+    { label: '7 Gün', value: 7 },
+    { label: '30 Gün', value: 30 },
   ];
 
   const detailedDateOptions = Array.from({ length: 15 }, (_, i) => {
@@ -142,7 +140,7 @@ export default function CreateBidScreen() {
       await dispatch(createBid({
         jobPostId: jobId as string,
         amount: parseFloat(amount),
-        estimatedDuration: parseFloat(estimatedDuration),
+        validityDays: validityDays,
         estimatedStartDate: estimatedStartDate ? new Date(estimatedStartDate).toISOString() : undefined,
         message: message.trim(),
         costItems: costItems.length > 0 ? costItems.map(item => ({
@@ -359,25 +357,25 @@ export default function CreateBidScreen() {
             )}
           </View>
 
-          {/* Duration Pills */}
+          {/* Validity Pills */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Tahmini Süre</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Teklif Geçerlilik Süresi</Text>
             <View style={styles.pillContainer}>
-              {DURATION_OPTIONS.map((opt) => (
+              {VALIDITY_OPTIONS.map((opt) => (
                 <TouchableOpacity
                   key={opt.value}
                   activeOpacity={0.7}
                   style={[
                     styles.pill,
                     { borderColor: colors.border },
-                    estimatedDuration === opt.value && { backgroundColor: colors.primary, borderColor: colors.primary }
+                    validityDays === opt.value && { backgroundColor: colors.primary, borderColor: colors.primary }
                   ]}
-                  onPress={() => setEstimatedDuration(opt.value)}
+                  onPress={() => setValidityDays(opt.value)}
                 >
                   <Text style={[
                     styles.pillText,
                     { color: colors.textSecondary },
-                    estimatedDuration === opt.value && { color: staticColors.white }
+                    validityDays === opt.value && { color: staticColors.white }
                   ]}>{opt.label}</Text>
                 </TouchableOpacity>
               ))}
