@@ -1197,30 +1197,28 @@ export default function HomeScreen() {
                             <View style={{ flex: 1, paddingRight: 8 }}>
                               <Text style={styles.recentJobTitleHorizontal} numberOfLines={1}>{job.serviceCategory ? getUstaCategory({ serviceCategory: job.serviceCategory }) : 'Genel'}</Text>
                               <Text style={styles.recentJobSubtextHorizontal} numberOfLines={1}>{job.title}</Text>
-                              <Text style={styles.recentJobCategoryTextHorizontal} numberOfLines={1}>{job.location?.city || 'Türkiye'}</Text>
-                            </View>
-                            {job.hasTimedBids && (
-                              <View style={styles.homeTimerContainer}>
-                                <View style={styles.homeTimerBadgeMinimal}>
-                                  <Ionicons name="time-outline" size={10} color="#D97706" style={{ marginRight: 3 }} />
-                                  <Text style={styles.homeTimerLabelSmall}>SÜRELİ TEKLİF</Text>
-                                </View>
-                                {job.earliestBidExpiresAt && (
-                                  <View style={styles.homeTimerValueWrapper}>
-                                    <CountdownTimer 
-                                      expiresAt={job.earliestBidExpiresAt} 
-                                      minimal={true}
-                                      size="small"
-                                    />
+                               
+                               <View style={styles.unifiedInfoRow}>
+                                  <Text style={styles.unifiedInfoText}>{job.location?.city || 'Türkiye'}</Text>
+                                  <Text style={styles.unifiedSeparator}>•</Text>
+                                  <View style={styles.unifiedBidBadge}>
+                                     <Text style={styles.unifiedBidText}>{job.bidCount || 0} Teklif</Text>
                                   </View>
-                                )}
-                              </View>
-                            )}
-                          </View>
-                          
-                          <View style={styles.bidStatPremiumBadge}>
-                             <Text style={styles.bidStatNumber}>{job.bidCount || 0}</Text>
-                             <Text style={styles.bidStatLabel}>TEKLİF</Text>
+                                  {job.hasTimedBids && job.earliestBidExpiresAt && (
+                                    <>
+                                      <Text style={styles.unifiedSeparator}>•</Text>
+                                      <View style={styles.unifiedTimerContainer}>
+                                        <Ionicons name="time-outline" size={12} color="#D97706" style={{ marginRight: 3 }} />
+                                        <CountdownTimer 
+                                          expiresAt={job.earliestBidExpiresAt} 
+                                          minimal={true}
+                                          size="small"
+                                        />
+                                      </View>
+                                    </>
+                                  )}
+                               </View>
+                            </View>
                           </View>
                         </View>
                       </TouchableOpacity>
@@ -2978,47 +2976,36 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: '#D97706',
   },
-  homeTimerContainer: {
-    alignItems: 'flex-end',
-    justifyContent: 'flex-start',
-  },
-  homeTimerBadgeMinimal: {
+  unifiedInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 2,
+    marginTop: 6,
+    flexWrap: 'wrap',
   },
-  homeTimerLabelSmall: {
+  unifiedInfoText: {
     fontFamily: fonts.medium,
-    fontSize: 7.5,
-    color: '#D97706',
-    letterSpacing: 0.5,
+    fontSize: 11,
+    color: staticColors.textLight,
   },
-  homeTimerValueWrapper: {
-    marginTop: -2,
+  unifiedSeparator: {
+    marginHorizontal: 6,
+    color: '#CBD5E1',
+    fontSize: 10,
   },
-  bidStatPremiumBadge: {
-    position: 'absolute',
-    bottom: 4,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    backgroundColor: 'rgba(22, 163, 74, 0.05)', // Very subtle success green
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 4,
+  unifiedBidBadge: {
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
   },
-  bidStatNumber: {
-    fontFamily: fonts.extraBold,
-    fontSize: 16,
-    color: '#16A34A',
-  },
-  bidStatLabel: {
+  unifiedBidText: {
     fontFamily: fonts.bold,
-    fontSize: 8,
+    fontSize: 10,
     color: '#16A34A',
-    opacity: 0.7,
-    letterSpacing: 0.3,
+  },
+  unifiedTimerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   priceTextContainer: {
     position: 'absolute',
