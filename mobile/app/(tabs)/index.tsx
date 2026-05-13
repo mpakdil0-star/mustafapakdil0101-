@@ -3002,27 +3002,35 @@ const styles = StyleSheet.create({
   },
   bidStatPremiumBadge: {
     position: 'absolute',
-    bottom: 4,
+    bottom: 6,
     right: 0,
     flexDirection: 'row',
-    alignItems: 'baseline',
-    backgroundColor: 'rgba(22, 163, 74, 0.05)', // Very subtle success green
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 4,
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4', // Very light emerald
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999, // Pill shape
+    borderWidth: 1,
+    borderColor: '#DCFCE7',
+    // Subtle shadow for premium feel
+    shadowColor: '#16A34A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   bidStatNumber: {
     fontFamily: fonts.extraBold,
-    fontSize: 16,
-    color: '#16A34A',
+    fontSize: 14,
+    color: '#059669', // Emerald 600
+    marginRight: 2,
   },
   bidStatLabel: {
     fontFamily: fonts.bold,
     fontSize: 8,
-    color: '#16A34A',
-    opacity: 0.7,
-    letterSpacing: 0.3,
+    color: '#059669',
+    letterSpacing: 0.5,
+    opacity: 0.9,
   },
   priceTextContainer: {
     position: 'absolute',
