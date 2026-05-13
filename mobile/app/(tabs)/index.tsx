@@ -19,7 +19,6 @@ import { AuthGuardModal } from '../../components/common/AuthGuardModal';
 import { JOB_CATEGORIES } from '../../constants/jobCategories';
 import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CountdownTimer } from '../../components/common/CountdownTimer';
 
 
 // --- Premium Service Category Component ---
@@ -1200,20 +1199,9 @@ export default function HomeScreen() {
                               <Text style={styles.recentJobCategoryTextHorizontal} numberOfLines={1}>{job.location?.city || 'Türkiye'}</Text>
                             </View>
                             {job.hasTimedBids && (
-                              <View style={styles.timerBadgeContainer}>
-                                <View style={styles.timerBadge}>
-                                  <Ionicons name="time" size={10} color="#D97706" style={{ marginRight: 2 }} />
-                                  <Text style={styles.timerBadgeText}>Süreli Teklif</Text>
-                                </View>
-                                {job.earliestBidExpiresAt && (
-                                  <View style={styles.homeTimerWrapper}>
-                                    <CountdownTimer 
-                                      expiresAt={job.earliestBidExpiresAt} 
-                                      showBadgeOnly={false} 
-                                      size="small"
-                                    />
-                                  </View>
-                                )}
+                              <View style={styles.timerBadge}>
+                                <Ionicons name="time" size={10} color="#D97706" style={{ marginRight: 2 }} />
+                                <Text style={styles.timerBadgeText}>Süreli Teklif</Text>
                               </View>
                             )}
                           </View>
@@ -2962,10 +2950,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: staticColors.textLight,
   },
-  timerBadgeContainer: {
-    alignItems: 'flex-end',
-    gap: 4,
-  },
   timerBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2973,14 +2957,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 6,
+    position: 'absolute',
+    top: 0,
+    right: 0,
   },
   timerBadgeText: {
     fontFamily: fonts.bold,
     fontSize: 8,
     color: '#D97706',
-  },
-  homeTimerWrapper: {
-    marginTop: -2,
   },
   priceTextContainer: {
     position: 'absolute',
