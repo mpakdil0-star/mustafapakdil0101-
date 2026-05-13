@@ -95,30 +95,46 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         {leftTabs.map((route: any, i: number) => renderTab(route, i, i))}
       </View>
 
-      {/* Center ACİL button */}
-      <View style={styles.centerButtonWrapper}>
-        <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+      {/* Center Button (Conditional) */}
+      <View style={[styles.centerButtonWrapper, isElectrician && { marginTop: 0, paddingTop: 10 }]}>
+        {isElectrician ? (
           <TouchableOpacity
-            activeOpacity={0.85}
+            style={styles.tabItem}
+            activeOpacity={0.7}
             onPress={() => {
-              if (!isAuthenticated) {
-                router.push('/(auth)/login');
-              } else {
-                router.push('/jobs/quick-create');
-              }
+              // Navigasyon veya ilgili sayfa yönlendirmesi buraya
+              // router.push('/channels'); 
             }}
           >
-            <LinearGradient
-              colors={['#FF4D4D', '#CC1A1A']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={styles.centerButton}
-            >
-              <Ionicons name="flash" size={26} color="#FFF" />
-              <Text style={styles.centerButtonLabel}>ACİL</Text>
-            </LinearGradient>
+            <View style={styles.tabIconWrapper}>
+              <Ionicons name="videocam-outline" size={24} color="#9CA3AF" />
+            </View>
+            <Text style={[styles.tabLabel, { color: '#9CA3AF' }]}>Usta Kanalları</Text>
           </TouchableOpacity>
-        </Animated.View>
+        ) : (
+          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => {
+                if (!isAuthenticated) {
+                  router.push('/(auth)/login');
+                } else {
+                  router.push('/jobs/quick-create');
+                }
+              }}
+            >
+              <LinearGradient
+                colors={['#FF4D4D', '#CC1A1A']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={styles.centerButton}
+              >
+                <Ionicons name="flash" size={26} color="#FFF" />
+                <Text style={styles.centerButtonLabel}>ACİL</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+        )}
       </View>
 
       {/* Right tabs */}
