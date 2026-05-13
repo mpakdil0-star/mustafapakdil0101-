@@ -109,23 +109,11 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
         </Animated.View>
       )}
 
-        <View style={[
-          styles.timerBox, 
-          isCritical && styles.timerBoxCritical,
-          minimal && styles.timerBoxMinimal
-        ]}>
-          <Text style={[
-            styles.timerText, 
-            size === 'large' && styles.timerTextLarge, 
-            isCritical && styles.timerTextCritical,
-            minimal && styles.timerTextMinimal
-          ]}>
-            <Text style={styles.dayText}>{timeLeft.days} Gün </Text>
-            <Text style={styles.timeText}>
-              {formatNumber(timeLeft.hours)}:{formatNumber(timeLeft.minutes)}:{formatNumber(timeLeft.seconds)}
-            </Text>
-          </Text>
-        </View>
+      <View style={[styles.timerBox, isCritical && { backgroundColor: '#FEF2F2' }]}>
+        <Text style={[styles.timerText, size === 'large' && styles.timerTextLarge, isCritical && { color: '#DC2626' }]}>
+          {`${timeLeft.days} Gün ${formatNumber(timeLeft.hours)}:${formatNumber(timeLeft.minutes)}:${formatNumber(timeLeft.seconds)}`}
+        </Text>
+      </View>
     </View>
   );
 };
@@ -166,43 +154,17 @@ const styles = StyleSheet.create({
     fontSize: 9,
   },
   timerBox: {
-    backgroundColor: '#F8FAFC',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  timerBoxCritical: {
-    backgroundColor: '#FFF1F2',
-    borderColor: '#FECACA',
-  },
-  timerBoxMinimal: {
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-    backgroundColor: 'transparent',
-    borderWidth: 0,
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
   },
   timerText: {
-    fontFamily: fonts.bold,
-    fontSize: 12,
-    color: '#475569',
+    fontFamily: fonts.semiBold,
+    fontSize: 11,
+    color: '#334155',
   },
   timerTextLarge: {
-    fontSize: 14,
-  },
-  timerTextCritical: {
-    color: '#DC2626',
-  },
-  timerTextMinimal: {
-    fontSize: 11,
-  },
-  dayText: {
-    color: '#64748B',
-    fontSize: 10,
-  },
-  timeText: {
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    letterSpacing: 0.5,
+    fontSize: 13,
   },
 });
