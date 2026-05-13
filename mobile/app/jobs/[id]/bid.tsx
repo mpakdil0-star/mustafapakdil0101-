@@ -337,19 +337,19 @@ export default function CreateBidScreen() {
           {/* Amount Input */}
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.textSecondary }]}>Sizin Teklifiniz (Genel Toplam ₺)</Text>
-            <TouchableOpacity 
-              activeOpacity={1}
-              onPress={() => amountInputRef.current?.focus()}
+            <View 
               style={[
                 styles.inputWrapper, 
                 { backgroundColor: colors.surface, borderColor: colors.border },
                 costItems.length > 0 && { backgroundColor: colors.surface + '50', opacity: 0.8 }
               ]}
             >
-              <Ionicons name="cash-outline" size={20} color={colors.primary} style={styles.inputIcon} />
+              <View pointerEvents="none">
+                <Ionicons name="cash-outline" size={20} color={colors.primary} style={styles.inputIcon} />
+              </View>
               <TextInput
                 ref={amountInputRef}
-                style={[styles.input, { color: colors.text }]}
+                style={[styles.input, { color: colors.text, flex: 1, height: '100%' }]}
                 placeholder="0.00"
                 keyboardType="numeric"
                 value={amount}
@@ -357,7 +357,7 @@ export default function CreateBidScreen() {
                 editable={costItems.length === 0}
                 placeholderTextColor={staticColors.textLight}
               />
-            </TouchableOpacity>
+            </View>
             {costItems.length > 0 && (
               <Text style={styles.infoText}>* Toplam tutar maliyet kalemlerine göre hesaplanmıştır.</Text>
             )}
