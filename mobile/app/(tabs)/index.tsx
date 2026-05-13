@@ -1221,17 +1221,10 @@ export default function HomeScreen() {
                             )}
                           </View>
                           
-                          <View style={styles.bidStatPremiumBadge}>
-                             <LinearGradient
-                               colors={['#F0FDF4', '#DCFCE7']}
-                               start={{ x: 0, y: 0 }}
-                               end={{ x: 1, y: 1 }}
-                               style={styles.bidStatGradient}
-                             >
-                               <Ionicons name="chatbubble-ellipses" size={11} color="#059669" style={{marginRight: 4}} />
-                               <Text style={styles.bidStatNumber}>{job.bidCount || 0}</Text>
-                               <Text style={styles.bidStatLabel}>TEKLİF</Text>
-                             </LinearGradient>
+                          <View style={styles.bidStatProfessionalBadge}>
+                             <Ionicons name="chatbubble-ellipses-outline" size={12} color="#059669" style={{marginRight: 4}} />
+                             <Text style={styles.bidStatProfessionalNumber}>{job.bidCount || 0}</Text>
+                             <Text style={styles.bidStatProfessionalLabel}>TEKLİF</Text>
                           </View>
                         </View>
                       </TouchableOpacity>
@@ -3007,39 +3000,30 @@ const styles = StyleSheet.create({
   homeTimerValueWrapper: {
     marginTop: -2,
   },
-  bidStatPremiumBadge: {
+  bidStatProfessionalBadge: {
     position: 'absolute',
-    bottom: 2,
+    bottom: 0,
     right: 0,
-    borderRadius: 12,
-    overflow: 'hidden',
-    // Subtle shadow
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  bidStatGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    backgroundColor: '#F0FDF4', // Very light emerald tint
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#A7F3D0',
+    borderColor: '#D1FAE5', // Emerald 100
   },
-  bidStatNumber: {
-    fontFamily: fonts.extraBold,
-    fontSize: 13,
+  bidStatProfessionalNumber: {
+    fontFamily: fonts.bold,
+    fontSize: 12,
     color: '#047857', // Emerald 700
     marginRight: 2,
   },
-  bidStatLabel: {
-    fontFamily: fonts.bold,
-    fontSize: 7.5,
-    color: '#047857',
-    letterSpacing: 0.6,
-    opacity: 0.8,
+  bidStatProfessionalLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 8,
+    color: '#059669', // Emerald 600
+    letterSpacing: 0.4,
   },
   priceTextContainer: {
     position: 'absolute',
