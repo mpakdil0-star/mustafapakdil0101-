@@ -109,8 +109,8 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
         </Animated.View>
       )}
 
-      <View style={[styles.timerBox, isCritical && { backgroundColor: '#FEF2F2' }]}>
-        <Text style={[styles.timerText, size === 'large' && styles.timerTextLarge, isCritical && { color: '#DC2626' }]}>
+      <View style={[styles.timerBox, isCritical && { backgroundColor: '#FEF2F2' }, minimal && { backgroundColor: 'transparent', paddingHorizontal: 0, paddingVertical: 0 }]}>
+        <Text style={[styles.timerText, size === 'large' && styles.timerTextLarge, isCritical && { color: '#DC2626' }, minimal && { fontSize: 10, fontFamily: fonts.bold }]}>
           {`${timeLeft.days} Gün ${formatNumber(timeLeft.hours)}:${formatNumber(timeLeft.minutes)}:${formatNumber(timeLeft.seconds)}`}
         </Text>
       </View>

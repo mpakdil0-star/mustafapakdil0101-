@@ -1202,7 +1202,7 @@ export default function HomeScreen() {
                             {job.hasTimedBids && (
                               <View style={styles.homeTimerContainer}>
                                 <View style={styles.homeTimerBadge}>
-                                  <Ionicons name="time" size={10} color="#D97706" style={{ marginRight: 2 }} />
+                                  <Ionicons name="time" size={10} color="#D97706" style={{ marginRight: 4 }} />
                                   <Text style={styles.homeTimerBadgeText}>Süreli Teklif</Text>
                                 </View>
                                 {job.earliestBidExpiresAt && (
@@ -1218,9 +1218,9 @@ export default function HomeScreen() {
                             )}
                           </View>
                           
-                          <View style={styles.priceTextContainer}>
-                             <Text style={[styles.priceTextLarge, { color: '#16A34A' }]}>{job.bidCount || 0}</Text>
-                             <Text style={styles.priceTextSmall}>Teklif</Text>
+                          <View style={styles.bidCountStatBadge}>
+                             <Text style={styles.bidCountNumber}>{job.bidCount || 0}</Text>
+                             <Text style={styles.bidCountLabel}>Teklif</Text>
                           </View>
                         </View>
                       </TouchableOpacity>
@@ -2985,7 +2985,7 @@ const styles = StyleSheet.create({
   homeTimerBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    backgroundColor: 'rgba(245, 158, 11, 0.1)', // Light Amber
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 6,
@@ -2997,6 +2997,32 @@ const styles = StyleSheet.create({
   },
   homeTimerValueWrapper: {
     marginTop: -2,
+  },
+  bidCountStatBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#F0FDF4', // Light Green
+    borderWidth: 1,
+    borderColor: '#DCFCE7',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    alignItems: 'center',
+    minWidth: 50,
+  },
+  bidCountNumber: {
+    fontFamily: fonts.extraBold,
+    fontSize: 14,
+    color: '#16A34A', // Success Green
+    lineHeight: 16,
+  },
+  bidCountLabel: {
+    fontFamily: fonts.bold,
+    fontSize: 8,
+    color: '#15803D',
+    textTransform: 'uppercase',
+    marginTop: -1,
   },
   priceTextContainer: {
     position: 'absolute',
