@@ -3002,7 +3002,7 @@ const styles = StyleSheet.create({
   },
   bidStatPremiumBadge: {
     position: 'absolute',
-    bottom: 0,
+    bottom: -6,
     right: 0,
     flexDirection: 'row',
     alignItems: 'center',
