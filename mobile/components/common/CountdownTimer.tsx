@@ -8,12 +8,14 @@ interface CountdownTimerProps {
   expiresAt: string;
   onExpired?: () => void;
   size?: 'small' | 'large';
+  minimal?: boolean;
 }
 
 export const CountdownTimer: React.FC<CountdownTimerProps> = ({
   expiresAt,
   onExpired,
   size = 'small',
+  minimal = false,
 }) => {
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
@@ -86,24 +88,26 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
 
   return (
     <View style={[styles.container, size === 'large' && styles.containerLarge]}>
-      <Animated.View style={[
-        styles.badge,
-        isCritical ? styles.criticalBadge : styles.activeBadge,
-        { opacity: pulseAnim }
-      ]}>
-        <Ionicons 
-          name="time" 
-          size={size === 'large' ? 12 : 10} 
-          color={isCritical ? '#DC2626' : colors.primary} 
-        />
-        <Text style={[
-          styles.badgeText, 
-          isCritical ? { color: '#DC2626' } : { color: colors.primary },
-          size === 'large' && styles.badgeTextLarge
+      {!minimal && (
+        <Animated.View style={[
+          styles.badge,
+          isCritical ? styles.criticalBadge : styles.activeBadge,
+          { opacity: pulseAnim }
         ]}>
-          SÜRELİ TEKLİF
-        </Text>
-      </Animated.View>
+          <Ionicons 
+            name="time" 
+            size={size === 'large' ? 12 : 10} 
+            color={isCritical ? '#DC2626' : colors.primary} 
+          />
+          <Text style={[
+            styles.badgeText, 
+            isCritical ? { color: '#DC2626' } : { color: colors.primary },
+            size === 'large' && styles.badgeTextLarge
+          ]}>
+            SÜRELİ TEKLİF
+          </Text>
+        </Animated.View>
+      )}
 
       <View style={[styles.timerBox, isCritical && { backgroundColor: '#FEF2F2' }]}>
         <Text style={[styles.timerText, size === 'large' && styles.timerTextLarge, isCritical && { color: '#DC2626' }]}>

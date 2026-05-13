@@ -482,8 +482,10 @@ export const jobService = {
                   status: { in: ['PENDING', 'ACCEPTED'] as any }
                 },
                 select: {
-                  id: true,
                   expiresAt: true
+                },
+                orderBy: {
+                  expiresAt: 'asc'
                 },
                 take: 1
               },
@@ -507,14 +509,15 @@ export const jobService = {
         }
 
         const { bids, ...jobWithoutBids } = job;
-        const hasTimedBids = bids && bids.length > 0;
+        const earliestBidExpiresAt = bids && bids.length > 0 ? bids[0].expiresAt : null;
 
         return {
           ...jobWithoutBids,
           bidCount: job._count.bids,
           estimatedBudget: job.estimatedBudget ? job.estimatedBudget.toString() : null,
           distance: distance ? parseFloat(distance.toFixed(2)) : null,
-          hasTimedBids,
+          hasTimedBids: !!earliestBidExpiresAt,
+          earliestBidExpiresAt,
         };
       });
 
