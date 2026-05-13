@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -49,6 +49,7 @@ export default function CreateBidScreen() {
   const [estimatedStartDate, setEstimatedStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [message, setMessage] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const amountInputRef = useRef<TextInput>(null);
   const [costItems, setCostItems] = useState<{ id: string; description: string; amount: string }[]>([]);
 
   // Maliyet kalemleri değiştiğinde toplam tutarı güncelle
@@ -336,13 +337,18 @@ export default function CreateBidScreen() {
           {/* Amount Input */}
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.textSecondary }]}>Sizin Teklifiniz (Genel Toplam ₺)</Text>
-            <View style={[
-              styles.inputWrapper, 
-              { backgroundColor: colors.surface, borderColor: colors.border },
-              costItems.length > 0 && { backgroundColor: colors.surface + '50', opacity: 0.8 }
-            ]}>
+            <TouchableOpacity 
+              activeOpacity={1}
+              onPress={() => amountInputRef.current?.focus()}
+              style={[
+                styles.inputWrapper, 
+                { backgroundColor: colors.surface, borderColor: colors.border },
+                costItems.length > 0 && { backgroundColor: colors.surface + '50', opacity: 0.8 }
+              ]}
+            >
               <Ionicons name="cash-outline" size={20} color={colors.primary} style={styles.inputIcon} />
               <TextInput
+                ref={amountInputRef}
                 style={[styles.input, { color: colors.text }]}
                 placeholder="0.00"
                 keyboardType="numeric"
@@ -351,7 +357,7 @@ export default function CreateBidScreen() {
                 editable={costItems.length === 0}
                 placeholderTextColor={staticColors.textLight}
               />
-            </View>
+            </TouchableOpacity>
             {costItems.length > 0 && (
               <Text style={styles.infoText}>* Toplam tutar maliyet kalemlerine göre hesaplanmıştır.</Text>
             )}
