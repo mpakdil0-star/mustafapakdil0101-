@@ -111,11 +111,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
 
       <View style={[styles.timerBox, isCritical && { backgroundColor: '#FEF2F2' }]}>
         <Text style={[styles.timerText, size === 'large' && styles.timerTextLarge, isCritical && { color: '#DC2626' }]}>
-          {timeLeft.days > 0 ? (
-            `${timeLeft.days} Gün`
-          ) : (
-            `${formatNumber(timeLeft.hours)}:${formatNumber(timeLeft.minutes)}:${formatNumber(timeLeft.seconds)}`
-          )}
+          {`${formatNumber(timeLeft.days * 24 + timeLeft.hours)}:${formatNumber(timeLeft.minutes)}:${formatNumber(timeLeft.seconds)}`}
         </Text>
       </View>
     </View>
