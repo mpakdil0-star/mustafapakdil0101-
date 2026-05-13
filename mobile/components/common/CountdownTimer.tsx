@@ -109,22 +109,9 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
         </Animated.View>
       )}
 
-      <View style={[
-        styles.timerBox, 
-        isCritical && styles.timerBoxCritical,
-        minimal && styles.timerBoxMinimal
-      ]}>
-        <Text style={[
-          styles.timerText, 
-          size === 'large' && styles.timerTextLarge, 
-          isCritical && styles.timerTextCritical,
-          minimal && styles.timerTextMinimal
-        ]}>
-          <Text style={styles.dayText}>{timeLeft.days}G</Text>
-          <Text style={styles.timeDivider}> • </Text>
-          <Text style={styles.timeText}>
-            {formatNumber(timeLeft.hours)}:{formatNumber(timeLeft.minutes)}:{formatNumber(timeLeft.seconds)}
-          </Text>
+      <View style={[styles.timerBox, isCritical && { backgroundColor: '#FEF2F2' }]}>
+        <Text style={[styles.timerText, size === 'large' && styles.timerTextLarge, isCritical && { color: '#DC2626' }]}>
+          {`${timeLeft.days} Gün ${formatNumber(timeLeft.hours)}:${formatNumber(timeLeft.minutes)}:${formatNumber(timeLeft.seconds)}`}
         </Text>
       </View>
     </View>
@@ -135,6 +122,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'flex-end',
     justifyContent: 'center',
+    minWidth: 80,
   },
   containerLarge: {
     gap: 4,
@@ -143,13 +131,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
     borderRadius: 4,
-    marginBottom: 3,
+    marginBottom: 2,
   },
   activeBadge: {
-    backgroundColor: colors.primary + '12',
+    backgroundColor: colors.primary + '15',
   },
   criticalBadge: {
     backgroundColor: '#FEF2F2',
@@ -160,58 +148,23 @@ const styles = StyleSheet.create({
   badgeText: {
     fontFamily: fonts.bold,
     fontSize: 8,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   badgeTextLarge: {
     fontSize: 9,
   },
   timerBox: {
-    backgroundColor: '#F8FAFC',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  timerBoxCritical: {
-    backgroundColor: '#FFF1F2',
-    borderColor: '#FECACA',
-  },
-  timerBoxMinimal: {
+    backgroundColor: '#F1F5F9',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 6,
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    paddingRight: 0,
+    borderRadius: 5,
   },
   timerText: {
     fontFamily: fonts.semiBold,
-    fontSize: 12,
-    color: '#475569',
-    flexDirection: 'row',
-    alignItems: 'center',
+    fontSize: 11,
+    color: '#334155',
   },
   timerTextLarge: {
-    fontSize: 14,
-  },
-  timerTextCritical: {
-    color: '#DC2626',
-  },
-  timerTextMinimal: {
-    fontSize: 11,
-    fontFamily: fonts.bold,
-  },
-  dayText: {
-    color: '#64748B',
-  },
-  timeDivider: {
-    color: '#CBD5E1',
-    fontWeight: '300',
-  },
-  timeText: {
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', // Use monospace for numbers to prevent jittering
-    letterSpacing: 0.5,
+    fontSize: 13,
   },
 });
