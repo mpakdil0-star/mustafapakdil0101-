@@ -1197,7 +1197,6 @@ export default function HomeScreen() {
                             <View style={{ flex: 1, paddingRight: 8 }}>
                               <Text style={styles.recentJobTitleHorizontal} numberOfLines={1}>{job.serviceCategory ? getUstaCategory({ serviceCategory: job.serviceCategory }) : 'Genel'}</Text>
                               <Text style={styles.recentJobSubtextHorizontal} numberOfLines={1}>{job.title}</Text>
-                              <Text style={styles.recentJobCategoryTextHorizontal} numberOfLines={1}>{job.location?.city || 'Türkiye'}</Text>
                             </View>
                             {job.hasTimedBids && (
                               <View style={styles.homeTimerContainer}>
@@ -1218,9 +1217,14 @@ export default function HomeScreen() {
                             )}
                           </View>
                           
-                          <View style={styles.bidCountStatBadge}>
-                             <Text style={styles.bidCountNumber}>{job.bidCount || 0}</Text>
-                             <Text style={styles.bidCountLabel}>Teklif</Text>
+                          <View style={styles.jobCardFooterRow}>
+                             <View style={styles.bidCountStatBadgeSmall}>
+                                <Text style={styles.bidCountNumberSmall}>{job.bidCount || 0}</Text>
+                                <Text style={styles.bidCountLabelSmall}>Teklif</Text>
+                             </View>
+                             
+                             <Text style={styles.footerSeparator}>•</Text>
+                             <Text style={styles.recentJobCategoryTextHorizontalFooter}>{job.location?.city || 'Türkiye'}</Text>
                           </View>
                         </View>
                       </TouchableOpacity>
@@ -2998,31 +3002,43 @@ const styles = StyleSheet.create({
   homeTimerValueWrapper: {
     marginTop: -2,
   },
-  bidCountStatBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: '#F0FDF4', // Light Green
+  jobCardFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 'auto',
+    paddingTop: 8,
+  },
+  bidCountStatBadgeSmall: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: '#DCFCE7',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    alignItems: 'center',
-    minWidth: 50,
   },
-  bidCountNumber: {
+  bidCountNumberSmall: {
     fontFamily: fonts.extraBold,
-    fontSize: 14,
-    color: '#16A34A', // Success Green
-    lineHeight: 16,
+    fontSize: 10,
+    color: '#16A34A',
+    marginRight: 3,
   },
-  bidCountLabel: {
+  bidCountLabelSmall: {
     fontFamily: fonts.bold,
-    fontSize: 8,
+    fontSize: 7,
     color: '#15803D',
     textTransform: 'uppercase',
-    marginTop: -1,
+  },
+  footerSeparator: {
+    marginHorizontal: 6,
+    color: '#CBD5E1',
+    fontSize: 10,
+  },
+  recentJobCategoryTextHorizontalFooter: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    color: staticColors.textLight,
   },
   priceTextContainer: {
     position: 'absolute',
