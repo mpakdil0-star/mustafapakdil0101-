@@ -340,16 +340,13 @@ export default function CreateBidScreen() {
             <View 
               style={[
                 styles.inputWrapper, 
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                { backgroundColor: colors.surface, borderColor: colors.border, paddingHorizontal: 0 },
                 costItems.length > 0 && { backgroundColor: colors.surface + '50', opacity: 0.8 }
               ]}
             >
-              <View pointerEvents="none">
-                <Ionicons name="cash-outline" size={20} color={colors.primary} style={styles.inputIcon} />
-              </View>
               <TextInput
                 ref={amountInputRef}
-                style={[styles.input, { color: colors.text, flex: 1, height: '100%' }]}
+                style={[styles.input, { color: colors.text, flex: 1, paddingLeft: 40, paddingRight: 12 }]}
                 placeholder="0.00"
                 keyboardType="numeric"
                 value={amount}
@@ -357,6 +354,9 @@ export default function CreateBidScreen() {
                 editable={costItems.length === 0}
                 placeholderTextColor={staticColors.textLight}
               />
+              <View style={{ position: 'absolute', left: 12, top: 12 }} pointerEvents="none">
+                <Ionicons name="cash-outline" size={20} color={colors.primary} />
+              </View>
             </View>
             {costItems.length > 0 && (
               <Text style={styles.infoText}>* Toplam tutar maliyet kalemlerine göre hesaplanmıştır.</Text>
