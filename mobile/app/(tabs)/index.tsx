@@ -3006,23 +3006,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#DCFCE7',
     borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    flexDirection: 'row',
     alignItems: 'center',
-    minWidth: 50,
+    gap: 4,
   },
   bidCountNumber: {
     fontFamily: fonts.extraBold,
     fontSize: 14,
     color: '#16A34A', // Success Green
-    lineHeight: 16,
   },
   bidCountLabel: {
     fontFamily: fonts.bold,
-    fontSize: 8,
+    fontSize: 9,
     color: '#15803D',
     textTransform: 'uppercase',
-    marginTop: -1,
   },
   priceTextContainer: {
     position: 'absolute',
