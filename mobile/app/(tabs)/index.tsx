@@ -1201,9 +1201,9 @@ export default function HomeScreen() {
                             </View>
                             {job.hasTimedBids && (
                               <View style={styles.homeTimerContainer}>
-                                <View style={styles.homeTimerBadge}>
-                                  <Ionicons name="time" size={10} color="#D97706" style={{ marginRight: 4 }} />
-                                  <Text style={styles.homeTimerBadgeText}>Süreli Teklif</Text>
+                                <View style={styles.homeTimerBadgeMinimal}>
+                                  <Ionicons name="time-outline" size={10} color="#D97706" style={{ marginRight: 3 }} />
+                                  <Text style={styles.homeTimerLabelSmall}>SÜRELİ TEKLİF</Text>
                                 </View>
                                 {job.earliestBidExpiresAt && (
                                   <View style={styles.homeTimerValueWrapper}>
@@ -1218,9 +1218,9 @@ export default function HomeScreen() {
                             )}
                           </View>
                           
-                          <View style={styles.bidCountStatBadge}>
-                             <Text style={styles.bidCountNumber}>{job.bidCount || 0}</Text>
-                             <Text style={styles.bidCountLabel}>Teklif</Text>
+                          <View style={styles.bidStatPremiumBadge}>
+                             <Text style={styles.bidStatNumber}>{job.bidCount || 0}</Text>
+                             <Text style={styles.bidStatLabel}>TEKLİF</Text>
                           </View>
                         </View>
                       </TouchableOpacity>
@@ -2980,48 +2980,45 @@ const styles = StyleSheet.create({
   },
   homeTimerContainer: {
     alignItems: 'flex-end',
-    gap: 4,
+    justifyContent: 'flex-start',
   },
-  homeTimerBadge: {
+  homeTimerBadgeMinimal: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(245, 158, 11, 0.1)', // Light Amber
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
+    marginBottom: 2,
   },
-  homeTimerBadgeText: {
-    fontFamily: fonts.bold,
-    fontSize: 8,
+  homeTimerLabelSmall: {
+    fontFamily: fonts.medium,
+    fontSize: 7.5,
     color: '#D97706',
+    letterSpacing: 0.5,
   },
   homeTimerValueWrapper: {
     marginTop: -2,
   },
-  bidCountStatBadge: {
+  bidStatPremiumBadge: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 4,
     right: 0,
-    backgroundColor: '#F0FDF4', // Light Green
-    borderWidth: 1,
-    borderColor: '#DCFCE7',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
+    alignItems: 'baseline',
+    backgroundColor: 'rgba(22, 163, 74, 0.05)', // Very subtle success green
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
   },
-  bidCountNumber: {
+  bidStatNumber: {
     fontFamily: fonts.extraBold,
-    fontSize: 11,
-    color: '#16A34A', // Success Green
+    fontSize: 16,
+    color: '#16A34A',
   },
-  bidCountLabel: {
+  bidStatLabel: {
     fontFamily: fonts.bold,
     fontSize: 8,
-    color: '#15803D',
-    textTransform: 'uppercase',
+    color: '#16A34A',
+    opacity: 0.7,
+    letterSpacing: 0.3,
   },
   priceTextContainer: {
     position: 'absolute',
