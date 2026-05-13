@@ -1209,7 +1209,7 @@ export default function HomeScreen() {
                                   <View style={styles.homeTimerWrapper}>
                                     <CountdownTimer 
                                       expiresAt={job.earliestBidExpiresAt} 
-                                      showBadgeOnly={false} 
+                                      minimal={true}
                                       size="small"
                                     />
                                   </View>
