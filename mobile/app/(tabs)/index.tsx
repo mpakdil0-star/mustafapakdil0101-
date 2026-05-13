@@ -1200,13 +1200,13 @@ export default function HomeScreen() {
                               <Text style={styles.recentJobCategoryTextHorizontal} numberOfLines={1}>{job.location?.city || 'Türkiye'}</Text>
                             </View>
                             {job.hasTimedBids && (
-                              <View style={styles.timerBadgeContainer}>
-                                <View style={styles.timerBadge}>
+                              <View style={styles.homeTimerContainer}>
+                                <View style={styles.homeTimerBadge}>
                                   <Ionicons name="time" size={10} color="#D97706" style={{ marginRight: 2 }} />
-                                  <Text style={styles.timerBadgeText}>Süreli Teklif</Text>
+                                  <Text style={styles.homeTimerBadgeText}>Süreli Teklif</Text>
                                 </View>
                                 {job.earliestBidExpiresAt && (
-                                  <View style={styles.homeTimerWrapper}>
+                                  <View style={styles.homeTimerValueWrapper}>
                                     <CountdownTimer 
                                       expiresAt={job.earliestBidExpiresAt} 
                                       minimal={true}
@@ -2962,10 +2962,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: staticColors.textLight,
   },
-  timerBadgeContainer: {
-    alignItems: 'flex-end',
-    gap: 4,
-  },
   timerBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2973,13 +2969,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 6,
+    position: 'absolute',
+    top: 0,
+    right: 0,
   },
   timerBadgeText: {
     fontFamily: fonts.bold,
     fontSize: 8,
     color: '#D97706',
   },
-  homeTimerWrapper: {
+  homeTimerContainer: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  homeTimerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  homeTimerBadgeText: {
+    fontFamily: fonts.bold,
+    fontSize: 8,
+    color: '#D97706',
+  },
+  homeTimerValueWrapper: {
     marginTop: -2,
   },
   priceTextContainer: {
