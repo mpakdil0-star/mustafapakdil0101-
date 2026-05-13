@@ -3005,21 +3005,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0FDF4', // Light Green
     borderWidth: 1,
     borderColor: '#DCFCE7',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
   },
   bidCountNumber: {
     fontFamily: fonts.extraBold,
-    fontSize: 14,
+    fontSize: 11,
     color: '#16A34A', // Success Green
   },
   bidCountLabel: {
     fontFamily: fonts.bold,
-    fontSize: 9,
+    fontSize: 8,
     color: '#15803D',
     textTransform: 'uppercase',
   },
