@@ -1197,7 +1197,10 @@ export default function HomeScreen() {
                             <View style={{ flex: 1, paddingRight: 8 }}>
                               <Text style={styles.recentJobTitleHorizontal} numberOfLines={1}>{job.serviceCategory ? getUstaCategory({ serviceCategory: job.serviceCategory }) : 'Genel'}</Text>
                               <Text style={styles.recentJobSubtextHorizontal} numberOfLines={1}>{job.title}</Text>
-                              <Text style={styles.recentJobCategoryTextHorizontal} numberOfLines={1}>{job.location?.city || 'Türkiye'}</Text>
+                              <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 2}}>
+                                <Ionicons name="location-outline" size={10} color={staticColors.textLight} style={{marginRight: 2}} />
+                                <Text style={styles.recentJobCategoryTextHorizontal} numberOfLines={1}>{job.location?.city || 'Türkiye'}</Text>
+                              </View>
                             </View>
                             {job.hasTimedBids && (
                               <View style={styles.homeTimerContainer}>
@@ -1219,6 +1222,7 @@ export default function HomeScreen() {
                           </View>
                           
                           <View style={styles.bidStatPremiumBadge}>
+                             <Ionicons name="chatbubble-ellipses-outline" size={12} color="#16A34A" style={{marginRight: 2}} />
                              <Text style={styles.bidStatNumber}>{job.bidCount || 0}</Text>
                              <Text style={styles.bidStatLabel}>TEKLİF</Text>
                           </View>
