@@ -689,12 +689,18 @@ export default function HomeScreen() {
 
               {isElectrician ? (
                 <>
-                  <View style={[styles.headerTitleContainer, isAuthenticated && { marginLeft: 0 }]}>
-                    <Text style={styles.welcomeName}>Merhaba, {user?.fullName?.split(' ')[0] || 'Misafir'}</Text>
-                    <View style={styles.ustaRoleBadge}>
-                      <Ionicons name="shield-checkmark" size={10} color="#34D399" />
-                      <Text style={styles.ustaRoleBadgeText}>Uzman Usta</Text>
+                  {/* Left: Name */}
+                  <View style={[styles.headerTitleContainer, isAuthenticated && { marginLeft: 0, flex: 1 }]}>
+                    <Text style={styles.ustaHeaderName}>{user?.fullName || 'Misafir'}</Text>
+                  </View>
+
+                  {/* Right: Rating + Role + Actions */}
+                  <View style={styles.ustaHeaderRight}>
+                    <View style={styles.ustaRatingContainer}>
+                      <Text style={styles.ustaRatingText}>{user?.averageRating?.toFixed(1) || '0.0'}</Text>
+                      <Ionicons name="star" size={12} color="#FBBF24" />
                     </View>
+                    <Text style={styles.ustaRoleText}>{user?.serviceCategory ? getUstaCategory({ serviceCategory: user.serviceCategory }) : 'Elektrik'} Ustası</Text>
                   </View>
 
                   <TouchableOpacity
@@ -849,7 +855,7 @@ export default function HomeScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeaderRow}>
               <View style={styles.sectionTitleContainer}>
-                <Text style={styles.sectionTitle}>📊 Kontrol Paneli</Text>
+                <Text style={styles.sectionTitle}>Kontrol Paneli</Text>
                 <Text style={styles.sectionSubtitle}>İşlerini ve profilini buradan yönet</Text>
               </View>
               {!hideHowItWorks && (
@@ -919,80 +925,47 @@ export default function HomeScreen() {
               )}
             </View>
 
-            {/* Dashboard Stat Cards (2 columns) */}
+            {/* Dashboard Stat Cards (Glassmorphism - 2 columns) */}
             <View style={styles.ustaDashboardRow}>
               <TouchableOpacity
-                style={styles.ustaDashboardCard}
-                onPress={() => handleActionWithAuth('/(tabs)/jobs', { tab: 'all' })}
+                style={styles.ustaDashboardCardDark}
+                onPress={() => handleActionWithAuth('/electrician/stats')}
                 activeOpacity={0.7}
               >
-                <LinearGradient colors={['#3B82F6', '#2563EB']} style={styles.ustaDashboardIconBox}>
-                  <Ionicons name="briefcase" size={20} color="#FFF" />
-                </LinearGradient>
-                <Text style={styles.ustaDashboardStatNumber}>{newJobsCount}</Text>
-                <Text style={styles.ustaDashboardStatLabel}>Yeni İş Fırsatı</Text>
+                <Text style={styles.ustaDashCardLabel}>Toplam Kazanç</Text>
+                <Text style={styles.ustaDashCardValue}>₺0.00</Text>
+                <Text style={styles.ustaDashCardSub}>Bu Ay</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.ustaDashboardCard}
+                style={styles.ustaDashboardCardDark}
                 onPress={() => handleActionWithAuth('/(tabs)/jobs', { tab: 'bids' })}
                 activeOpacity={0.7}
               >
-                <LinearGradient colors={['#10B981', '#059669']} style={styles.ustaDashboardIconBox}>
-                  <Ionicons name="pricetag" size={20} color="#FFF" />
-                </LinearGradient>
-                <Text style={styles.ustaDashboardStatNumber}>0</Text>
-                <Text style={styles.ustaDashboardStatLabel}>Aktif Teklif</Text>
+                <Text style={styles.ustaDashCardLabel}>Aktif Teklifler</Text>
+                <Text style={styles.ustaDashCardValue}>0</Text>
+                <Text style={styles.ustaDashCardSub}>Bekleyen</Text>
               </TouchableOpacity>
             </View>
-
-            {/* Full-width Action Card */}
-            <TouchableOpacity
-              style={styles.glassCardFull}
-              onPress={() => handleActionWithAuth('/electrician/stats')}
-              activeOpacity={0.7}
-            >
-              <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.cardIconWrapper}>
-                <Ionicons name="stats-chart" size={24} color="#FFF" />
-              </LinearGradient>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.cardMainTitle}>İstatistiklerim</Text>
-                <Text style={styles.cardMainSubtitle}>Performansını ve kazancını gör</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
-            </TouchableOpacity>
 
             {/* Professional Tools Section */}
             <View style={styles.sectionHeaderRow}>
               <View style={styles.sectionTitleContainer}>
-                <Text style={styles.sectionTitle}>🛠️ Profesyonel Araçlar</Text>
-                <Text style={styles.sectionSubtitle}>İşini kolaylaştıran pratik araçlar</Text>
+                <Text style={styles.sectionTitle}>PROFESYONEL ARAÇLAR</Text>
               </View>
+              <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
             </View>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScrollContainer}>
               <TouchableOpacity
                 style={styles.toolCardModern}
-                onPress={() => handleActionWithAuth('/tools/quote')}
-                activeOpacity={0.85}
-              >
-                <LinearGradient colors={['#10B981', '#059669']} style={styles.toolIconBoxModern}>
-                  <Ionicons name="document-text" size={26} color="#FFF" />
-                </LinearGradient>
-                <Text style={styles.toolCardTitle}>Teklif Hazırla</Text>
-                <Text style={styles.toolCardDesc}>PDF oluştur ve paylaş</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.toolCardModern}
                 onPress={() => handleActionWithAuth('/tools/calendar')}
                 activeOpacity={0.85}
               >
-                <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.toolIconBoxModern}>
-                  <Ionicons name="calendar" size={26} color="#FFF" />
-                </LinearGradient>
-                <Text style={styles.toolCardTitle}>İş Takvimim</Text>
-                <Text style={styles.toolCardDesc}>Planla ve hatırlat</Text>
+                <View style={styles.toolIconBoxDark}>
+                  <Ionicons name="calendar" size={28} color="#FFF" />
+                </View>
+                <Text style={styles.toolCardTitle}>Takvim</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -1000,12 +973,56 @@ export default function HomeScreen() {
                 onPress={() => handleActionWithAuth('/tools/ledger')}
                 activeOpacity={0.85}
               >
-                <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.toolIconBoxModern}>
-                  <Ionicons name="wallet" size={26} color="#FFF" />
-                </LinearGradient>
-                <Text style={styles.toolCardTitle}>Hesap Defteri</Text>
-                <Text style={styles.toolCardDesc}>Alacak-verecek takibi</Text>
+                <View style={styles.toolIconBoxDark}>
+                  <Ionicons name="book" size={28} color="#FFF" />
+                </View>
+                <Text style={styles.toolCardTitle}>Defter</Text>
               </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.toolCardModern}
+                onPress={() => handleActionWithAuth('/tools/quote')}
+                activeOpacity={0.85}
+              >
+                <View style={styles.toolIconBoxDark}>
+                  <Ionicons name="document-text" size={28} color="#FFF" />
+                </View>
+                <Text style={styles.toolCardTitle}>PDF Teklifler</Text>
+              </TouchableOpacity>
+            </ScrollView>
+
+            {/* Sıcak Fırsatlar (Hot Leads) Section */}
+            <View style={styles.sectionHeaderRow}>
+              <View style={styles.sectionTitleContainer}>
+                <Text style={styles.sectionTitle}>SICAK FIRSATLAR</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScrollContainer}>
+              {recentJobs.length > 0 ? recentJobs.slice(0, 5).map((job: any) => (
+                <TouchableOpacity
+                  key={job.id}
+                  style={styles.hotLeadCard}
+                  onPress={() => handleActionWithAuth(`/jobs/${job.id}`)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.hotLeadTitle} numberOfLines={1}>{job.title || 'İş İlanı'}</Text>
+                  <View style={styles.hotLeadLocationRow}>
+                    <Ionicons name="location-outline" size={12} color="#94A3B8" />
+                    <Text style={styles.hotLeadLocationText} numberOfLines={1}>{job.location?.city || 'Türkiye'}</Text>
+                  </View>
+                  <Text style={styles.hotLeadPrice}>₺{job.estimatedBudget || '---'}</Text>
+                  <View style={styles.hotLeadButton}>
+                    <Text style={styles.hotLeadButtonText}>Teklif Ver</Text>
+                  </View>
+                </TouchableOpacity>
+              )) : (
+                <View style={styles.hotLeadCard}>
+                  <Text style={styles.hotLeadTitle}>Yeni iş bekleniyor</Text>
+                  <Text style={styles.hotLeadLocationText}>Yakında yeni fırsatlar gelecek</Text>
+                </View>
+              )}
             </ScrollView>
           </View>
         )}
@@ -1776,6 +1793,33 @@ const styles = StyleSheet.create({
     color: staticColors.white,
     letterSpacing: -0.5,
   },
+  ustaHeaderName: {
+    fontFamily: fonts.extraBold,
+    fontSize: 24,
+    color: staticColors.white,
+    letterSpacing: -0.5,
+    lineHeight: 28,
+  },
+  ustaHeaderRight: {
+    alignItems: 'flex-end',
+    marginRight: 8,
+  },
+  ustaRatingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  ustaRatingText: {
+    fontFamily: fonts.extraBold,
+    fontSize: 16,
+    color: staticColors.white,
+  },
+  ustaRoleText: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+  },
   ustaRoleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1792,6 +1836,93 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#34D399',
     letterSpacing: 0.3,
+  },
+  ustaDashboardRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  ustaDashboardCardDark: {
+    flex: 1,
+    backgroundColor: '#1A3A2A',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(52, 211, 153, 0.15)',
+  },
+  ustaDashCardLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.7)',
+    marginBottom: 6,
+  },
+  ustaDashCardValue: {
+    fontFamily: fonts.extraBold,
+    fontSize: 24,
+    color: '#34D399',
+    marginBottom: 2,
+  },
+  ustaDashCardSub: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.5)',
+  },
+  toolIconBoxDark: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: '#1E293B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  hotLeadCard: {
+    width: 170,
+    backgroundColor: staticColors.white,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  hotLeadTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 14,
+    color: staticColors.text,
+    marginBottom: 4,
+  },
+  hotLeadLocationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginBottom: 8,
+  },
+  hotLeadLocationText: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    color: '#94A3B8',
+  },
+  hotLeadPrice: {
+    fontFamily: fonts.extraBold,
+    fontSize: 16,
+    color: '#059669',
+    marginBottom: 10,
+  },
+  hotLeadButton: {
+    backgroundColor: '#059669',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+  },
+  hotLeadButtonText: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    color: '#FFF',
   },
   notificationButton: {
     width: 48,
