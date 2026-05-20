@@ -158,8 +158,7 @@ export default function HomeScreen() {
   const [activeHomeTab, setActiveHomeTab] = useState<'ustalar' | 'ilanlar'>('ustalar');
   const [recentJobs, setRecentJobs] = useState<any[]>([]);
   const [isLoadingRecentJobs, setIsLoadingRecentJobs] = useState(false);
-
-  // Pulse animation for health action buttons
+  const [stats, setStats] = useState<any>(null);
   const healthPulseAnim = useRef(new Animated.Value(1)).current;
 
   // RGB Border animation for profile health card
@@ -386,14 +385,15 @@ export default function HomeScreen() {
   }, [isAuthenticated, isElectrician, user]);
 
   // Kullanıcının konumunu/şehrini ve hizmet bölgelerini yükle
-  const initializationRef = useRef(false);
-
-  // Define fetching functions using useCallback to reuse in useEffect and useFocusEffect
   const fetchRecentJobs = useCallback(async () => {
-    if (isElectrician || !isInitialized) return;
+    if (!isInitialized) return;
     setIsLoadingRecentJobs(true);
     try {
-      const result = await jobService.getJobs({ limit: 10 });
+      let params: any = { limit: 10 };
+      if (isElectrician) {
+        params.serviceCategory = user?.electricianProfile?.serviceCategory || user?.serviceCategory || 'elektrik';
+      }
+      const result = await jobService.getJobs(params);
       if (result && result.jobs) {
         setRecentJobs(result.jobs.slice(0, 10));
       }
@@ -403,7 +403,20 @@ export default function HomeScreen() {
     } finally {
       setIsLoadingRecentJobs(false);
     }
-  }, [isElectrician, isInitialized]);
+  }, [isElectrician, isInitialized, user]);
+
+  const fetchStats = useCallback(async () => {
+    if (!isAuthenticated || !isElectrician) return;
+    try {
+      const response = await api.get('/users/stats');
+      if (response.data.success) {
+        setStats(response.data.data);
+      }
+    } catch (error) {
+      console.error('[HomeScreen] Error fetching stats:', error);
+    }
+  }, [isAuthenticated, isElectrician]);
+
 
   const fetchFeaturedElectricians = useCallback(async () => {
     if (isElectrician || !isInitialized) return;
@@ -474,13 +487,14 @@ export default function HomeScreen() {
           console.log('Error refreshing status on focus:', e);
         }
       };
-
       if (initializationRef.current && isAuthenticated) {
         // Refresh necessary data on every focus
         fetchNewJobsCount();
         refreshStatus();
-        if (!isElectrician) {
-          fetchRecentJobs();
+        fetchRecentJobs();
+        if (isElectrician) {
+          fetchStats();
+        } else {
           fetchFeaturedElectricians();
         }
         return;
@@ -542,7 +556,9 @@ export default function HomeScreen() {
             fetchLocations(),
             fetchVerification(),
             fetchNewJobsCount(),
-            checkPushStatus()
+            checkPushStatus(),
+            isElectrician ? fetchStats() : Promise.resolve(),
+            fetchRecentJobs()
           ]);
           
           setIsInitialized(true);
@@ -554,7 +570,7 @@ export default function HomeScreen() {
       };
 
       runInitialization();
-    }, [isAuthenticated, isElectrician])
+    }, [isAuthenticated, isElectrician, fetchRecentJobs, fetchFeaturedElectricians, fetchStats])
   );
 
 
@@ -593,11 +609,15 @@ export default function HomeScreen() {
 
   // Separate useEffect for initial fetching
   useEffect(() => {
-    if (!isElectrician && isInitialized) {
-      fetchFeaturedElectricians();
+    if (isInitialized) {
       fetchRecentJobs();
+      if (isElectrician) {
+        fetchStats();
+      } else {
+        fetchFeaturedElectricians();
+      }
     }
-  }, [isElectrician, isInitialized, fetchFeaturedElectricians, fetchRecentJobs]);
+  }, [isElectrician, isInitialized, fetchFeaturedElectricians, fetchRecentJobs, fetchStats]);
 
   // Real-time refresh of new jobs count and unread count when notifications change
   useEffect(() => {
@@ -650,26 +670,28 @@ export default function HomeScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Premium Welcome Header with Background Image and Enhanced Decoration */}
         <View style={styles.premiumHeaderContainer}>
           <ImageBackground
             source={require('../../assets/images/header_bg.png')}
             style={styles.premiumHeader}
             imageStyle={styles.headerImage}
           >
-            {/* Emerald/Forest Green Gradient Overlay for Usta */}
+            {/* Vibrant Orange Gradient Overlay for Usta */}
             <LinearGradient
               colors={isElectrician
-                ? ['#043A2F', '#021B15']
+                ? [colors.primary, colors.primaryDark || '#B91C1C']
                 : (colors.gradientHeaderAmethyst as any) || [colors.primary + '88', colors.primaryLight + 'DD']
               }
               style={StyleSheet.absoluteFill}
             />
 
             {/* Glowing Decorative Circles */}
-            <View style={[styles.headerDecorativeCircle1, isElectrician && { backgroundColor: 'rgba(52, 211, 153, 0.08)' }]} />
-            <View style={[styles.headerDecorativeCircle2, isElectrician && { backgroundColor: 'rgba(52, 211, 153, 0.05)' }]} />
-            <View style={[styles.headerDecorativeCircle3, isElectrician && { backgroundColor: 'rgba(52, 211, 153, 0.1)' }]} />
+            <View style={[styles.headerDecorativeCircle1, isElectrician && { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]} />
+            <View style={[styles.headerDecorativeCircle2, isElectrician && { backgroundColor: 'rgba(255, 255, 255, 0.05)' }]} />
+            <View style={[styles.headerDecorativeCircle3, isElectrician && { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]} />
+        {/* Premium Welcome Header with Background Image and Enhanced Decoration */}
+
+
 
             <View style={[styles.headerTopRow, !isElectrician && { marginBottom: 0 }]}>
               {!isAuthenticated && (
@@ -764,30 +786,34 @@ export default function HomeScreen() {
 
             {/* Dashboard cards inside the gradient background exactly as in mockup */}
             {isElectrician && (
-              <View style={styles.ustaHeaderDashboardRow}>
-                <TouchableOpacity
-                  style={[styles.ustaDashboardCardDark, styles.glowGreen]}
-                  onPress={() => handleActionWithAuth('/electrician/stats')}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.ustaDashCardLabel}>Toplam Kazanç</Text>
-                  <Text style={styles.ustaDashCardValue}>₺14,850.50</Text>
-                  <Text style={styles.ustaDashCardSub}>Bu Ay</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.ustaDashboardCardDark, styles.glowBlue]}
-                  onPress={() => handleActionWithAuth('/(tabs)/jobs', { tab: 'bids' })}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.ustaDashCardLabel}>Aktif Teklifler</Text>
-                  <Text style={styles.ustaDashCardValue}>19</Text>
-                  <Text style={styles.ustaDashCardSub}>Bekleyen</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </ImageBackground>
-        </View>
+               <View style={styles.ustaHeaderDashboardRow}>
+                 <TouchableOpacity
+                   style={[styles.ustaDashboardCardDark, styles.glowPrimary]}
+                   onPress={() => handleActionWithAuth('/electrician/stats')}
+                   activeOpacity={0.85}
+                 >
+                   <Text style={styles.ustaDashCardLabel}>Toplam Kazanç</Text>
+                   <Text style={styles.ustaDashCardValue}>
+                     {stats ? `₺${stats.totalEarnings.toLocaleString('tr-TR')}` : '₺0.00'}
+                   </Text>
+                   <Text style={styles.ustaDashCardSub}>Tüm Zamanlar</Text>
+                 </TouchableOpacity>
+ 
+                 <TouchableOpacity
+                   style={[styles.ustaDashboardCardDark, styles.glowAccent]}
+                   onPress={() => handleActionWithAuth('/(tabs)/jobs', { tab: 'bids' })}
+                   activeOpacity={0.85}
+                 >
+                   <Text style={styles.ustaDashCardLabel}>Aktif Teklifler</Text>
+                   <Text style={styles.ustaDashCardValue}>
+                     {stats ? stats.activeBids : '0'}
+                   </Text>
+                   <Text style={styles.ustaDashCardSub}>Bekleyen</Text>
+                 </TouchableOpacity>
+               </View>
+             )}
+            </ImageBackground>
+          </View>
 
         {/* Push Notification Banner — Fallback for users who dismissed the initial popup */}
         {showPushBanner && isAuthenticated && (
@@ -2003,20 +2029,35 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
   },
-  glowGreen: {
-    shadowColor: '#34D399',
+  glowPrimary: {
+    shadowColor: '#FF4B2B',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  glowAccent: {
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  glowGreen: {
+    shadowColor: '#FF4B2B',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
     elevation: 4,
   },
   glowBlue: {
-    shadowColor: '#60A5FA',
+    shadowColor: '#F59E0B',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
     elevation: 4,
   },
+
   ustaDashCardLabel: {
     fontFamily: fonts.semiBold,
     fontSize: 12,
