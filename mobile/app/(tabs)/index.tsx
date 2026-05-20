@@ -159,6 +159,89 @@ export default function HomeScreen() {
   const [recentJobs, setRecentJobs] = useState<any[]>([]);
   const [isLoadingRecentJobs, setIsLoadingRecentJobs] = useState(false);
   const [stats, setStats] = useState<any>(null);
+  
+  // Marketplace / Pazar Yeri States
+  const [marketplaceProducts, setMarketplaceProducts] = useState([
+    {
+      id: 'prod-1',
+      title: 'Makita Şarjlı Matkap 18V',
+      price: 1750,
+      category: 'El Aleti',
+      sellerName: 'Mustafa Yılmaz (Usta)',
+      sellerType: 'ELECTRICIAN',
+      location: 'Kadıköy, İstanbul',
+      desc: 'Çok temiz durumda, yedek bataryası ve şarj aletiyle birlikte verilecektir. İhtiyaç fazlasıdır.',
+      date: 'Bugün',
+    },
+    {
+      id: 'prod-2',
+      title: 'Öznur 3x2.5 NYM Kablo (45m)',
+      price: 850,
+      category: 'Kablo',
+      sellerName: 'Ahmet Kaya (Vatandaş)',
+      sellerType: 'CITIZEN',
+      location: 'Üsküdar, İstanbul',
+      desc: 'Ev tadilatından kalan sıfır rulo bakır kablo. İhtiyacım olmadığı için satıyorum.',
+      date: 'Bugün',
+    },
+    {
+      id: 'prod-3',
+      title: 'Siemens 16A Sigorta Kutusu (10 Adet)',
+      price: 450,
+      category: 'Şalt / Malzeme',
+      sellerName: 'Bülent Tan (Usta)',
+      sellerType: 'ELECTRICIAN',
+      location: 'Beşiktaş, İstanbul',
+      desc: 'Şantiyeden kalan sıfır kutusunda otomatik sigortalar. Toptan fiyatına verilecektir.',
+      date: 'Dün',
+    }
+  ]);
+  const [isAddProductModalVisible, setIsAddProductModalVisible] = useState(false);
+  const [isProductDetailModalVisible, setIsProductDetailModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  
+  // New Product Form States
+  const [newProdTitle, setNewProdTitle] = useState('');
+  const [newProdCategory, setNewProdCategory] = useState('Kablo');
+  const [newProdPrice, setNewProdPrice] = useState('');
+  const [newProdDesc, setNewProdDesc] = useState('');
+
+  const handleAddProduct = () => {
+    if (!newProdTitle.trim() || !newProdPrice.trim() || !newProdDesc.trim()) {
+      Alert.alert('Eksik Bilgi', 'Lütfen tüm alanları doldurun.');
+      return;
+    }
+
+    const priceNum = parseFloat(newProdPrice);
+    if (isNaN(priceNum)) {
+      Alert.alert('Geçersiz Fiyat', 'Lütfen geçerli bir sayı girin.');
+      return;
+    }
+
+    const newProduct = {
+      id: `prod-${Date.now()}`,
+      title: newProdTitle,
+      price: priceNum,
+      category: newProdCategory,
+      sellerName: isElectrician ? `${user?.fullName || 'Mustafa Yılmaz'} (Usta)` : `${user?.fullName || 'Ahmet Kaya'} (Vatandaş)`,
+      sellerType: isElectrician ? 'ELECTRICIAN' : 'CITIZEN',
+      location: 'İstanbul',
+      desc: newProdDesc,
+      date: 'Şimdi',
+    };
+
+    setMarketplaceProducts([newProduct, ...marketplaceProducts]);
+    
+    // Reset Form
+    setNewProdTitle('');
+    setNewProdPrice('');
+    setNewProdDesc('');
+    setNewProdCategory('Kablo');
+    
+    setIsAddProductModalVisible(false);
+    Alert.alert('Başarılı', 'Ürününüz pazar yerinde başarıyla yayınlandı!');
+  };
+
   const healthPulseAnim = useRef(new Animated.Value(1)).current;
 
   // RGB Border animation for profile health card
@@ -1146,101 +1229,6 @@ export default function HomeScreen() {
                 </>
               )}
             </ScrollView>
-
-            {/* Ustalara Özel Avantajlar Section */}
-            <View style={[styles.sectionHeaderRow, { marginTop: 22, marginBottom: 8 }]}>
-              <View style={styles.sectionTitleContainer}>
-                <Text style={styles.sectionTitle}>USTALARA ÖZEL AVANTAJLAR</Text>
-              </View>
-              <Ionicons name="gift" size={18} color={colors.primary} />
-            </View>
-
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false} 
-              contentContainerStyle={[styles.toolsScrollContainer, { paddingBottom: 16 }]}
-            >
-              {/* Perk Card 1 */}
-              <TouchableOpacity
-                style={styles.perkCard}
-                activeOpacity={0.85}
-                onPress={() => Alert.alert('Bayi İndirim Kodu', 'Öznur Kablo bayi indirim kodunuz: KABLO15\n\nBu kod ile bakır kablo alımlarında anında indirim kazanırsınız!')}
-              >
-                <LinearGradient
-                  colors={['#1E293B', '#0F172A']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.perkCardGradient}
-                >
-                  <View style={styles.perkHeader}>
-                    <Text style={styles.perkBrand}>ÖZNUR KABLO</Text>
-                    <View style={styles.perkBadge}>
-                      <Text style={styles.perkBadgeText}>%15 İNDİRİM</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.perkTitle}>TTR & Antigron Kablo Setleri</Text>
-                  <Text style={styles.perkDesc}>Ustalara özel sepet indirim kodu geçerlidir.</Text>
-                  <View style={styles.perkFooter}>
-                    <Text style={styles.perkCodeText}>Kod: KABLO15</Text>
-                    <Ionicons name="copy" size={14} color={colors.primary} />
-                  </View>
-                </LinearGradient>
-              </TouchableOpacity>
-
-              {/* Perk Card 2 */}
-              <TouchableOpacity
-                style={styles.perkCard}
-                activeOpacity={0.85}
-                onPress={() => Alert.alert('Bayi İndirim Kodu', 'Siemens bayi indirim kodunuz: SIEMENS20\n\nBu kod ile şalt ve otomatik sigortalarda bayi indirimi alabilirsiniz!')}
-              >
-                <LinearGradient
-                  colors={['#1E293B', '#0F172A']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.perkCardGradient}
-                >
-                  <View style={styles.perkHeader}>
-                    <Text style={styles.perkBrand}>SIEMENS TÜRKİYE</Text>
-                    <View style={[styles.perkBadge, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
-                      <Text style={[styles.perkBadgeText, { color: '#F59E0B' }]}>%20 FIRSAT</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.perkTitle}>Otomatik Sigorta & Şalt</Text>
-                  <Text style={styles.perkDesc}>Grup priz ve sigorta kutularında geçerli bayii kodu.</Text>
-                  <View style={styles.perkFooter}>
-                    <Text style={[styles.perkCodeText, { color: '#F59E0B' }]}>Kod: SIEMENS20</Text>
-                    <Ionicons name="copy" size={14} color="#F59E0B" />
-                  </View>
-                </LinearGradient>
-              </TouchableOpacity>
-
-              {/* Perk Card 3 */}
-              <TouchableOpacity
-                style={styles.perkCard}
-                activeOpacity={0.85}
-                onPress={() => Alert.alert('Bayi İndirim Kodu', 'Makita bayi indirim kodunuz: MAKITA25\n\nBu kod ile Makita şarjlı matkap ve vidalamalarda %25 net indirim alabilirsiniz!')}
-              >
-                <LinearGradient
-                  colors={['#1E293B', '#0F172A']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.perkCardGradient}
-                >
-                  <View style={styles.perkHeader}>
-                    <Text style={styles.perkBrand}>MAKITA EL ALETLERİ</Text>
-                    <View style={[styles.perkBadge, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
-                      <Text style={[styles.perkBadgeText, { color: '#EF4444' }]}>%25 İNDİRİM</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.perkTitle}>Akülü Vidalama & Matkap</Text>
-                  <Text style={styles.perkDesc}>Şarjlı aletlerde sepette anında indirim kodu.</Text>
-                  <View style={styles.perkFooter}>
-                    <Text style={[styles.perkCodeText, { color: '#EF4444' }]}>Kod: MAKITA25</Text>
-                    <Ionicons name="copy" size={14} color="#EF4444" />
-                  </View>
-                </LinearGradient>
-              </TouchableOpacity>
-            </ScrollView>
           </View>
         )}
 
@@ -1532,6 +1520,222 @@ export default function HomeScreen() {
             </View>
           )
         }
+
+        {/* ==================== PAZAR YERİ & İKİNCİ EL ==================== */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionTitleContainer}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>PAZAR YERİ & İKİNCİ EL</Text>
+              <Text style={styles.sectionSubtitle}>Ustalar ve vatandaşlar arası malzeme satışı</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.addProductBtn}
+              activeOpacity={0.8}
+              onPress={() => setIsAddProductModalVisible(true)}
+            >
+              <LinearGradient
+                colors={[colors.primary, colors.primaryDark || '#B91C1C']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.addProductBtnGradient}
+              >
+                <Ionicons name="add-circle" size={14} color="#FFF" style={{ marginRight: 2 }} />
+                <Text style={styles.addProductBtnText}>İlan Ekle</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            contentContainerStyle={styles.marketScrollContainer}
+          >
+            {marketplaceProducts.map((prod) => {
+              const isUsta = prod.sellerType === 'ELECTRICIAN';
+              return (
+                <TouchableOpacity
+                  key={prod.id}
+                  style={styles.marketCard}
+                  activeOpacity={0.9}
+                  onPress={() => {
+                    setSelectedProduct(prod);
+                    setIsProductDetailModalVisible(true);
+                  }}
+                >
+                  <LinearGradient
+                    colors={['#1E293B', '#0F172A']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.marketCardGradient}
+                  >
+                    <View style={styles.marketCardHeader}>
+                      <View style={[styles.marketCategoryBadge, { backgroundColor: isUsta ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)' }]}>
+                        <Text style={[styles.marketCategoryText, { color: isUsta ? '#F59E0B' : '#10B981' }]}>{prod.category}</Text>
+                      </View>
+                      <Text style={styles.marketDateText}>{prod.date}</Text>
+                    </View>
+
+                    <Text style={styles.marketProductTitle} numberOfLines={1}>{prod.title}</Text>
+                    <Text style={styles.marketProductDesc} numberOfLines={2}>{prod.desc}</Text>
+
+                    <View style={styles.marketCardFooter}>
+                      <View style={styles.marketPriceWrapper}>
+                        <Text style={styles.marketPriceLabel}>Fiyat</Text>
+                        <Text style={styles.marketPriceValue}>₺{prod.price}</Text>
+                      </View>
+
+                      <View style={styles.marketSellerBadge}>
+                        <Ionicons name={isUsta ? "build" : "person"} size={10} color="#94A3B8" style={{ marginRight: 3 }} />
+                        <Text style={styles.marketSellerText} numberOfLines={1}>
+                          {isUsta ? 'Usta' : 'Vatandaş'}
+                        </Text>
+                      </View>
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* ==================== YENİ İLAN EKLE MODAL ==================== */}
+        <Modal
+          visible={isAddProductModalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setIsAddProductModalVisible(false)}
+        >
+          <View style={styles.hiwModalOverlay}>
+            <View style={[styles.hiwModalContent, { maxHeight: '85%', paddingBottom: 24 }]}>
+              <View style={styles.hiwHeader}>
+                <Text style={styles.hiwTitle}>Ürün Satış İlanı Ekle</Text>
+                <TouchableOpacity onPress={() => setIsAddProductModalVisible(false)} style={styles.hiwCloseBtn}>
+                  <Ionicons name="close" size={24} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView style={{ marginTop: 16 }} showsVerticalScrollIndicator={false}>
+                <Text style={styles.formLabel}>Ürün Adı *</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="Örn: Makita Şarjlı Matkap, 50m Kablo vb."
+                  placeholderTextColor="rgba(255,255,255,0.3)"
+                  value={newProdTitle}
+                  onChangeText={setNewProdTitle}
+                />
+
+                <Text style={styles.formLabel}>Kategori *</Text>
+                <View style={styles.categoryPickerRow}>
+                  {['El Aleti', 'Kablo', 'Şalt / Malzeme', 'Diğer'].map((cat) => (
+                    <TouchableOpacity
+                      key={cat}
+                      style={[
+                        styles.categoryPickerBtn,
+                        newProdCategory === cat && { backgroundColor: colors.primary, borderColor: colors.primary }
+                      ]}
+                      onPress={() => setNewProdCategory(cat)}
+                    >
+                      <Text style={[styles.categoryPickerText, newProdCategory === cat && { color: '#FFF' }]}>{cat}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <Text style={styles.formLabel}>Fiyat (₺) *</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="Örn: 1500"
+                  placeholderTextColor="rgba(255,255,255,0.3)"
+                  keyboardType="numeric"
+                  value={newProdPrice}
+                  onChangeText={setNewProdPrice}
+                />
+
+                <Text style={styles.formLabel}>Ürün Açıklaması *</Text>
+                <TextInput
+                  style={[styles.formInput, { height: 100, textAlignVertical: 'top', paddingTop: 10 }]}
+                  placeholder="Ürünün durumu, markası ve teslimat bilgileri..."
+                  placeholderTextColor="rgba(255,255,255,0.3)"
+                  multiline={true}
+                  numberOfLines={4}
+                  value={newProdDesc}
+                  onChangeText={setNewProdDesc}
+                />
+
+                <TouchableOpacity
+                  style={[styles.submitBtn, { backgroundColor: colors.primary, marginTop: 16 }]}
+                  onPress={handleAddProduct}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.submitBtnText}>İlanı Yayınla 🚀</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
+        {/* ==================== ÜRÜN DETAY MODAL ==================== */}
+        <Modal
+          visible={isProductDetailModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setIsProductDetailModalVisible(false)}
+        >
+          <View style={styles.hiwModalOverlay}>
+            <View style={[styles.hiwModalContent, { paddingBottom: 24 }]}>
+              <View style={styles.hiwHeader}>
+                <Text style={styles.hiwTitle}>Ürün Detayları</Text>
+                <TouchableOpacity onPress={() => setIsProductDetailModalVisible(false)} style={styles.hiwCloseBtn}>
+                  <Ionicons name="close" size={24} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              {selectedProduct && (
+                <View style={{ marginTop: 20 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View style={[styles.marketCategoryBadge, { backgroundColor: selectedProduct.sellerType === 'ELECTRICIAN' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)' }]}>
+                      <Text style={[styles.marketCategoryText, { color: selectedProduct.sellerType === 'ELECTRICIAN' ? '#F59E0B' : '#10B981' }]}>{selectedProduct.category}</Text>
+                    </View>
+                    <Text style={{ color: '#94A3B8', fontSize: 12, fontFamily: fonts.medium }}>{selectedProduct.date}</Text>
+                  </View>
+
+                  <Text style={{ fontSize: 18, fontFamily: fonts.bold, color: '#FFF', marginTop: 12 }}>{selectedProduct.title}</Text>
+                  
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 4 }}>
+                    <Ionicons name="location-outline" size={14} color="#94A3B8" />
+                    <Text style={{ color: '#94A3B8', fontSize: 12, fontFamily: fonts.medium }}>{selectedProduct.location}</Text>
+                  </View>
+
+                  <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 12, marginTop: 16 }}>
+                    <Text style={{ color: '#E2E8F0', fontSize: 13, lineHeight: 20, fontFamily: fonts.regular }}>{selectedProduct.desc}</Text>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', paddingTop: 16 }}>
+                    <View>
+                      <Text style={{ color: '#94A3B8', fontSize: 11, fontFamily: fonts.medium }}>Satıcı</Text>
+                      <Text style={{ color: '#FFF', fontSize: 14, fontFamily: fonts.bold }}>{selectedProduct.sellerName}</Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={{ color: '#94A3B8', fontSize: 11, fontFamily: fonts.medium }}>Fiyat</Text>
+                      <Text style={{ color: colors.primary, fontSize: 20, fontFamily: fonts.extraBold }}>₺{selectedProduct.price}</Text>
+                    </View>
+                  </View>
+
+                  <TouchableOpacity
+                    style={[styles.submitBtn, { backgroundColor: colors.primary, marginTop: 24, flexDirection: 'row', gap: 8, justifyContent: 'center' }]}
+                    onPress={() => {
+                      setIsProductDetailModalVisible(false);
+                      router.push('/(tabs)/messages');
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="chatbubbles" size={18} color="#FFF" />
+                    <Text style={styles.submitBtnText}>Satıcıyla İletişime Geç (Sohbet Et)</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </View>
+        </Modal>
 
         {/* How It Works Modal */}
         <Modal
@@ -3183,8 +3387,28 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     marginRight: 8,
   },
-  perkCard: {
-    width: 250,
+  addProductBtn: {
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  addProductBtnGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 4,
+  },
+  addProductBtnText: {
+    color: '#FFF',
+    fontFamily: fonts.bold,
+    fontSize: 11.5,
+  },
+  marketScrollContainer: {
+    paddingVertical: 8,
+    gap: 12,
+  },
+  marketCard: {
+    width: 230,
     borderRadius: 20,
     overflow: 'hidden',
     marginRight: 12,
@@ -3196,56 +3420,128 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 4,
   },
-  perkCardGradient: {
+  marketCardGradient: {
     padding: 16,
-    height: 140,
+    height: 145,
     justifyContent: 'space-between',
   },
-  perkHeader: {
+  marketCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  perkBrand: {
-    fontFamily: fonts.bold,
-    fontSize: 11,
-    color: '#94A3B8',
-    letterSpacing: 0.8,
-  },
-  perkBadge: {
-    backgroundColor: 'rgba(255, 75, 43, 0.15)',
+  marketCategoryBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
-  perkBadgeText: {
+  marketCategoryText: {
     fontFamily: fonts.bold,
     fontSize: 9,
-    color: '#FF4B2B',
+    textTransform: 'uppercase',
   },
-  perkTitle: {
+  marketDateText: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    color: '#64748B',
+  },
+  marketProductTitle: {
     fontFamily: fonts.bold,
-    fontSize: 13,
+    fontSize: 13.5,
     color: '#FFFFFF',
+    marginTop: 8,
   },
-  perkDesc: {
+  marketProductDesc: {
     fontFamily: fonts.regular,
-    fontSize: 10.5,
+    fontSize: 11,
     color: '#94A3B8',
-    lineHeight: 14,
+    lineHeight: 15,
+    marginTop: 4,
   },
-  perkFooter: {
+  marketCardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.06)',
     paddingTop: 8,
+    marginTop: 8,
   },
-  perkCodeText: {
+  marketPriceWrapper: {
+    flexDirection: 'column',
+  },
+  marketPriceLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 8.5,
+    color: '#64748B',
+    textTransform: 'uppercase',
+  },
+  marketPriceValue: {
+    fontFamily: fonts.extraBold,
+    fontSize: 14,
+    color: '#FFF',
+  },
+  marketSellerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  marketSellerText: {
     fontFamily: fonts.bold,
-    fontSize: 11,
-    color: '#FF4B2B',
+    fontSize: 9,
+    color: '#94A3B8',
+  },
+  // Form and Modal Elements
+  formLabel: {
+    fontFamily: fonts.bold,
+    fontSize: 12.5,
+    color: '#E2E8F0',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  formInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 44,
+    color: '#FFF',
+    fontFamily: fonts.medium,
+    fontSize: 13.5,
+  },
+  categoryPickerRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 4,
+  },
+  categoryPickerBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  categoryPickerText: {
+    fontFamily: fonts.bold,
+    fontSize: 11.5,
+    color: '#94A3B8',
+  },
+  submitBtn: {
+    height: 48,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  submitBtnText: {
+    fontFamily: fonts.bold,
+    fontSize: 14,
+    color: '#FFF',
   },
   toolIconBoxModern: {
     width: 52,
