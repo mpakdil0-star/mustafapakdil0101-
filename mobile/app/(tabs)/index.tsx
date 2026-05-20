@@ -397,8 +397,16 @@ export default function HomeScreen() {
         params.serviceCategory = user?.electricianProfile?.serviceCategory || user?.serviceCategory || 'elektrik';
       }
       const result = await jobService.getJobs(params);
-      if (result && result.jobs) {
+      if (result && result.jobs && result.jobs.length > 0) {
         setRecentJobs(result.jobs.slice(0, 10));
+      } else {
+        // Fallback: Fetch any available open jobs from database so the screen always shows REAL jobs
+        const generalJobsResult = await jobService.getJobs({ limit: 10 });
+        if (generalJobsResult && generalJobsResult.jobs) {
+          setRecentJobs(generalJobsResult.jobs.slice(0, 10));
+        } else {
+          setRecentJobs([]);
+        }
       }
     } catch (error) {
       console.log('Error fetching recent jobs:', error);
@@ -661,10 +669,10 @@ export default function HomeScreen() {
     }
   };
 
-  const fullName = user?.fullName || 'MUSTAFA YILMAZ';
+  const fullName = isAuthenticated ? (user?.fullName || 'USTA') : 'MİSAFİR USTA';
   const nameParts = fullName.toUpperCase().split(' ');
-  const firstName = nameParts[0] || 'MUSTAFA';
-  const lastName = nameParts.slice(1).join(' ') || 'YILMAZ';
+  const firstName = nameParts[0] || 'MİSAFİR';
+  const lastName = nameParts.slice(1).join(' ') || 'USTA';
 
   return (
     <View style={[styles.container, { backgroundColor: colors.backgroundLight }]}>
@@ -992,9 +1000,17 @@ export default function HomeScreen() {
                 onPress={() => handleActionWithAuth('/tools/calendar')}
                 activeOpacity={0.85}
               >
-                <View style={styles.toolIconBoxDark}>
-                  <Ionicons name="calendar" size={28} color="#FFF" />
-                </View>
+                <LinearGradient
+                  colors={['#10B981', '#059669', '#022C22']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.toolIconBoxGradient}
+                >
+                  <Image
+                    source={require('../../assets/images/tool_calendar.png')}
+                    style={styles.toolIconImage}
+                  />
+                </LinearGradient>
                 <Text style={styles.toolCardTitle}>Takvim</Text>
               </TouchableOpacity>
 
@@ -1003,9 +1019,17 @@ export default function HomeScreen() {
                 onPress={() => handleActionWithAuth('/tools/ledger')}
                 activeOpacity={0.85}
               >
-                <View style={styles.toolIconBoxDark}>
-                  <Ionicons name="book" size={28} color="#FFF" />
-                </View>
+                <LinearGradient
+                  colors={['#10B981', '#059669', '#022C22']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.toolIconBoxGradient}
+                >
+                  <Image
+                    source={require('../../assets/images/tool_ledger.png')}
+                    style={styles.toolIconImage}
+                  />
+                </LinearGradient>
                 <Text style={styles.toolCardTitle}>Defter</Text>
               </TouchableOpacity>
 
@@ -1014,9 +1038,17 @@ export default function HomeScreen() {
                 onPress={() => handleActionWithAuth('/tools/quote')}
                 activeOpacity={0.85}
               >
-                <View style={styles.toolIconBoxDark}>
-                  <Ionicons name="document-text" size={28} color="#FFF" />
-                </View>
+                <LinearGradient
+                  colors={['#10B981', '#059669', '#022C22']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.toolIconBoxGradient}
+                >
+                  <Image
+                    source={require('../../assets/images/tool_quotes.png')}
+                    style={styles.toolIconImage}
+                  />
+                </LinearGradient>
                 <Text style={styles.toolCardTitle}>PDF Teklifler</Text>
               </TouchableOpacity>
             </ScrollView>
@@ -1031,36 +1063,46 @@ export default function HomeScreen() {
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScrollContainer}>
               {recentJobs.length > 0 ? recentJobs.slice(0, 5).map((job: any, index: number) => {
-                const isEven = index % 2 === 0;
+                const isUrgent = job.urgencyLevel === 'HIGH' || job.urgencyLevel === 'MEDIUM';
+                const statusColor = isUrgent ? '#EF4444' : '#3B82F6';
+                const badgeBgColor = isUrgent ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)';
+                const iconColor = isUrgent ? '#059669' : '#3B82F6';
+                
                 return (
                   <TouchableOpacity
                     key={job.id}
-                    style={[styles.hotLeadCard, isEven ? styles.glowGreen : styles.glowBlue]}
+                    style={[styles.hotLeadCard, isUrgent ? styles.glowGreen : styles.glowBlue]}
                     onPress={() => handleActionWithAuth(`/jobs/${job.id}`)}
                     activeOpacity={0.85}
                   >
                     <View style={styles.hotLeadHeaderRow}>
                       <Text style={styles.hotLeadTitle} numberOfLines={1}>{job.title || 'İş İlanı'}</Text>
-                      <View style={styles.hotLeadUrgentBadge}>
-                        <Ionicons name="time-outline" size={10} color="#EF4444" />
-                        <Text style={styles.hotLeadUrgentText}>14dk</Text>
+                      <View style={[styles.hotLeadUrgentBadge, { backgroundColor: badgeBgColor }]}>
+                        <Ionicons name="time" size={10} color={statusColor} />
+                        <Text style={[styles.hotLeadUrgentText, { color: statusColor }]}>
+                          {isUrgent ? 'Acil' : 'Yeni'}
+                        </Text>
                       </View>
                     </View>
 
                     <View style={styles.hotLeadLocationRow}>
-                      <Ionicons name="location" size={12} color="#059669" />
+                      <Ionicons name="location" size={12} color={iconColor} />
                       <Text style={styles.hotLeadLocationText} numberOfLines={1}>
-                        {job.location?.city || 'İstanbul'}, {job.distance ? `${job.distance.toFixed(1)}km` : '1.2km'}
+                        {job.location?.district ? `${job.location.district}, ` : ''}{job.location?.city || 'İstanbul'}
                       </Text>
                     </View>
 
                     <View style={styles.hotLeadBottomRow}>
                       <View style={styles.hotLeadPriceCol}>
-                        <Text style={styles.hotLeadPrice}>₺{job.estimatedBudget || '850'}</Text>
-                        <Text style={styles.hotLeadPriceStatus}> - Acil!</Text>
+                        <Text style={[styles.hotLeadPrice, { color: statusColor }]}>
+                          ₺{job.estimatedBudget ? Number(job.estimatedBudget).toLocaleString('tr-TR') : '850'}
+                        </Text>
+                        <Text style={[styles.hotLeadPriceStatus, { color: statusColor }]}>
+                          {isUrgent ? ' - Acil!' : ' - Standart'}
+                        </Text>
                       </View>
                       <TouchableOpacity
-                        style={styles.hotLeadActionBtn}
+                        style={[styles.hotLeadActionBtn, { backgroundColor: isUrgent ? '#047857' : '#3B82F6' }]}
                         onPress={() => handleActionWithAuth(`/jobs/${job.id}`)}
                         activeOpacity={0.8}
                       >
@@ -2026,39 +2068,35 @@ const styles = StyleSheet.create({
   },
   ustaDashboardCardDark: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     borderRadius: 20,
     padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.22)',
   },
   glowPrimary: {
     shadowColor: '#FF4B2B',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 12,
-    elevation: 4,
   },
   glowAccent: {
     shadowColor: '#F59E0B',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 12,
-    elevation: 4,
   },
   glowGreen: {
     shadowColor: '#FF4B2B',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 12,
-    elevation: 4,
   },
   glowBlue: {
     shadowColor: '#F59E0B',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 12,
-    elevation: 4,
   },
 
   ustaDashCardLabel: {
@@ -2087,6 +2125,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
+  },
+  toolIconBoxGradient: {
+    width: 64,
+    height: 64,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  toolIconImage: {
+    width: 44,
+    height: 44,
+    resizeMode: 'contain',
   },
   hotLeadCard: {
     width: 210,
