@@ -35,7 +35,8 @@ class ApiService {
         const method = (config.method || 'get').toLowerCase();
         const isPublicEndpoint = 
           (url.includes('/jobs') && !url.includes('/my-jobs') && !url.includes('/bids') && !url.includes('/admin') && method === 'get') ||
-          (url.includes('/users/electricians') && method === 'get');
+          (url.includes('/users/electricians') && method === 'get') ||
+          (url.includes('/marketplace') && method === 'get');
 
         if (isPublicEndpoint) {
           delete config.headers.Authorization;
@@ -145,7 +146,11 @@ class ApiService {
         const errorUrl = error.config?.url || 'Unknown URL';
         const responseHeaders = error.response?.headers;
 
-        console.error(`❌ [API ERROR] ${originalRequest?.method?.toUpperCase()} ${errorUrl} -> Status: ${statusCode}, Message: ${errorMessage}`);
+        // Don't log marketplace 404s — backend may not have this route yet
+        const isMarketplace404 = errorUrl.includes('/marketplace') && statusCode === 404;
+        if (!isMarketplace404) {
+          console.error(`❌ [API ERROR] ${originalRequest?.method?.toUpperCase()} ${errorUrl} -> Status: ${statusCode}, Message: ${errorMessage}`);
+        }
 
         return Promise.reject(error);
       }

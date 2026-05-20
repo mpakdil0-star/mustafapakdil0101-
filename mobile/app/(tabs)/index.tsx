@@ -20,6 +20,7 @@ import { JOB_CATEGORIES } from '../../constants/jobCategories';
 import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CountdownTimer } from '../../components/common/CountdownTimer';
+import * as ImagePicker from 'expo-image-picker';
 
 
 // --- Premium Service Category Component ---
@@ -198,6 +199,7 @@ export default function HomeScreen() {
   ]);
   const [isAddProductModalVisible, setIsAddProductModalVisible] = useState(false);
   const [isProductDetailModalVisible, setIsProductDetailModalVisible] = useState(false);
+  const [isAllProductsModalVisible, setIsAllProductsModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   
   // New Product Form States
@@ -205,8 +207,79 @@ export default function HomeScreen() {
   const [newProdCategory, setNewProdCategory] = useState('Kablo');
   const [newProdPrice, setNewProdPrice] = useState('');
   const [newProdDesc, setNewProdDesc] = useState('');
+  const [newProdImage, setNewProdImage] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  const handleAddProduct = () => {
+  // Marketplace Search and Filtering States
+  const [marketSearchQuery, setMarketSearchQuery] = useState('');
+  const [marketSelectedFilter, setMarketSelectedFilter] = useState('');
+
+  // AsyncStorage key for marketplace persistence
+  const MARKETPLACE_STORAGE_KEY = 'marketplace_products_v1';
+
+  // Load marketplace products: AsyncStorage first, then try backend sync
+  const fetchMarketplaceProducts = async () => {
+    try {
+      // 1. Load from AsyncStorage (instant, always works)
+      const stored = await AsyncStorage.getItem(MARKETPLACE_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMarketplaceProducts(parsed);
+        }
+      }
+
+      // 2. Try backend sync silently (optional — won't error if 404)
+      try {
+        const response = await api.get(API_ENDPOINTS.MARKETPLACE);
+        if (response.data?.success && response.data.data && response.data.data.length > 0) {
+          setMarketplaceProducts(response.data.data);
+          await AsyncStorage.setItem(MARKETPLACE_STORAGE_KEY, JSON.stringify(response.data.data));
+        }
+      } catch (_backendErr) {
+        // Backend doesn't support marketplace yet — silently ignore
+      }
+    } catch (error) {
+      console.log('Marketplace load error:', error);
+    }
+  };
+
+  // Save marketplace products to AsyncStorage
+  const saveMarketplaceToStorage = async (products: any[]) => {
+    try {
+      await AsyncStorage.setItem(MARKETPLACE_STORAGE_KEY, JSON.stringify(products));
+    } catch (_e) {
+      // Silently ignore storage errors
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchMarketplaceProducts();
+    }, [])
+  );
+
+  const handlePickProductImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.6,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets?.[0]) {
+        const base64Str = result.assets[0].base64 
+          ? `data:image/jpeg;base64,${result.assets[0].base64}` 
+          : result.assets[0].uri;
+        setNewProdImage(base64Str);
+      }
+    } catch (error) {
+      Alert.alert('Hata', 'Fotoğraf seçilirken bir hata oluştu.');
+    }
+  };
+
+  const handleAddProduct = async () => {
     if (!newProdTitle.trim() || !newProdPrice.trim() || !newProdDesc.trim()) {
       Alert.alert('Eksik Bilgi', 'Lütfen tüm alanları doldurun.');
       return;
@@ -218,28 +291,49 @@ export default function HomeScreen() {
       return;
     }
 
+    const userLocation = user?.city ? `${user.city}` : 'İstanbul';
+
     const newProduct = {
       id: `prod-${Date.now()}`,
       title: newProdTitle,
       price: priceNum,
       category: newProdCategory,
-      sellerName: isElectrician ? `${user?.fullName || 'Mustafa Yılmaz'} (Usta)` : `${user?.fullName || 'Ahmet Kaya'} (Vatandaş)`,
+      sellerName: user?.fullName ? `${user.fullName} (${isElectrician ? 'Usta' : 'Vatandaş'})` : (isElectrician ? 'Mustafa Yılmaz (Usta)' : 'Ahmet Kaya (Vatandaş)'),
       sellerType: isElectrician ? 'ELECTRICIAN' : 'CITIZEN',
-      location: 'İstanbul',
+      location: userLocation,
       desc: newProdDesc,
-      date: 'Şimdi',
+      date: 'Bugün',
+      image: newProdImage,
     };
 
-    setMarketplaceProducts([newProduct, ...marketplaceProducts]);
-    
-    // Reset Form
+    setIsUploadingImage(true);
+
+    // Add to local state immediately
+    const updatedProducts = [newProduct, ...marketplaceProducts];
+    setMarketplaceProducts(updatedProducts);
+
+    // Save to AsyncStorage for persistence
+    await saveMarketplaceToStorage(updatedProducts);
+
+    // Try backend sync silently (optional)
+    try {
+      const response = await api.post(API_ENDPOINTS.MARKETPLACE, newProduct);
+      if (response.data?.success && response.data.data) {
+        setMarketplaceProducts(response.data.data);
+        await saveMarketplaceToStorage(response.data.data);
+      }
+    } catch (_e) {
+      // Backend not available — already saved locally
+    }
+
+    setIsUploadingImage(false);
     setNewProdTitle('');
     setNewProdPrice('');
     setNewProdDesc('');
     setNewProdCategory('Kablo');
-    
+    setNewProdImage(null);
     setIsAddProductModalVisible(false);
-    Alert.alert('Başarılı', 'Ürününüz pazar yerinde başarıyla yayınlandı!');
+    Alert.alert('Başarılı', 'İlanınız pazar yerinde başarıyla yayınlandı! 🚀');
   };
 
   const healthPulseAnim = useRef(new Animated.Value(1)).current;
@@ -1525,7 +1619,16 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <View style={styles.sectionTitleContainer}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>PAZAR YERİ & İKİNCİ EL</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>PAZAR YERİ & İKİNCİ EL</Text>
+                <TouchableOpacity 
+                  onPress={() => setIsAllProductsModalVisible(true)}
+                  style={{ backgroundColor: 'rgba(245, 158, 11, 0.12)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: '#F59E0B' }}>Tümünü Gör ➔</Text>
+                </TouchableOpacity>
+              </View>
               <Text style={styles.sectionSubtitle}>Ustalar ve vatandaşlar arası malzeme satışı</Text>
             </View>
             <TouchableOpacity
@@ -1562,36 +1665,75 @@ export default function HomeScreen() {
                     setIsProductDetailModalVisible(true);
                   }}
                 >
-                  <LinearGradient
-                    colors={['#1E293B', '#0F172A']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.marketCardGradient}
-                  >
-                    <View style={styles.marketCardHeader}>
-                      <View style={[styles.marketCategoryBadge, { backgroundColor: isUsta ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)' }]}>
-                        <Text style={[styles.marketCategoryText, { color: isUsta ? '#F59E0B' : '#10B981' }]}>{prod.category}</Text>
-                      </View>
-                      <Text style={styles.marketDateText}>{prod.date}</Text>
-                    </View>
+                  {prod.image ? (
+                    <ImageBackground
+                      source={{ uri: prod.image }}
+                      style={{ width: '100%', height: 185 }}
+                      imageStyle={{ borderRadius: 20 }}
+                    >
+                      <LinearGradient
+                        colors={['rgba(15, 23, 42, 0.3)', '#0F172A']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={[styles.marketCardGradient, { backgroundColor: 'transparent' }]}
+                      >
+                        <View style={styles.marketCardHeader}>
+                          <View style={[styles.marketCategoryBadge, { backgroundColor: isUsta ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)' }]}>
+                            <Text style={[styles.marketCategoryText, { color: isUsta ? '#F59E0B' : '#10B981' }]}>{prod.category}</Text>
+                          </View>
+                          <Text style={styles.marketDateText}>{prod.date}</Text>
+                        </View>
 
-                    <Text style={styles.marketProductTitle} numberOfLines={1}>{prod.title}</Text>
-                    <Text style={styles.marketProductDesc} numberOfLines={2}>{prod.desc}</Text>
+                        <Text style={styles.marketProductTitle} numberOfLines={1}>{prod.title}</Text>
+                        <Text style={styles.marketProductDesc} numberOfLines={2}>{prod.desc}</Text>
 
-                    <View style={styles.marketCardFooter}>
-                      <View style={styles.marketPriceWrapper}>
-                        <Text style={styles.marketPriceLabel}>Fiyat</Text>
-                        <Text style={styles.marketPriceValue}>₺{prod.price}</Text>
+                        <View style={styles.marketCardFooter}>
+                          <View style={styles.marketPriceWrapper}>
+                            <Text style={styles.marketPriceLabel}>Fiyat</Text>
+                            <Text style={styles.marketPriceValue}>₺{prod.price}</Text>
+                          </View>
+
+                          <View style={styles.marketSellerBadge}>
+                            <Ionicons name={isUsta ? "build" : "person"} size={10} color="#94A3B8" style={{ marginRight: 3 }} />
+                            <Text style={styles.marketSellerText} numberOfLines={1}>
+                              {isUsta ? 'Usta' : 'Vatandaş'}
+                            </Text>
+                          </View>
+                        </View>
+                      </LinearGradient>
+                    </ImageBackground>
+                  ) : (
+                    <LinearGradient
+                      colors={['#1E293B', '#0F172A']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.marketCardGradient}
+                    >
+                      <View style={styles.marketCardHeader}>
+                        <View style={[styles.marketCategoryBadge, { backgroundColor: isUsta ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)' }]}>
+                          <Text style={[styles.marketCategoryText, { color: isUsta ? '#F59E0B' : '#10B981' }]}>{prod.category}</Text>
+                        </View>
+                        <Text style={styles.marketDateText}>{prod.date}</Text>
                       </View>
 
-                      <View style={styles.marketSellerBadge}>
-                        <Ionicons name={isUsta ? "build" : "person"} size={10} color="#94A3B8" style={{ marginRight: 3 }} />
-                        <Text style={styles.marketSellerText} numberOfLines={1}>
-                          {isUsta ? 'Usta' : 'Vatandaş'}
-                        </Text>
+                      <Text style={styles.marketProductTitle} numberOfLines={1}>{prod.title}</Text>
+                      <Text style={styles.marketProductDesc} numberOfLines={2}>{prod.desc}</Text>
+
+                      <View style={styles.marketCardFooter}>
+                        <View style={styles.marketPriceWrapper}>
+                          <Text style={styles.marketPriceLabel}>Fiyat</Text>
+                          <Text style={styles.marketPriceValue}>₺{prod.price}</Text>
+                        </View>
+
+                        <View style={styles.marketSellerBadge}>
+                          <Ionicons name={isUsta ? "build" : "person"} size={10} color="#94A3B8" style={{ marginRight: 3 }} />
+                          <Text style={styles.marketSellerText} numberOfLines={1}>
+                            {isUsta ? 'Usta' : 'Vatandaş'}
+                          </Text>
+                        </View>
                       </View>
-                    </View>
-                  </LinearGradient>
+                    </LinearGradient>
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -1606,7 +1748,7 @@ export default function HomeScreen() {
           onRequestClose={() => setIsAddProductModalVisible(false)}
         >
           <View style={styles.hiwModalOverlay}>
-            <View style={[styles.marketModalContent, { maxHeight: '85%', paddingBottom: 24 }]}>
+            <View style={[styles.marketModalContent, { maxHeight: '90%', paddingBottom: 24 }]}>
               <View style={styles.hiwHeader}>
                 <Text style={styles.marketModalTitle}>Ürün Satış İlanı Ekle</Text>
                 <TouchableOpacity onPress={() => setIsAddProductModalVisible(false)} style={styles.hiwCloseBtn}>
@@ -1615,6 +1757,41 @@ export default function HomeScreen() {
               </View>
 
               <ScrollView style={{ marginTop: 16 }} showsVerticalScrollIndicator={false}>
+                {/* Photo Upload Zone */}
+                <Text style={styles.formLabel}>Ürün Fotoğrafı</Text>
+                {newProdImage ? (
+                  <View style={{ position: 'relative', width: '100%', height: 160, borderRadius: 16, overflow: 'hidden', marginBottom: 16, borderHorizontalWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                    <Image source={{ uri: newProdImage }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+                    <TouchableOpacity
+                      style={{ position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(15, 23, 42, 0.75)', padding: 6, borderRadius: 20 }}
+                      onPress={() => setNewProdImage(null)}
+                    >
+                      <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={{
+                      height: 100,
+                      borderRadius: 16,
+                      borderStyle: 'dashed',
+                      borderWidth: 1.5,
+                      borderColor: 'rgba(255, 255, 255, 0.2)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      marginBottom: 16,
+                      gap: 4
+                    }}
+                    onPress={handlePickProductImage}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="camera-outline" size={26} color="#F59E0B" />
+                    <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: '#FFF' }}>Fotoğraf Seç (İsteğe Bağlı)</Text>
+                    <Text style={{ fontSize: 9.5, fontFamily: fonts.medium, color: '#94A3B8' }}>Galeriden bir ürün görseli yükleyin</Text>
+                  </TouchableOpacity>
+                )}
+
                 <Text style={styles.formLabel}>Ürün Adı *</Text>
                 <TextInput
                   style={styles.formInput}
@@ -1652,7 +1829,7 @@ export default function HomeScreen() {
 
                 <Text style={styles.formLabel}>Ürün Açıklaması *</Text>
                 <TextInput
-                  style={[styles.formInput, { height: 100, textAlignVertical: 'top', paddingTop: 10 }]}
+                  style={[styles.formInput, { height: 80, textAlignVertical: 'top', paddingTop: 10 }]}
                   placeholder="Ürünün durumu, markası ve teslimat bilgileri..."
                   placeholderTextColor="rgba(255,255,255,0.3)"
                   multiline={true}
@@ -1665,9 +1842,131 @@ export default function HomeScreen() {
                   style={[styles.submitBtn, { backgroundColor: colors.primary, marginTop: 16 }]}
                   onPress={handleAddProduct}
                   activeOpacity={0.8}
+                  disabled={isUploadingImage}
                 >
-                  <Text style={styles.submitBtnText}>İlanı Yayınla 🚀</Text>
+                  {isUploadingImage ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <Text style={styles.submitBtnText}>İlanı Yayınla 🚀</Text>
+                  )}
                 </TouchableOpacity>
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
+        {/* ==================== TÜM PAZAR YERİ İLANLARI MODAL ==================== */}
+        <Modal
+          visible={isAllProductsModalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setIsAllProductsModalVisible(false)}
+        >
+          <View style={styles.hiwModalOverlay}>
+            <View style={[styles.marketModalContent, { maxHeight: '90%', paddingBottom: 24 }]}>
+              <View style={styles.hiwHeader}>
+                <Text style={styles.marketModalTitle}>Tüm Pazar Yeri İlanları</Text>
+                <TouchableOpacity onPress={() => setIsAllProductsModalVisible(false)} style={styles.hiwCloseBtn}>
+                  <Ionicons name="close" size={24} color="#94A3B8" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Search Bar */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, paddingHorizontal: 12, height: 44, marginTop: 16, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                <Ionicons name="search" size={18} color="#94A3B8" style={{ marginRight: 8 }} />
+                <TextInput
+                  style={{ flex: 1, color: '#FFF', fontFamily: fonts.medium, fontSize: 13.5, height: '100%', paddingVertical: 0 }}
+                  placeholder="Ürün adı, satıcı veya kategori ara..."
+                  placeholderTextColor="rgba(255,255,255,0.3)"
+                  value={marketSearchQuery}
+                  onChangeText={setMarketSearchQuery}
+                />
+                {marketSearchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => setMarketSearchQuery('')}>
+                    <Ionicons name="close-circle" size={16} color="#94A3B8" />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Category Filter Tabs */}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxHeight: 36, marginBottom: 16 }} contentContainerStyle={{ alignItems: 'center' }}>
+                {['Tümü', 'El Aleti', 'Kablo', 'Şalt / Malzeme', 'Diğer'].map((cat) => {
+                  const isSelected = (cat === 'Tümü' && marketSelectedFilter === '') || (marketSelectedFilter === cat);
+                  return (
+                    <TouchableOpacity
+                      key={cat}
+                      style={{
+                        paddingHorizontal: 14,
+                        paddingVertical: 6,
+                        borderRadius: 20,
+                        backgroundColor: isSelected ? colors.primary : 'rgba(255,255,255,0.05)',
+                        marginRight: 8,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: 28
+                      }}
+                      onPress={() => setMarketSelectedFilter(cat === 'Tümü' ? '' : cat)}
+                    >
+                      <Text style={{ color: '#FFF', fontFamily: fonts.bold, fontSize: 11 }}>{cat}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {marketplaceProducts
+                  .filter((p) => {
+                    const matchesSearch = p.title.toLowerCase().includes(marketSearchQuery.toLowerCase()) ||
+                      p.desc.toLowerCase().includes(marketSearchQuery.toLowerCase()) ||
+                      p.sellerName.toLowerCase().includes(marketSearchQuery.toLowerCase());
+                    const matchesCat = marketSelectedFilter === '' || p.category.includes(marketSelectedFilter) || marketSelectedFilter.includes(p.category);
+                    return matchesSearch && matchesCat;
+                  })
+                  .map((prod) => {
+                    const isUsta = prod.sellerType === 'ELECTRICIAN';
+                    return (
+                      <TouchableOpacity
+                        key={prod.id}
+                        style={{
+                          backgroundColor: 'rgba(255,255,255,0.03)',
+                          borderRadius: 16,
+                          padding: 12,
+                          marginBottom: 12,
+                          borderWidth: 1,
+                          borderColor: 'rgba(255,255,255,0.06)',
+                          flexDirection: 'row',
+                          gap: 12
+                        }}
+                        onPress={() => {
+                          setSelectedProduct(prod);
+                          setIsProductDetailModalVisible(true);
+                        }}
+                      >
+                        {prod.image ? (
+                          <Image source={{ uri: prod.image }} style={{ width: 70, height: 70, borderRadius: 10, backgroundColor: '#1E293B' }} />
+                        ) : (
+                          <View style={{ width: 70, height: 70, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' }}>
+                            <Ionicons name={prod.category === 'Kablo' ? 'analytics' : 'construct'} size={24} color="#94A3B8" />
+                          </View>
+                        )}
+                        <View style={{ flex: 1, justifyContent: 'space-between' }}>
+                          <View>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Text style={{ color: isUsta ? '#F59E0B' : '#10B981', fontSize: 9, fontFamily: fonts.bold, textTransform: 'uppercase' }}>{prod.category}</Text>
+                              <Text style={{ color: '#64748B', fontSize: 9, fontFamily: fonts.medium }}>{prod.date}</Text>
+                            </View>
+                            <Text style={{ color: '#FFF', fontSize: 13, fontFamily: fonts.bold, marginTop: 2 }} numberOfLines={1}>{prod.title}</Text>
+                            <Text style={{ color: '#94A3B8', fontSize: 10.5, fontFamily: fonts.regular, marginTop: 2 }} numberOfLines={1}>{prod.desc}</Text>
+                          </View>
+                          
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                            <Text style={{ color: colors.primary, fontSize: 13.5, fontFamily: fonts.extraBold }}>₺{prod.price}</Text>
+                            <Text style={{ color: '#94A3B8', fontSize: 10, fontFamily: fonts.medium }} numberOfLines={1}>{prod.sellerName.split(' ')[0]}</Text>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
               </ScrollView>
             </View>
           </View>
@@ -1691,6 +1990,13 @@ export default function HomeScreen() {
 
               {selectedProduct && (
                 <View style={{ marginTop: 20 }}>
+                  {/* Photo Header */}
+                  {selectedProduct.image && (
+                    <View style={{ width: '100%', height: 180, borderRadius: 16, overflow: 'hidden', marginBottom: 16 }}>
+                      <Image source={{ uri: selectedProduct.image }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+                    </View>
+                  )}
+
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                     <View style={[styles.marketCategoryBadge, { backgroundColor: selectedProduct.sellerType === 'ELECTRICIAN' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)' }]}>
                       <Text style={[styles.marketCategoryText, { color: selectedProduct.sellerType === 'ELECTRICIAN' ? '#F59E0B' : '#10B981' }]}>{selectedProduct.category}</Text>
@@ -1710,9 +2016,9 @@ export default function HomeScreen() {
                   </View>
 
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', paddingTop: 16 }}>
-                    <View>
+                    <View style={{ flex: 1, marginRight: 8 }}>
                       <Text style={{ color: '#94A3B8', fontSize: 11, fontFamily: fonts.medium }}>Satıcı</Text>
-                      <Text style={{ color: '#FFF', fontSize: 14, fontFamily: fonts.bold }}>{selectedProduct.sellerName}</Text>
+                      <Text style={{ color: '#FFF', fontSize: 13.5, fontFamily: fonts.bold }} numberOfLines={1}>{selectedProduct.sellerName}</Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
                       <Text style={{ color: '#94A3B8', fontSize: 11, fontFamily: fonts.medium }}>Fiyat</Text>

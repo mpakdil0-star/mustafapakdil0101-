@@ -136,6 +136,9 @@ export const API_ENDPOINTS = {
   LEDGER_SUMMARY: '/ledger/summary',
   LEDGER_DETAIL: (id: string) => `/ledger/${encodeURIComponent(id)}`,
   LEDGER_PAID: (id: string) => `/ledger/${encodeURIComponent(id)}/paid`,
+
+  // Marketplace (Pazar Yeri)
+  MARKETPLACE: '/marketplace',
 };
 
 // Helper function to get full file URL

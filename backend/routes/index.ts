@@ -66,6 +66,56 @@ router.use(`${apiPrefix}/locations`, locationRoutes);
 // Payment routes
 router.use(`${apiPrefix}/payments`, paymentRoutes);
 
+// ==================== SHARED MARKETPLACE ROUTES ====================
+import fs from 'fs';
+import path from 'path';
+
+const MARKETPLACE_FILE = path.join(process.cwd(), 'data', 'marketplace.json');
+
+// Get marketplace products
+router.get(`${apiPrefix}/marketplace`, (req, res) => {
+  try {
+    if (fs.existsSync(MARKETPLACE_FILE)) {
+      const data = fs.readFileSync(MARKETPLACE_FILE, 'utf8');
+      return res.json({ success: true, data: JSON.parse(data) });
+    }
+  } catch (error) {
+    console.error('Failed to read marketplace file:', error);
+  }
+  return res.json({ success: true, data: [] });
+});
+
+// Add new marketplace product
+router.post(`${apiPrefix}/marketplace`, (req, res) => {
+  try {
+    let products: any[] = [];
+    
+    // Ensure the data directory exists
+    const dataDir = path.dirname(MARKETPLACE_FILE);
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+
+    if (fs.existsSync(MARKETPLACE_FILE)) {
+      try {
+        products = JSON.parse(fs.readFileSync(MARKETPLACE_FILE, 'utf8'));
+      } catch (e) {
+        console.error('Failed to parse existing marketplace products:', e);
+      }
+    }
+
+    const newProduct = req.body;
+    // Add product to the beginning
+    products.unshift(newProduct);
+
+    fs.writeFileSync(MARKETPLACE_FILE, JSON.stringify(products, null, 2), 'utf8');
+    return res.json({ success: true, data: products });
+  } catch (error: any) {
+    console.error('Failed to save marketplace product:', error);
+    return res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
 // Health check (API level)
 router.get(`${apiPrefix}/health`, async (req, res) => {
   let dbStatus = 'unknown';
