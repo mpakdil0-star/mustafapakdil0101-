@@ -1146,6 +1146,101 @@ export default function HomeScreen() {
                 </>
               )}
             </ScrollView>
+
+            {/* Ustalara Özel Avantajlar Section */}
+            <View style={[styles.sectionHeaderRow, { marginTop: 22, marginBottom: 8 }]}>
+              <View style={styles.sectionTitleContainer}>
+                <Text style={styles.sectionTitle}>USTALARA ÖZEL AVANTAJLAR</Text>
+              </View>
+              <Ionicons name="gift" size={18} color={colors.primary} />
+            </View>
+
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              contentContainerStyle={[styles.toolsScrollContainer, { paddingBottom: 16 }]}
+            >
+              {/* Perk Card 1 */}
+              <TouchableOpacity
+                style={styles.perkCard}
+                activeOpacity={0.85}
+                onPress={() => Alert.alert('Bayi İndirim Kodu', 'Öznur Kablo bayi indirim kodunuz: KABLO15\n\nBu kod ile bakır kablo alımlarında anında indirim kazanırsınız!')}
+              >
+                <LinearGradient
+                  colors={['#1E293B', '#0F172A']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.perkCardGradient}
+                >
+                  <View style={styles.perkHeader}>
+                    <Text style={styles.perkBrand}>ÖZNUR KABLO</Text>
+                    <View style={styles.perkBadge}>
+                      <Text style={styles.perkBadgeText}>%15 İNDİRİM</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.perkTitle}>TTR & Antigron Kablo Setleri</Text>
+                  <Text style={styles.perkDesc}>Ustalara özel sepet indirim kodu geçerlidir.</Text>
+                  <View style={styles.perkFooter}>
+                    <Text style={styles.perkCodeText}>Kod: KABLO15</Text>
+                    <Ionicons name="copy" size={14} color={colors.primary} />
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Perk Card 2 */}
+              <TouchableOpacity
+                style={styles.perkCard}
+                activeOpacity={0.85}
+                onPress={() => Alert.alert('Bayi İndirim Kodu', 'Siemens bayi indirim kodunuz: SIEMENS20\n\nBu kod ile şalt ve otomatik sigortalarda bayi indirimi alabilirsiniz!')}
+              >
+                <LinearGradient
+                  colors={['#1E293B', '#0F172A']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.perkCardGradient}
+                >
+                  <View style={styles.perkHeader}>
+                    <Text style={styles.perkBrand}>SIEMENS TÜRKİYE</Text>
+                    <View style={[styles.perkBadge, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
+                      <Text style={[styles.perkBadgeText, { color: '#F59E0B' }]}>%20 FIRSAT</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.perkTitle}>Otomatik Sigorta & Şalt</Text>
+                  <Text style={styles.perkDesc}>Grup priz ve sigorta kutularında geçerli bayii kodu.</Text>
+                  <View style={styles.perkFooter}>
+                    <Text style={[styles.perkCodeText, { color: '#F59E0B' }]}>Kod: SIEMENS20</Text>
+                    <Ionicons name="copy" size={14} color="#F59E0B" />
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Perk Card 3 */}
+              <TouchableOpacity
+                style={styles.perkCard}
+                activeOpacity={0.85}
+                onPress={() => Alert.alert('Bayi İndirim Kodu', 'Makita bayi indirim kodunuz: MAKITA25\n\nBu kod ile Makita şarjlı matkap ve vidalamalarda %25 net indirim alabilirsiniz!')}
+              >
+                <LinearGradient
+                  colors={['#1E293B', '#0F172A']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.perkCardGradient}
+                >
+                  <View style={styles.perkHeader}>
+                    <Text style={styles.perkBrand}>MAKITA EL ALETLERİ</Text>
+                    <View style={[styles.perkBadge, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
+                      <Text style={[styles.perkBadgeText, { color: '#EF4444' }]}>%25 İNDİRİM</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.perkTitle}>Akülü Vidalama & Matkap</Text>
+                  <Text style={styles.perkDesc}>Şarjlı aletlerde sepette anında indirim kodu.</Text>
+                  <View style={styles.perkFooter}>
+                    <Text style={[styles.perkCodeText, { color: '#EF4444' }]}>Kod: MAKITA25</Text>
+                    <Ionicons name="copy" size={14} color="#EF4444" />
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         )}
 
@@ -3087,6 +3182,70 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 4,
     marginRight: 8,
+  },
+  perkCard: {
+    width: 250,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  perkCardGradient: {
+    padding: 16,
+    height: 140,
+    justifyContent: 'space-between',
+  },
+  perkHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  perkBrand: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    color: '#94A3B8',
+    letterSpacing: 0.8,
+  },
+  perkBadge: {
+    backgroundColor: 'rgba(255, 75, 43, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  perkBadgeText: {
+    fontFamily: fonts.bold,
+    fontSize: 9,
+    color: '#FF4B2B',
+  },
+  perkTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 13,
+    color: '#FFFFFF',
+  },
+  perkDesc: {
+    fontFamily: fonts.regular,
+    fontSize: 10.5,
+    color: '#94A3B8',
+    lineHeight: 14,
+  },
+  perkFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+    paddingTop: 8,
+  },
+  perkCodeText: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    color: '#FF4B2B',
   },
   toolIconBoxModern: {
     width: 52,
