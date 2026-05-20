@@ -1113,7 +1113,7 @@ export default function HomeScreen() {
                   style={[styles.toolIconBoxGradient, { shadowColor: colors.primary }]}
                 >
                   <Image
-                    source={require('../../assets/images/tool_calendar.png')}
+                    source={require('../../assets/images/tool_calendar.jpg')}
                     style={styles.toolIconImage}
                   />
                 </LinearGradient>
@@ -1132,7 +1132,7 @@ export default function HomeScreen() {
                   style={[styles.toolIconBoxGradient, { shadowColor: colors.primary }]}
                 >
                   <Image
-                    source={require('../../assets/images/tool_ledger.png')}
+                    source={require('../../assets/images/tool_ledger.jpg')}
                     style={styles.toolIconImage}
                   />
                 </LinearGradient>
@@ -1151,7 +1151,7 @@ export default function HomeScreen() {
                   style={[styles.toolIconBoxGradient, { shadowColor: colors.primary }]}
                 >
                   <Image
-                    source={require('../../assets/images/tool_quotes.png')}
+                    source={require('../../assets/images/tool_quotes.jpg')}
                     style={styles.toolIconImage}
                   />
                 </LinearGradient>
