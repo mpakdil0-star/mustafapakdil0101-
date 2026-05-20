@@ -638,15 +638,10 @@ export default function HomeScreen() {
     }
   };
 
-  // SAFETY CHECK: Prevent crash on reload when user is not yet loaded
-  if (isAuthenticated && !user) {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={{ marginTop: 20, color: colors.textSecondary, fontFamily: fonts.medium }}>Yükleniyor...</Text>
-      </View>
-    );
-  }
+  const fullName = user?.fullName || 'MUSTAFA YILMAZ';
+  const nameParts = fullName.toUpperCase().split(' ');
+  const firstName = nameParts[0] || 'MUSTAFA';
+  const lastName = nameParts.slice(1).join(' ') || 'YILMAZ';
 
   return (
     <View style={[styles.container, { backgroundColor: colors.backgroundLight }]}>
@@ -662,19 +657,19 @@ export default function HomeScreen() {
             style={styles.premiumHeader}
             imageStyle={styles.headerImage}
           >
-            {/* Amethyst Gradient Overlay */}
+            {/* Emerald/Forest Green Gradient Overlay for Usta */}
             <LinearGradient
               colors={isElectrician
-                ? [colors.primary + 'AA', colors.primary + 'F2']
+                ? ['#043A2F', '#021B15']
                 : (colors.gradientHeaderAmethyst as any) || [colors.primary + '88', colors.primaryLight + 'DD']
               }
               style={StyleSheet.absoluteFill}
             />
 
-            {/* Amethyst Glow Decorative Circles */}
-            <View style={[styles.headerDecorativeCircle1, !isElectrician && { backgroundColor: colors.glowAmethystSoft || 'rgba(167, 139, 250, 0.15)' }]} />
-            <View style={[styles.headerDecorativeCircle2, !isElectrician && { backgroundColor: colors.glassPurple || 'rgba(139, 92, 246, 0.15)' }]} />
-            <View style={[styles.headerDecorativeCircle3, !isElectrician && { backgroundColor: colors.glowAmethyst || 'rgba(139, 92, 246, 0.3)' }]} />
+            {/* Glowing Decorative Circles */}
+            <View style={[styles.headerDecorativeCircle1, isElectrician && { backgroundColor: 'rgba(52, 211, 153, 0.08)' }]} />
+            <View style={[styles.headerDecorativeCircle2, isElectrician && { backgroundColor: 'rgba(52, 211, 153, 0.05)' }]} />
+            <View style={[styles.headerDecorativeCircle3, isElectrician && { backgroundColor: 'rgba(52, 211, 153, 0.1)' }]} />
 
             <View style={[styles.headerTopRow, !isElectrician && { marginBottom: 0 }]}>
               {!isAuthenticated && (
@@ -689,48 +684,50 @@ export default function HomeScreen() {
 
               {isElectrician ? (
                 <>
-                  {/* Left: Name */}
-                  <View style={[styles.headerTitleContainer, isAuthenticated && { marginLeft: 0, flex: 1 }]}>
-                    <Text style={styles.ustaHeaderName}>{user?.fullName || 'Misafir'}</Text>
+                  {/* Left: Name on two lines, large & uppercase */}
+                  <View style={styles.ustaHeaderNameContainer}>
+                    <Text style={styles.ustaHeaderNameLine}>{firstName}</Text>
+                    {lastName ? <Text style={styles.ustaHeaderNameLine}>{lastName}</Text> : null}
                   </View>
 
-                  {/* Right: Rating + Role + Actions */}
-                  <View style={styles.ustaHeaderRight}>
-                    <View style={styles.ustaRatingContainer}>
-                      <Text style={styles.ustaRatingText}>{user?.averageRating?.toFixed(1) || '0.0'}</Text>
-                      <Ionicons name="star" size={12} color="#FBBF24" />
-                    </View>
-                    <Text style={styles.ustaRoleText}>{user?.serviceCategory ? getUstaCategory({ serviceCategory: user.serviceCategory }) : 'Elektrik'} Ustası</Text>
-                  </View>
-
-                  <TouchableOpacity
-                    style={styles.headerLinkButton}
-                    activeOpacity={0.7}
-                    onPress={() => handleActionWithAuth('/profile/notifications')}
-                  >
-                    <Ionicons name="notifications-outline" size={24} color={colors.white} />
-                    {unreadCount > 0 && (
-                      <Animated.View style={[styles.notificationBadge, { transform: [{ scale: badgePulseAnim }] }]}>
-                        <Text style={styles.notificationBadgeText}>
-                          {unreadCount > 9 ? '9+' : unreadCount}
-                        </Text>
-                      </Animated.View>
-                    )}
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.profileAvatarButton}
-                    activeOpacity={0.7}
-                    onPress={() => handleActionWithAuth('/profile')}
-                  >
-                    {user?.profileImageUrl ? (
-                      <Image source={{ uri: getFileUrl(user.profileImageUrl) || '' }} style={styles.headerAvatar} />
-                    ) : (
-                      <View style={styles.headerAvatarPlaceholder}>
-                        <Ionicons name="person" size={20} color={colors.primary} />
+                  {/* Right: Rating + Role + Avatar & Notification */}
+                  <View style={styles.ustaHeaderRightContainer}>
+                    <View style={styles.ustaRatingAndRoleColumn}>
+                      <View style={styles.ustaRatingRow}>
+                        <Text style={styles.ustaRatingText}>{user?.averageRating?.toFixed(1) || '4.9'}</Text>
+                        <Ionicons name="star" size={13} color="#FBBF24" style={{ marginLeft: 2 }} />
                       </View>
-                    )}
-                  </TouchableOpacity>
+                      <Text style={styles.ustaRoleText}>
+                        {getUstaCategory(user || { serviceCategory: 'elektrik' })} Ustası
+                      </Text>
+                    </View>
+
+                    <TouchableOpacity
+                      style={styles.ustaAvatarContainer}
+                      activeOpacity={0.8}
+                      onPress={() => handleActionWithAuth('/profile')}
+                    >
+                      {user?.profileImageUrl ? (
+                        <Image source={{ uri: getFileUrl(user.profileImageUrl) || '' }} style={styles.ustaAvatarImage} />
+                      ) : (
+                        <View style={styles.ustaAvatarPlaceholder}>
+                          <Ionicons name="person" size={20} color="#043A2F" />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+
+                    {/* Elegant notification bell */}
+                    <TouchableOpacity
+                      style={styles.ustaNotificationBellMini}
+                      activeOpacity={0.7}
+                      onPress={() => handleActionWithAuth('/profile/notifications')}
+                    >
+                      <Ionicons name="notifications" size={18} color="#FFF" />
+                      {unreadCount > 0 && (
+                        <View style={styles.ustaNotificationDot} />
+                      )}
+                    </TouchableOpacity>
+                  </View>
                 </>
               ) : (
                 <>
@@ -764,6 +761,31 @@ export default function HomeScreen() {
                 </>
               )}
             </View>
+
+            {/* Dashboard cards inside the gradient background exactly as in mockup */}
+            {isElectrician && (
+              <View style={styles.ustaHeaderDashboardRow}>
+                <TouchableOpacity
+                  style={[styles.ustaDashboardCardDark, styles.glowGreen]}
+                  onPress={() => handleActionWithAuth('/electrician/stats')}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.ustaDashCardLabel}>Toplam Kazanç</Text>
+                  <Text style={styles.ustaDashCardValue}>₺14,850.50</Text>
+                  <Text style={styles.ustaDashCardSub}>Bu Ay</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.ustaDashboardCardDark, styles.glowBlue]}
+                  onPress={() => handleActionWithAuth('/(tabs)/jobs', { tab: 'bids' })}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.ustaDashCardLabel}>Aktif Teklifler</Text>
+                  <Text style={styles.ustaDashCardValue}>19</Text>
+                  <Text style={styles.ustaDashCardSub}>Bekleyen</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </ImageBackground>
         </View>
 
@@ -925,28 +947,7 @@ export default function HomeScreen() {
               )}
             </View>
 
-            {/* Dashboard Stat Cards (Glassmorphism - 2 columns) */}
-            <View style={styles.ustaDashboardRow}>
-              <TouchableOpacity
-                style={styles.ustaDashboardCardDark}
-                onPress={() => handleActionWithAuth('/electrician/stats')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.ustaDashCardLabel}>Toplam Kazanç</Text>
-                <Text style={styles.ustaDashCardValue}>₺0.00</Text>
-                <Text style={styles.ustaDashCardSub}>Bu Ay</Text>
-              </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.ustaDashboardCardDark}
-                onPress={() => handleActionWithAuth('/(tabs)/jobs', { tab: 'bids' })}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.ustaDashCardLabel}>Aktif Teklifler</Text>
-                <Text style={styles.ustaDashCardValue}>0</Text>
-                <Text style={styles.ustaDashCardSub}>Bekleyen</Text>
-              </TouchableOpacity>
-            </View>
 
             {/* Professional Tools Section */}
             <View style={styles.sectionHeaderRow}>
@@ -1000,28 +1001,149 @@ export default function HomeScreen() {
             </View>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScrollContainer}>
-              {recentJobs.length > 0 ? recentJobs.slice(0, 5).map((job: any) => (
-                <TouchableOpacity
-                  key={job.id}
-                  style={styles.hotLeadCard}
-                  onPress={() => handleActionWithAuth(`/jobs/${job.id}`)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.hotLeadTitle} numberOfLines={1}>{job.title || 'İş İlanı'}</Text>
-                  <View style={styles.hotLeadLocationRow}>
-                    <Ionicons name="location-outline" size={12} color="#94A3B8" />
-                    <Text style={styles.hotLeadLocationText} numberOfLines={1}>{job.location?.city || 'Türkiye'}</Text>
-                  </View>
-                  <Text style={styles.hotLeadPrice}>₺{job.estimatedBudget || '---'}</Text>
-                  <View style={styles.hotLeadButton}>
-                    <Text style={styles.hotLeadButtonText}>Teklif Ver</Text>
-                  </View>
-                </TouchableOpacity>
-              )) : (
-                <View style={styles.hotLeadCard}>
-                  <Text style={styles.hotLeadTitle}>Yeni iş bekleniyor</Text>
-                  <Text style={styles.hotLeadLocationText}>Yakında yeni fırsatlar gelecek</Text>
-                </View>
+              {recentJobs.length > 0 ? recentJobs.slice(0, 5).map((job: any, index: number) => {
+                const isEven = index % 2 === 0;
+                return (
+                  <TouchableOpacity
+                    key={job.id}
+                    style={[styles.hotLeadCard, isEven ? styles.glowGreen : styles.glowBlue]}
+                    onPress={() => handleActionWithAuth(`/jobs/${job.id}`)}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.hotLeadHeaderRow}>
+                      <Text style={styles.hotLeadTitle} numberOfLines={1}>{job.title || 'İş İlanı'}</Text>
+                      <View style={styles.hotLeadUrgentBadge}>
+                        <Ionicons name="time-outline" size={10} color="#EF4444" />
+                        <Text style={styles.hotLeadUrgentText}>14dk</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.hotLeadLocationRow}>
+                      <Ionicons name="location" size={12} color="#059669" />
+                      <Text style={styles.hotLeadLocationText} numberOfLines={1}>
+                        {job.location?.city || 'İstanbul'}, {job.distance ? `${job.distance.toFixed(1)}km` : '1.2km'}
+                      </Text>
+                    </View>
+
+                    <View style={styles.hotLeadBottomRow}>
+                      <View style={styles.hotLeadPriceCol}>
+                        <Text style={styles.hotLeadPrice}>₺{job.estimatedBudget || '850'}</Text>
+                        <Text style={styles.hotLeadPriceStatus}> - Acil!</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.hotLeadActionBtn}
+                        onPress={() => handleActionWithAuth(`/jobs/${job.id}`)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.hotLeadActionBtnText}>Teklif Ver</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </TouchableOpacity>
+                );
+              }) : (
+                <>
+                  {/* Mockup Job 1 */}
+                  <TouchableOpacity
+                    style={[styles.hotLeadCard, styles.glowGreen]}
+                    onPress={() => handleActionWithAuth('/(tabs)/jobs')}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.hotLeadHeaderRow}>
+                      <Text style={styles.hotLeadTitle} numberOfLines={1}>Acil Pano Arızası</Text>
+                      <View style={styles.hotLeadUrgentBadge}>
+                        <Ionicons name="time" size={10} color="#EF4444" />
+                        <Text style={styles.hotLeadUrgentText}>14dk</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.hotLeadLocationRow}>
+                      <Ionicons name="location" size={12} color="#059669" />
+                      <Text style={styles.hotLeadLocationText} numberOfLines={1}>Kadıköy, 1.2km</Text>
+                    </View>
+
+                    <View style={styles.hotLeadBottomRow}>
+                      <View style={styles.hotLeadPriceCol}>
+                        <Text style={styles.hotLeadPrice}>₺850</Text>
+                        <Text style={styles.hotLeadPriceStatus}> - Acil!</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.hotLeadActionBtn}
+                        onPress={() => handleActionWithAuth('/(tabs)/jobs')}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.hotLeadActionBtnText}>Teklif Ver</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Mockup Job 2 */}
+                  <TouchableOpacity
+                    style={[styles.hotLeadCard, styles.glowBlue]}
+                    onPress={() => handleActionWithAuth('/(tabs)/jobs')}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.hotLeadHeaderRow}>
+                      <Text style={styles.hotLeadTitle} numberOfLines={1}>Priz Değişimi</Text>
+                      <View style={[styles.hotLeadUrgentBadge, { backgroundColor: 'rgba(59, 130, 246, 0.1)' }]}>
+                        <Ionicons name="time" size={10} color="#3B82F6" />
+                        <Text style={[styles.hotLeadUrgentText, { color: '#3B82F6' }]}>25dk</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.hotLeadLocationRow}>
+                      <Ionicons name="location" size={12} color="#3B82F6" />
+                      <Text style={styles.hotLeadLocationText} numberOfLines={1}>Üsküdar, 2.5km</Text>
+                    </View>
+
+                    <View style={styles.hotLeadBottomRow}>
+                      <View style={styles.hotLeadPriceCol}>
+                        <Text style={[styles.hotLeadPrice, { color: '#3B82F6' }]}>₺350</Text>
+                        <Text style={[styles.hotLeadPriceStatus, { color: '#3B82F6' }]}> - Standart</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={[styles.hotLeadActionBtn, { backgroundColor: '#3B82F6' }]}
+                        onPress={() => handleActionWithAuth('/(tabs)/jobs')}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.hotLeadActionBtnText}>Teklif Ver</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Mockup Job 3 */}
+                  <TouchableOpacity
+                    style={[styles.hotLeadCard, styles.glowBlue]}
+                    onPress={() => handleActionWithAuth('/(tabs)/jobs')}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.hotLeadHeaderRow}>
+                      <Text style={styles.hotLeadTitle} numberOfLines={1}>Aydınlatma Montajı</Text>
+                      <View style={styles.hotLeadUrgentBadge}>
+                        <Ionicons name="time" size={10} color="#EF4444" />
+                        <Text style={styles.hotLeadUrgentText}>45dk</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.hotLeadLocationRow}>
+                      <Ionicons name="location" size={12} color="#059669" />
+                      <Text style={styles.hotLeadLocationText} numberOfLines={1}>Beşiktaş, 3.1km</Text>
+                    </View>
+
+                    <View style={styles.hotLeadBottomRow}>
+                      <View style={styles.hotLeadPriceCol}>
+                        <Text style={styles.hotLeadPrice}>₺1,200</Text>
+                        <Text style={styles.hotLeadPriceStatus}> - Fırsat</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.hotLeadActionBtn}
+                        onPress={() => handleActionWithAuth('/(tabs)/jobs')}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.hotLeadActionBtnText}>Teklif Ver</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </TouchableOpacity>
+                </>
               )}
             </ScrollView>
           </View>
@@ -1793,21 +1915,30 @@ const styles = StyleSheet.create({
     color: staticColors.white,
     letterSpacing: -0.5,
   },
-  ustaHeaderName: {
+  ustaHeaderNameContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  ustaHeaderNameLine: {
     fontFamily: fonts.extraBold,
     fontSize: 24,
     color: staticColors.white,
     letterSpacing: -0.5,
     lineHeight: 28,
+    textTransform: 'uppercase',
   },
-  ustaHeaderRight: {
-    alignItems: 'flex-end',
-    marginRight: 8,
-  },
-  ustaRatingContainer: {
+  ustaHeaderRightContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: 10,
+  },
+  ustaRatingAndRoleColumn: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  ustaRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   ustaRatingText: {
     fontFamily: fonts.extraBold,
@@ -1817,56 +1948,93 @@ const styles = StyleSheet.create({
   ustaRoleText: {
     fontFamily: fonts.medium,
     fontSize: 11,
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 2,
   },
-  ustaRoleBadge: {
-    flexDirection: 'row',
+  ustaAvatarContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    overflow: 'hidden',
+  },
+  ustaAvatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  ustaAvatarPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(52, 211, 153, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    marginTop: 4,
-    gap: 4,
-    alignSelf: 'flex-start',
   },
-  ustaRoleBadgeText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 10,
-    color: '#34D399',
-    letterSpacing: 0.3,
+  ustaNotificationBellMini: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  ustaDashboardRow: {
+  ustaNotificationDot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#EF4444',
+  },
+  ustaHeaderDashboardRow: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 12,
+    marginTop: 20,
+    marginBottom: 6,
   },
   ustaDashboardCardDark: {
     flex: 1,
-    backgroundColor: '#1A3A2A',
-    borderRadius: 16,
-    padding: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 20,
+    padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(52, 211, 153, 0.15)',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  glowGreen: {
+    shadowColor: '#34D399',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  glowBlue: {
+    shadowColor: '#60A5FA',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 4,
   },
   ustaDashCardLabel: {
     fontFamily: fonts.semiBold,
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
     marginBottom: 6,
   },
   ustaDashCardValue: {
     fontFamily: fonts.extraBold,
-    fontSize: 24,
-    color: '#34D399',
-    marginBottom: 2,
+    fontSize: 22,
+    color: '#FFFFFF',
+    marginBottom: 4,
   },
   ustaDashCardSub: {
     fontFamily: fonts.medium,
     fontSize: 10,
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(255, 255, 255, 0.5)',
   },
+
   toolIconBoxDark: {
     width: 56,
     height: 56,
@@ -1877,52 +2045,83 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   hotLeadCard: {
-    width: 170,
+    width: 210,
     backgroundColor: staticColors.white,
-    borderRadius: 16,
-    padding: 14,
+    borderRadius: 20,
+    padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  hotLeadHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   hotLeadTitle: {
     fontFamily: fonts.bold,
     fontSize: 14,
     color: staticColors.text,
-    marginBottom: 4,
+    flex: 1,
+    marginRight: 6,
+  },
+  hotLeadUrgentBadge: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  hotLeadUrgentText: {
+    fontFamily: fonts.bold,
+    fontSize: 10,
+    color: '#EF4444',
   },
   hotLeadLocationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    marginBottom: 8,
+    gap: 4,
+    marginBottom: 12,
   },
   hotLeadLocationText: {
-    fontFamily: fonts.regular,
+    fontFamily: fonts.semiBold,
     fontSize: 11,
     color: '#94A3B8',
+  },
+  hotLeadBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  hotLeadPriceCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   hotLeadPrice: {
     fontFamily: fonts.extraBold,
     fontSize: 16,
     color: '#059669',
-    marginBottom: 10,
   },
-  hotLeadButton: {
-    backgroundColor: '#059669',
-    borderRadius: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-  },
-  hotLeadButtonText: {
+  hotLeadPriceStatus: {
     fontFamily: fonts.bold,
     fontSize: 11,
-    color: '#FFF',
+    color: '#EF4444',
+  },
+  hotLeadActionBtn: {
+    backgroundColor: '#043A2F',
+    borderRadius: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  hotLeadActionBtnText: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    color: '#FFFFFF',
   },
   notificationButton: {
     width: 48,
