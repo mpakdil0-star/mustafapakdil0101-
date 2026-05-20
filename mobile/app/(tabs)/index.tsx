@@ -1001,10 +1001,10 @@ export default function HomeScreen() {
                 activeOpacity={0.85}
               >
                 <LinearGradient
-                  colors={['#10B981', '#059669', '#022C22']}
+                  colors={[colors.primary, colors.primaryDark || '#B91C1C', '#431407']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  style={styles.toolIconBoxGradient}
+                  style={[styles.toolIconBoxGradient, { shadowColor: colors.primary }]}
                 >
                   <Image
                     source={require('../../assets/images/tool_calendar.png')}
@@ -1020,10 +1020,10 @@ export default function HomeScreen() {
                 activeOpacity={0.85}
               >
                 <LinearGradient
-                  colors={['#10B981', '#059669', '#022C22']}
+                  colors={[colors.primary, colors.primaryDark || '#B91C1C', '#431407']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  style={styles.toolIconBoxGradient}
+                  style={[styles.toolIconBoxGradient, { shadowColor: colors.primary }]}
                 >
                   <Image
                     source={require('../../assets/images/tool_ledger.png')}
@@ -1039,10 +1039,10 @@ export default function HomeScreen() {
                 activeOpacity={0.85}
               >
                 <LinearGradient
-                  colors={['#10B981', '#059669', '#022C22']}
+                  colors={[colors.primary, colors.primaryDark || '#B91C1C', '#431407']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  style={styles.toolIconBoxGradient}
+                  style={[styles.toolIconBoxGradient, { shadowColor: colors.primary }]}
                 >
                   <Image
                     source={require('../../assets/images/tool_quotes.png')}
@@ -1064,14 +1064,14 @@ export default function HomeScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScrollContainer}>
               {recentJobs.length > 0 ? recentJobs.slice(0, 5).map((job: any, index: number) => {
                 const isUrgent = job.urgencyLevel === 'HIGH' || job.urgencyLevel === 'MEDIUM';
-                const statusColor = isUrgent ? '#EF4444' : '#3B82F6';
-                const badgeBgColor = isUrgent ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)';
-                const iconColor = isUrgent ? '#059669' : '#3B82F6';
+                const statusColor = isUrgent ? colors.primary : '#F59E0B';
+                const badgeBgColor = isUrgent ? 'rgba(255, 75, 43, 0.1)' : 'rgba(245, 158, 11, 0.1)';
+                const iconColor = isUrgent ? colors.primary : '#F59E0B';
                 
                 return (
                   <TouchableOpacity
                     key={job.id}
-                    style={[styles.hotLeadCard, isUrgent ? styles.glowGreen : styles.glowBlue]}
+                    style={[styles.hotLeadCard, isUrgent ? styles.glowPrimary : styles.glowAccent]}
                     onPress={() => handleActionWithAuth(`/jobs/${job.id}`)}
                     activeOpacity={0.85}
                   >
@@ -1102,7 +1102,7 @@ export default function HomeScreen() {
                         </Text>
                       </View>
                       <TouchableOpacity
-                        style={[styles.hotLeadActionBtn, { backgroundColor: isUrgent ? '#047857' : '#3B82F6' }]}
+                        style={[styles.hotLeadActionBtn, { backgroundColor: isUrgent ? colors.primary : '#F59E0B' }]}
                         onPress={() => handleActionWithAuth(`/jobs/${job.id}`)}
                         activeOpacity={0.8}
                       >
@@ -1115,30 +1115,30 @@ export default function HomeScreen() {
                 <>
                   {/* Mockup Job 1 */}
                   <TouchableOpacity
-                    style={[styles.hotLeadCard, styles.glowGreen]}
+                    style={[styles.hotLeadCard, styles.glowPrimary]}
                     onPress={() => handleActionWithAuth('/(tabs)/jobs')}
                     activeOpacity={0.85}
                   >
                     <View style={styles.hotLeadHeaderRow}>
                       <Text style={styles.hotLeadTitle} numberOfLines={1}>Acil Pano Arızası</Text>
-                      <View style={styles.hotLeadUrgentBadge}>
-                        <Ionicons name="time" size={10} color="#EF4444" />
-                        <Text style={styles.hotLeadUrgentText}>14dk</Text>
+                      <View style={[styles.hotLeadUrgentBadge, { backgroundColor: 'rgba(255, 75, 43, 0.1)' }]}>
+                        <Ionicons name="time" size={10} color={colors.primary} />
+                        <Text style={[styles.hotLeadUrgentText, { color: colors.primary }]}>14dk</Text>
                       </View>
                     </View>
 
                     <View style={styles.hotLeadLocationRow}>
-                      <Ionicons name="location" size={12} color="#059669" />
+                      <Ionicons name="location" size={12} color={colors.primary} />
                       <Text style={styles.hotLeadLocationText} numberOfLines={1}>Kadıköy, 1.2km</Text>
                     </View>
 
                     <View style={styles.hotLeadBottomRow}>
                       <View style={styles.hotLeadPriceCol}>
-                        <Text style={styles.hotLeadPrice}>₺850</Text>
-                        <Text style={styles.hotLeadPriceStatus}> - Acil!</Text>
+                        <Text style={[styles.hotLeadPrice, { color: colors.primary }]}>₺850</Text>
+                        <Text style={[styles.hotLeadPriceStatus, { color: colors.primary }]}> - Acil!</Text>
                       </View>
                       <TouchableOpacity
-                        style={styles.hotLeadActionBtn}
+                        style={[styles.hotLeadActionBtn, { backgroundColor: colors.primary }]}
                         onPress={() => handleActionWithAuth('/(tabs)/jobs')}
                         activeOpacity={0.8}
                       >
@@ -1149,30 +1149,30 @@ export default function HomeScreen() {
 
                   {/* Mockup Job 2 */}
                   <TouchableOpacity
-                    style={[styles.hotLeadCard, styles.glowBlue]}
+                    style={[styles.hotLeadCard, styles.glowAccent]}
                     onPress={() => handleActionWithAuth('/(tabs)/jobs')}
                     activeOpacity={0.85}
                   >
                     <View style={styles.hotLeadHeaderRow}>
                       <Text style={styles.hotLeadTitle} numberOfLines={1}>Priz Değişimi</Text>
-                      <View style={[styles.hotLeadUrgentBadge, { backgroundColor: 'rgba(59, 130, 246, 0.1)' }]}>
-                        <Ionicons name="time" size={10} color="#3B82F6" />
-                        <Text style={[styles.hotLeadUrgentText, { color: '#3B82F6' }]}>25dk</Text>
+                      <View style={[styles.hotLeadUrgentBadge, { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
+                        <Ionicons name="time" size={10} color="#F59E0B" />
+                        <Text style={[styles.hotLeadUrgentText, { color: '#F59E0B' }]}>25dk</Text>
                       </View>
                     </View>
 
                     <View style={styles.hotLeadLocationRow}>
-                      <Ionicons name="location" size={12} color="#3B82F6" />
+                      <Ionicons name="location" size={12} color="#F59E0B" />
                       <Text style={styles.hotLeadLocationText} numberOfLines={1}>Üsküdar, 2.5km</Text>
                     </View>
 
                     <View style={styles.hotLeadBottomRow}>
                       <View style={styles.hotLeadPriceCol}>
-                        <Text style={[styles.hotLeadPrice, { color: '#3B82F6' }]}>₺350</Text>
-                        <Text style={[styles.hotLeadPriceStatus, { color: '#3B82F6' }]}> - Standart</Text>
+                        <Text style={[styles.hotLeadPrice, { color: '#F59E0B' }]}>₺350</Text>
+                        <Text style={[styles.hotLeadPriceStatus, { color: '#F59E0B' }]}> - Standart</Text>
                       </View>
                       <TouchableOpacity
-                        style={[styles.hotLeadActionBtn, { backgroundColor: '#3B82F6' }]}
+                        style={[styles.hotLeadActionBtn, { backgroundColor: '#F59E0B' }]}
                         onPress={() => handleActionWithAuth('/(tabs)/jobs')}
                         activeOpacity={0.8}
                       >
@@ -1183,30 +1183,30 @@ export default function HomeScreen() {
 
                   {/* Mockup Job 3 */}
                   <TouchableOpacity
-                    style={[styles.hotLeadCard, styles.glowBlue]}
+                    style={[styles.hotLeadCard, styles.glowAccent]}
                     onPress={() => handleActionWithAuth('/(tabs)/jobs')}
                     activeOpacity={0.85}
                   >
                     <View style={styles.hotLeadHeaderRow}>
                       <Text style={styles.hotLeadTitle} numberOfLines={1}>Aydınlatma Montajı</Text>
-                      <View style={styles.hotLeadUrgentBadge}>
-                        <Ionicons name="time" size={10} color="#EF4444" />
-                        <Text style={styles.hotLeadUrgentText}>45dk</Text>
+                      <View style={[styles.hotLeadUrgentBadge, { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
+                        <Ionicons name="time" size={10} color="#F59E0B" />
+                        <Text style={[styles.hotLeadUrgentText, { color: '#F59E0B' }]}>45dk</Text>
                       </View>
                     </View>
 
                     <View style={styles.hotLeadLocationRow}>
-                      <Ionicons name="location" size={12} color="#059669" />
+                      <Ionicons name="location" size={12} color="#F59E0B" />
                       <Text style={styles.hotLeadLocationText} numberOfLines={1}>Beşiktaş, 3.1km</Text>
                     </View>
 
                     <View style={styles.hotLeadBottomRow}>
                       <View style={styles.hotLeadPriceCol}>
-                        <Text style={styles.hotLeadPrice}>₺1,200</Text>
-                        <Text style={styles.hotLeadPriceStatus}> - Fırsat</Text>
+                        <Text style={[styles.hotLeadPrice, { color: '#F59E0B' }]}>₺1,200</Text>
+                        <Text style={[styles.hotLeadPriceStatus, { color: '#F59E0B' }]}> - Fırsat</Text>
                       </View>
                       <TouchableOpacity
-                        style={styles.hotLeadActionBtn}
+                        style={[styles.hotLeadActionBtn, { backgroundColor: '#F59E0B' }]}
                         onPress={() => handleActionWithAuth('/(tabs)/jobs')}
                         activeOpacity={0.8}
                       >
