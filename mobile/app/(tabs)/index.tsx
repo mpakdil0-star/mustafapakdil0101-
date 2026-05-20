@@ -193,6 +193,9 @@ export default function HomeScreen() {
 
   // NEW: Badge Pulse Animation
   const badgePulseAnim = useRef(new Animated.Value(1)).current;
+  const initializationRef = useRef(false);
+
+
   useEffect(() => {
     if (unreadCount > 0) {
       Animated.loop(

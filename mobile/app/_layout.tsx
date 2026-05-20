@@ -122,6 +122,9 @@ function RootLayoutNav() {
       const isOnboarding = segments[0] === 'onboarding';
       const currentPath = segments.join('/');
       const isInsideProfileGroup = segments[0] === 'profile';
+      const isWelcome = segments[0] === 'welcome' || segments.includes('welcome') || currentPath === 'welcome';
+
+
 
       // 1. Check onboarding first
       if (!isOnboarding) {
