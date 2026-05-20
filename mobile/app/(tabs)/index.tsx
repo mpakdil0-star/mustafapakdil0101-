@@ -1606,11 +1606,11 @@ export default function HomeScreen() {
           onRequestClose={() => setIsAddProductModalVisible(false)}
         >
           <View style={styles.hiwModalOverlay}>
-            <View style={[styles.hiwModalContent, { maxHeight: '85%', paddingBottom: 24 }]}>
+            <View style={[styles.marketModalContent, { maxHeight: '85%', paddingBottom: 24 }]}>
               <View style={styles.hiwHeader}>
-                <Text style={styles.hiwTitle}>Ürün Satış İlanı Ekle</Text>
+                <Text style={styles.marketModalTitle}>Ürün Satış İlanı Ekle</Text>
                 <TouchableOpacity onPress={() => setIsAddProductModalVisible(false)} style={styles.hiwCloseBtn}>
-                  <Ionicons name="close" size={24} color={colors.textSecondary} />
+                  <Ionicons name="close" size={24} color="#94A3B8" />
                 </TouchableOpacity>
               </View>
 
@@ -1681,11 +1681,11 @@ export default function HomeScreen() {
           onRequestClose={() => setIsProductDetailModalVisible(false)}
         >
           <View style={styles.hiwModalOverlay}>
-            <View style={[styles.hiwModalContent, { paddingBottom: 24 }]}>
+            <View style={[styles.marketModalContent, { paddingBottom: 24 }]}>
               <View style={styles.hiwHeader}>
-                <Text style={styles.hiwTitle}>Ürün Detayları</Text>
+                <Text style={styles.marketModalTitle}>Ürün Detayları</Text>
                 <TouchableOpacity onPress={() => setIsProductDetailModalVisible(false)} style={styles.hiwCloseBtn}>
-                  <Ionicons name="close" size={24} color={colors.textSecondary} />
+                  <Ionicons name="close" size={24} color="#94A3B8" />
                 </TouchableOpacity>
               </View>
 
@@ -3422,8 +3422,26 @@ const styles = StyleSheet.create({
   },
   marketCardGradient: {
     padding: 16,
-    height: 145,
+    height: 185,
     justifyContent: 'space-between',
+  },
+  marketModalContent: {
+    width: '100%',
+    backgroundColor: '#0F172A',
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  marketModalTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 20,
+    color: '#FFFFFF',
   },
   marketCardHeader: {
     flexDirection: 'row',
