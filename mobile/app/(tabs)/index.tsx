@@ -2349,21 +2349,27 @@ export default function HomeScreen() {
                     </View>
                   </View>
 
-                  <TouchableOpacity
-                    style={[styles.submitBtn, { backgroundColor: colors.primary, marginTop: 24, flexDirection: 'row', gap: 8, justifyContent: 'center' }]}
-                    onPress={() => handleContactSeller(selectedProduct.sellerId, selectedProduct.sellerName)}
-                    activeOpacity={0.8}
-                    disabled={isStartingChat}
-                  >
-                    {isStartingChat ? (
-                      <ActivityIndicator size="small" color="#FFF" />
-                    ) : (
-                      <>
-                        <Ionicons name="chatbubbles" size={18} color="#FFF" />
-                        <Text style={styles.submitBtnText}>Satıcıyla İletişime Geç (Sohbet Et)</Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
+                  {selectedProduct.sellerId === user?.id ? (
+                    <View style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.2)', borderRadius: 12, padding: 14, marginTop: 24, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ color: '#60A5FA', fontSize: 13.5, fontFamily: fonts.semibold }}>Bu ilan size aittir (Kendi ürününüz)</Text>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={[styles.submitBtn, { backgroundColor: colors.primary, marginTop: 24, flexDirection: 'row', gap: 8, justifyContent: 'center' }]}
+                      onPress={() => handleContactSeller(selectedProduct.sellerId, selectedProduct.sellerName)}
+                      activeOpacity={0.8}
+                      disabled={isStartingChat}
+                    >
+                      {isStartingChat ? (
+                        <ActivityIndicator size="small" color="#FFF" />
+                      ) : (
+                        <>
+                          <Ionicons name="chatbubbles" size={18} color="#FFF" />
+                          <Text style={styles.submitBtnText}>Satıcıyla İletişime Geç (Sohbet Et)</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
             </View>
