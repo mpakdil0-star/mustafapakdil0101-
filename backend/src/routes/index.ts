@@ -17,6 +17,7 @@ import reportRoutes from './reportRoutes';
 import blockRoutes from './blockRoutes';
 import calendarRoutes from './calendarRoutes';
 import ledgerRoutes from './ledgerRoutes';
+import marketplaceRoutes from './marketplaceRoutes';
 
 const router = Router();
 
@@ -55,5 +56,6 @@ router.use('/reports', reportRoutes);
 router.use('/blocks', blockRoutes);
 router.use('/calendar', calendarRoutes);
 router.use('/ledger', ledgerRoutes);
+router.use('/marketplace', marketplaceRoutes);
 
 export default router;

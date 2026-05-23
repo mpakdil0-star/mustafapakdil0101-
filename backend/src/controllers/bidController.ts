@@ -1093,3 +1093,170 @@ export const deleteBidController = async (
   }
 };
 
+export const requestPriceUpdateController = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: { message: 'Unauthorized' },
+      });
+    }
+
+    if (req.user.userType !== 'CITIZEN') {
+      return res.status(403).json({
+        success: false,
+        error: { message: 'Only citizens can request price updates' },
+      });
+    }
+
+    const idStr = String(req.params.id);
+
+    // FAST PATH: If mock mode or database offline
+    if (idStr.startsWith('mock-') || !isDatabaseAvailable) {
+      console.log('⚡ [MOCK] Handling requestPriceUpdate for mock bid:', idStr);
+      const foundBid = bidStoreById.get(idStr);
+
+      if (!foundBid) {
+        return res.status(404).json({
+          success: false,
+          error: { message: 'Bid not found in mock store' },
+        });
+      }
+
+      // Find job title
+      const { jobStoreById } = require('./jobController');
+      const job = jobStoreById.get(foundBid.jobPostId);
+      const jobTitle = job?.title || 'ilanınız';
+      
+      const { mockStorage } = require('../utils/mockStorage');
+      const citizenData = mockStorage.get(req.user.id);
+      const citizenName = citizenData?.fullName || 'Bir müşteri';
+
+      // Send mock notification
+      const { addMockNotification } = require('../routes/notificationRoutes');
+      if (foundBid.electricianId) {
+        const notification = {
+          id: `mock-notif-${Date.now()}-price-update`,
+          userId: foundBid.electricianId,
+          type: 'price_update_requested',
+          title: 'Güncel Fiyat Talebi! 💰',
+          message: `${citizenName} "${jobTitle}" ilanına verdiğiniz teklif için güncel fiyat teklifi istiyor.`,
+          isRead: false,
+          relatedId: foundBid.jobPostId,
+          relatedType: 'JOB',
+          createdAt: new Date().toISOString()
+        };
+        addMockNotification(foundBid.electricianId, notification);
+
+        // Send socket notification
+        notifyUser(foundBid.electricianId, 'price_update_requested', {
+          id: notification.id,
+          type: 'price_update_requested',
+          jobId: foundBid.jobPostId,
+          jobPostId: foundBid.jobPostId,
+          jobTitle: jobTitle,
+          bidId: foundBid.id,
+          title: notification.title,
+          message: notification.message,
+          isRead: false,
+          createdAt: notification.createdAt,
+          relatedId: foundBid.jobPostId,
+          relatedType: 'JOB'
+        });
+        notifyUser(foundBid.electricianId, 'notification', {
+          id: notification.id,
+          type: 'price_update_requested',
+          jobId: foundBid.jobPostId,
+          jobPostId: foundBid.jobPostId,
+          jobTitle: jobTitle,
+          bidId: foundBid.id,
+          title: notification.title,
+          message: notification.message,
+          isRead: false,
+          createdAt: notification.createdAt,
+          relatedId: foundBid.jobPostId,
+          relatedType: 'JOB'
+        });
+
+        // Send Push notification (for mock)
+        const { mockStorage } = require('../utils/mockStorage');
+        const electricianData = mockStorage.get(foundBid.electricianId);
+        if (electricianData?.pushToken) {
+          const pushNotificationService = require('../services/pushNotificationService').default;
+          pushNotificationService.sendNotification({
+            to: electricianData.pushToken,
+            title: 'Güncel Fiyat Talebi! 💰',
+            body: `${citizenName} "${jobTitle}" ilanı için teklifinizi güncellemenizi istiyor.`,
+            data: { jobId: foundBid.jobPostId, type: 'price_update_requested' }
+          }).catch((err: any) => console.error('Push Notification Error (Mock Request Update):', err));
+        }
+      }
+
+      return res.json({
+        success: true,
+        data: { success: true }
+      });
+    }
+
+    // DATABASE PATH
+    try {
+      const result = await bidService.requestPriceUpdate(idStr, String(req.user.id));
+      return res.json({
+        success: true,
+        data: result,
+      });
+    } catch (dbError: any) {
+      const isConnectionError =
+        dbError.message?.includes('connect') ||
+        dbError.message?.includes('database') ||
+        dbError.message?.includes("Can't reach database") ||
+        dbError.code === 'P1001' ||
+        dbError.code === 'P1017' ||
+        dbError.name === 'PrismaClientInitializationError' ||
+        dbError.constructor.name === 'PrismaClientInitializationError';
+
+      if (isConnectionError) {
+        console.warn('⚠️ Database connection failed during requestPriceUpdate, falling back to mock logic');
+        // If DB fails, try fallback mock if it exists
+        const foundBid = bidStoreById.get(idStr);
+        if (foundBid) {
+          // Perform same mock logic as above
+          const { jobStoreById } = require('./jobController');
+          const job = jobStoreById.get(foundBid.jobPostId);
+          const jobTitle = job?.title || 'ilanınız';
+          
+          const { mockStorage } = require('../utils/mockStorage');
+          const citizenData = mockStorage.get(req.user.id);
+          const citizenName = citizenData?.fullName || 'Bir müşteri';
+          const { addMockNotification } = require('../routes/notificationRoutes');
+          if (foundBid.electricianId) {
+            const notification = {
+              id: `mock-notif-${Date.now()}-price-update`,
+              userId: foundBid.electricianId,
+              type: 'price_update_requested',
+              title: 'Güncel Fiyat Talebi! 💰',
+              message: `${citizenName} "${jobTitle}" ilanına verdiğiniz teklif için güncel fiyat teklifi istiyor.`,
+              isRead: false,
+              relatedId: foundBid.jobPostId,
+              relatedType: 'JOB',
+              createdAt: new Date().toISOString()
+            };
+            addMockNotification(foundBid.electricianId, notification);
+            notifyUser(foundBid.electricianId, 'price_update_requested', notification);
+            notifyUser(foundBid.electricianId, 'notification', notification);
+          }
+          return res.json({ success: true, data: { success: true } });
+        }
+      }
+
+      throw dbError;
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+

@@ -130,5 +130,10 @@ export const bidService = {
     const response = await apiClient.delete(API_ENDPOINTS.BID_DETAIL(id));
     return response.data.data;
   },
+
+  async requestPriceUpdate(id: string) {
+    const response = await apiClient.post(API_ENDPOINTS.REQUEST_PRICE_UPDATE(id));
+    return response.data;
+  },
 };
 

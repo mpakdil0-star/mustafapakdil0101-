@@ -32,6 +32,11 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
   });
 
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
+  const onExpiredRef = React.useRef(onExpired);
+
+  useEffect(() => {
+    onExpiredRef.current = onExpired;
+  }, [onExpired]);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
@@ -41,7 +46,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
 
       if (isNaN(targetDate) || difference <= 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true });
-        if (onExpired && !isNaN(targetDate)) onExpired();
+        if (onExpiredRef.current && !isNaN(targetDate)) onExpiredRef.current();
         return;
       }
 
@@ -66,7 +71,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
     const timer = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(timer);
-  }, [expiresAt, onExpired]);
+  }, [expiresAt]);
 
   if (timeLeft.isExpired) {
     if (isNaN(new Date(expiresAt).getTime())) return null; // Don't show anything for invalid dates

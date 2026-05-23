@@ -54,7 +54,7 @@ interface OtherUser {
 }
 
 export default function ChatScreen() {
-    const { id: conversationId } = useLocalSearchParams<{ id: string }>();
+    const { id: conversationId, sellerName, sellerId } = useLocalSearchParams<{ id: string; sellerName?: string; sellerId?: string }>();
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { user } = useAppSelector((state) => state.auth);
@@ -63,7 +63,10 @@ export default function ChatScreen() {
     const flatListRef = useRef<FlatList>(null);
 
     const [messages, setMessages] = useState<Message[]>([]);
-    const [otherUser, setOtherUser] = useState<OtherUser | null>(null);
+    const [otherUser, setOtherUser] = useState<OtherUser | null>(
+        // Initialize otherUser from route params if provided (from product detail / marketplace)
+        sellerName && sellerId ? { id: sellerId, fullName: sellerName, profileImageUrl: null } : null
+    );
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
@@ -118,6 +121,61 @@ export default function ChatScreen() {
             await dispatch(fetchUnreadCount());
         } catch (error: any) {
             console.error('Error loading conversation:', error);
+            
+            // Fallback: reconstruct otherUser from route params or mock conversation ID
+            // Priority: route params (sellerName/sellerId) > conversation ID parsing
+            const hasRouteParams = sellerName && sellerId;
+            
+            if (hasRouteParams || (conversationId && conversationId.includes('mock'))) {
+                let name = sellerName || 'Mustafa Yılmaz (Usta)';
+                let odtherUserId = sellerId || 'mock-electrician-1';
+                let type = name.includes('Usta') || name.includes('usta') ? 'ELECTRICIAN' : 'CITIZEN';
+
+                // Only parse from conversation ID if no route params
+                if (!hasRouteParams && conversationId.includes('mock')) {
+                    const parts = conversationId.split('-');
+                    for (const part of parts) {
+                        if (part === 'electrician' || part === 'citizen' || part === 'user') {
+                            const idx = parts.indexOf(part);
+                            if (idx !== -1 && parts[idx+1]) {
+                                odtherUserId = `mock-${part}-${parts[idx+1]}`;
+                                if (part === 'electrician') {
+                                    name = 'Mustafa Yılmaz (Usta)';
+                                    type = 'ELECTRICIAN';
+                                } else {
+                                    name = 'Ahmet Kaya (Vatandaş)';
+                                    type = 'CITIZEN';
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                setOtherUser({
+                    id: odtherUserId,
+                    fullName: name,
+                    profileImageUrl: null,
+                    userType: type
+                });
+
+                // Set a welcoming mock message
+                setMessages([
+                    {
+                        id: 'mock-msg-welcome',
+                        conversationId,
+                        senderId: odtherUserId,
+                        content: `Merhaba! Ben ${name}. Size nasıl yardımcı olabilirim?`,
+                        messageType: 'TEXT',
+                        createdAt: new Date(Date.now() - 60000).toISOString(),
+                        sender: {
+                            id: odtherUserId,
+                            fullName: name,
+                            profileImageUrl: null
+                        }
+                    }
+                ]);
+            }
         } finally {
             setLoading(false);
         }
@@ -222,6 +280,61 @@ export default function ChatScreen() {
         setSending(true);
 
         try {
+            // Local mock conversation fallback
+            if (conversationId.includes('mock')) {
+                // Optimistic user message addition
+                const userMsg: Message = {
+                    id: tempId,
+                    conversationId,
+                    senderId: user?.id || 'mock-current-user',
+                    content: messageContent,
+                    messageType: 'TEXT',
+                    createdAt: new Date().toISOString(),
+                    sender: {
+                        id: user?.id || 'mock-current-user',
+                        fullName: user?.fullName || 'Siz',
+                        profileImageUrl: user?.profileImageUrl || null,
+                    },
+                };
+                setMessages(prev => [...prev, userMsg]);
+                
+                // Show simulated 'typing...' state
+                setTimeout(() => {
+                    setIsTyping(true);
+                }, 500);
+
+                // Simulate quick usta response after 1.8 seconds!
+                setTimeout(() => {
+                    setIsTyping(false);
+                    const ustaResponses = [
+                        "Harika, detayları konuşalım. İlanınızdaki elektrik işi için ne zaman müsaitsiniz?",
+                        "Tabii ki yardımcı olurum. Malzemeler sizde hazır mı yoksa ben mi getireyim?",
+                        "Mesajınızı aldım, şu an başka bir iş üzerindeyim. En kısa sürede size geri dönüş yapacağım.",
+                        "Anlaştık, bu iş için size en uygun fiyatı sunacağımdan emin olabilirsiniz.",
+                        "Merhabalar, işin büyüklüğü nedir? Fotoğraf gönderebilir misiniz?"
+                    ];
+                    const randomResponse = ustaResponses[Math.floor(Math.random() * ustaResponses.length)];
+                    
+                    const systemMsg: Message = {
+                        id: `mock-reply-${Date.now()}`,
+                        conversationId,
+                        senderId: otherUser?.id || 'mock-electrician-1',
+                        content: randomResponse,
+                        messageType: 'TEXT',
+                        createdAt: new Date().toISOString(),
+                        sender: {
+                            id: otherUser?.id || 'mock-electrician-1',
+                            fullName: otherUser?.fullName || 'Mustafa Yılmaz (Usta)',
+                            profileImageUrl: null
+                        }
+                    };
+                    setMessages(prev => [...prev, systemMsg]);
+                }, 2000);
+                
+                setSending(false);
+                return;
+            }
+
             // Socket ile gönder
             if (socketService.getConnectionStatus()) {
                 socketService.sendMessage(conversationId, messageContent);
@@ -387,7 +500,7 @@ export default function ChatScreen() {
                         {isLastInGroup && (
                             <View style={[styles.avatarMini, { backgroundColor: colors.primary + '15' }]}>
                                 <Text style={[styles.avatarMiniText, { color: colors.primary }]}>
-                                    {otherUser?.fullName.charAt(0).toUpperCase()}
+                                    {otherUser?.fullName ? otherUser.fullName.charAt(0).toUpperCase() : '?'}
                                 </Text>
                             </View>
                         )}

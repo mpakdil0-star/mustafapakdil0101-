@@ -645,3 +645,27 @@ model LedgerEntry {
   @@index([createdAt])
   @@map("ledger_entries")
 }
+
+// Pazar Yeri İkinci El Ürünleri
+model MarketplaceProduct {
+  id          String   @id @default(uuid())
+  title       String
+  price       Float
+  category    String
+  sellerName  String   @map("seller_name")
+  sellerId    String   @map("seller_id")
+  sellerType  String   @map("seller_type")
+  location    String
+  desc        String   @db.Text
+  date        String
+  image       String?
+  images      String[] @default([])
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([sellerId])
+  @@index([category])
+  @@index([createdAt])
+  @@map("marketplace_products")
+}
+

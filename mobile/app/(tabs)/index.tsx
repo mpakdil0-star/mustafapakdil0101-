@@ -15,6 +15,7 @@ import { authService } from '../../services/authService';
 import { API_ENDPOINTS, getFileUrl } from '../../constants/api';
 import { jobService } from '../../services/jobService';
 import { userService } from '../../services/userService';
+import { messageService } from '../../services/messageService';
 import { AuthGuardModal } from '../../components/common/AuthGuardModal';
 import { JOB_CATEGORIES } from '../../constants/jobCategories';
 import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
@@ -169,6 +170,7 @@ export default function HomeScreen() {
       price: 1750,
       category: 'El Aleti',
       sellerName: 'Mustafa Yılmaz (Usta)',
+      sellerId: 'mock-electrician-1',
       sellerType: 'ELECTRICIAN',
       location: 'Kadıköy, İstanbul',
       desc: 'Çok temiz durumda, yedek bataryası ve şarj aletiyle birlikte verilecektir. İhtiyaç fazlasıdır.',
@@ -180,6 +182,7 @@ export default function HomeScreen() {
       price: 850,
       category: 'Kablo',
       sellerName: 'Ahmet Kaya (Vatandaş)',
+      sellerId: 'mock-citizen-2',
       sellerType: 'CITIZEN',
       location: 'Üsküdar, İstanbul',
       desc: 'Ev tadilatından kalan sıfır rulo bakır kablo. İhtiyacım olmadığı için satıyorum.',
@@ -191,6 +194,7 @@ export default function HomeScreen() {
       price: 450,
       category: 'Şalt / Malzeme',
       sellerName: 'Bülent Tan (Usta)',
+      sellerId: 'mock-electrician-3',
       sellerType: 'ELECTRICIAN',
       location: 'Beşiktaş, İstanbul',
       desc: 'Şantiyeden kalan sıfır kutusunda otomatik sigortalar. Toptan fiyatına verilecektir.',
@@ -207,8 +211,11 @@ export default function HomeScreen() {
   const [newProdCategory, setNewProdCategory] = useState('Kablo');
   const [newProdPrice, setNewProdPrice] = useState('');
   const [newProdDesc, setNewProdDesc] = useState('');
-  const [newProdImage, setNewProdImage] = useState<string | null>(null);
+  const [newProdImages, setNewProdImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [showPhotoSourceModal, setShowPhotoSourceModal] = useState(false);
+  const [showFullscreenImage, setShowFullscreenImage] = useState<string | null>(null);
+  const [isStartingChat, setIsStartingChat] = useState(false);
 
   // Marketplace Search and Filtering States
   const [marketSearchQuery, setMarketSearchQuery] = useState('');
@@ -259,9 +266,52 @@ export default function HomeScreen() {
     }, [])
   );
 
-  const handlePickProductImage = async () => {
+  const handleChooseFromGallery = async () => {
     try {
+      const remainingCount = 5 - newProdImages.length;
+      if (remainingCount <= 0) {
+        Alert.alert('Sınır Aşıldı', 'En fazla 5 adet fotoğraf yükleyebilirsiniz.');
+        return;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        selectionLimit: remainingCount,
+        quality: 0.6,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const newImages = result.assets.map(asset => 
+          asset.base64 
+            ? `data:image/jpeg;base64,${asset.base64}` 
+            : asset.uri
+        );
+        setNewProdImages(prev => {
+          const combined = [...prev, ...newImages];
+          return combined.slice(0, 5);
+        });
+      }
+    } catch (error) {
+      Alert.alert('Hata', 'Fotoğraf seçilirken bir hata oluştu.');
+    }
+  };
+
+  const handleTakePhoto = async () => {
+    try {
+      if (newProdImages.length >= 5) {
+        Alert.alert('Sınır Aşıldı', 'En fazla 5 adet fotoğraf yükleyebilirsiniz.');
+        return;
+      }
+
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Kamera İzni Gerekli', 'Fotoğraf çekebilmek için kamera erişim izni vermelisiniz. Lütfen cihaz ayarlarından izin verin.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         quality: 0.6,
@@ -272,10 +322,65 @@ export default function HomeScreen() {
         const base64Str = result.assets[0].base64 
           ? `data:image/jpeg;base64,${result.assets[0].base64}` 
           : result.assets[0].uri;
-        setNewProdImage(base64Str);
+        setNewProdImages(prev => [...prev, base64Str]);
       }
     } catch (error) {
-      Alert.alert('Hata', 'Fotoğraf seçilirken bir hata oluştu.');
+      Alert.alert('Hata', 'Fotoğraf çekilirken bir hata oluştu.');
+    }
+  };
+
+  const handlePickProductImage = () => {
+    if (newProdImages.length >= 5) {
+      Alert.alert('Sınır Aşıldı', 'En fazla 5 adet fotoğraf yükleyebilirsiniz.');
+      return;
+    }
+    setShowPhotoSourceModal(true);
+  };
+
+  const handleContactSeller = async (sellerId: string, sellerName: string) => {
+    if (!isAuthenticated) {
+      setPendingAction({ path: '/(tabs)/index' });
+      setShowAuthModal(true);
+      return;
+    }
+
+    if (sellerId === user?.id) {
+      Alert.alert('Bilgi', 'Kendi ilanınız için sohbet başlatamazsınız.');
+      return;
+    }
+
+    setIsStartingChat(true);
+    try {
+      // Create or locate the conversation with the EXACT seller of the product
+      let conversation: any = null;
+      try {
+        conversation = await messageService.findOrCreateConversation(sellerId);
+      } catch (innerErr) {
+        console.warn('⚠️ findOrCreateConversation threw, generating local mock:', innerErr);
+      }
+
+      // If the API call returned null or threw, build a local mock conversation
+      if (!conversation || !conversation.id) {
+        const mockId = `mock-conv-${sellerId}-${user?.id || 'guest'}`;
+        conversation = { id: mockId };
+      }
+      
+      setIsProductDetailModalVisible(false);
+      router.push({
+        pathname: `/messages/${conversation.id}`,
+        params: { sellerName: sellerName, sellerId: sellerId }
+      });
+    } catch (err) {
+      // Last-resort fallback
+      console.warn('⚠️ handleContactSeller outer catch:', err);
+      const fallbackId = `mock-conv-${sellerId}-fallback`;
+      setIsProductDetailModalVisible(false);
+      router.push({
+        pathname: `/messages/${fallbackId}`,
+        params: { sellerName: sellerName, sellerId: sellerId }
+      });
+    } finally {
+      setIsStartingChat(false);
     }
   };
 
@@ -299,11 +404,13 @@ export default function HomeScreen() {
       price: priceNum,
       category: newProdCategory,
       sellerName: user?.fullName ? `${user.fullName} (${isElectrician ? 'Usta' : 'Vatandaş'})` : (isElectrician ? 'Mustafa Yılmaz (Usta)' : 'Ahmet Kaya (Vatandaş)'),
+      sellerId: user?.id || 'mock-current-user',
       sellerType: isElectrician ? 'ELECTRICIAN' : 'CITIZEN',
       location: userLocation,
       desc: newProdDesc,
       date: 'Bugün',
-      image: newProdImage,
+      image: newProdImages.length > 0 ? newProdImages[0] : null,
+      images: newProdImages,
     };
 
     setIsUploadingImage(true);
@@ -331,7 +438,7 @@ export default function HomeScreen() {
     setNewProdPrice('');
     setNewProdDesc('');
     setNewProdCategory('Kablo');
-    setNewProdImage(null);
+    setNewProdImages([]);
     setIsAddProductModalVisible(false);
     Alert.alert('Başarılı', 'İlanınız pazar yerinde başarıyla yayınlandı! 🚀');
   };
@@ -371,6 +478,9 @@ export default function HomeScreen() {
   // NEW: Badge Pulse Animation
   const badgePulseAnim = useRef(new Animated.Value(1)).current;
   const initializationRef = useRef(false);
+  const mockExpire1 = useRef(new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()).current;
+  const mockExpire2 = useRef(new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString()).current;
+  const mockExpire3 = useRef(new Date(Date.now() + 10 * 60 * 60 * 1000).toISOString()).current;
 
 
   useEffect(() => {
@@ -928,13 +1038,15 @@ export default function HomeScreen() {
 
                     {/* Elegant notification bell */}
                     <TouchableOpacity
-                      style={styles.ustaNotificationBellMini}
+                      style={styles.headerLinkButton}
                       activeOpacity={0.7}
                       onPress={() => handleActionWithAuth('/profile/notifications')}
                     >
-                      <Ionicons name="notifications" size={18} color="#FFF" />
+                      <Ionicons name="notifications-outline" size={24} color={colors.white} />
                       {unreadCount > 0 && (
-                        <View style={styles.ustaNotificationDot} />
+                        <Animated.View style={[styles.notificationBadge, { transform: [{ scale: badgePulseAnim }] }]}>
+                          <Text style={styles.notificationBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                        </Animated.View>
                       )}
                     </TouchableOpacity>
                   </View>
@@ -1159,13 +1271,17 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </ScrollView>
 
-            {/* Sıcak Fırsatlar (Hot Leads) Section */}
-            <View style={styles.sectionHeaderRow}>
+            {/* İş İlanları Section */}
+            <TouchableOpacity
+              style={styles.sectionHeaderRow}
+              activeOpacity={0.7}
+              onPress={() => router.push('/(tabs)/jobs')}
+            >
               <View style={styles.sectionTitleContainer}>
-                <Text style={styles.sectionTitle}>SICAK FIRSATLAR</Text>
+                <Text style={styles.sectionTitle}>İŞ İLANLARI</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-            </View>
+            </TouchableOpacity>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScrollContainer}>
               {recentJobs.length > 0 ? recentJobs.slice(0, 5).map((job: any, index: number) => {
@@ -1198,14 +1314,33 @@ export default function HomeScreen() {
                       </Text>
                     </View>
 
+                    {(job.expiresAt || job.earliestBidExpiresAt) && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8, paddingHorizontal: 2 }}>
+                        <Ionicons name="time-outline" size={12} color="#D97706" />
+                        <CountdownTimer 
+                          expiresAt={job.expiresAt || job.earliestBidExpiresAt} 
+                          minimal={true}
+                          size="small"
+                        />
+                      </View>
+                    )}
+
                     <View style={styles.hotLeadBottomRow}>
                       <View style={styles.hotLeadPriceCol}>
-                        <Text style={[styles.hotLeadPrice, { color: statusColor }]}>
-                          ₺{job.estimatedBudget ? Number(job.estimatedBudget).toLocaleString('tr-TR') : '850'}
-                        </Text>
-                        <Text style={[styles.hotLeadPriceStatus, { color: statusColor }]}>
-                          {isUrgent ? ' - Acil!' : ' - Standart'}
-                        </Text>
+                        {job.estimatedBudget ? (
+                          <>
+                            <Text style={[styles.hotLeadPrice, { color: statusColor }]}>
+                              ₺{Number(job.estimatedBudget).toLocaleString('tr-TR')}
+                            </Text>
+                            <Text style={[styles.hotLeadPriceStatus, { color: statusColor }]}>
+                              {isUrgent ? ' - Acil!' : ' - Standart'}
+                            </Text>
+                          </>
+                        ) : (
+                          <Text style={[styles.hotLeadPriceStatus, { color: statusColor }]}>
+                            {isUrgent ? 'Acil İlan' : 'Standart İlan'}
+                          </Text>
+                        )}
                       </View>
                       <TouchableOpacity
                         style={[styles.hotLeadActionBtn, { backgroundColor: isUrgent ? colors.primary : '#F59E0B' }]}
@@ -1236,6 +1371,15 @@ export default function HomeScreen() {
                     <View style={styles.hotLeadLocationRow}>
                       <Ionicons name="location" size={12} color={colors.primary} />
                       <Text style={styles.hotLeadLocationText} numberOfLines={1}>Kadıköy, 1.2km</Text>
+                    </View>
+
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8, paddingHorizontal: 2 }}>
+                      <Ionicons name="time-outline" size={12} color="#D97706" />
+                      <CountdownTimer 
+                        expiresAt={mockExpire1} 
+                        minimal={true}
+                        size="small"
+                      />
                     </View>
 
                     <View style={styles.hotLeadBottomRow}>
@@ -1272,6 +1416,15 @@ export default function HomeScreen() {
                       <Text style={styles.hotLeadLocationText} numberOfLines={1}>Üsküdar, 2.5km</Text>
                     </View>
 
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8, paddingHorizontal: 2 }}>
+                      <Ionicons name="time-outline" size={12} color="#D97706" />
+                      <CountdownTimer 
+                        expiresAt={mockExpire2} 
+                        minimal={true}
+                        size="small"
+                      />
+                    </View>
+
                     <View style={styles.hotLeadBottomRow}>
                       <View style={styles.hotLeadPriceCol}>
                         <Text style={[styles.hotLeadPrice, { color: '#F59E0B' }]}>₺350</Text>
@@ -1304,6 +1457,15 @@ export default function HomeScreen() {
                     <View style={styles.hotLeadLocationRow}>
                       <Ionicons name="location" size={12} color="#F59E0B" />
                       <Text style={styles.hotLeadLocationText} numberOfLines={1}>Beşiktaş, 3.1km</Text>
+                    </View>
+
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8, paddingHorizontal: 2 }}>
+                      <Ionicons name="time-outline" size={12} color="#D97706" />
+                      <CountdownTimer 
+                        expiresAt={mockExpire3} 
+                        minimal={true}
+                        size="small"
+                      />
                     </View>
 
                     <View style={styles.hotLeadBottomRow}>
@@ -1758,18 +1920,8 @@ export default function HomeScreen() {
 
               <ScrollView style={{ marginTop: 16 }} showsVerticalScrollIndicator={false}>
                 {/* Photo Upload Zone */}
-                <Text style={styles.formLabel}>Ürün Fotoğrafı</Text>
-                {newProdImage ? (
-                  <View style={{ position: 'relative', width: '100%', height: 160, borderRadius: 16, overflow: 'hidden', marginBottom: 16, borderHorizontalWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                    <Image source={{ uri: newProdImage }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
-                    <TouchableOpacity
-                      style={{ position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(15, 23, 42, 0.75)', padding: 6, borderRadius: 20 }}
-                      onPress={() => setNewProdImage(null)}
-                    >
-                      <Ionicons name="trash-outline" size={16} color="#EF4444" />
-                    </TouchableOpacity>
-                  </View>
-                ) : (
+                <Text style={styles.formLabel}>Ürün Fotoğrafları (En fazla 5 adet)</Text>
+                {newProdImages.length === 0 ? (
                   <TouchableOpacity
                     style={{
                       height: 100,
@@ -1787,9 +1939,53 @@ export default function HomeScreen() {
                     activeOpacity={0.7}
                   >
                     <Ionicons name="camera-outline" size={26} color="#F59E0B" />
-                    <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: '#FFF' }}>Fotoğraf Seç (İsteğe Bağlı)</Text>
-                    <Text style={{ fontSize: 9.5, fontFamily: fonts.medium, color: '#94A3B8' }}>Galeriden bir ürün görseli yükleyin</Text>
+                    <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: '#FFF' }}>Fotoğraf Seç veya Çek (En Fazla 5)</Text>
+                    <Text style={{ fontSize: 9.5, fontFamily: fonts.medium, color: '#94A3B8' }}>Galeriden yükleyin veya kamera ile çekin</Text>
                   </TouchableOpacity>
+                ) : (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                    {newProdImages.map((img, index) => (
+                      <View key={index} style={{ position: 'relative', width: 90, height: 90, borderRadius: 12, overflow: 'hidden', marginRight: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                        <Image source={{ uri: img }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+                        <TouchableOpacity
+                          style={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(15, 23, 42, 0.85)', padding: 4, borderRadius: 12 }}
+                          onPress={() => {
+                            setNewProdImages(prev => prev.filter((_, i) => i !== index));
+                          }}
+                        >
+                          <Ionicons name="trash" size={12} color="#EF4444" />
+                        </TouchableOpacity>
+                        {index === 0 && (
+                          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#F59E0B', paddingVertical: 2, alignItems: 'center' }}>
+                            <Text style={{ color: '#0F172A', fontSize: 8, fontFamily: fonts.bold }}>Kapak</Text>
+                          </View>
+                        )}
+                      </View>
+                    ))}
+                    
+                    {newProdImages.length < 5 && (
+                      <TouchableOpacity
+                        style={{
+                          width: 90,
+                          height: 90,
+                          borderRadius: 12,
+                          borderStyle: 'dashed',
+                          borderWidth: 1.5,
+                          borderColor: 'rgba(255, 255, 255, 0.2)',
+                          backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          gap: 2
+                        }}
+                        onPress={handlePickProductImage}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="camera-outline" size={20} color="#F59E0B" />
+                        <Text style={{ fontSize: 9, fontFamily: fonts.bold, color: '#FFF', textAlign: 'center' }}>Fotoğraf Ekle</Text>
+                        <Text style={{ fontSize: 8, fontFamily: fonts.medium, color: '#94A3B8' }}>{newProdImages.length}/5</Text>
+                      </TouchableOpacity>
+                    )}
+                  </ScrollView>
                 )}
 
                 <Text style={styles.formLabel}>Ürün Adı *</Text>
@@ -1851,6 +2047,103 @@ export default function HomeScreen() {
                   )}
                 </TouchableOpacity>
               </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
+        {/* ==================== FOTOĞRAF SEÇİM YÖNTEMİ MODAL (PREMIUM THEME) ==================== */}
+        <Modal
+          visible={showPhotoSourceModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowPhotoSourceModal(false)}
+        >
+          <View style={styles.hiwModalOverlay}>
+            <View style={[styles.marketModalContent, { width: '90%', paddingBottom: 24 }]}>
+              <View style={styles.hiwHeader}>
+                <Text style={styles.marketModalTitle}>Fotoğraf Ekle</Text>
+                <TouchableOpacity onPress={() => setShowPhotoSourceModal(false)} style={styles.hiwCloseBtn}>
+                  <Ionicons name="close" size={20} color="#FFF" />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: 13, fontFamily: fonts.medium, marginBottom: 20 }}>
+                Ürününüzün fotoğrafını nasıl eklemek istersiniz?
+              </Text>
+
+              <View style={{ gap: 12 }}>
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    padding: 16,
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                  }}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    setShowPhotoSourceModal(false);
+                    handleTakePhoto();
+                  }}
+                >
+                  <View style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', padding: 10, borderRadius: 12, marginRight: 14 }}>
+                    <Ionicons name="camera" size={20} color="#F59E0B" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#FFF', fontSize: 14, fontFamily: fonts.bold }}>Kamera ile Fotoğraf Çek</Text>
+                    <Text style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 11, fontFamily: fonts.medium, marginTop: 2 }}>
+                      Kameranızı açarak anlık bir ürün fotoğrafı çekin
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="rgba(255, 255, 255, 0.3)" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    padding: 16,
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                  }}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    setShowPhotoSourceModal(false);
+                    handleChooseFromGallery();
+                  }}
+                >
+                  <View style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', padding: 10, borderRadius: 12, marginRight: 14 }}>
+                    <Ionicons name="images" size={20} color="#F59E0B" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#FFF', fontSize: 14, fontFamily: fonts.bold }}>Galeriden Görsel Seç</Text>
+                    <Text style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 11, fontFamily: fonts.medium, marginTop: 2 }}>
+                      Cihazınızın galerisinden mevcut bir görsel yükleyin
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="rgba(255, 255, 255, 0.3)" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                    paddingVertical: 14,
+                    borderRadius: 16,
+                    alignItems: 'center',
+                    marginTop: 8,
+                    borderWidth: 1,
+                    borderColor: 'rgba(255, 255, 255, 0.05)',
+                  }}
+                  activeOpacity={0.7}
+                  onPress={() => setShowPhotoSourceModal(false)}
+                >
+                  <Text style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: 13, fontFamily: fonts.bold }}>Vazgeç</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>
@@ -1991,11 +2284,41 @@ export default function HomeScreen() {
               {selectedProduct && (
                 <View style={{ marginTop: 20 }}>
                   {/* Photo Header */}
-                  {selectedProduct.image && (
-                    <View style={{ width: '100%', height: 180, borderRadius: 16, overflow: 'hidden', marginBottom: 16 }}>
+                  {selectedProduct.images && selectedProduct.images.length > 0 ? (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                      {selectedProduct.images.map((img: string, idx: number) => (
+                        <TouchableOpacity
+                          key={idx}
+                          activeOpacity={0.9}
+                          onPress={() => setShowFullscreenImage(img)}
+                          style={{ width: 280, height: 180, borderRadius: 16, overflow: 'hidden', marginRight: 10, position: 'relative' }}
+                        >
+                          <Image source={{ uri: img }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+                          <View style={{ position: 'absolute', bottom: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <Ionicons name="expand" size={12} color="#FFF" />
+                            <Text style={{ color: '#FFF', fontSize: 10, fontFamily: fonts.bold }}>Büyütmek için Dokunun</Text>
+                          </View>
+                          {selectedProduct.images.length > 1 && (
+                            <View style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 }}>
+                              <Text style={{ color: '#FFF', fontSize: 9.5, fontFamily: fonts.bold }}>{idx + 1}/{selectedProduct.images.length}</Text>
+                            </View>
+                          )}
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  ) : selectedProduct.image ? (
+                    <TouchableOpacity
+                      activeOpacity={0.9}
+                      onPress={() => setShowFullscreenImage(selectedProduct.image)}
+                      style={{ width: '100%', height: 180, borderRadius: 16, overflow: 'hidden', marginBottom: 16, position: 'relative' }}
+                    >
                       <Image source={{ uri: selectedProduct.image }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
-                    </View>
-                  )}
+                      <View style={{ position: 'absolute', bottom: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Ionicons name="expand" size={12} color="#FFF" />
+                        <Text style={{ color: '#FFF', fontSize: 10, fontFamily: fonts.bold }}>Büyütmek için Dokunun</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ) : null}
 
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                     <View style={[styles.marketCategoryBadge, { backgroundColor: selectedProduct.sellerType === 'ELECTRICIAN' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)' }]}>
@@ -2028,19 +2351,52 @@ export default function HomeScreen() {
 
                   <TouchableOpacity
                     style={[styles.submitBtn, { backgroundColor: colors.primary, marginTop: 24, flexDirection: 'row', gap: 8, justifyContent: 'center' }]}
-                    onPress={() => {
-                      setIsProductDetailModalVisible(false);
-                      router.push('/(tabs)/messages');
-                    }}
+                    onPress={() => handleContactSeller(selectedProduct.sellerId, selectedProduct.sellerName)}
                     activeOpacity={0.8}
+                    disabled={isStartingChat}
                   >
-                    <Ionicons name="chatbubbles" size={18} color="#FFF" />
-                    <Text style={styles.submitBtnText}>Satıcıyla İletişime Geç (Sohbet Et)</Text>
+                    {isStartingChat ? (
+                      <ActivityIndicator size="small" color="#FFF" />
+                    ) : (
+                      <>
+                        <Ionicons name="chatbubbles" size={18} color="#FFF" />
+                        <Text style={styles.submitBtnText}>Satıcıyla İletişime Geç (Sohbet Et)</Text>
+                      </>
+                    )}
                   </TouchableOpacity>
                 </View>
               )}
             </View>
           </View>
+        </Modal>
+
+        {/* ==================== FOTOĞRAF TAM EKRAN GÖSTERİCİ MODAL ==================== */}
+        <Modal
+          visible={!!showFullscreenImage}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowFullscreenImage(null)}
+        >
+          <TouchableOpacity 
+            style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.95)', justifyContent: 'center', alignItems: 'center' }} 
+            activeOpacity={1}
+            onPress={() => setShowFullscreenImage(null)}
+          >
+            {showFullscreenImage && (
+              <Image 
+                source={{ uri: showFullscreenImage }} 
+                style={{ width: '100%', height: '80%', resizeMode: 'contain' }} 
+              />
+            )}
+            
+            {/* Close Button at top right */}
+            <TouchableOpacity 
+              style={{ position: 'absolute', top: 50, right: 20, backgroundColor: 'rgba(255,255,255,0.15)', padding: 10, borderRadius: 25, zIndex: 100 }}
+              onPress={() => setShowFullscreenImage(null)}
+            >
+              <Ionicons name="close" size={24} color="#FFF" />
+            </TouchableOpacity>
+          </TouchableOpacity>
         </Modal>
 
         {/* How It Works Modal */}

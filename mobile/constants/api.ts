@@ -91,6 +91,7 @@ export const API_ENDPOINTS = {
   ACCEPT_BID: (bidId: string) => `/bids/${encodeURIComponent(bidId)}/accept`,
   REJECT_BID: (bidId: string) => `/bids/${encodeURIComponent(bidId)}/reject`,
   WITHDRAW_BID: (bidId: string) => `/bids/${encodeURIComponent(bidId)}/withdraw`,
+  REQUEST_PRICE_UPDATE: (bidId: string) => `/bids/${encodeURIComponent(bidId)}/request-update`,
 
   // Messages
   CONVERSATIONS: '/conversations',

@@ -838,5 +838,93 @@ export const bidService = {
 
     return { success: true };
   },
+
+  async requestPriceUpdate(bidId: string, citizenId: string) {
+    const bid = await prisma.bid.findUnique({
+      where: { id: bidId },
+      include: {
+        jobPost: true,
+      },
+    });
+
+    if (!bid) {
+      throw new NotFoundError('Bid not found');
+    }
+
+    if (bid.jobPost.citizenId !== citizenId) {
+      throw new ForbiddenError('Only job owner can request price update');
+    }
+
+    // Create database notification for electrician
+    try {
+      const electrician = await prisma.user.findUnique({
+        where: { id: bid.electricianId },
+        select: { id: true, pushToken: true, fullName: true }
+      });
+
+      if (electrician) {
+        const citizen = await prisma.user.findUnique({
+          where: { id: citizenId },
+          select: { id: true, fullName: true }
+        });
+        const citizenName = citizen?.fullName || 'Bir müşteri';
+        const jobTitle = bid.jobPost.title || 'ilanınız';
+
+        const notifPayload = {
+          id: `price-update-notif-${Date.now()}`,
+          type: 'price_update_requested',
+          jobId: bid.jobPostId,
+          jobPostId: bid.jobPostId,
+          jobTitle: jobTitle,
+          bidId: bid.id,
+          title: 'Güncel Fiyat Talebi! 💰',
+          message: `${citizenName} "${jobTitle}" ilanına verdiğiniz teklif için güncel fiyat teklifi istiyor.`,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+          relatedId: bid.jobPostId,
+          relatedType: 'JOB'
+        };
+
+        // 1. Socket notification
+        console.log(`   📢 Sending socket 'price_update_requested' and 'notification' to user: ${electrician.id}`);
+        notifyUser(electrician.id, 'price_update_requested', notifPayload);
+        notifyUser(electrician.id, 'notification', notifPayload);
+
+        // 2. Save Notification to DB
+        if (isDatabaseAvailable) {
+          console.log(`   💾 Saving notification to DB...`);
+          await prisma.notification.create({
+            data: {
+              userId: electrician.id,
+              type: 'price_update_requested',
+              title: 'Güncel Fiyat Talebi! 💰',
+              message: `${citizenName} "${jobTitle}" ilanına verdiğiniz teklif için güncel fiyat teklifi istiyor.`,
+              relatedType: 'JOB',
+              relatedId: bid.jobPostId,
+            }
+          });
+          console.log(`   ✅ DB notification saved`);
+        }
+
+        // 3. Send Push Notification
+        if (electrician.pushToken) {
+          console.log(`   📲 Attempting PUSH to electrician ${electrician.id}`);
+          pushNotificationService.sendNotification({
+            to: electrician.pushToken,
+            title: 'Güncel Fiyat Talebi! 💰',
+            body: `${citizenName} "${jobTitle}" ilanı için teklifinizi güncellemenizi istiyor.`,
+            data: { jobId: bid.jobPostId, type: 'price_update_requested' },
+            sound: 'default'
+          }).catch(err => {
+            console.error(`   ❌ PUSH delivery failed:`, err);
+          });
+        }
+      }
+    } catch (error) {
+      console.error('❌ Failed to notify electrician of price update request:', error);
+    }
+
+    return { success: true };
+  },
 };
 
