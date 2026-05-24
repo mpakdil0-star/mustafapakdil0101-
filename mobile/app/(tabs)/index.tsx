@@ -1922,35 +1922,39 @@ export default function HomeScreen() {
 
         {/* ==================== PAZAR YERİ & İKİNCİ EL ==================== */}
         <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <View style={styles.sectionTitleContainer}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16, marginBottom: 0 }]} numberOfLines={1}>PAZAR YERİ & İKİNCİ EL</Text>
-                <TouchableOpacity 
-                  onPress={() => setIsAllProductsModalVisible(true)}
-                  style={{ marginLeft: 4, paddingVertical: 2, flexShrink: 0 }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: colors.primary }}>Tümünü Gör &gt;</Text>
-                </TouchableOpacity>
-              </View>
-              <Text style={styles.sectionSubtitle}>Ustalar ve vatandaşlar arası malzeme satışı</Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.addProductBtn, { marginTop: 18 }]}
-              activeOpacity={0.8}
-              onPress={() => setIsAddProductModalVisible(true)}
-            >
-              <LinearGradient
-                colors={[colors.primary, colors.primaryDark || '#B91C1C']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.addProductBtnGradient}
+          {/* Header Container */}
+          <View style={{ marginBottom: 16 }}>
+            {/* Row 1: Title and Tümünü Gör */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 17, marginBottom: 0 }]} numberOfLines={1}>PAZAR YERİ & İKİNCİ EL</Text>
+              <TouchableOpacity 
+                onPress={() => setIsAllProductsModalVisible(true)}
+                style={{ paddingVertical: 2, paddingLeft: 10 }}
+                activeOpacity={0.7}
               >
-                <Ionicons name="add-circle" size={14} color="#FFF" style={{ marginRight: 2 }} />
-                <Text style={styles.addProductBtnText}>İlan Ekle</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+                <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: colors.primary }}>Tümünü Gör &gt;</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Row 2: Subtitle and İlan Ekle */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={[styles.sectionSubtitle, { flex: 1, marginRight: 12, marginBottom: 0 }]}>Ustalar ve vatandaşlar arası malzeme satışı</Text>
+              <TouchableOpacity
+                style={styles.addProductBtn}
+                activeOpacity={0.8}
+                onPress={() => setIsAddProductModalVisible(true)}
+              >
+                <LinearGradient
+                  colors={[colors.primary, colors.primaryDark || '#B91C1C']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.addProductBtnGradient}
+                >
+                  <Ionicons name="add-circle" size={14} color="#FFF" style={{ marginRight: 2 }} />
+                  <Text style={styles.addProductBtnText}>İlan Ekle</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <ScrollView 
