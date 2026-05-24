@@ -340,8 +340,8 @@ export default function ChannelsScreen() {
         }
       />
 
-      {/* Tabs (Horizontal Card Segmented Selector overlapping curved header) */}
-      <View style={{ height: 95, marginTop: -20, marginBottom: 8, zIndex: 10 }}>
+      {/* Tabs (Horizontal Card Segmented Selector below curved header with breathing space) */}
+      <View style={{ height: 95, marginTop: 14, marginBottom: 8 }}>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
@@ -354,9 +354,9 @@ export default function ChannelsScreen() {
             { id: 'materials', label: 'Malzeme', icon: 'document-text-outline', activeColor: '#059669', gradientColors: ['#059669', '#064E3B'] },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
-            const borderColor = isActive ? tab.activeColor : tab.activeColor + '40'; // ~25% opacity colored border
-            const iconColor = isActive ? '#FFF' : tab.activeColor + 'C0'; // ~75% opacity themed color
-            const textColor = isActive ? '#FFF' : tab.activeColor + 'A0'; // ~62% opacity themed color
+            const borderColor = isActive ? tab.activeColor : '#E2E8F0'; // Clean neutral border for inactive tabs
+            const iconColor = isActive ? '#FFF' : tab.activeColor; // Vibrant solid themed icon
+            const textColor = isActive ? '#FFF' : '#1E293B'; // Crisp Slate 800 for clear legibility
             return (
               <TouchableOpacity
                 key={tab.id}
@@ -406,18 +406,20 @@ export default function ChannelsScreen() {
           {/* ==================== FORUM / SORU-CEVAP AKIŞI ==================== */}
           {activeTab === 'forum' && (
             <View style={{ width: '100%' }}>
-              <TouchableOpacity
-                style={[styles.actionBtn, { overflow: 'hidden', padding: 0 }]}
-                onPress={() => setIsNewPostModalVisible(true)}
-              >
-                <LinearGradient
-                  colors={['#3B82F6', '#0F4C81']}
-                  style={styles.actionBtnGradient}
+              {forumPosts.length > 0 && (
+                <TouchableOpacity
+                  style={[styles.actionBtn, { overflow: 'hidden', padding: 0 }]}
+                  onPress={() => setIsNewPostModalVisible(true)}
                 >
-                  <Ionicons name="add-circle" size={18} color="#FFF" />
-                  <Text style={styles.actionBtnText}>Yeni Teknik Soru Sor</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+                  <LinearGradient
+                    colors={['#3B82F6', '#0F4C81']}
+                    style={styles.actionBtnGradient}
+                  >
+                    <Ionicons name="add-circle" size={18} color="#FFF" />
+                    <Text style={styles.actionBtnText}>Yeni Teknik Soru Sor</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              )}
 
               {forumPosts.length === 0 ? (
                 <EmptyState
@@ -600,18 +602,20 @@ export default function ChannelsScreen() {
           {/* ==================== HÜNERLERİM / PHOTO SHOWCASE ==================== */}
           {activeTab === 'gallery' && (
             <View style={{ width: '100%' }}>
-              <TouchableOpacity
-                style={[styles.actionBtn, { overflow: 'hidden', padding: 0 }]}
-                onPress={() => setIsNewShowcaseModalVisible(true)}
-              >
-                <LinearGradient
-                  colors={['#3B82F6', '#0F4C81']}
-                  style={styles.actionBtnGradient}
+              {showcaseItems.length > 0 && (
+                <TouchableOpacity
+                  style={[styles.actionBtn, { overflow: 'hidden', padding: 0 }]}
+                  onPress={() => setIsNewShowcaseModalVisible(true)}
                 >
-                  <Ionicons name="camera" size={18} color="#FFF" />
-                  <Text style={styles.actionBtnText}>Yeni Hüner Fotoğrafı Yükle</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+                  <LinearGradient
+                    colors={['#3B82F6', '#0F4C81']}
+                    style={styles.actionBtnGradient}
+                  >
+                    <Ionicons name="camera" size={18} color="#FFF" />
+                    <Text style={styles.actionBtnText}>Yeni Hüner Fotoğrafı Yükle</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              )}
 
               {showcaseItems.length === 0 ? (
                 <EmptyState
