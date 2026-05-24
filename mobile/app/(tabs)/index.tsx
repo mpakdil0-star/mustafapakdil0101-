@@ -2807,12 +2807,54 @@ export default function HomeScreen() {
                     <Text style={{ color: '#E2E8F0', fontSize: 13, lineHeight: 20, fontFamily: fonts.regular }}>{selectedShowcaseItem.description || 'Bu zanaatkar tarafından yapılan özel işçilik.'}</Text>
                   </View>
 
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', paddingTop: 16 }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#94A3B8', fontSize: 11, fontFamily: fonts.medium }}>Usta</Text>
-                      <Text style={{ color: '#FFF', fontSize: 13.5, fontFamily: fonts.bold }}>{selectedShowcaseItem.ustaName}</Text>
+                  <TouchableOpacity
+                    style={{ 
+                      flexDirection: 'row', 
+                      alignItems: 'center', 
+                      marginTop: 20, 
+                      borderTopWidth: 1, 
+                      borderTopColor: 'rgba(255,255,255,0.06)', 
+                      paddingTop: 16,
+                      gap: 12
+                    }}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      setIsShowcaseDetailModalVisible(false);
+                      router.push(`/electricians/${selectedShowcaseItem.ustaId}` as any);
+                    }}
+                  >
+                    {/* Usta Avatar */}
+                    <View style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 22,
+                      backgroundColor: 'rgba(255,255,255,0.08)',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      borderWidth: 1.5,
+                      borderColor: colors.primary + '40',
+                      overflow: 'hidden'
+                    }}>
+                      {selectedShowcaseItem.ustaAvatar ? (
+                        <Image 
+                          source={{ uri: getFileUrl(selectedShowcaseItem.ustaAvatar) || '' }} 
+                          style={{ width: '100%', height: '100%' }} 
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <Ionicons name="person" size={18} color="#FFF" />
+                      )}
                     </View>
-                  </View>
+
+                    {/* Usta Info */}
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: '#94A3B8', fontSize: 11, fontFamily: fonts.medium }}>Usta Profili</Text>
+                      <Text style={{ color: '#FFF', fontSize: 14, fontFamily: fonts.bold }}>{selectedShowcaseItem.ustaName}</Text>
+                    </View>
+
+                    {/* Chevron Forward */}
+                    <Ionicons name="chevron-forward" size={18} color={colors.primary} style={{ marginRight: 4 }} />
+                  </TouchableOpacity>
 
                   {selectedShowcaseItem.ustaId === user?.id ? (
                     <View style={{ marginTop: 24 }}>
