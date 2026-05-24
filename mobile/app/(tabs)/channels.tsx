@@ -316,7 +316,7 @@ export default function ChannelsScreen() {
   };
 
   const filteredJobOffers = jobOffers.filter(
-    (job) => selectedCity === 'Tüm Türkiye' || job.city === selectedCity
+    (job) => selectedCity === 'Tüm Türkiye' || (job.ustaCity || job.city || 'İstanbul') === selectedCity
   );
 
   return (
@@ -548,10 +548,8 @@ export default function ChannelsScreen() {
                   <View key={offer.id} style={styles.jobCard}>
                     <View style={styles.jobCardHeader}>
                       <View style={styles.cityBadge}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                          <Ionicons name="location" size={10} color="#22D3EE" />
-                          <Text style={styles.cityBadgeText}>{offer.ustaCity || offer.city}</Text>
-                        </View>
+                        <Ionicons name="location" size={10} color="#22D3EE" style={{ marginRight: 4 }} />
+                        <Text style={styles.cityBadgeText}>{offer.ustaCity || offer.city || 'İstanbul'}</Text>
                       </View>
                       <View style={styles.jobCardUrgencyBadge}>
                         <Ionicons name="flash" size={9} color="#F59E0B" style={{ marginRight: 2 }} />
@@ -1242,12 +1240,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   cityBadge: {
-    backgroundColor: 'rgba(6, 182, 212, 0.12)',
-    borderWidth: 0.5,
-    borderColor: 'rgba(6, 182, 212, 0.3)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(6, 182, 212, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.25)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   cityBadgeText: {
     fontSize: 10,
