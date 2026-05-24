@@ -2351,8 +2351,8 @@ export default function HomeScreen() {
           animationType="slide"
           onRequestClose={() => setIsAllProductsModalVisible(false)}
         >
-          <View style={styles.hiwModalOverlay}>
-            <View style={[styles.marketModalContent, { maxHeight: '90%', paddingBottom: 24 }]}>
+          <View style={{ flex: 1, backgroundColor: '#0F172A' }}>
+            <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 30, paddingBottom: 24 }}>
               <View style={styles.hiwHeader}>
                 <Text style={styles.marketModalTitle}>Tüm Pazar Yeri İlanları</Text>
                 <TouchableOpacity onPress={() => setIsAllProductsModalVisible(false)} style={styles.hiwCloseBtn}>
