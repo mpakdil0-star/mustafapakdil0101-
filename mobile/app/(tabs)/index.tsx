@@ -163,7 +163,7 @@ export default function HomeScreen() {
   const [stats, setStats] = useState<any>(null);
   
   // Marketplace / Pazar Yeri States
-  const [marketplaceProducts, setMarketplaceProducts] = useState([
+  const [marketplaceProducts, setMarketplaceProducts] = useState<any[]>([
     {
       id: 'prod-1',
       title: 'Makita Şarjlı Matkap 18V',
@@ -441,6 +441,76 @@ export default function HomeScreen() {
     setNewProdImages([]);
     setIsAddProductModalVisible(false);
     Alert.alert('Başarılı', 'İlanınız pazar yerinde başarıyla yayınlandı! 🚀');
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    Alert.alert(
+      'İlanı Sil',
+      'Bu ilanı pazar yerinden tamamen silmek istediğinize emin misiniz?',
+      [
+        { text: 'Vazgeç', style: 'cancel' },
+        {
+          text: 'Evet, Sil',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // 1. Local state update
+              const updatedProducts = marketplaceProducts.filter(p => p.id !== productId);
+              setMarketplaceProducts(updatedProducts);
+              await saveMarketplaceToStorage(updatedProducts);
+              
+              // Close detail modal
+              setIsProductDetailModalVisible(false);
+              setSelectedProduct(null);
+
+              // 2. Backend sync
+              await api.delete(`${API_ENDPOINTS.MARKETPLACE}/${productId}`);
+              
+              Alert.alert('Başarılı', 'İlan başarıyla silindi.');
+            } catch (error) {
+              console.log('Error deleting product:', error);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleMarkAsSold = async (productId: string) => {
+    Alert.alert(
+      'Satıldı Olarak İşaretle',
+      'Bu ürünü satıldı olarak işaretlemek istiyor musunuz? Bu işlem geri alınamaz ve iletişim kapatılır.',
+      [
+        { text: 'Vazgeç', style: 'cancel' },
+        {
+          text: 'Evet, Satıldı',
+          onPress: async () => {
+            try {
+              // 1. Local state update
+              const updatedProducts = marketplaceProducts.map(p => {
+                if (p.id === productId) {
+                  return { ...p, isSold: true };
+                }
+                return p;
+              });
+              setMarketplaceProducts(updatedProducts);
+              await saveMarketplaceToStorage(updatedProducts);
+
+              // Close detail modal or update selectedProduct in modal
+              setIsProductDetailModalVisible(false);
+              setSelectedProduct(null);
+
+              // 2. Backend sync
+              await api.put(`${API_ENDPOINTS.MARKETPLACE}/${productId}`);
+
+              Alert.alert('Tebrikler 🎉', 'Ürününüz satıldı olarak işaretlendi!');
+            } catch (error) {
+              console.log('Error marking product as sold:', error);
+            }
+          }
+        }
+      ]
+    );
   };
 
   const healthPulseAnim = useRef(new Animated.Value(1)).current;
@@ -1827,6 +1897,31 @@ export default function HomeScreen() {
                     setIsProductDetailModalVisible(true);
                   }}
                 >
+                  {prod.isSold && (
+                    <View style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                      borderRadius: 20,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      zIndex: 10,
+                    }}>
+                      <View style={{
+                        borderWidth: 2,
+                        borderColor: '#10B981',
+                        paddingHorizontal: 16,
+                        paddingVertical: 6,
+                        borderRadius: 8,
+                        transform: [{ rotate: '-10deg' }]
+                      }}>
+                        <Text style={{ color: '#10B981', fontSize: 16, fontFamily: fonts.extraBold, letterSpacing: 1.5 }}>SATILDI</Text>
+                      </View>
+                    </View>
+                  )}
                   {prod.image ? (
                     <ImageBackground
                       source={{ uri: prod.image }}
@@ -2235,13 +2330,30 @@ export default function HomeScreen() {
                           setIsProductDetailModalVisible(true);
                         }}
                       >
-                        {prod.image ? (
-                          <Image source={{ uri: prod.image }} style={{ width: 70, height: 70, borderRadius: 10, backgroundColor: '#1E293B' }} />
-                        ) : (
-                          <View style={{ width: 70, height: 70, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' }}>
-                            <Ionicons name={prod.category === 'Kablo' ? 'analytics' : 'construct'} size={24} color="#94A3B8" />
-                          </View>
-                        )}
+                        <View style={{ position: 'relative' }}>
+                          {prod.image ? (
+                            <Image source={{ uri: prod.image }} style={{ width: 70, height: 70, borderRadius: 10, backgroundColor: '#1E293B' }} />
+                          ) : (
+                            <View style={{ width: 70, height: 70, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' }}>
+                              <Ionicons name={prod.category === 'Kablo' ? 'analytics' : 'construct'} size={24} color="#94A3B8" />
+                            </View>
+                          )}
+                          {prod.isSold && (
+                            <View style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              backgroundColor: 'rgba(15, 23, 42, 0.7)',
+                              borderRadius: 10,
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                            }}>
+                              <Text style={{ color: '#10B981', fontSize: 9.5, fontFamily: fonts.extraBold, letterSpacing: 0.5 }}>SATILDI</Text>
+                            </View>
+                          )}
+                        </View>
                         <View style={{ flex: 1, justifyContent: 'space-between' }}>
                           <View>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2350,8 +2462,72 @@ export default function HomeScreen() {
                   </View>
 
                   {selectedProduct.sellerId === user?.id ? (
-                    <View style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.2)', borderRadius: 12, padding: 14, marginTop: 24, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ color: '#60A5FA', fontSize: 13.5, fontFamily: fonts.semibold }}>Bu ilan size aittir (Kendi ürününüz)</Text>
+                    <View style={{ marginTop: 24, gap: 12 }}>
+                      <View style={{ backgroundColor: 'rgba(59, 130, 246, 0.08)', borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.15)', borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ color: '#60A5FA', fontSize: 12.5, fontFamily: fonts.semiBold }}>
+                          {selectedProduct.isSold ? 'Bu ilanı başarıyla sattınız 🤝' : 'Bu ilan size aittir (Kendi ürününüz)'}
+                        </Text>
+                      </View>
+                      
+                      <View style={{ flexDirection: 'row', gap: 10 }}>
+                        {!selectedProduct.isSold && (
+                          <TouchableOpacity
+                            style={{
+                              flex: 1,
+                              height: 48,
+                              backgroundColor: '#10B981',
+                              borderRadius: 12,
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 8,
+                            }}
+                            activeOpacity={0.8}
+                            onPress={() => handleMarkAsSold(selectedProduct.id)}
+                          >
+                            <Ionicons name="checkmark-circle" size={18} color="#FFF" />
+                            <Text style={{ color: '#FFF', fontSize: 13.5, fontFamily: fonts.bold }}>Satıldı Yap</Text>
+                          </TouchableOpacity>
+                        )}
+                        
+                        <TouchableOpacity
+                          style={{
+                            flex: 1,
+                            height: 48,
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            borderWidth: 1.5,
+                            borderColor: '#EF4444',
+                            borderRadius: 12,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 8,
+                          }}
+                          activeOpacity={0.8}
+                          onPress={() => handleDeleteProduct(selectedProduct.id)}
+                        >
+                          <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                          <Text style={{ color: '#EF4444', fontSize: 13.5, fontFamily: fonts.bold }}>İlanı Sil</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : selectedProduct.isSold ? (
+                    <View
+                      style={{
+                        height: 48,
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        borderWidth: 1,
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderRadius: 12,
+                        marginTop: 24,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 8,
+                      }}
+                    >
+                      <Ionicons name="lock-closed" size={18} color="#94A3B8" />
+                      <Text style={{ color: '#94A3B8', fontSize: 14, fontFamily: fonts.bold }}>Bu Ürün Satıldı 🤝</Text>
                     </View>
                   ) : (
                     <TouchableOpacity

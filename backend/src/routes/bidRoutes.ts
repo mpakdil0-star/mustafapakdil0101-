@@ -9,6 +9,7 @@ import {
   rejectBidController,
   withdrawBidController,
   deleteBidController,
+  requestPriceUpdateController,
 } from '../controllers/bidController';
 import { authenticate } from '../middleware/auth';
 import { validate, createBidValidation, updateBidValidation } from '../validators';
@@ -29,6 +30,7 @@ router.post('/:id/accept', acceptBidController);
 router.post('/:id/reject', rejectBidController);
 router.post('/:id/withdraw', withdrawBidController);
 router.delete('/:id', deleteBidController);
+router.post('/:id/request-update', requestPriceUpdateController);
 
 export default router;
 

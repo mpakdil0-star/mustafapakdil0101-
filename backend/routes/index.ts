@@ -116,6 +116,60 @@ router.post(`${apiPrefix}/marketplace`, (req, res) => {
   }
 });
 
+// Update marketplace product status (mark as sold)
+router.put(`${apiPrefix}/marketplace/:id`, (req, res) => {
+  try {
+    const { id } = req.params;
+    let products: any[] = [];
+
+    if (fs.existsSync(MARKETPLACE_FILE)) {
+      try {
+        products = JSON.parse(fs.readFileSync(MARKETPLACE_FILE, 'utf8'));
+      } catch (e) {
+        console.error('Failed to parse existing marketplace products:', e);
+      }
+    }
+
+    // Find the product and set isSold to true
+    products = products.map((p) => {
+      if (p.id === id) {
+        return { ...p, isSold: true };
+      }
+      return p;
+    });
+
+    fs.writeFileSync(MARKETPLACE_FILE, JSON.stringify(products, null, 2), 'utf8');
+    return res.json({ success: true, data: products });
+  } catch (error: any) {
+    console.error('Failed to update marketplace product status:', error);
+    return res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
+// Delete marketplace product
+router.delete(`${apiPrefix}/marketplace/:id`, (req, res) => {
+  try {
+    const { id } = req.params;
+    let products: any[] = [];
+
+    if (fs.existsSync(MARKETPLACE_FILE)) {
+      try {
+        products = JSON.parse(fs.readFileSync(MARKETPLACE_FILE, 'utf8'));
+      } catch (e) {
+        console.error('Failed to parse existing marketplace products:', e);
+      }
+    }
+
+    products = products.filter((p) => p.id !== id);
+
+    fs.writeFileSync(MARKETPLACE_FILE, JSON.stringify(products, null, 2), 'utf8');
+    return res.json({ success: true, data: products });
+  } catch (error: any) {
+    console.error('Failed to delete marketplace product:', error);
+    return res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
 // Health check (API level)
 router.get(`${apiPrefix}/health`, async (req, res) => {
   let dbStatus = 'unknown';
