@@ -874,7 +874,7 @@ export default function HomeScreen() {
           if (locRes.data.success) {
             setLocationsCount(locRes.data.data.length);
             const cities = locRes.data.data.map((l: any) => l.city).filter(Boolean);
-            setUserCities(cities);
+            setUserCities(prev => JSON.stringify(prev) === JSON.stringify(cities) ? prev : cities);
           }
           
           if (verRes.data?.status) {
@@ -914,7 +914,7 @@ export default function HomeScreen() {
               if (response.data.success && response.data.data.length > 0) {
                 const locations = response.data.data;
                 const cities = locations.map((l: any) => l.city).filter(Boolean);
-                setUserCities(cities);
+                setUserCities(prev => JSON.stringify(prev) === JSON.stringify(cities) ? prev : cities);
                 setLocationsCount(locations.length);
               }
             } catch (error) {
@@ -967,7 +967,7 @@ export default function HomeScreen() {
       };
 
       runInitialization();
-    }, [isAuthenticated, isElectrician, fetchRecentJobs, fetchFeaturedElectricians, fetchStats])
+    }, [isAuthenticated, isElectrician])
   );
 
 
