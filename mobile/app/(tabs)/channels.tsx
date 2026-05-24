@@ -240,8 +240,10 @@ export default function ChannelsScreen() {
       title: newJobTitle,
       description: newJobDesc,
       city: user?.city || 'İstanbul',
+      ustaCity: user?.city || 'İstanbul',
       ustaId: user?.id || 'mock-usta-id',
       ustaName: user?.fullName || 'Usta',
+      ustaAvatar: user?.profileImageUrl || null,
     };
 
     try {
@@ -354,9 +356,9 @@ export default function ChannelsScreen() {
             { id: 'materials', label: 'Malzeme', icon: 'document-text-outline', activeColor: '#059669', gradientColors: ['#059669', '#064E3B'] },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
-            const borderColor = isActive ? tab.activeColor : '#E2E8F0'; // Clean neutral border for inactive tabs
+            const borderColor = isActive ? tab.activeColor : '#CBD5E1'; // Increased contrast for inactive tabs
             const iconColor = isActive ? '#FFF' : tab.activeColor; // Vibrant solid themed icon
-            const textColor = isActive ? '#FFF' : '#1E293B'; // Crisp Slate 800 for clear legibility
+            const textColor = isActive ? '#FFF' : '#475569'; // Crisp Slate 600 for clear legibility
             return (
               <TouchableOpacity
                 key={tab.id}
@@ -546,7 +548,10 @@ export default function ChannelsScreen() {
                   <View key={offer.id} style={styles.jobCard}>
                     <View style={styles.jobCardHeader}>
                       <View style={styles.cityBadge}>
-                        <Text style={styles.cityBadgeText}>{offer.city}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                          <Ionicons name="location" size={10} color="#22D3EE" />
+                          <Text style={styles.cityBadgeText}>{offer.ustaCity || offer.city}</Text>
+                        </View>
                       </View>
                       <View style={styles.jobCardUrgencyBadge}>
                         <Ionicons name="flash" size={9} color="#F59E0B" style={{ marginRight: 2 }} />
@@ -559,19 +564,26 @@ export default function ChannelsScreen() {
 
                     <View style={styles.jobCardFooter}>
                       <View style={styles.jobPublisherRow}>
-                        <LinearGradient
-                          colors={['#10B981', '#047857']}
-                          style={styles.jobPublisherAvatar}
-                        >
-                          <Text style={styles.jobPublisherAvatarText}>
-                            {offer.ustaName ? offer.ustaName.charAt(0).toUpperCase() : 'U'}
-                          </Text>
-                        </LinearGradient>
+                        {offer.ustaAvatar ? (
+                          <Image 
+                            source={{ uri: offer.ustaAvatar }} 
+                            style={styles.jobPublisherAvatar} 
+                          />
+                        ) : (
+                          <LinearGradient
+                            colors={['#06B6D4', '#0891B2']}
+                            style={styles.jobPublisherAvatar}
+                          >
+                            <Text style={styles.jobPublisherAvatarText}>
+                              {offer.ustaName ? offer.ustaName.charAt(0).toUpperCase() : 'U'}
+                            </Text>
+                          </LinearGradient>
+                        )}
                         <View>
                           <Text style={styles.jobCardAuthorLabel}>Paslayan Usta</Text>
-                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
                             <Text style={styles.jobCardAuthor}>{offer.ustaName}</Text>
-                            <Ionicons name="checkmark-circle" size={11} color="#10B981" style={{ marginLeft: 3 }} />
+                            <Ionicons name="checkmark-circle" size={13} color="#10B981" />
                           </View>
                         </View>
                       </View>
@@ -1211,23 +1223,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   jobCard: {
-    backgroundColor: '#FFFFFF', // Clean white background matching jobs tab
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    padding: 16,
+    padding: 20,
     marginBottom: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(6, 182, 212, 0.2)', // Subtle cyan border
-    shadowColor: 'rgba(6, 182, 212, 0.05)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#E2E8F0', // Sleek Slate-200 border
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 4,
   },
   jobCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   cityBadge: {
     backgroundColor: 'rgba(6, 182, 212, 0.12)',
@@ -1269,14 +1281,14 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontFamily: fonts.regular,
     lineHeight: 18,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   jobCardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.04)',
+    borderTopColor: '#F1F5F9', // Clearly visible divider line
     paddingTop: 12,
   },
   jobPublisherRow: {
