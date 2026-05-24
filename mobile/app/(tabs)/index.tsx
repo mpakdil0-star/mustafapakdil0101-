@@ -1924,7 +1924,7 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <View style={styles.sectionTitleContainer}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16, marginBottom: 0 }]} numberOfLines={1}>PAZAR YERİ & İKİNCİ EL</Text>
                 <TouchableOpacity 
                   onPress={() => setIsAllProductsModalVisible(true)}
@@ -1937,7 +1937,7 @@ export default function HomeScreen() {
               <Text style={styles.sectionSubtitle}>Ustalar ve vatandaşlar arası malzeme satışı</Text>
             </View>
             <TouchableOpacity
-              style={styles.addProductBtn}
+              style={[styles.addProductBtn, { marginTop: 8 }]}
               activeOpacity={0.8}
               onPress={() => setIsAddProductModalVisible(true)}
             >
