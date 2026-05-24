@@ -1928,16 +1928,16 @@ export default function HomeScreen() {
                 <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16, marginBottom: 0 }]} numberOfLines={1}>PAZAR YERİ & İKİNCİ EL</Text>
                 <TouchableOpacity 
                   onPress={() => setIsAllProductsModalVisible(true)}
-                  style={{ backgroundColor: 'rgba(245, 158, 11, 0.12)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, flexShrink: 0 }}
+                  style={{ marginLeft: 4, paddingVertical: 2, flexShrink: 0 }}
                   activeOpacity={0.7}
                 >
-                  <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: '#F59E0B' }}>Tümünü Gör ➔</Text>
+                  <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: colors.primary }}>Tümünü Gör &gt;</Text>
                 </TouchableOpacity>
               </View>
               <Text style={styles.sectionSubtitle}>Ustalar ve vatandaşlar arası malzeme satışı</Text>
             </View>
             <TouchableOpacity
-              style={[styles.addProductBtn, { marginTop: 8 }]}
+              style={[styles.addProductBtn, { marginTop: 18 }]}
               activeOpacity={0.8}
               onPress={() => setIsAddProductModalVisible(true)}
             >
