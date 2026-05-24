@@ -270,11 +270,30 @@ export default function HomeScreen() {
     try {
       const response = await api.get('/showcase');
       if (response.data?.success && Array.isArray(response.data.data) && response.data.data.length > 0) {
+        // Build a map of electrician avatars to backfill missing ones (e.g. for items uploaded before the avatar change)
+        let electriciansMap: Record<string, string> = {};
+        try {
+          const elecRes = await userService.getElectricians({});
+          if (elecRes && elecRes.success && Array.isArray(elecRes.data)) {
+            elecRes.data.forEach((elec: any) => {
+              if (elec.id && elec.profileImageUrl) {
+                electriciansMap[elec.id] = elec.profileImageUrl;
+              }
+            });
+          }
+        } catch (err) {
+          console.log('Error fetching electricians map for showcase:', err);
+        }
+
         // Group by ustaId and keep the latest item for each usta
         const grouped: Record<string, any> = {};
         response.data.data.forEach((item: any) => {
           if (!grouped[item.ustaId]) {
-            grouped[item.ustaId] = item;
+            const avatar = item.ustaAvatar || electriciansMap[item.ustaId] || null;
+            grouped[item.ustaId] = {
+              ...item,
+              ustaAvatar: avatar
+            };
           }
         });
         setHomeShowcaseItems(Object.values(grouped));
