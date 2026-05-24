@@ -866,7 +866,9 @@ export default function HomeScreen() {
         try {
           const [locRes, verRes] = await Promise.all([
             api.get(`${API_ENDPOINTS.LOCATIONS}?t=${Date.now()}`),
-            authService.getVerificationStatus().catch(() => ({ data: { status: null } }))
+            isElectrician
+              ? authService.getVerificationStatus().catch(() => ({ data: { status: null } }))
+              : Promise.resolve({ data: { status: null } } as any)
           ]);
           
           if (locRes.data.success) {
@@ -949,7 +951,7 @@ export default function HomeScreen() {
           
           await Promise.all([
             fetchLocations(),
-            fetchVerification(),
+            isElectrician ? fetchVerification() : Promise.resolve(),
             fetchNewJobsCount(),
             checkPushStatus(),
             isElectrician ? fetchStats() : Promise.resolve(),
