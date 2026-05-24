@@ -261,6 +261,28 @@ export default function ChannelsScreen() {
     }
   };
 
+  // Handle Delete Job Offer
+  const handleDeleteJobOffer = async (itemId: string) => {
+    Alert.alert('İlanı İptal Et', 'Bu iş paslama ilanınızı silmek ve yayından kaldırmak istediğinize emin misiniz?', [
+      { text: 'Vazgeç', style: 'cancel' },
+      {
+        text: 'Evet, İptal Et',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const response = await api.delete(`/community/jobs/${itemId}`);
+            if (response.data?.success) {
+              setJobOffers(response.data.data);
+              Alert.alert('Başarılı', 'İş paslama ilanınız başarıyla iptal edildi.');
+            }
+          } catch (err) {
+            Alert.alert('Hata', 'İlan iptal edilemedi.');
+          }
+        }
+      }
+    ]);
+  };
+
   // Handle Add Job Offer
   const handleAddJobOffer = async () => {
     if (!newJobTitle.trim() || !newJobDesc.trim()) {
@@ -642,9 +664,18 @@ export default function ChannelsScreen() {
                         </View>
 
                         {offer.ustaId === user?.id ? (
-                          <View style={styles.ownJobBadge}>
-                            <Ionicons name="checkmark-circle" size={12} color="#059669" />
-                            <Text style={styles.ownJobBadgeText}>İlanınız Yayında</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <View style={styles.ownJobBadge}>
+                              <Ionicons name="checkmark-circle" size={12} color="#059669" />
+                              <Text style={styles.ownJobBadgeText}>İlanınız Yayında</Text>
+                            </View>
+                            <TouchableOpacity
+                              style={styles.jobDeleteBtn}
+                              onPress={() => handleDeleteJobOffer(offer.id)}
+                            >
+                              <Ionicons name="trash" size={13} color="#EF4444" style={{ marginRight: 4 }} />
+                              <Text style={styles.jobDeleteBtnText}>İptal Et</Text>
+                            </TouchableOpacity>
                           </View>
                         ) : (
                           <TouchableOpacity
@@ -1423,6 +1454,21 @@ const styles = StyleSheet.create({
   },
   ownJobBadgeText: {
     color: '#059669',
+    fontSize: 10.5,
+    fontFamily: fonts.bold,
+  },
+  jobDeleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  jobDeleteBtnText: {
+    color: '#EF4444',
     fontSize: 10.5,
     fontFamily: fonts.bold,
   },

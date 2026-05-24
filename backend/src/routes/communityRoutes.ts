@@ -210,4 +210,32 @@ router.post('/jobs', async (req, res) => {
   }
 });
 
+// DELETE /api/v1/community/jobs/:id - Delete job sharing post
+router.delete('/jobs/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (isDatabaseAvailable) {
+      try {
+        await prisma.jobSharingPost.delete({
+          where: { id }
+        });
+      } catch (err) {
+        console.warn(`Could not delete job sharing post ${id} from DB (might be mock ID):`, err);
+      }
+      const jobs = await prisma.jobSharingPost.findMany({
+        orderBy: { createdAt: 'desc' }
+      });
+      return res.json({ success: true, data: jobs });
+    }
+
+    let jobs = loadJobSharing();
+    jobs = jobs.filter(job => job.id !== id);
+    saveJobSharing(jobs);
+    res.json({ success: true, data: jobs });
+  } catch (error: any) {
+    console.error('Error deleting job sharing post:', error);
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
 export default router;
