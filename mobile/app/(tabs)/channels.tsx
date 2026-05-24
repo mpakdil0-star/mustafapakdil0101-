@@ -316,10 +316,7 @@ export default function ChannelsScreen() {
   );
 
   return (
-    <LinearGradient
-      colors={['#0F2133', '#060B18']}
-      style={styles.container}
-    >
+    <View style={[styles.container, { backgroundColor: '#F8FAFC' }]}>
       {/* Header (Premium Slate Design matching mockup) */}
       <View style={styles.header}>
         <View style={styles.headerContentRow}>
@@ -658,7 +655,7 @@ export default function ChannelsScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Teknik Soru Sor</Text>
               <TouchableOpacity onPress={() => setIsNewPostModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#FFF" />
+                <Ionicons name="close" size={24} color="#64748B" />
               </TouchableOpacity>
             </View>
 
@@ -711,7 +708,7 @@ export default function ChannelsScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle} numberOfLines={1}>{selectedPost?.title}</Text>
               <TouchableOpacity onPress={() => setIsCommentsModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#FFF" />
+                <Ionicons name="close" size={24} color="#64748B" />
               </TouchableOpacity>
             </View>
 
@@ -763,7 +760,7 @@ export default function ChannelsScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>İş Pasla / Eleman Bul</Text>
               <TouchableOpacity onPress={() => setIsNewJobModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#FFF" />
+                <Ionicons name="close" size={24} color="#64748B" />
               </TouchableOpacity>
             </View>
 
@@ -835,7 +832,7 @@ export default function ChannelsScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Hüner Fotoğrafı Yükle</Text>
               <TouchableOpacity onPress={() => setIsNewShowcaseModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#FFF" />
+                <Ionicons name="close" size={24} color="#64748B" />
               </TouchableOpacity>
             </View>
 
@@ -905,7 +902,7 @@ export default function ChannelsScreen() {
         </View>
       </Modal>
 
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -933,12 +930,9 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   headerTitleText: {
-    color: '#60A5FA',
+    color: '#0F4C81', // Sapphire deep blue for header title on light bg
     fontSize: 26,
     fontFamily: fonts.bold,
-    textShadowColor: 'rgba(96, 165, 250, 0.6)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
   },
   headerActions: {
     flexDirection: 'row',
@@ -977,11 +971,16 @@ const styles = StyleSheet.create({
     width: 95,
     height: 75,
     borderRadius: 16,
-    backgroundColor: 'rgba(30, 41, 59, 0.5)',
+    backgroundColor: '#FFFFFF', // Clean white card background
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
     overflow: 'hidden',
+    shadowColor: 'rgba(0,0,0,0.02)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   tabCardBtnActive: {
     backgroundColor: 'transparent',
@@ -1035,17 +1034,17 @@ const styles = StyleSheet.create({
   },
   // Birebir aynısı Forum Card
   forumCard: {
-    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    backgroundColor: '#FFFFFF', // Clean white background matching jobs tab
     borderRadius: 24,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1.5,
-    borderColor: '#3B82F6',
-    shadowColor: '#3B82F6',
+    borderColor: 'rgba(59, 130, 246, 0.2)', // Subtle sapphire blue border
+    shadowColor: 'rgba(15, 76, 129, 0.05)',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   forumHeader: {
     flexDirection: 'row',
@@ -1060,29 +1059,29 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   forumAuthor: {
-    color: '#FFF',
+    color: '#0F172A', // Slate 900 for light bg readability
     fontSize: 15,
     fontFamily: fonts.bold,
   },
   forumMeta: {
-    color: '#94A3B8',
+    color: '#64748B',
     fontSize: 12,
     fontFamily: fonts.medium,
     marginTop: 1,
   },
   metaTime: {
-    color: '#64748B',
+    color: '#94A3B8',
     fontSize: 11.5,
     fontFamily: fonts.medium,
   },
   forumTitle: {
-    color: '#FFF',
+    color: '#0F172A', // Slate 900 for light bg readability
     fontSize: 16.5,
     fontFamily: fonts.bold,
     marginBottom: 6,
   },
   forumDesc: {
-    color: '#94A3B8',
+    color: '#334155', // Slate 700 for light bg readability
     fontSize: 13,
     fontFamily: fonts.regular,
     lineHeight: 19,
@@ -1194,17 +1193,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   jobCard: {
-    backgroundColor: 'rgba(30, 41, 59, 0.75)',
+    backgroundColor: '#FFFFFF', // Clean white background matching jobs tab
     borderRadius: 24,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1.5,
-    borderColor: '#06B6D4',
-    shadowColor: '#06B6D4',
+    borderColor: 'rgba(6, 182, 212, 0.2)', // Subtle cyan border
+    shadowColor: 'rgba(6, 182, 212, 0.05)',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   jobCardHeader: {
     flexDirection: 'row',
@@ -1242,13 +1241,13 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
   },
   jobCardTitle: {
-    color: '#FFF',
+    color: '#0F172A', // Slate 900
     fontSize: 14.5,
     fontFamily: fonts.bold,
     marginBottom: 6,
   },
   jobCardDesc: {
-    color: '#94A3B8',
+    color: '#334155', // Slate 700
     fontSize: 12.5,
     fontFamily: fonts.regular,
     lineHeight: 18,
@@ -1285,7 +1284,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
   },
   jobCardAuthor: {
-    color: '#E2E8F0',
+    color: '#334155', // Slate 700
     fontSize: 12,
     fontFamily: fonts.bold,
   },
@@ -1318,18 +1317,18 @@ const styles = StyleSheet.create({
   },
   masonryItem: {
     width: (width - 44) / 2,
-    backgroundColor: '#1E293B',
+    backgroundColor: '#FFFFFF', // Clean white background
     borderRadius: 16,
     marginBottom: 14,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: '#E2E8F0', // Subtle light grey border
     position: 'relative',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.04,
     shadowRadius: 6,
-    elevation: 2,
+    elevation: 1,
   },
   imageWrapper: {
     width: '100%',
@@ -1366,12 +1365,12 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   masonryTitle: {
-    color: '#FFF',
+    color: '#0F172A', // Slate 900
     fontSize: 12,
     fontFamily: fonts.bold,
   },
   masonryUsta: {
-    color: '#94A3B8',
+    color: '#475569', // Slate 600
     fontSize: 10,
     fontFamily: fonts.medium,
     marginTop: 2,
@@ -1391,44 +1390,44 @@ const styles = StyleSheet.create({
   // Modals Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)', // Slightly lighter overlay
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#FFFFFF', // Clean white modal content background
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: '#E2E8F0',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: '#F1F5F9',
     paddingBottom: 14,
     marginBottom: 16,
   },
   modalTitle: {
-    color: '#FFF',
+    color: '#0F172A', // Slate 900
     fontSize: 16.5,
     fontFamily: fonts.bold,
   },
   label: {
-    color: '#E2E8F0',
+    color: '#475569', // Slate 600
     fontSize: 12.5,
     fontFamily: fonts.bold,
     marginBottom: 6,
     marginTop: 10,
   },
   input: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: '#F8FAFC', // Light background for inputs
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: '#E2E8F0',
     borderRadius: 12,
-    color: '#FFF',
+    color: '#0F172A',
     paddingHorizontal: 12,
     height: 44,
     fontFamily: fonts.medium,
@@ -1440,8 +1439,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderStyle: 'dashed',
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
     justifyContent: 'center',
     alignItems: 'center',
     marginVertical: 10,
@@ -1479,7 +1478,7 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
   },
   postBody: {
-    color: '#E2E8F0',
+    color: '#334155', // Slate 700
     fontSize: 13.5,
     fontFamily: fonts.regular,
     lineHeight: 20,
@@ -1487,7 +1486,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#F1F5F9',
     marginVertical: 14,
   },
   sectionTitle: {
@@ -1503,21 +1502,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   commentBox: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: '#F8FAFC', // Light comment background
     borderRadius: 12,
     padding: 12,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: '#E2E8F0',
   },
   commentAuthor: {
-    color: '#FFF',
+    color: '#0F172A', // Slate 900
     fontSize: 12,
     fontFamily: fonts.bold,
     marginBottom: 2,
   },
   commentText: {
-    color: '#94A3B8',
+    color: '#334155', // Slate 700
     fontSize: 12.5,
     fontFamily: fonts.regular,
   },
@@ -1534,20 +1533,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: '#F1F5F9',
     paddingTop: 12,
   },
   commentInput: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: '#F8FAFC',
     borderRadius: 12,
-    color: '#FFF',
+    color: '#0F172A',
     paddingHorizontal: 12,
     height: 40,
     fontFamily: fonts.medium,
     fontSize: 13,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: '#E2E8F0',
   },
   sendCommentBtn: {
     width: 40,
@@ -1559,24 +1558,24 @@ const styles = StyleSheet.create({
   // City Filter Modal Styles
   centerModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   cityModalContent: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#FFFFFF', // Clean white background for city list
     width: '80%',
     borderRadius: 20,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: '#E2E8F0',
   },
   cityModalTitle: {
-    color: '#FFF',
+    color: '#0F172A', // Slate 900
     fontSize: 15,
     fontFamily: fonts.bold,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: '#F1F5F9',
     paddingBottom: 10,
     marginBottom: 10,
   },
@@ -1590,7 +1589,7 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   cityListItemText: {
-    color: '#E2E8F0',
+    color: '#475569', // Slate 600
     fontSize: 13,
     fontFamily: fonts.medium,
   },
