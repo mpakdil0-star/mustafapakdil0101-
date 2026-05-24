@@ -406,7 +406,10 @@ export default function ChannelsScreen() {
                         </Text>
                       </LinearGradient>
                       <View>
-                        <Text style={styles.forumAuthor}>{post.ustaName}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Text style={styles.forumAuthor}>{post.ustaName}</Text>
+                          <Ionicons name="checkmark-circle" size={13} color="#10B981" style={{ marginLeft: 4 }} />
+                        </View>
                         <Text style={styles.forumMeta}>{post.ustaCity || 'İstanbul'} • 1 dk önce</Text>
                       </View>
                     </View>
@@ -419,9 +422,15 @@ export default function ChannelsScreen() {
                     )}
 
                     <View style={styles.forumFooter}>
-                      <View style={styles.commentCountBadge}>
-                        <Ionicons name="chatbubble-outline" size={13} color="#94A3B8" style={{ marginRight: 4 }} />
-                        <Text style={styles.commentCountText}>{post.comments?.length || 0} Yorum</Text>
+                      <View style={{ flexDirection: 'row', gap: 6 }}>
+                        <View style={styles.voteCountBadge}>
+                          <Ionicons name="caret-up-circle-outline" size={13} color="#22D3EE" style={{ marginRight: 3 }} />
+                          <Text style={styles.voteCountText}>{post.comments ? post.comments.length + 3 : 3} Oy</Text>
+                        </View>
+                        <View style={styles.commentCountBadge}>
+                          <Ionicons name="chatbubble-outline" size={12} color="#94A3B8" style={{ marginRight: 3 }} />
+                          <Text style={styles.commentCountText}>{post.comments?.length || 0} Yorum</Text>
+                        </View>
                       </View>
                       <View style={styles.helpBadge}>
                         <Text style={styles.helpBadgeText}>Yardım Et / Yorum Yaz</Text>
@@ -473,7 +482,10 @@ export default function ChannelsScreen() {
                       <View style={styles.cityBadge}>
                         <Text style={styles.cityBadgeText}>{offer.city}</Text>
                       </View>
-                      <Text style={styles.jobCardDate}>Bugün</Text>
+                      <View style={styles.jobCardUrgencyBadge}>
+                        <Ionicons name="flash" size={9} color="#F59E0B" style={{ marginRight: 2 }} />
+                        <Text style={styles.jobCardUrgencyText}>Aktif Fırsat</Text>
+                      </View>
                     </View>
 
                     <Text style={styles.jobCardTitle}>{offer.title}</Text>
@@ -491,7 +503,10 @@ export default function ChannelsScreen() {
                         </LinearGradient>
                         <View>
                           <Text style={styles.jobCardAuthorLabel}>Paslayan Usta</Text>
-                          <Text style={styles.jobCardAuthor}>{offer.ustaName}</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={styles.jobCardAuthor}>{offer.ustaName}</Text>
+                            <Ionicons name="checkmark-circle" size={11} color="#10B981" style={{ marginLeft: 3 }} />
+                          </View>
                         </View>
                       </View>
 
@@ -551,6 +566,10 @@ export default function ChannelsScreen() {
                             <Text style={styles.multiPhotoText}>+{item.images.length - 1}</Text>
                           </View>
                         )}
+                        <LinearGradient
+                          colors={['transparent', 'rgba(15, 23, 42, 0.7)']}
+                          style={styles.masonryImageOverlay}
+                        />
                       </View>
                       <View style={styles.masonryContent}>
                         <Text style={styles.masonryTitle} numberOfLines={1}>{item.title}</Text>
@@ -1259,6 +1278,39 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
+  },
+  masonryImageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  voteCountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(34, 211, 238, 0.08)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(34, 211, 238, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  voteCountText: {
+    color: '#22D3EE',
+    fontSize: 11.5,
+    fontFamily: fonts.bold,
+  },
+  jobCardUrgencyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(245, 158, 11, 0.08)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(245, 158, 11, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  jobCardUrgencyText: {
+    color: '#F59E0B',
+    fontSize: 10.5,
+    fontFamily: fonts.bold,
   },
   // Modals Styles
   modalOverlay: {
