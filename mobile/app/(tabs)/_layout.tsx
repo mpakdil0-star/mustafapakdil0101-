@@ -100,24 +100,26 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       </View>
 
       {/* Center Button (Conditional) */}
-      <View style={[styles.centerButtonWrapper, isElectrician && { marginTop: 0, paddingTop: 10 }]}>
+      <View style={styles.centerButtonWrapper}>
         {isElectrician ? (
-          <TouchableOpacity
-            style={styles.tabItem}
-            activeOpacity={0.7}
-            onPress={() => {
-              navigation.navigate('channels');
-            }}
-          >
-            <View style={styles.tabIconWrapper}>
-              <Ionicons 
-                name={isChannelFocused ? "chatbubble-ellipses" : "chatbubble-ellipses-outline"} 
-                size={24} 
-                color={isChannelFocused ? colors.primary : "#9CA3AF"} 
-              />
-            </View>
-            <Text style={[styles.tabLabel, { color: isChannelFocused ? colors.primary : "#9CA3AF" }]}>Usta Kanalları</Text>
-          </TouchableOpacity>
+          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => {
+                navigation.navigate('channels');
+              }}
+            >
+              <LinearGradient
+                colors={[colors.primary, colors.primaryDark || '#1D4ED8']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={[styles.centerButton, { shadowColor: colors.primary }]}
+              >
+                <Ionicons name="chatbubble-ellipses" size={26} color="#FFF" />
+                <Text style={styles.centerButtonLabel}>KANALLAR</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
         ) : (
           <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
             <TouchableOpacity
