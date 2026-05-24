@@ -38,6 +38,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     switch (routeName) {
       case 'index': return focused ? 'home' : 'home-outline';
       case 'jobs': return focused ? 'briefcase' : 'briefcase-outline';
+      case 'channels': return focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline';
       case 'messages': return focused ? 'chatbubbles' : 'chatbubbles-outline';
       case 'profile': return focused ? 'person' : 'person-outline';
       default: return 'home-outline';
@@ -49,18 +50,21 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     switch (routeName) {
       case 'index': return 'Ana Sayfa';
       case 'jobs': return isElectr ? 'İşler' : 'İlanlarım';
+      case 'channels': return 'Kanallar';
       case 'messages': return 'Mesajlar';
       case 'profile': return 'Profil';
       default: return '';
     }
   };
 
-  // Split tabs: 2 left, ACİL center, 2 right
-  const leftTabs = state.routes.slice(0, 2);
-  const rightTabs = state.routes.slice(2, 4);
+  // Split tabs dynamically by name to keep them in their proper visual locations
+  const leftTabs = state.routes.filter((r: any) => r.name === 'index' || r.name === 'jobs');
+  const rightTabs = state.routes.filter((r: any) => r.name === 'messages' || r.name === 'profile');
+  const isChannelFocused = state.routes[state.index]?.name === 'channels';
 
-  const renderTab = (route: any, index: number, globalIndex: number) => {
-    const focused = state.index === globalIndex;
+  const renderTab = (route: any) => {
+    const routeGlobalIndex = state.routes.findIndex((r: any) => r.name === route.name);
+    const focused = state.index === routeGlobalIndex;
     const icon = getIcon(route.name, focused);
     const label = getLabel(route.name);
     const color = focused ? colors.primary : '#9CA3AF';
@@ -92,7 +96,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     <View style={[styles.tabBarContainer, { paddingBottom: insets.bottom, height: TAB_HEIGHT }]}>
       {/* Left tabs */}
       <View style={styles.tabSection}>
-        {leftTabs.map((route: any, i: number) => renderTab(route, i, i))}
+        {leftTabs.map((route: any) => renderTab(route))}
       </View>
 
       {/* Center Button (Conditional) */}
@@ -102,14 +106,17 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             style={styles.tabItem}
             activeOpacity={0.7}
             onPress={() => {
-              // Navigasyon veya ilgili sayfa yönlendirmesi buraya
-              // router.push('/channels'); 
+              navigation.navigate('channels');
             }}
           >
             <View style={styles.tabIconWrapper}>
-              <Ionicons name="videocam-outline" size={24} color="#9CA3AF" />
+              <Ionicons 
+                name={isChannelFocused ? "chatbubble-ellipses" : "chatbubble-ellipses-outline"} 
+                size={24} 
+                color={isChannelFocused ? colors.primary : "#9CA3AF"} 
+              />
             </View>
-            <Text style={[styles.tabLabel, { color: '#9CA3AF' }]}>Usta Kanalları</Text>
+            <Text style={[styles.tabLabel, { color: isChannelFocused ? colors.primary : "#9CA3AF" }]}>Usta Kanalları</Text>
           </TouchableOpacity>
         ) : (
           <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
@@ -139,7 +146,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
       {/* Right tabs */}
       <View style={styles.tabSection}>
-        {rightTabs.map((route: any, i: number) => renderTab(route, i, i + 2))}
+        {rightTabs.map((route: any) => renderTab(route))}
       </View>
     </View>
   );
@@ -167,6 +174,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={{ title: 'Ana Sayfa' }} />
       <Tabs.Screen name="jobs" options={{ title: 'İlanlar' }} />
+      <Tabs.Screen name="channels" options={{ title: 'Usta Kanalları' }} />
       <Tabs.Screen name="messages" options={{ title: 'Mesajlar' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
     </Tabs>

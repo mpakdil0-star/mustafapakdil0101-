@@ -278,5 +278,8 @@ export const authService = {
       throw new Error(message);
     }
   },
+  async getVerificationStatus() {
+    return apiClient.get('/users/verification');
+  },
 };
 

@@ -206,6 +206,11 @@ export default function HomeScreen() {
   const [isAllProductsModalVisible, setIsAllProductsModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   
+  // Showcase / Hünerler States
+  const [homeShowcaseItems, setHomeShowcaseItems] = useState<any[]>([]);
+  const [selectedShowcaseItem, setSelectedShowcaseItem] = useState<any>(null);
+  const [isShowcaseDetailModalVisible, setIsShowcaseDetailModalVisible] = useState(false);
+  
   // New Product Form States
   const [newProdTitle, setNewProdTitle] = useState('');
   const [newProdCategory, setNewProdCategory] = useState('Kablo');
@@ -260,9 +265,31 @@ export default function HomeScreen() {
     }
   };
 
+  const fetchHomeShowcase = async () => {
+    try {
+      const response = await api.get('/showcase');
+      if (response.data?.success && Array.isArray(response.data.data) && response.data.data.length > 0) {
+        setHomeShowcaseItems(response.data.data);
+      } else {
+        // Fallback to beautiful mock showcase items if empty or error
+        setHomeShowcaseItems([
+          { id: 'sc-1', title: 'Pano Kablolama Tesisatı', description: 'Schneider şalt malzemesi ile özenle çekilmiş endüstriyel dağıtım panosu.', image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500', ustaName: 'Ahmet Yılmaz (Usta)', ustaId: 'mock-electrician-1' },
+          { id: 'sc-2', title: 'Akıllı Ev LED Tasarımları', description: 'Modern mimariye uygun lüks asma tavan aydınlatma ve otomasyon kurulumu.', image: 'https://images.unsplash.com/photo-1565538810844-1e119d81a207?w=500', ustaName: 'Mustafa Kaya (Usta)', ustaId: 'mock-electrician-3' },
+          { id: 'sc-3', title: 'Sigorta Kutusu Revizyonu', description: 'Eski tip panonun sıfır Siemens malzemeleri ile güvenli bir şekilde yenilenmesi.', image: 'https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=500', ustaName: 'Bülent Tan (Usta)', ustaId: 'mock-electrician-3' },
+          { id: 'sc-4', title: 'Güvenlik Kamera Altyapısı', description: '4K UltraHD Dahua IP kamera kurulumu ve kablo kanallama işçiliği.', image: 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=500', ustaName: 'Mustafa Yılmaz (Usta)', ustaId: 'mock-electrician-1' },
+          { id: 'sc-5', title: 'Klima Dezenfekte ve Bakımı', description: 'Antibakteriyel solüsyon ile detaylı klima iç ünite petek temizliği.', image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500', ustaName: 'Tuğçe Klimacı (Usta)', ustaId: 'mock-electrician-2' },
+          { id: 'sc-6', title: 'Sıfır Daire Kablo Çekimi', description: 'Tüm dairenin tadilat öncesi güvenli NYM kablolama ve borulama işlemi.', image: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=500', ustaName: 'Ahmet Kaya (Usta)', ustaId: 'mock-electrician-2' }
+        ]);
+      }
+    } catch (_err) {
+      // Fallback
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       fetchMarketplaceProducts();
+      fetchHomeShowcase();
     }, [])
   );
 
@@ -751,7 +778,7 @@ export default function HomeScreen() {
     try {
       let params: any = { limit: 10 };
       if (isElectrician) {
-        params.serviceCategory = user?.electricianProfile?.serviceCategory || user?.serviceCategory || 'elektrik';
+        params.serviceCategory = user?.electricianProfile?.serviceCategory || (user as any)?.serviceCategory || 'elektrik';
       }
       const result = await jobService.getJobs(params);
       if (result && result.jobs && result.jobs.length > 0) {
@@ -1084,7 +1111,7 @@ export default function HomeScreen() {
                   <View style={styles.ustaHeaderRightContainer}>
                     <View style={styles.ustaRatingAndRoleColumn}>
                       <View style={styles.ustaRatingRow}>
-                        <Text style={styles.ustaRatingText}>{user?.averageRating?.toFixed(1) || '4.9'}</Text>
+                        <Text style={styles.ustaRatingText}>{(user as any)?.averageRating?.toFixed(1) || '4.9'}</Text>
                         <Ionicons name="star" size={13} color="#FBBF24" style={{ marginLeft: 2 }} />
                       </View>
                       <Text style={styles.ustaRoleText}>
@@ -1583,32 +1610,33 @@ export default function HomeScreen() {
               }}
             >
               {Array.from({ length: 3 }).map((_, colIndex) => {
-                const vitrinItems = [
-                  { id: 1, title: 'Elektrik Tesisat', desc: 'Güvenli ve profesyonel', icon: 'flash', serviceCategory: 'elektrik', image: require('../../assets/images/v_vitrin_elektrik.jpg') },
-                  { id: 2, title: 'Güvenlik Kamera', desc: 'Kurulum ve bakım', icon: 'videocam', serviceCategory: 'elektrik', image: require('../../assets/images/v_vitrin_kamera.jpg') },
-                  { id: 3, title: 'Klima Servisi', desc: 'Montaj ve temizlik', icon: 'snow', serviceCategory: 'klima', image: require('../../assets/images/v_vitrin_klima.jpg') },
-                  { id: 4, title: 'Tesisat & Su', desc: 'Acil müdahale', icon: 'water', serviceCategory: 'tesisat', image: require('../../assets/images/v_vitrin_tesisat.jpg') },
-                  { id: 5, title: 'Çilingir', desc: 'Kapı açma ve kilit', icon: 'key', serviceCategory: 'cilingir', image: require('../../assets/images/v_vitrin_cilingir.jpg') },
-                  { id: 6, title: 'Beyaz Eşya', desc: 'Tamir ve bakım', icon: 'construct', serviceCategory: 'beyaz-esya', image: require('../../assets/images/v_vitrin_beyaz_esya.jpg') },
-                ];
+                const colItems = homeShowcaseItems.slice(colIndex * 2, colIndex * 2 + 2);
+                if (colItems.length === 0) return null;
                 return (
                   <View key={colIndex} style={styles.vitrinColumn}>
-                    {vitrinItems.slice(colIndex * 2, colIndex * 2 + 2).map((item) => (
+                    {colItems.map((item) => (
                       <TouchableOpacity
                         key={item.id}
                         activeOpacity={0.85}
-                        onPress={() => handleActionWithAuth('/jobs/create', { serviceCategory: item.serviceCategory })}
+                        onPress={() => {
+                          setSelectedShowcaseItem(item);
+                          setIsShowcaseDetailModalVisible(true);
+                        }}
                         style={styles.vitrinCardSmall}
                       >
-                        <ImageBackground source={item.image} style={styles.vitrinCardBg} imageStyle={styles.vitrinCardBgImage}>
+                        <ImageBackground 
+                          source={typeof item.image === 'string' ? { uri: item.image } : item.image} 
+                          style={styles.vitrinCardBg} 
+                          imageStyle={styles.vitrinCardBgImage}
+                        >
                           <LinearGradient colors={['transparent', 'rgba(0,0,0,0.85)']} style={styles.vitrinCardGradient}>
                             <View style={styles.vitrinCardContentRow}>
                               <View style={styles.vitrinIconCircleSm}>
-                                <Ionicons name={item.icon as any} size={20} color="#FFF" />
+                                <Ionicons name="flash" size={20} color="#FFF" />
                               </View>
                               <View style={styles.vitrinCardTextCol}>
-                                <Text style={styles.vitrinCardTitle} numberOfLines={2}>{item.title}</Text>
-                                <Text style={styles.vitrinCardDesc} numberOfLines={1}>{item.desc}</Text>
+                                <Text style={styles.vitrinCardTitle} numberOfLines={1}>{item.title}</Text>
+                                <Text style={styles.vitrinCardDesc} numberOfLines={1}>@{item.ustaName.split(' ')[0]}</Text>
                               </View>
                             </View>
                           </LinearGradient>
@@ -2633,6 +2661,95 @@ export default function HomeScreen() {
               >
                 <Text style={styles.hiwButtonText}>{isElectrician ? 'İlanlara Göz At' : 'Hemen İlan Ver'}</Text>
               </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* ==================== HÜNER (REELS) DETAY MODAL ==================== */}
+        <Modal
+          visible={isShowcaseDetailModalVisible && !!selectedShowcaseItem}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setIsShowcaseDetailModalVisible(false)}
+        >
+          <View style={styles.hiwModalOverlay}>
+            <View style={[styles.marketModalContent, { paddingBottom: 24 }]}>
+              <View style={styles.hiwHeader}>
+                <Text style={styles.marketModalTitle}>Usta Hüneri Detayı</Text>
+                <TouchableOpacity onPress={() => setIsShowcaseDetailModalVisible(false)} style={styles.hiwCloseBtn}>
+                  <Ionicons name="close" size={24} color="#94A3B8" />
+                </TouchableOpacity>
+              </View>
+
+              {selectedShowcaseItem && (
+                <View style={{ marginTop: 20 }}>
+                  {/* Photo Section */}
+                  {selectedShowcaseItem.image ? (
+                    <TouchableOpacity
+                      activeOpacity={0.9}
+                      onPress={() => setShowFullscreenImage(typeof selectedShowcaseItem.image === 'string' ? selectedShowcaseItem.image : null)}
+                      style={{ width: '100%', height: 220, borderRadius: 16, overflow: 'hidden', marginBottom: 16, position: 'relative' }}
+                    >
+                      <Image 
+                        source={typeof selectedShowcaseItem.image === 'string' ? { uri: selectedShowcaseItem.image } : selectedShowcaseItem.image} 
+                        style={{ width: '100%', height: '100%', resizeMode: 'cover' }} 
+                      />
+                      <View style={{ position: 'absolute', bottom: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Ionicons name="expand" size={12} color="#FFF" />
+                        <Text style={{ color: '#FFF', fontSize: 10, fontFamily: fonts.bold }}>Büyütmek için Dokunun</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ) : null}
+
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View style={[styles.marketCategoryBadge, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
+                      <Text style={[styles.marketCategoryText, { color: '#F59E0B' }]}>Zanaat / Hüner Galerisi</Text>
+                    </View>
+                  </View>
+
+                  <Text style={{ fontSize: 18, fontFamily: fonts.bold, color: '#FFF', marginTop: 12 }}>{selectedShowcaseItem.title}</Text>
+
+                  <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 12, marginTop: 16 }}>
+                    <Text style={{ color: '#E2E8F0', fontSize: 13, lineHeight: 20, fontFamily: fonts.regular }}>{selectedShowcaseItem.description || 'Bu zanaatkar tarafından yapılan özel işçilik.'}</Text>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', paddingTop: 16 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: '#94A3B8', fontSize: 11, fontFamily: fonts.medium }}>Usta</Text>
+                      <Text style={{ color: '#FFF', fontSize: 13.5, fontFamily: fonts.bold }}>{selectedShowcaseItem.ustaName}</Text>
+                    </View>
+                  </View>
+
+                  {selectedShowcaseItem.ustaId === user?.id ? (
+                    <View style={{ marginTop: 24 }}>
+                      <View style={{ backgroundColor: 'rgba(59, 130, 246, 0.08)', borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.15)', borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ color: '#60A5FA', fontSize: 12.5, fontFamily: fonts.semiBold }}>
+                          Kendi yüklediğiniz vitrin çalışması
+                        </Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={[styles.submitBtn, { backgroundColor: colors.primary, marginTop: 24, flexDirection: 'row', gap: 8, justifyContent: 'center' }]}
+                      onPress={() => {
+                        setIsShowcaseDetailModalVisible(false);
+                        handleContactSeller(selectedShowcaseItem.ustaId, selectedShowcaseItem.ustaName);
+                      }}
+                      activeOpacity={0.8}
+                      disabled={isStartingChat}
+                    >
+                      {isStartingChat ? (
+                        <ActivityIndicator size="small" color="#FFF" />
+                      ) : (
+                        <>
+                          <Ionicons name="chatbubbles" size={18} color="#FFF" />
+                          <Text style={styles.submitBtnText}>Ustayla İletişime Geç (Sohbet Et)</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
             </View>
           </View>
         </Modal>

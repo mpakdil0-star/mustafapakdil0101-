@@ -18,6 +18,8 @@ import blockRoutes from './blockRoutes';
 import calendarRoutes from './calendarRoutes';
 import ledgerRoutes from './ledgerRoutes';
 import marketplaceRoutes from './marketplaceRoutes';
+import showcaseRoutes from './showcaseRoutes';
+import communityRoutes from './communityRoutes';
 
 const router = Router();
 
@@ -57,5 +59,7 @@ router.use('/blocks', blockRoutes);
 router.use('/calendar', calendarRoutes);
 router.use('/ledger', ledgerRoutes);
 router.use('/marketplace', marketplaceRoutes);
+router.use('/showcase', showcaseRoutes);
+router.use('/community', communityRoutes);
 
 export default router;
