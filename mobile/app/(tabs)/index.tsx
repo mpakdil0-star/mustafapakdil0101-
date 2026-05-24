@@ -245,7 +245,7 @@ export default function HomeScreen() {
   const MARKETPLACE_STORAGE_KEY = 'marketplace_products_v1';
 
   // Load marketplace products: AsyncStorage first, then try backend sync with smart local preservation
-  const fetchMarketplaceProducts = async () => {
+  const fetchMarketplaceProducts = useCallback(async () => {
     try {
       let localProducts: any[] = [];
 
@@ -273,8 +273,16 @@ export default function HomeScreen() {
           // Merge backend products with user's local products to avoid duplicates
           const merged = [...myLocalProducts];
           backendProducts.forEach((bProd: any) => {
-            if (!merged.some(mProd => mProd.id === bProd.id)) {
-              merged.push(bProd);
+            // If the backend product belongs to the user, ensure it is flagged as isLocal
+            const isMyProduct = bProd.sellerId === user?.id || bProd.sellerId === 'mock-current-user';
+            const mergedProd = isMyProduct ? { ...bProd, isLocal: true } : bProd;
+
+            const existingIdx = merged.findIndex(mProd => mProd.id === mergedProd.id);
+            if (existingIdx === -1) {
+              merged.push(mergedProd);
+            } else if (isMyProduct) {
+              // Ensure the local flag is set/preserved in the local array
+              merged[existingIdx] = { ...merged[existingIdx], isLocal: true };
             }
           });
 
@@ -287,7 +295,7 @@ export default function HomeScreen() {
     } catch (error) {
       console.log('Marketplace load error:', error);
     }
-  };
+  }, [user]);
 
   // Save marketplace products to AsyncStorage
   const saveMarketplaceToStorage = async (products: any[]) => {
@@ -356,7 +364,7 @@ export default function HomeScreen() {
     useCallback(() => {
       fetchMarketplaceProducts();
       fetchHomeShowcase();
-    }, [])
+    }, [fetchMarketplaceProducts])
   );
 
   const handleChooseFromGallery = async () => {
@@ -520,8 +528,16 @@ export default function HomeScreen() {
     try {
       const response = await api.post(API_ENDPOINTS.MARKETPLACE, newProduct);
       if (response.data?.success && response.data.data) {
-        setMarketplaceProducts(response.data.data);
-        await saveMarketplaceToStorage(response.data.data);
+        // Map over the backend response and restore/ensure isLocal flag is set to true for our custom products
+        const mergedData = response.data.data.map((bProd: any) => {
+          const isMatch = bProd.id === newProduct.id || updatedProducts.some(p => p.id === bProd.id && p.isLocal);
+          if (isMatch) {
+            return { ...bProd, isLocal: true };
+          }
+          return bProd;
+        });
+        setMarketplaceProducts(mergedData);
+        await saveMarketplaceToStorage(mergedData);
       }
     } catch (_e) {
       // Backend not available — already saved locally
