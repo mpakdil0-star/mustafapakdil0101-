@@ -692,18 +692,23 @@ function RootLayoutNav() {
     };
   }, [isAuthenticated, dispatch, router]);
 
+  // Deferred Deep Linking when user gets authenticated
+  useEffect(() => {
+    if (isAuthenticated && pendingNotificationPath && isNavigationReady) {
+      console.log('🚀 [RootNav] Navigating to deferred notification path:', pendingNotificationPath);
+      // Small delay to ensure state and navigation is fully mounted
+      setTimeout(() => {
+        router.push(pendingNotificationPath as any);
+        setPendingNotificationPath(null);
+      }, 500);
+    }
+  }, [isAuthenticated, pendingNotificationPath, isNavigationReady]);
+
   // PUSH NOTIFICATION TAP HANDLER (Deep Linking for background/closed app)
   useEffect(() => {
     // Handle notification tap when app is in background or closed
     const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
       console.log('🔔 [DEEP LINK] Push notification tapped:', JSON.stringify(response.notification.request.content.data));
-
-      // CRITICAL: If not authenticated, don't try to navigate to protected notification screens
-      if (!isAuthenticated) {
-        console.log('🚫 [DEEP LINK] Ignoring tap because user is not authenticated');
-        router.push('/welcome');
-        return;
-      }
 
       const data = response.notification.request.content.data as any;
 
@@ -723,11 +728,24 @@ function RootLayoutNav() {
 
       if (targetPath) {
         setPendingNotificationPath(targetPath);
-        router.push(targetPath as any);
-        // Clear pending path after a short delay
-        setTimeout(() => setPendingNotificationPath(null), 2000);
+        
+        // If already authenticated or if it is a public path (like jobs), navigate immediately.
+        // Otherwise, defer the navigation until the Redux store rehydrates/authenticates.
+        const isPublicPath = targetPath.startsWith('/jobs/');
+        if (isAuthenticated || isPublicPath) {
+          console.log('🚀 [DEEP LINK] Navigating immediately to target path:', targetPath);
+          router.push(targetPath as any);
+          // Clear pending path after a short delay
+          setTimeout(() => setPendingNotificationPath(null), 2000);
+        } else {
+          console.log('⏳ [DEEP LINK] Deferring protected navigation until authenticated:', targetPath);
+        }
       } else {
-        router.push('/profile/notifications');
+        if (isAuthenticated) {
+          router.push('/profile/notifications');
+        } else {
+          router.push('/welcome');
+        }
       }
     });
 
@@ -765,8 +783,14 @@ function RootLayoutNav() {
 
           if (targetPath) {
             setPendingNotificationPath(targetPath);
-            router.push(targetPath as any);
-            setTimeout(() => setPendingNotificationPath(null), 2500);
+            const isPublicPath = targetPath.startsWith('/jobs/');
+            if (isAuthenticated || isPublicPath) {
+              console.log('🚀 [DEEP LINK] Navigating immediately to initial target path:', targetPath);
+              router.push(targetPath as any);
+              setTimeout(() => setPendingNotificationPath(null), 2500);
+            } else {
+              console.log('⏳ [DEEP LINK] Initial target path deferred:', targetPath);
+            }
           }
         }, 1200);
       }
@@ -780,7 +804,7 @@ function RootLayoutNav() {
       responseSubscription.remove();
       receivedSubscription.remove();
     };
-  }, [router, isNavigationReady, dispatch]);
+  }, [router, isNavigationReady, isAuthenticated, dispatch]);
 
   // Sycn native App icon badge with Redux unreadCount
   const { unreadCount } = useSelector((state: RootState) => state.notifications);
