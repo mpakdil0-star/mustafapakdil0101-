@@ -217,11 +217,18 @@ export default function HomeScreen() {
   const [newProdCategory, setNewProdCategory] = useState('Kablo');
   const [newProdPrice, setNewProdPrice] = useState('');
   const [newProdDesc, setNewProdDesc] = useState('');
+  const [newProdLocation, setNewProdLocation] = useState('');
   const [newProdImages, setNewProdImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [showPhotoSourceModal, setShowPhotoSourceModal] = useState(false);
   const [showFullscreenImage, setShowFullscreenImage] = useState<string | null>(null);
   const [isStartingChat, setIsStartingChat] = useState(false);
+
+  useEffect(() => {
+    if (isAddProductModalVisible) {
+      setNewProdLocation(user?.city || 'İstanbul');
+    }
+  }, [isAddProductModalVisible, user]);
 
   // Marketplace Search and Filtering States
   const [marketSearchQuery, setMarketSearchQuery] = useState('');
@@ -446,7 +453,7 @@ export default function HomeScreen() {
   };
 
   const handleAddProduct = async () => {
-    if (!newProdTitle.trim() || !newProdPrice.trim() || !newProdDesc.trim()) {
+    if (!newProdTitle.trim() || !newProdPrice.trim() || !newProdDesc.trim() || !newProdLocation.trim()) {
       Alert.alert('Eksik Bilgi', 'Lütfen tüm alanları doldurun.');
       return;
     }
@@ -457,7 +464,7 @@ export default function HomeScreen() {
       return;
     }
 
-    const userLocation = user?.city ? `${user.city}` : 'İstanbul';
+    const userLocation = newProdLocation.trim();
 
     const newProduct = {
       id: `prod-${Date.now()}`,
@@ -498,6 +505,7 @@ export default function HomeScreen() {
     setNewProdTitle('');
     setNewProdPrice('');
     setNewProdDesc('');
+    setNewProdLocation('');
     setNewProdCategory('Kablo');
     setNewProdImages([]);
     setIsAddProductModalVisible(false);
@@ -2193,6 +2201,15 @@ export default function HomeScreen() {
                   keyboardType="numeric"
                   value={newProdPrice}
                   onChangeText={setNewProdPrice}
+                />
+
+                <Text style={styles.formLabel}>Konum (Şehir/İlçe) *</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="Örn: Ankara, Keçiören"
+                  placeholderTextColor="rgba(255,255,255,0.3)"
+                  value={newProdLocation}
+                  onChangeText={setNewProdLocation}
                 />
 
                 <Text style={styles.formLabel}>Ürün Açıklaması *</Text>
