@@ -121,12 +121,15 @@ export default function ChannelsScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      quality: 0.8,
+      quality: 0.6,
+      base64: true,
     });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      if (type === 'forum') setNewPostImage(result.assets[0].uri);
-      if (type === 'showcase') setNewShowcaseImage(result.assets[0].uri);
+      const asset = result.assets[0];
+      const imageStr = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
+      if (type === 'forum') setNewPostImage(imageStr);
+      if (type === 'showcase') setNewShowcaseImage(imageStr);
     }
   };
 
