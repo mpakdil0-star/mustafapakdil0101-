@@ -21,6 +21,8 @@ import { useAppColors } from '../../hooks/useAppColors';
 import { colors as staticColors } from '../../constants/colors';
 import { fonts } from '../../constants/typography';
 import api from '../../services/api';
+import { PremiumHeader } from '../../components/common/PremiumHeader';
+import { EmptyState } from '../../components/common/EmptyState';
 
 const { width } = Dimensions.get('window');
 
@@ -317,13 +319,16 @@ export default function ChannelsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: '#F8FAFC' }]}>
-      {/* Header (Premium Slate Design matching mockup) */}
-      <View style={styles.header}>
-        <View style={styles.headerContentRow}>
-          <Text style={styles.headerTitleText}>Usta Kanalları</Text>
+      {/* Header (Premium Curved Blue Design matching Jobs tab) */}
+      <PremiumHeader
+        title="Usta Kanalları"
+        subtitle="Meslektaşlarınla yardımlaş, iş paylaş ve zanaatini sergile"
+        layout="tab"
+        backgroundImage={require('../../assets/images/header_bg.png')}
+        rightElement={
           <View style={styles.headerActions}>
             <TouchableOpacity style={styles.headerActionBtn} activeOpacity={0.7}>
-              <Ionicons name="search" size={20} color="#94A3B8" />
+              <Ionicons name="search" size={20} color="#FFF" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.headerAvatarContainer} activeOpacity={0.7}>
               <Image 
@@ -332,11 +337,11 @@ export default function ChannelsScreen() {
               />
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
+        }
+      />
 
-      {/* Tabs (Horizontal Card Segmented Selector matching mockup) */}
-      <View style={{ height: 95, marginBottom: 4 }}>
+      {/* Tabs (Horizontal Card Segmented Selector overlapping curved header) */}
+      <View style={{ height: 95, marginTop: -20, marginBottom: 8, zIndex: 10 }}>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
@@ -415,10 +420,13 @@ export default function ChannelsScreen() {
               </TouchableOpacity>
 
               {forumPosts.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                  <Ionicons name="chatbubbles-outline" size={48} color="#64748B" />
-                  <Text style={styles.emptyText}>Henüz teknik soru sorulmamış.</Text>
-                </View>
+                <EmptyState
+                  icon="chatbubbles-outline"
+                  title="Soru Bulunamadı"
+                  description="Henüz bu kanalda bir teknik soru sorulmamış."
+                  buttonTitle="İlk Soruyu Sen Sor"
+                  onButtonPress={() => setIsNewPostModalVisible(true)}
+                />
               ) : (
                 forumPosts.map((post) => (
                   <TouchableOpacity
@@ -524,10 +532,13 @@ export default function ChannelsScreen() {
               </View>
 
               {filteredJobOffers.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                  <Ionicons name="briefcase-outline" size={48} color="#64748B" />
-                  <Text style={styles.emptyText}>{selectedCity} için paslanmış aktif iş yok.</Text>
-                </View>
+                <EmptyState
+                  icon="briefcase-outline"
+                  title="İş İlanı Bulunamadı"
+                  description={`${selectedCity} şehri için henüz bir iş paylaşılmamış.`}
+                  buttonTitle="İlk İşi Sen Pasla"
+                  onButtonPress={() => setIsNewJobModalVisible(true)}
+                />
               ) : (
                 filteredJobOffers.map((offer) => (
                   <View key={offer.id} style={styles.jobCard}>
@@ -603,10 +614,13 @@ export default function ChannelsScreen() {
               </TouchableOpacity>
 
               {showcaseItems.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                  <Ionicons name="images-outline" size={48} color="#64748B" />
-                  <Text style={styles.emptyText}>Henüz hüner görseli eklenmemiş.</Text>
-                </View>
+                <EmptyState
+                  icon="images-outline"
+                  title="Hüner Bulunamadı"
+                  description="Henüz kimse hüner galerisine bir fotoğraf yüklememiş."
+                  buttonTitle="İlk Fotoğrafı Sen Yükle"
+                  onButtonPress={() => setIsNewShowcaseModalVisible(true)}
+                />
               ) : (
                 <View style={styles.masonryGrid}>
                   {showcaseItems.map((item) => (
