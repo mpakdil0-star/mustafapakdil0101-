@@ -16,8 +16,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import { useAppSelector } from '../../hooks/redux';
 import { useAppColors } from '../../hooks/useAppColors';
+import { messageService } from '../../services/messageService';
 import { colors as staticColors } from '../../constants/colors';
 import { fonts } from '../../constants/typography';
 import api from '../../services/api';
@@ -29,6 +31,7 @@ const { width } = Dimensions.get('window');
 export default function ChannelsScreen() {
   const colors = useAppColors();
   const { user } = useAppSelector((state) => state.auth);
+  const router = useRouter();
   
   // Tab State: 'forum' | 'jobs' | 'gallery'
   const [activeTab, setActiveTab] = useState<'forum' | 'jobs' | 'gallery'>('forum');
@@ -226,6 +229,35 @@ export default function ChannelsScreen() {
       }
     } catch (err) {
       Alert.alert('Hata', 'Yorum gönderilemedi.');
+    }
+  };
+
+  // Handle Contact Usta (Job Sharing)
+  const handleContactUsta = async (ustaId: string, ustaName: string) => {
+    try {
+      let conversation = null;
+      try {
+        conversation = await messageService.findOrCreateConversation(ustaId);
+      } catch (innerErr) {
+        console.warn('⚠️ findOrCreateConversation failed:', innerErr);
+      }
+
+      if (!conversation || !conversation.id) {
+        const mockId = `mock-conv-${ustaId}-${user?.id || 'guest'}`;
+        conversation = { id: mockId };
+      }
+
+      router.push({
+        pathname: `/messages/${conversation.id}`,
+        params: { sellerName: ustaName, sellerId: ustaId }
+      });
+    } catch (err) {
+      console.warn('⚠️ handleContactUsta outer catch:', err);
+      const fallbackId = `mock-conv-${ustaId}-fallback`;
+      router.push({
+        pathname: `/messages/${fallbackId}`,
+        params: { sellerName: ustaName, sellerId: ustaId }
+      });
     }
   };
 
@@ -595,7 +627,17 @@ export default function ChannelsScreen() {
                         <TouchableOpacity
                           style={styles.jobContactBtnContainer}
                           onPress={() => {
-                            Alert.alert('İletişime Geç', `${offer.ustaName} ile görüşme başlatılsın mı?`);
+                            Alert.alert(
+                              'İletişime Geç',
+                              `${offer.ustaName} ile görüşme başlatılsın mı?`,
+                              [
+                                { text: 'Vazgeç', style: 'cancel' },
+                                {
+                                  text: 'Evet, Başlat',
+                                  onPress: () => handleContactUsta(offer.ustaId, offer.ustaName)
+                                }
+                              ]
+                            );
                           }}
                         >
                           <LinearGradient
