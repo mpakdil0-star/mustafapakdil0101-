@@ -244,15 +244,18 @@ export default function HomeScreen() {
   // AsyncStorage key for marketplace persistence
   const MARKETPLACE_STORAGE_KEY = 'marketplace_products_v1';
 
-  // Load marketplace products: AsyncStorage first, then try backend sync
+  // Load marketplace products: AsyncStorage first, then try backend sync with smart local preservation
   const fetchMarketplaceProducts = async () => {
     try {
+      let localProducts: any[] = [];
+
       // 1. Load from AsyncStorage (instant, always works)
       const stored = await AsyncStorage.getItem(MARKETPLACE_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setMarketplaceProducts(parsed);
+          localProducts = parsed;
+          setMarketplaceProducts(localProducts);
         }
       }
 
@@ -260,8 +263,23 @@ export default function HomeScreen() {
       try {
         const response = await api.get(API_ENDPOINTS.MARKETPLACE);
         if (response.data?.success && response.data.data && response.data.data.length > 0) {
-          setMarketplaceProducts(response.data.data);
-          await AsyncStorage.setItem(MARKETPLACE_STORAGE_KEY, JSON.stringify(response.data.data));
+          const backendProducts = response.data.data;
+
+          // SMART SYNC: Keep all locally created listings of the current user
+          const myLocalProducts = localProducts.filter(
+            p => p.sellerId === user?.id || p.sellerId === 'mock-current-user'
+          );
+
+          // Merge backend products with user's local products to avoid duplicates
+          const merged = [...myLocalProducts];
+          backendProducts.forEach((bProd: any) => {
+            if (!merged.some(mProd => mProd.id === bProd.id)) {
+              merged.push(bProd);
+            }
+          });
+
+          setMarketplaceProducts(merged);
+          await AsyncStorage.setItem(MARKETPLACE_STORAGE_KEY, JSON.stringify(merged));
         }
       } catch (_backendErr) {
         // Backend doesn't support marketplace yet — silently ignore
