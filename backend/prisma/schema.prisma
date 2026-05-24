@@ -670,3 +670,73 @@ model MarketplaceProduct {
   @@map("marketplace_products")
 }
 
+// Zanaat Vitrini (Showcase)
+model ShowcaseItem {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  image       String   @db.Text // primary image
+  images      String[] @default([]) // multiple images
+  ustaId      String   @map("usta_id")
+  ustaName    String   @map("usta_name")
+  ustaCity    String   @map("usta_city")
+  ustaAvatar  String?  @map("usta_avatar")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([ustaId])
+  @@index([createdAt])
+  @@map("showcase_items")
+}
+
+// Teknik Yardım Forum Gönderileri
+model ForumPost {
+  id          String         @id @default(uuid())
+  title       String
+  description String         @db.Text
+  imageUrl    String?        @map("image_url") @db.Text
+  ustaId      String         @map("usta_id")
+  ustaName    String         @map("usta_name")
+  ustaCity    String?        @map("usta_city")
+  comments    ForumComment[]
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  @@index([ustaId])
+  @@index([createdAt])
+  @@map("forum_posts")
+}
+
+// Forum Yorumları
+model ForumComment {
+  id          String    @id @default(uuid())
+  forumPostId String    @map("forum_post_id")
+  text        String    @db.Text
+  ustaId      String    @map("usta_id")
+  ustaName    String    @map("usta_name")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  forumPost   ForumPost @relation(fields: [forumPostId], references: [id], onDelete: Cascade)
+
+  @@index([forumPostId])
+  @@index([ustaId])
+  @@map("forum_comments")
+}
+
+// Bölgesel İş Paslama İlanları
+model JobSharingPost {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  ustaId      String   @map("usta_id")
+  ustaName    String   @map("usta_name")
+  ustaCity    String   @map("usta_city")
+  ustaAvatar  String?  @map("usta_avatar")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([ustaId])
+  @@index([createdAt])
+  @@map("job_sharing_posts")
+}
+

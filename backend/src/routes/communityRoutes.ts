@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
+import prisma, { isDatabaseAvailable } from '../config/database';
 
 const router = Router();
 const FORUM_FILE = path.join(process.cwd(), 'data', 'forum.json');
@@ -47,12 +48,51 @@ const saveJobSharing = (data: any[]) => {
 };
 
 // ==================== FORUM ROUTES ====================
-router.get('/forum', (req, res) => {
-  res.json({ success: true, data: loadForum() });
+router.get('/forum', async (req, res) => {
+  try {
+    if (isDatabaseAvailable) {
+      const posts = await prisma.forumPost.findMany({
+        include: {
+          comments: {
+            orderBy: { createdAt: 'asc' }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      return res.json({ success: true, data: posts });
+    }
+    res.json({ success: true, data: loadForum() });
+  } catch (error: any) {
+    console.error('Error fetching forum posts:', error);
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
 });
 
-router.post('/forum', (req, res) => {
+router.post('/forum', async (req, res) => {
   try {
+    if (isDatabaseAvailable) {
+      const { title, description, imageUrl, ustaId, ustaName, ustaCity } = req.body;
+      await prisma.forumPost.create({
+        data: {
+          title: title || '',
+          description: description || '',
+          imageUrl: imageUrl || null,
+          ustaId: ustaId || '',
+          ustaName: ustaName || '',
+          ustaCity: ustaCity || null
+        }
+      });
+      const posts = await prisma.forumPost.findMany({
+        include: {
+          comments: {
+            orderBy: { createdAt: 'asc' }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      return res.status(201).json({ success: true, data: posts });
+    }
+
     const forum = loadForum();
     const newPost = {
       id: `forum-${Date.now()}`,
@@ -64,13 +104,42 @@ router.post('/forum', (req, res) => {
     saveForum(forum);
     res.status(201).json({ success: true, data: forum });
   } catch (error: any) {
+    console.error('Error creating forum post:', error);
     res.status(500).json({ success: false, error: { message: error.message } });
   }
 });
 
-router.post('/forum/:id/comment', (req, res) => {
+router.post('/forum/:id/comment', async (req, res) => {
   try {
     const { id } = req.params;
+    
+    if (isDatabaseAvailable) {
+      const { text, ustaId, ustaName } = req.body;
+      const postExists = await prisma.forumPost.findUnique({
+        where: { id }
+      });
+      if (!postExists) {
+        return res.status(404).json({ success: false, error: { message: 'Post not found' } });
+      }
+      await prisma.forumComment.create({
+        data: {
+          forumPostId: id,
+          text: text || '',
+          ustaId: ustaId || '',
+          ustaName: ustaName || ''
+        }
+      });
+      const posts = await prisma.forumPost.findMany({
+        include: {
+          comments: {
+            orderBy: { createdAt: 'asc' }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      return res.json({ success: true, data: posts });
+    }
+
     let forum = loadForum();
     const postIndex = forum.findIndex(p => p.id === id);
     if (postIndex === -1) {
@@ -85,17 +154,47 @@ router.post('/forum/:id/comment', (req, res) => {
     saveForum(forum);
     res.json({ success: true, data: forum });
   } catch (error: any) {
+    console.error('Error creating forum comment:', error);
     res.status(500).json({ success: false, error: { message: error.message } });
   }
 });
 
 // ==================== JOB SHARING ROUTES ====================
-router.get('/jobs', (req, res) => {
-  res.json({ success: true, data: loadJobSharing() });
+router.get('/jobs', async (req, res) => {
+  try {
+    if (isDatabaseAvailable) {
+      const jobs = await prisma.jobSharingPost.findMany({
+        orderBy: { createdAt: 'desc' }
+      });
+      return res.json({ success: true, data: jobs });
+    }
+    res.json({ success: true, data: loadJobSharing() });
+  } catch (error: any) {
+    console.error('Error fetching job sharing posts:', error);
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
 });
 
-router.post('/jobs', (req, res) => {
+router.post('/jobs', async (req, res) => {
   try {
+    if (isDatabaseAvailable) {
+      const { title, description, ustaId, ustaName, ustaCity, ustaAvatar } = req.body;
+      await prisma.jobSharingPost.create({
+        data: {
+          title: title || '',
+          description: description || '',
+          ustaId: ustaId || '',
+          ustaName: ustaName || '',
+          ustaCity: ustaCity || '',
+          ustaAvatar: ustaAvatar || null
+        }
+      });
+      const jobs = await prisma.jobSharingPost.findMany({
+        orderBy: { createdAt: 'desc' }
+      });
+      return res.status(201).json({ success: true, data: jobs });
+    }
+
     const jobs = loadJobSharing();
     const newJob = {
       id: `sharing-${Date.now()}`,
@@ -106,6 +205,7 @@ router.post('/jobs', (req, res) => {
     saveJobSharing(jobs);
     res.status(201).json({ success: true, data: jobs });
   } catch (error: any) {
+    console.error('Error creating job sharing post:', error);
     res.status(500).json({ success: false, error: { message: error.message } });
   }
 });
