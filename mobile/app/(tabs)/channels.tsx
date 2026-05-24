@@ -51,7 +51,7 @@ export default function ChannelsScreen() {
 
   // 2. Job Sharing States
   const [jobOffers, setJobOffers] = useState<any[]>([]);
-  const [selectedCity, setSelectedCity] = useState(user?.city || 'İstanbul');
+  const [selectedCity, setSelectedCity] = useState('Tüm Türkiye');
   const [isNewJobModalVisible, setIsNewJobModalVisible] = useState(false);
   const [newJobTitle, setNewJobTitle] = useState('');
   const [newJobDesc, setNewJobDesc] = useState('');
@@ -567,12 +567,12 @@ export default function ChannelsScreen() {
             <View style={{ width: '100%' }}>
               <View style={styles.jobsHeaderRow}>
                 <TouchableOpacity
-                  style={[styles.cityFilterBtn, { borderColor: 'rgba(6, 182, 212, 0.25)' }]}
+                  style={[styles.cityFilterBtn, { borderColor: 'rgba(8, 145, 178, 0.25)' }]}
                   onPress={() => setIsCityFilterModalVisible(true)}
                 >
-                  <Ionicons name="location-outline" size={14} color="#22D3EE" />
-                  <Text style={[styles.cityFilterText, { color: '#22D3EE' }]}>{selectedCity}</Text>
-                  <Ionicons name="chevron-down" size={12} color="#22D3EE" />
+                  <Ionicons name="location-outline" size={14} color="#0891B2" />
+                  <Text style={[styles.cityFilterText, { color: '#0891B2' }]}>{selectedCity}</Text>
+                  <Ionicons name="chevron-down" size={12} color="#0891B2" />
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -625,7 +625,7 @@ export default function ChannelsScreen() {
                     >
                       <View style={styles.jobCardHeader}>
                         <View style={styles.cityBadge}>
-                          <Ionicons name="location" size={10} color="#22D3EE" style={{ marginRight: 4 }} />
+                          <Ionicons name="location" size={10} color="#0891B2" style={{ marginRight: 4 }} />
                           <Text style={styles.cityBadgeText}>{offer.ustaCity || offer.city || 'İstanbul'}</Text>
                         </View>
                         <View style={styles.jobCardUrgencyBadge}>
@@ -663,21 +663,7 @@ export default function ChannelsScreen() {
                           </View>
                         </View>
 
-                        {offer.ustaId === user?.id ? (
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                            <View style={styles.ownJobBadge}>
-                              <Ionicons name="checkmark-circle" size={12} color="#059669" />
-                              <Text style={styles.ownJobBadgeText}>İlanınız Yayında</Text>
-                            </View>
-                            <TouchableOpacity
-                              style={styles.jobDeleteBtn}
-                              onPress={() => handleDeleteJobOffer(offer.id)}
-                            >
-                              <Ionicons name="trash" size={13} color="#EF4444" style={{ marginRight: 4 }} />
-                              <Text style={styles.jobDeleteBtnText}>İptal Et</Text>
-                            </TouchableOpacity>
-                          </View>
-                        ) : (
+                        {offer.ustaId !== user?.id && (
                           <TouchableOpacity
                             style={styles.jobContactBtnContainer}
                             onPress={() => {
@@ -704,6 +690,22 @@ export default function ChannelsScreen() {
                           </TouchableOpacity>
                         )}
                       </View>
+
+                      {offer.ustaId === user?.id && (
+                        <View style={styles.ownerControlRow}>
+                          <View style={styles.ownJobBadge}>
+                            <Ionicons name="checkmark-circle" size={12} color="#059669" />
+                            <Text style={styles.ownJobBadgeText}>İlanınız Yayında</Text>
+                          </View>
+                          <TouchableOpacity
+                            style={styles.jobDeleteBtn}
+                            onPress={() => handleDeleteJobOffer(offer.id)}
+                          >
+                            <Ionicons name="trash" size={13} color="#EF4444" style={{ marginRight: 4 }} />
+                            <Text style={styles.jobDeleteBtnText}>İptal Et</Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
                     </TouchableOpacity>
                   );
                 })
@@ -1344,9 +1346,9 @@ const styles = StyleSheet.create({
   cityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(6, 182, 212, 0.08)',
+    backgroundColor: 'rgba(8, 145, 178, 0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.25)',
+    borderColor: 'rgba(8, 145, 178, 0.22)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
@@ -1355,7 +1357,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: fonts.bold,
     textTransform: 'uppercase',
-    color: '#22D3EE',
+    color: '#0891B2',
   },
   jobCardUrgencyBadge: {
     flexDirection: 'row',
@@ -1471,6 +1473,12 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     fontSize: 10.5,
     fontFamily: fonts.bold,
+  },
+  ownerControlRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
   },
   // Masonry Showcase Gallery Styles
   masonryGrid: {
