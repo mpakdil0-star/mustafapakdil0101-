@@ -582,7 +582,7 @@ export default function ChannelsScreen() {
       {/* 2. Forum Comments Modal */}
       <Modal visible={isCommentsModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: '85%' }]}>
+          <View style={[styles.modalContent, { height: '85%', width: '100%' }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle} numberOfLines={1}>{selectedPost?.title}</Text>
               <TouchableOpacity onPress={() => setIsCommentsModalVisible(false)}>
