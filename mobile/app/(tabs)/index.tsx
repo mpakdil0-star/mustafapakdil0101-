@@ -1924,11 +1924,11 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <View style={styles.sectionTitleContainer}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>PAZAR YERİ & İKİNCİ EL</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16, marginBottom: 0 }]} numberOfLines={1}>PAZAR YERİ & İKİNCİ EL</Text>
                 <TouchableOpacity 
                   onPress={() => setIsAllProductsModalVisible(true)}
-                  style={{ backgroundColor: 'rgba(245, 158, 11, 0.12)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 }}
+                  style={{ backgroundColor: 'rgba(245, 158, 11, 0.12)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, flexShrink: 0 }}
                   activeOpacity={0.7}
                 >
                   <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: '#F59E0B' }}>Tümünü Gör ➔</Text>
