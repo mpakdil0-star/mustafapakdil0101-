@@ -660,6 +660,7 @@ model MarketplaceProduct {
   date        String
   image       String?
   images      String[] @default([])
+  isSold      Boolean  @default(false) @map("is_sold")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

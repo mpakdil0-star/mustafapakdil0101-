@@ -132,3 +132,69 @@ export const addProduct = async (req: AuthRequest, res: Response, next: NextFunc
         next(error);
     }
 };
+
+export const deleteProduct = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+
+        if (isDatabaseAvailable) {
+            try {
+                const marketplaceService = (await import('../services/marketplaceService')).default;
+                await marketplaceService.deleteProduct(id);
+                return res.json({
+                    success: true,
+                    message: 'İlan başarıyla silindi',
+                });
+            } catch (dbError: any) {
+                console.warn('Database error deleting product, falling back to mock:', dbError.message);
+            }
+        }
+
+        // MOCK/IN-MEMORY MODE
+        inMemoryProducts = inMemoryProducts.filter(p => p.id !== id);
+        return res.json({
+            success: true,
+            data: inMemoryProducts,
+            message: 'İlan başarıyla silindi (Mock)',
+        });
+
+    } catch (error: any) {
+        next(error);
+    }
+};
+
+export const markAsSold = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+
+        if (isDatabaseAvailable) {
+            try {
+                const marketplaceService = (await import('../services/marketplaceService')).default;
+                const updated = await marketplaceService.markAsSold(id);
+                return res.json({
+                    success: true,
+                    data: updated,
+                    message: 'İlan satıldı olarak işaretlendi',
+                });
+            } catch (dbError: any) {
+                console.warn('Database error updating product, falling back to mock:', dbError.message);
+            }
+        }
+
+        // MOCK/IN-MEMORY MODE
+        inMemoryProducts = inMemoryProducts.map(p => {
+            if (p.id === id) {
+                return { ...p, isSold: true };
+            }
+            return p;
+        });
+        return res.json({
+            success: true,
+            data: inMemoryProducts,
+            message: 'İlan satıldı olarak işaretlendi (Mock)',
+        });
+
+    } catch (error: any) {
+        next(error);
+    }
+};

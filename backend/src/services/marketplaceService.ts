@@ -34,9 +34,30 @@ export const marketplaceService = {
                 date: productData.date || 'Bugün',
                 image: productData.image || null,
                 images: productData.images || [],
+                isSold: false,
             },
         });
 
+        return product;
+    },
+
+    /**
+     * Delete a product from the database
+     */
+    async deleteProduct(id: string) {
+        await prisma.marketplaceProduct.delete({
+            where: { id },
+        });
+    },
+
+    /**
+     * Mark a product as sold in the database
+     */
+    async markAsSold(id: string) {
+        const product = await prisma.marketplaceProduct.update({
+            where: { id },
+            data: { isSold: true },
+        });
         return product;
     },
 };
