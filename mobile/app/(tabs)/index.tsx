@@ -210,6 +210,7 @@ export default function HomeScreen() {
   const [homeShowcaseItems, setHomeShowcaseItems] = useState<any[]>([]);
   const [selectedShowcaseItem, setSelectedShowcaseItem] = useState<any>(null);
   const [isShowcaseDetailModalVisible, setIsShowcaseDetailModalVisible] = useState(false);
+  const [showcaseActiveImageIndex, setShowcaseActiveImageIndex] = useState(0);
   
   // New Product Form States
   const [newProdTitle, setNewProdTitle] = useState('');
@@ -269,17 +270,31 @@ export default function HomeScreen() {
     try {
       const response = await api.get('/showcase');
       if (response.data?.success && Array.isArray(response.data.data) && response.data.data.length > 0) {
-        setHomeShowcaseItems(response.data.data);
+        // Group by ustaId and keep the latest item for each usta
+        const grouped: Record<string, any> = {};
+        response.data.data.forEach((item: any) => {
+          if (!grouped[item.ustaId]) {
+            grouped[item.ustaId] = item;
+          }
+        });
+        setHomeShowcaseItems(Object.values(grouped));
       } else {
         // Fallback to beautiful mock showcase items if empty or error
-        setHomeShowcaseItems([
+        const mockItems = [
           { id: 'sc-1', title: 'Pano Kablolama Tesisatı', description: 'Schneider şalt malzemesi ile özenle çekilmiş endüstriyel dağıtım panosu.', image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500', ustaName: 'Ahmet Yılmaz (Usta)', ustaId: 'mock-electrician-1' },
           { id: 'sc-2', title: 'Akıllı Ev LED Tasarımları', description: 'Modern mimariye uygun lüks asma tavan aydınlatma ve otomasyon kurulumu.', image: 'https://images.unsplash.com/photo-1565538810844-1e119d81a207?w=500', ustaName: 'Mustafa Kaya (Usta)', ustaId: 'mock-electrician-3' },
-          { id: 'sc-3', title: 'Sigorta Kutusu Revizyonu', description: 'Eski tip panonun sıfır Siemens malzemeleri ile güvenli bir şekilde yenilenmesi.', image: 'https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=500', ustaName: 'Bülent Tan (Usta)', ustaId: 'mock-electrician-3' },
+          { id: 'sc-3', title: 'Sigorta Kutusu Revizyonu', description: 'Eski tip panonun sıfır Siemens malzemeleri ile güvenli bir şekilde yenilenmesi.', image: 'https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=500', ustaName: 'Bülent Tan (Usta)', ustaId: 'mock-electrician-4' },
           { id: 'sc-4', title: 'Güvenlik Kamera Altyapısı', description: '4K UltraHD Dahua IP kamera kurulumu ve kablo kanallama işçiliği.', image: 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=500', ustaName: 'Mustafa Yılmaz (Usta)', ustaId: 'mock-electrician-1' },
           { id: 'sc-5', title: 'Klima Dezenfekte ve Bakımı', description: 'Antibakteriyel solüsyon ile detaylı klima iç ünite petek temizliği.', image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500', ustaName: 'Tuğçe Klimacı (Usta)', ustaId: 'mock-electrician-2' },
-          { id: 'sc-6', title: 'Sıfır Daire Kablo Çekimi', description: 'Tüm dairenin tadilat öncesi güvenli NYM kablolama ve borulama işlemi.', image: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=500', ustaName: 'Ahmet Kaya (Usta)', ustaId: 'mock-electrician-2' }
-        ]);
+          { id: 'sc-6', title: 'Sıfır Daire Kablo Çekimi', description: 'Tüm dairenin tadilat öncesi güvenli NYM kablolama ve borulama işlemi.', image: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=500', ustaName: 'Ahmet Kaya (Usta)', ustaId: 'mock-electrician-5' }
+        ];
+        const grouped: Record<string, any> = {};
+        mockItems.forEach((item: any) => {
+          if (!grouped[item.ustaId]) {
+            grouped[item.ustaId] = item;
+          }
+        });
+        setHomeShowcaseItems(Object.values(grouped));
       }
     } catch (_err) {
       // Fallback
@@ -1622,6 +1637,7 @@ export default function HomeScreen() {
                         activeOpacity={0.85}
                         onPress={() => {
                           setSelectedShowcaseItem(item);
+                          setShowcaseActiveImageIndex(0);
                           setIsShowcaseDetailModalVisible(true);
                         }}
                         style={styles.vitrinCardSmall}
@@ -2685,23 +2701,72 @@ export default function HomeScreen() {
 
               {selectedShowcaseItem && (
                 <View style={{ marginTop: 20 }}>
-                  {/* Photo Section */}
-                  {selectedShowcaseItem.image ? (
-                    <TouchableOpacity
-                      activeOpacity={0.9}
-                      onPress={() => setShowFullscreenImage(typeof selectedShowcaseItem.image === 'string' ? selectedShowcaseItem.image : null)}
-                      style={{ width: '100%', height: 220, borderRadius: 16, overflow: 'hidden', marginBottom: 16, position: 'relative' }}
-                    >
-                      <Image 
-                        source={typeof selectedShowcaseItem.image === 'string' ? { uri: selectedShowcaseItem.image } : selectedShowcaseItem.image} 
-                        style={{ width: '100%', height: '100%', resizeMode: 'cover' }} 
-                      />
-                      <View style={{ position: 'absolute', bottom: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        <Ionicons name="expand" size={12} color="#FFF" />
-                        <Text style={{ color: '#FFF', fontSize: 10, fontFamily: fonts.bold }}>Büyütmek için Dokunun</Text>
+                  {/* Photo Section (Horizontal Swiper Carousel) */}
+                  {(() => {
+                    const showcaseImages = selectedShowcaseItem.images && selectedShowcaseItem.images.length > 0
+                      ? selectedShowcaseItem.images
+                      : [selectedShowcaseItem.image].filter(Boolean);
+                    
+                    if (showcaseImages.length === 0) return null;
+
+                    return (
+                      <View style={{ marginBottom: 16 }}>
+                        <ScrollView 
+                          horizontal 
+                          pagingEnabled
+                          showsHorizontalScrollIndicator={false} 
+                          onScroll={(e) => {
+                            const slideSize = e.nativeEvent.layoutMeasurement.width;
+                            const offset = e.nativeEvent.contentOffset.x;
+                            const activeIdx = Math.floor((offset + slideSize / 2) / slideSize);
+                            setShowcaseActiveImageIndex(activeIdx);
+                          }}
+                          scrollEventThrottle={16}
+                          style={{ width: '100%', height: 220, borderRadius: 16 }}
+                        >
+                          {showcaseImages.map((imgUrl: string, idx: number) => (
+                            <TouchableOpacity
+                              key={idx}
+                              activeOpacity={0.9}
+                              onPress={() => setShowFullscreenImage(imgUrl)}
+                              style={{ width: Dimensions.get('window').width - 48, height: 220, borderRadius: 16, overflow: 'hidden', position: 'relative' }}
+                            >
+                              <Image 
+                                source={typeof imgUrl === 'string' ? { uri: imgUrl } : imgUrl} 
+                                style={{ width: '100%', height: '100%', resizeMode: 'cover' }} 
+                              />
+                              <View style={{ position: 'absolute', bottom: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                <Ionicons name="expand" size={12} color="#FFF" />
+                                <Text style={{ color: '#FFF', fontSize: 10, fontFamily: fonts.bold }}>Büyütmek için Dokunun</Text>
+                              </View>
+                              {showcaseImages.length > 1 && (
+                                <View style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 }}>
+                                  <Text style={{ color: '#FFF', fontSize: 9.5, fontFamily: fonts.bold }}>{idx + 1}/{showcaseImages.length}</Text>
+                                </View>
+                              )}
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+
+                        {/* Carousel Dots Indicators */}
+                        {showcaseImages.length > 1 && (
+                          <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 10, gap: 5 }}>
+                            {showcaseImages.map((_: any, idx: number) => (
+                              <View 
+                                key={idx} 
+                                style={{
+                                  width: showcaseActiveImageIndex === idx ? 16 : 6,
+                                  height: 6,
+                                  borderRadius: 3,
+                                  backgroundColor: showcaseActiveImageIndex === idx ? colors.primary : 'rgba(255, 255, 255, 0.2)',
+                                }}
+                              />
+                            ))}
+                          </View>
+                        )}
                       </View>
-                    </TouchableOpacity>
-                  ) : null}
+                    );
+                  })()}
 
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                     <View style={[styles.marketCategoryBadge, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>

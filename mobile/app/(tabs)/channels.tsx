@@ -57,7 +57,7 @@ export default function ChannelsScreen() {
   const [isNewShowcaseModalVisible, setIsNewShowcaseModalVisible] = useState(false);
   const [newShowcaseTitle, setNewShowcaseTitle] = useState('');
   const [newShowcaseDesc, setNewShowcaseDesc] = useState('');
-  const [newShowcaseImage, setNewShowcaseImage] = useState<string | null>(null);
+  const [newShowcaseImages, setNewShowcaseImages] = useState<string[]>([]);
 
   // Cities List for Filter
   const CITIES = ['Tüm Türkiye', 'İstanbul', 'Ankara', 'İzmir', 'Adana', 'Antalya', 'Bursa', 'Mersin', 'Kocaeli', 'Gaziantep'];
@@ -110,8 +110,8 @@ export default function ChannelsScreen() {
     loadData();
   }, [activeTab]);
 
-  // Handle Pick Image
-  const handlePickImage = async (type: 'forum' | 'showcase') => {
+  // Handle Pick Image for Forum (Single Image)
+  const handlePickImage = async (type: 'forum') => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
       Alert.alert('İzin Gerekli', 'Fotoğraf seçebilmek için galeri izni vermelisiniz.');
@@ -129,7 +129,47 @@ export default function ChannelsScreen() {
       const asset = result.assets[0];
       const imageStr = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
       if (type === 'forum') setNewPostImage(imageStr);
-      if (type === 'showcase') setNewShowcaseImage(imageStr);
+    }
+  };
+
+  // Handle Pick Showcase Image (Supports Camera and Multi-select Gallery)
+  const handlePickShowcaseImage = async (source: 'camera' | 'gallery') => {
+    try {
+      const permissionResult = source === 'camera'
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permissionResult.granted) {
+        Alert.alert('İzin Gerekli', `Fotoğraf ${source === 'camera' ? 'çekmek' : 'seçmek'} için gerekli izinleri vermelisiniz.`);
+        return;
+      }
+
+      const options: ImagePicker.ImagePickerOptions = {
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: source === 'camera', // Only allow cropping in camera mode
+        quality: 0.6,
+        base64: true,
+      };
+
+      const result = source === 'camera'
+        ? await ImagePicker.launchCameraAsync(options)
+        : await ImagePicker.launchImageLibraryAsync({
+            ...options,
+            allowsMultipleSelection: true,
+            selectionLimit: 5 - newShowcaseImages.length,
+          });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const selected = result.assets.map(asset => 
+          asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri
+        );
+        setNewShowcaseImages(prev => {
+          const combined = [...prev, ...selected];
+          return combined.slice(0, 5);
+        });
+      }
+    } catch (error) {
+      Alert.alert('Hata', 'Fotoğraf seçilirken bir sorun oluştu.');
     }
   };
 
@@ -218,15 +258,16 @@ export default function ChannelsScreen() {
 
   // Handle Add Showcase Gallery Item
   const handleAddShowcaseItem = async () => {
-    if (!newShowcaseTitle.trim() || !newShowcaseImage) {
-      Alert.alert('Eksik Bilgi', 'Lütfen başlık doldurun ve bir görsel seçin.');
+    if (!newShowcaseTitle.trim() || newShowcaseImages.length === 0) {
+      Alert.alert('Eksik Bilgi', 'Lütfen başlık doldurun ve en az bir görsel seçin.');
       return;
     }
 
     const newItem = {
       title: newShowcaseTitle,
       description: newShowcaseDesc,
-      image: newShowcaseImage,
+      image: newShowcaseImages[0], // primary fallback image
+      images: newShowcaseImages,    // all images
       ustaId: user?.id || 'mock-usta-id',
       ustaName: user?.fullName || 'Usta',
       ustaCity: user?.city || 'İstanbul',
@@ -239,7 +280,7 @@ export default function ChannelsScreen() {
         setIsNewShowcaseModalVisible(false);
         setNewShowcaseTitle('');
         setNewShowcaseDesc('');
-        setNewShowcaseImage(null);
+        setNewShowcaseImages([]);
         Alert.alert('Başarılı', 'Zanaat eseriniz Hüner Galerisinde yayınlandı! 📸');
       }
     } catch (err) {
@@ -690,20 +731,46 @@ export default function ChannelsScreen() {
               onChangeText={setNewShowcaseDesc}
             />
 
-            <Text style={styles.label}>Çalışma Görseli *</Text>
-            {newShowcaseImage ? (
-              <View style={styles.previewContainer}>
-                <Image source={{ uri: newShowcaseImage }} style={styles.previewImage} />
-                <TouchableOpacity style={styles.removeImageBtn} onPress={() => setNewShowcaseImage(null)}>
-                  <Ionicons name="close" size={16} color="#FFF" />
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <TouchableOpacity style={styles.imageSelector} onPress={() => handlePickImage('showcase')}>
-                <Ionicons name="camera-outline" size={24} color={colors.primary} />
-                <Text style={{ color: colors.primary, fontFamily: fonts.bold, fontSize: 13, marginTop: 4 }}>Galeri veya Kameradan Seç</Text>
-              </TouchableOpacity>
-            )}
+            <Text style={styles.label}>Çalışma Görselleri * (En fazla 5 adet)</Text>
+            <View style={{ marginBottom: 16 }}>
+              {newShowcaseImages.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row', marginBottom: 12 }}>
+                  {newShowcaseImages.map((img, idx) => (
+                    <View key={idx} style={{ position: 'relative', marginRight: 10 }}>
+                      <Image source={{ uri: img }} style={{ width: 80, height: 80, borderRadius: 12, backgroundColor: '#1E293B' }} />
+                      <TouchableOpacity 
+                        style={{ position: 'absolute', top: -5, right: -5, backgroundColor: '#EF4444', borderRadius: 10, padding: 2 }}
+                        onPress={() => {
+                          setNewShowcaseImages(prev => prev.filter((_, i) => i !== idx));
+                        }}
+                      >
+                        <Ionicons name="close" size={12} color="#FFF" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
+
+              {newShowcaseImages.length < 5 && (
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <TouchableOpacity 
+                    style={{ flex: 1, height: 48, borderRadius: 12, borderWidth: 1.5, borderColor: colors.primary, borderStyle: 'dashed', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                    onPress={() => handlePickShowcaseImage('gallery')}
+                  >
+                    <Ionicons name="images-outline" size={20} color={colors.primary} />
+                    <Text style={{ color: colors.primary, fontFamily: fonts.bold, fontSize: 12.5 }}>Galeriden Seç</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={{ flex: 1, height: 48, borderRadius: 12, borderWidth: 1.5, borderColor: colors.primary, borderStyle: 'dashed', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                    onPress={() => handlePickShowcaseImage('camera')}
+                  >
+                    <Ionicons name="camera-outline" size={20} color={colors.primary} />
+                    <Text style={{ color: colors.primary, fontFamily: fonts.bold, fontSize: 12.5 }}>Kamera ile Çek</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
 
             <TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.primary, marginTop: 20 }]} onPress={handleAddShowcaseItem}>
               <Text style={styles.submitBtnText}>Hünerini Vitrine Ekle 📸</Text>
