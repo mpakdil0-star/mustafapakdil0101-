@@ -17,6 +17,24 @@ let GoogleSignin: any = null;
  * Bu sayede modül yokken uygulama crash olmaz.
  */
 const getGoogleSignin = async () => {
+  // If running in Expo Go, fail gracefully and avoid importing/instantiating the native library
+  try {
+    const Constants = require('expo-constants').default;
+    if (Constants.appOwnership === 'expo') {
+      console.log('ℹ️ [SocialAuth] Skipping Google Sign-In: Running in Expo Go environment');
+      return null;
+    }
+  } catch (_e) {}
+
+  // Double check if the native module actually exists to prevent bridge crash in custom configurations
+  try {
+    const { NativeModules } = require('react-native');
+    if (!NativeModules.RNGoogleSignin) {
+      console.log('ℹ️ [SocialAuth] Skipping Google Sign-In: Native RNGoogleSignin module not present');
+      return null;
+    }
+  } catch (_e) {}
+
   if (!GoogleSignin) {
     try {
       const module = await import('@react-native-google-signin/google-signin');
