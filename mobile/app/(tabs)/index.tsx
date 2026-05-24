@@ -144,6 +144,7 @@ export default function HomeScreen() {
   console.log('[HomeScreen] unreadCount:', unreadCount); // DEBUG: Check badge count
   const [newJobsCount, setNewJobsCount] = useState(0);
   const [userCities, setUserCities] = useState<string[]>([]);
+  const [userLocations, setUserLocations] = useState<any[]>([]);
   const [locationsCount, setLocationsCount] = useState(0); // Service areas count from API
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isHowItWorksVisible, setIsHowItWorksVisible] = useState(false);
@@ -226,9 +227,15 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (isAddProductModalVisible) {
-      setNewProdLocation(user?.city || 'İstanbul');
+      const defaultLoc = userLocations.find(l => l.isDefault) || userLocations[0];
+      if (defaultLoc) {
+        const formatted = `${defaultLoc.district ? defaultLoc.district + ', ' : ''}${defaultLoc.city || ''}`.replace(/^, /, '').replace(/, $/, '');
+        setNewProdLocation(formatted || user?.city || 'İstanbul');
+      } else {
+        setNewProdLocation(user?.city || 'İstanbul');
+      }
     }
-  }, [isAddProductModalVisible, user]);
+  }, [isAddProductModalVisible, user, userLocations]);
 
   // Marketplace Search and Filtering States
   const [marketSearchQuery, setMarketSearchQuery] = useState('');
@@ -914,6 +921,7 @@ export default function HomeScreen() {
           ]);
           
           if (locRes.data.success) {
+            setUserLocations(locRes.data.data);
             setLocationsCount(locRes.data.data.length);
             const cities = locRes.data.data.map((l: any) => l.city).filter(Boolean);
             setUserCities(prev => JSON.stringify(prev) === JSON.stringify(cities) ? prev : cities);
@@ -955,6 +963,7 @@ export default function HomeScreen() {
               const response = await api.get(`${API_ENDPOINTS.LOCATIONS}?t=${Date.now()}`);
               if (response.data.success && response.data.data.length > 0) {
                 const locations = response.data.data;
+                setUserLocations(locations);
                 const cities = locations.map((l: any) => l.city).filter(Boolean);
                 setUserCities(prev => JSON.stringify(prev) === JSON.stringify(cities) ? prev : cities);
                 setLocationsCount(locations.length);
