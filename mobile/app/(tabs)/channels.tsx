@@ -329,7 +329,7 @@ export default function ChannelsScreen() {
         </LinearGradient>
       </View>
 
-      {/* Tabs */}
+      {/* Tabs (Apple Segmented Capsule Style) */}
       <View style={styles.tabContainer}>
         {[
           { id: 'forum', label: 'Teknik Destek', icon: 'chatbubble-ellipses-outline' },
@@ -342,12 +342,16 @@ export default function ChannelsScreen() {
               key={tab.id}
               style={[
                 styles.tabBtn,
-                isActive && { borderBottomColor: colors.primary, borderBottomWidth: 3 }
+                isActive && { 
+                  backgroundColor: 'rgba(139, 92, 246, 0.12)', 
+                  borderWidth: 1, 
+                  borderColor: 'rgba(139, 92, 246, 0.25)' 
+                }
               ]}
               onPress={() => setActiveTab(tab.id as any)}
             >
-              <Ionicons name={tab.icon as any} size={18} color={isActive ? colors.primary : '#94A3B8'} />
-              <Text style={[styles.tabLabel, { color: isActive ? colors.primary : '#94A3B8' }]}>{tab.label}</Text>
+              <Ionicons name={tab.icon as any} size={15} color={isActive ? '#C084FC' : '#94A3B8'} />
+              <Text style={[styles.tabLabel, { color: isActive ? '#C084FC' : '#94A3B8' }]}>{tab.label}</Text>
             </TouchableOpacity>
           );
         })}
@@ -364,11 +368,16 @@ export default function ChannelsScreen() {
           {activeTab === 'forum' && (
             <View style={{ width: '100%' }}>
               <TouchableOpacity
-                style={[styles.actionBtn, { backgroundColor: colors.primary }]}
+                style={[styles.actionBtn, { overflow: 'hidden', padding: 0 }]}
                 onPress={() => setIsNewPostModalVisible(true)}
               >
-                <Ionicons name="add-circle" size={20} color="#FFF" />
-                <Text style={styles.actionBtnText}>Yeni Teknik Soru Sor</Text>
+                <LinearGradient
+                  colors={['#8B5CF6', '#6D28D9']}
+                  style={styles.actionBtnGradient}
+                >
+                  <Ionicons name="add-circle" size={18} color="#FFF" />
+                  <Text style={styles.actionBtnText}>Yeni Teknik Soru Sor</Text>
+                </LinearGradient>
               </TouchableOpacity>
 
               {forumPosts.length === 0 ? (
@@ -388,9 +397,14 @@ export default function ChannelsScreen() {
                     }}
                   >
                     <View style={styles.forumHeader}>
-                      <View style={styles.avatarPlaceholder}>
-                        <Ionicons name="person" size={16} color="#FFF" />
-                      </View>
+                      <LinearGradient
+                        colors={['#A78BFA', '#7C3AED']}
+                        style={styles.avatarGradient}
+                      >
+                        <Text style={styles.avatarText}>
+                          {post.ustaName ? post.ustaName.charAt(0).toUpperCase() : 'U'}
+                        </Text>
+                      </LinearGradient>
                       <View>
                         <Text style={styles.forumAuthor}>{post.ustaName}</Text>
                         <Text style={styles.forumMeta}>{post.ustaCity || 'İstanbul'} • 1 dk önce</Text>
@@ -405,11 +419,14 @@ export default function ChannelsScreen() {
                     )}
 
                     <View style={styles.forumFooter}>
-                      <View style={styles.commentCountBox}>
-                        <Ionicons name="chatbubble-outline" size={16} color="#94A3B8" />
+                      <View style={styles.commentCountBadge}>
+                        <Ionicons name="chatbubble-outline" size={13} color="#94A3B8" style={{ marginRight: 4 }} />
                         <Text style={styles.commentCountText}>{post.comments?.length || 0} Yorum</Text>
                       </View>
-                      <Text style={{ color: colors.primary, fontFamily: fonts.bold, fontSize: 11.5 }}>Yardım Et / Yorum Yaz ➔</Text>
+                      <View style={styles.helpBadge}>
+                        <Text style={styles.helpBadgeText}>Yardım Et / Yorum Yaz</Text>
+                        <Ionicons name="chevron-forward" size={11} color="#C084FC" style={{ marginLeft: 2 }} />
+                      </View>
                     </View>
                   </TouchableOpacity>
                 ))
@@ -422,20 +439,25 @@ export default function ChannelsScreen() {
             <View style={{ width: '100%' }}>
               <View style={styles.jobsHeaderRow}>
                 <TouchableOpacity
-                  style={[styles.cityFilterBtn, { borderColor: colors.primary + '30' }]}
+                  style={[styles.cityFilterBtn, { borderColor: 'rgba(6, 182, 212, 0.25)' }]}
                   onPress={() => setIsCityFilterModalVisible(true)}
                 >
-                  <Ionicons name="location-outline" size={16} color={colors.primary} />
-                  <Text style={[styles.cityFilterText, { color: colors.primary }]}>{selectedCity}</Text>
-                  <Ionicons name="chevron-down" size={14} color={colors.primary} />
+                  <Ionicons name="location-outline" size={14} color="#22D3EE" />
+                  <Text style={[styles.cityFilterText, { color: '#22D3EE' }]}>{selectedCity}</Text>
+                  <Ionicons name="chevron-down" size={12} color="#22D3EE" />
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.miniAddBtn, { backgroundColor: colors.primary }]}
+                  style={[styles.miniAddBtn, { overflow: 'hidden', padding: 0 }]}
                   onPress={() => setIsNewJobModalVisible(true)}
                 >
-                  <Ionicons name="add" size={18} color="#FFF" />
-                  <Text style={styles.miniAddBtnText}>İş Pasla</Text>
+                  <LinearGradient
+                    colors={['#8B5CF6', '#6D28D9']}
+                    style={styles.miniAddBtnGradient}
+                  >
+                    <Ionicons name="add" size={16} color="#FFF" />
+                    <Text style={styles.miniAddBtnText}>İş Pasla</Text>
+                  </LinearGradient>
                 </TouchableOpacity>
               </View>
 
@@ -448,8 +470,8 @@ export default function ChannelsScreen() {
                 filteredJobOffers.map((offer) => (
                   <View key={offer.id} style={styles.jobCard}>
                     <View style={styles.jobCardHeader}>
-                      <View style={[styles.cityBadge, { backgroundColor: colors.primary + '15' }]}>
-                        <Text style={[styles.cityBadgeText, { color: colors.primary }]}>{offer.city}</Text>
+                      <View style={styles.cityBadge}>
+                        <Text style={styles.cityBadgeText}>{offer.city}</Text>
                       </View>
                       <Text style={styles.jobCardDate}>Bugün</Text>
                     </View>
@@ -458,20 +480,35 @@ export default function ChannelsScreen() {
                     <Text style={styles.jobCardDesc}>{offer.description}</Text>
 
                     <View style={styles.jobCardFooter}>
-                      <View>
-                        <Text style={styles.jobCardAuthorLabel}>Paslayan Usta</Text>
-                        <Text style={styles.jobCardAuthor}>{offer.ustaName}</Text>
+                      <View style={styles.jobPublisherRow}>
+                        <LinearGradient
+                          colors={['#10B981', '#047857']}
+                          style={styles.jobPublisherAvatar}
+                        >
+                          <Text style={styles.jobPublisherAvatarText}>
+                            {offer.ustaName ? offer.ustaName.charAt(0).toUpperCase() : 'U'}
+                          </Text>
+                        </LinearGradient>
+                        <View>
+                          <Text style={styles.jobCardAuthorLabel}>Paslayan Usta</Text>
+                          <Text style={styles.jobCardAuthor}>{offer.ustaName}</Text>
+                        </View>
                       </View>
 
                       {offer.ustaId !== user?.id && (
                         <TouchableOpacity
-                          style={[styles.jobContactBtn, { backgroundColor: '#10B981' }]}
+                          style={styles.jobContactBtnContainer}
                           onPress={() => {
                             Alert.alert('İletişime Geç', `${offer.ustaName} ile görüşme başlatılsın mı?`);
                           }}
                         >
-                          <Ionicons name="chatbubbles" size={14} color="#FFF" />
-                          <Text style={styles.jobContactText}>İşi Al / Konuş</Text>
+                          <LinearGradient
+                            colors={['#10B981', '#059669']}
+                            style={styles.jobContactGradient}
+                          >
+                            <Ionicons name="chatbubbles" size={13} color="#FFF" />
+                            <Text style={styles.jobContactText}>İşi Al / Konuş</Text>
+                          </LinearGradient>
                         </TouchableOpacity>
                       )}
                     </View>
@@ -485,11 +522,16 @@ export default function ChannelsScreen() {
           {activeTab === 'gallery' && (
             <View style={{ width: '100%' }}>
               <TouchableOpacity
-                style={[styles.actionBtn, { backgroundColor: colors.primary }]}
+                style={[styles.actionBtn, { overflow: 'hidden', padding: 0 }]}
                 onPress={() => setIsNewShowcaseModalVisible(true)}
               >
-                <Ionicons name="camera" size={20} color="#FFF" />
-                <Text style={styles.actionBtnText}>Yeni Hüner Fotoğrafı Yükle</Text>
+                <LinearGradient
+                  colors={['#8B5CF6', '#6D28D9']}
+                  style={styles.actionBtnGradient}
+                >
+                  <Ionicons name="camera" size={18} color="#FFF" />
+                  <Text style={styles.actionBtnText}>Yeni Hüner Fotoğrafı Yükle</Text>
+                </LinearGradient>
               </TouchableOpacity>
 
               {showcaseItems.length === 0 ? (
@@ -501,9 +543,17 @@ export default function ChannelsScreen() {
                 <View style={styles.masonryGrid}>
                   {showcaseItems.map((item) => (
                     <View key={item.id} style={styles.masonryItem}>
-                      <Image source={{ uri: item.image }} style={styles.masonryImage} />
+                      <View style={styles.imageWrapper}>
+                        <Image source={{ uri: item.image }} style={styles.masonryImage} />
+                        {item.images && item.images.length > 1 && (
+                          <View style={styles.multiPhotoBadge}>
+                            <Ionicons name="layers" size={10} color="#FFF" />
+                            <Text style={styles.multiPhotoText}>+{item.images.length - 1}</Text>
+                          </View>
+                        )}
+                      </View>
                       <View style={styles.masonryContent}>
-                        <Text style={styles.masonryTitle}>{item.title}</Text>
+                        <Text style={styles.masonryTitle} numberOfLines={1}>{item.title}</Text>
                         <Text style={styles.masonryUsta}>@{item.ustaName.split(' ')[0]}</Text>
                       </View>
                       
@@ -512,7 +562,7 @@ export default function ChannelsScreen() {
                           style={styles.masonryDeleteBtn}
                           onPress={() => handleDeleteShowcaseItem(item.id)}
                         >
-                          <Ionicons name="trash" size={12} color="#EF4444" />
+                          <Ionicons name="trash" size={11} color="#EF4444" />
                         </TouchableOpacity>
                       )}
                     </View>
@@ -819,9 +869,13 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: '#1E293B',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
-    height: 48,
+    borderRadius: 14,
+    padding: 4,
+    marginHorizontal: 16,
+    marginVertical: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    height: 46,
   },
   tabBtn: {
     flex: 1,
@@ -829,6 +883,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 6,
+    borderRadius: 10,
     height: '100%',
   },
   tabLabel: {
@@ -851,13 +906,22 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
   },
   actionBtn: {
+    height: 44,
+    borderRadius: 12,
+    marginBottom: 16,
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  actionBtnGradient: {
+    width: '100%',
+    height: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    height: 44,
-    borderRadius: 12,
-    marginBottom: 16,
   },
   actionBtnText: {
     color: '#FFF',
@@ -871,6 +935,13 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
+    borderLeftWidth: 4,
+    borderLeftColor: '#8B5CF6', // Premium left strip
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
   },
   forumHeader: {
     flexDirection: 'row',
@@ -878,13 +949,22 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 12,
   },
-  avatarPlaceholder: {
+  avatarGradient: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#6D28D9',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  avatarText: {
+    color: '#FFF',
+    fontSize: 13.5,
+    fontFamily: fonts.bold,
   },
   forumAuthor: {
     color: '#FFF',
@@ -926,15 +1006,33 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     marginTop: 4,
   },
-  commentCountBox: {
+  commentCountBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   commentCountText: {
     color: '#94A3B8',
-    fontSize: 12,
+    fontSize: 11.5,
     fontFamily: fonts.medium,
+  },
+  helpBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 0.5,
+    borderColor: 'rgba(139, 92, 246, 0.2)',
+  },
+  helpBadgeText: {
+    color: '#C084FC',
+    fontFamily: fonts.bold,
+    fontSize: 11,
   },
   // Jobs Styles
   jobsHeaderRow: {
@@ -946,7 +1044,7 @@ const styles = StyleSheet.create({
   cityFilterBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: 'rgba(6, 182, 212, 0.05)',
     borderWidth: 1,
     paddingHorizontal: 12,
     height: 36,
@@ -958,11 +1056,19 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
   },
   miniAddBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
     height: 36,
     borderRadius: 18,
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  miniAddBtnGradient: {
+    height: '100%',
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
   },
   miniAddBtnText: {
@@ -977,6 +1083,13 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981', // Opportunity green strip
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
   },
   jobCardHeader: {
     flexDirection: 'row',
@@ -985,14 +1098,18 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   cityBadge: {
+    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(6, 182, 212, 0.3)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
   },
   cityBadgeText: {
-    fontSize: 10.5,
+    fontSize: 10,
     fontFamily: fonts.bold,
     textTransform: 'uppercase',
+    color: '#22D3EE',
   },
   jobCardDate: {
     color: '#64748B',
@@ -1020,6 +1137,23 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255,255,255,0.04)',
     paddingTop: 12,
   },
+  jobPublisherRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  jobPublisherAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  jobPublisherAvatarText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontFamily: fonts.bold,
+  },
   jobCardAuthorLabel: {
     color: '#64748B',
     fontSize: 9.5,
@@ -1030,12 +1164,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: fonts.bold,
   },
-  jobContactBtn: {
+  jobContactBtnContainer: {
+    borderRadius: 8,
+    overflow: 'hidden',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  jobContactGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     height: 32,
-    borderRadius: 8,
     gap: 6,
   },
   jobContactText: {
@@ -1058,12 +1200,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  imageWrapper: {
+    width: '100%',
+    height: 160,
+    position: 'relative',
+    backgroundColor: '#0F172A',
   },
   masonryImage: {
     width: '100%',
-    height: 160,
+    height: '100%',
     resizeMode: 'cover',
-    backgroundColor: '#0F172A',
+  },
+  multiPhotoBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 3,
+  },
+  multiPhotoText: {
+    color: '#FFF',
+    fontSize: 9.5,
+    fontFamily: fonts.bold,
   },
   masonryContent: {
     padding: 10,
