@@ -576,82 +576,106 @@ export default function ChannelsScreen() {
                   onButtonPress={() => setIsNewJobModalVisible(true)}
                 />
               ) : (
-                filteredJobOffers.map((offer) => (
-                  <View key={offer.id} style={styles.jobCard}>
-                    <View style={styles.jobCardHeader}>
-                      <View style={styles.cityBadge}>
-                        <Ionicons name="location" size={10} color="#22D3EE" style={{ marginRight: 4 }} />
-                        <Text style={styles.cityBadgeText}>{offer.ustaCity || offer.city || 'İstanbul'}</Text>
+                filteredJobOffers.map((offer) => {
+                  const isOwnJob = offer.ustaId === user?.id;
+                  return (
+                    <TouchableOpacity
+                      key={offer.id}
+                      style={styles.jobCard}
+                      activeOpacity={isOwnJob ? 1 : 0.85}
+                      onPress={() => {
+                        if (isOwnJob) {
+                          Alert.alert('Bilgi', 'Bu sizin kendi iş ilanınızdır.');
+                        } else {
+                          Alert.alert(
+                            'İletişime Geç',
+                            `${offer.ustaName} ile görüşme başlatılsın mı?`,
+                            [
+                              { text: 'Vazgeç', style: 'cancel' },
+                              {
+                                text: 'Evet, Başlat',
+                                onPress: () => handleContactUsta(offer.ustaId, offer.ustaName)
+                              }
+                            ]
+                          );
+                        }
+                      }}
+                    >
+                      <View style={styles.jobCardHeader}>
+                        <View style={styles.cityBadge}>
+                          <Ionicons name="location" size={10} color="#22D3EE" style={{ marginRight: 4 }} />
+                          <Text style={styles.cityBadgeText}>{offer.ustaCity || offer.city || 'İstanbul'}</Text>
+                        </View>
+                        <View style={styles.jobCardUrgencyBadge}>
+                          <Ionicons name="flash" size={9} color="#F59E0B" style={{ marginRight: 2 }} />
+                          <Text style={styles.jobCardUrgencyText}>Aktif Fırsat</Text>
+                        </View>
                       </View>
-                      <View style={styles.jobCardUrgencyBadge}>
-                        <Ionicons name="flash" size={9} color="#F59E0B" style={{ marginRight: 2 }} />
-                        <Text style={styles.jobCardUrgencyText}>Aktif Fırsat</Text>
-                      </View>
-                    </View>
 
-                    <Text style={styles.jobCardTitle}>{offer.title}</Text>
-                    <Text style={styles.jobCardDesc}>{offer.description}</Text>
+                      <Text style={styles.jobCardTitle}>{offer.title}</Text>
+                      <Text style={styles.jobCardDesc}>{offer.description}</Text>
 
-                    <View style={styles.jobCardFooter}>
-                      <View style={styles.jobPublisherRow}>
-                        {offer.ustaAvatar ? (
-                          <Image 
-                            source={{ uri: offer.ustaAvatar }} 
-                            style={styles.jobPublisherAvatar} 
-                          />
-                        ) : (
-                          <LinearGradient
-                            colors={['#06B6D4', '#0891B2']}
-                            style={styles.jobPublisherAvatar}
-                          >
-                            <Text style={styles.jobPublisherAvatarText}>
-                              {offer.ustaName ? offer.ustaName.charAt(0).toUpperCase() : 'U'}
-                            </Text>
-                          </LinearGradient>
-                        )}
-                        <View>
-                          <Text style={styles.jobCardAuthorLabel}>Paslayan Usta</Text>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                            <Text style={styles.jobCardAuthor}>{offer.ustaName}</Text>
-                            <Ionicons name="checkmark-circle" size={13} color="#10B981" />
+                      <View style={styles.jobCardFooter}>
+                        <View style={styles.jobPublisherRow}>
+                          {offer.ustaAvatar ? (
+                            <Image 
+                              source={{ uri: offer.ustaAvatar }} 
+                              style={styles.jobPublisherAvatar} 
+                            />
+                          ) : (
+                            <LinearGradient
+                              colors={['#06B6D4', '#0891B2']}
+                              style={styles.jobPublisherAvatar}
+                            >
+                              <Text style={styles.jobPublisherAvatarText}>
+                                {offer.ustaName ? offer.ustaName.charAt(0).toUpperCase() : 'U'}
+                              </Text>
+                            </LinearGradient>
+                          )}
+                          <View>
+                            <Text style={styles.jobCardAuthorLabel}>Paslayan Usta</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                              <Text style={styles.jobCardAuthor}>{offer.ustaName}</Text>
+                              <Ionicons name="checkmark-circle" size={13} color="#10B981" />
+                            </View>
                           </View>
                         </View>
-                      </View>
 
-                      {offer.ustaId === user?.id ? (
-                        <View style={styles.ownJobBadge}>
-                          <Ionicons name="checkmark-circle" size={12} color="#059669" />
-                          <Text style={styles.ownJobBadgeText}>İlanınız Yayında</Text>
-                        </View>
-                      ) : (
-                        <TouchableOpacity
-                          style={styles.jobContactBtnContainer}
-                          onPress={() => {
-                            Alert.alert(
-                              'İletişime Geç',
-                              `${offer.ustaName} ile görüşme başlatılsın mı?`,
-                              [
-                                { text: 'Vazgeç', style: 'cancel' },
-                                {
-                                  text: 'Evet, Başlat',
-                                  onPress: () => handleContactUsta(offer.ustaId, offer.ustaName)
-                                }
-                              ]
-                            );
-                          }}
-                        >
-                          <LinearGradient
-                            colors={['#10B981', '#059669']}
-                            style={styles.jobContactGradient}
+                        {offer.ustaId === user?.id ? (
+                          <View style={styles.ownJobBadge}>
+                            <Ionicons name="checkmark-circle" size={12} color="#059669" />
+                            <Text style={styles.ownJobBadgeText}>İlanınız Yayında</Text>
+                          </View>
+                        ) : (
+                          <TouchableOpacity
+                            style={styles.jobContactBtnContainer}
+                            onPress={() => {
+                              Alert.alert(
+                                'İletişime Geç',
+                                `${offer.ustaName} ile görüşme başlatılsın mı?`,
+                                [
+                                  { text: 'Vazgeç', style: 'cancel' },
+                                  {
+                                    text: 'Evet, Başlat',
+                                    onPress: () => handleContactUsta(offer.ustaId, offer.ustaName)
+                                  }
+                                ]
+                              );
+                            }}
                           >
-                            <Ionicons name="chatbubbles" size={13} color="#FFF" />
-                            <Text style={styles.jobContactText}>İşi Al / Konuş</Text>
-                          </LinearGradient>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  </View>
-                ))
+                            <LinearGradient
+                              colors={['#10B981', '#059669']}
+                              style={styles.jobContactGradient}
+                            >
+                              <Ionicons name="chatbubbles" size={13} color="#FFF" />
+                              <Text style={styles.jobContactText}>İşi Al / Konuş</Text>
+                            </LinearGradient>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
               )}
             </View>
           )}
