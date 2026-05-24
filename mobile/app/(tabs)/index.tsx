@@ -164,44 +164,7 @@ export default function HomeScreen() {
   const [stats, setStats] = useState<any>(null);
   
   // Marketplace / Pazar Yeri States
-  const [marketplaceProducts, setMarketplaceProducts] = useState<any[]>([
-    {
-      id: 'prod-1',
-      title: 'Makita Şarjlı Matkap 18V',
-      price: 1750,
-      category: 'El Aleti',
-      sellerName: 'Mustafa Yılmaz (Usta)',
-      sellerId: 'mock-electrician-1',
-      sellerType: 'ELECTRICIAN',
-      location: 'Kadıköy, İstanbul',
-      desc: 'Çok temiz durumda, yedek bataryası ve şarj aletiyle birlikte verilecektir. İhtiyaç fazlasıdır.',
-      date: 'Bugün',
-    },
-    {
-      id: 'prod-2',
-      title: 'Öznur 3x2.5 NYM Kablo (45m)',
-      price: 850,
-      category: 'Kablo',
-      sellerName: 'Ahmet Kaya (Vatandaş)',
-      sellerId: 'mock-citizen-2',
-      sellerType: 'CITIZEN',
-      location: 'Üsküdar, İstanbul',
-      desc: 'Ev tadilatından kalan sıfır rulo bakır kablo. İhtiyacım olmadığı için satıyorum.',
-      date: 'Bugün',
-    },
-    {
-      id: 'prod-3',
-      title: 'Siemens 16A Sigorta Kutusu (10 Adet)',
-      price: 450,
-      category: 'Şalt / Malzeme',
-      sellerName: 'Bülent Tan (Usta)',
-      sellerId: 'mock-electrician-3',
-      sellerType: 'ELECTRICIAN',
-      location: 'Beşiktaş, İstanbul',
-      desc: 'Şantiyeden kalan sıfır kutusunda otomatik sigortalar. Toptan fiyatına verilecektir.',
-      date: 'Dün',
-    }
-  ]);
+  const [marketplaceProducts, setMarketplaceProducts] = useState<any[]>([]);
   const [isAddProductModalVisible, setIsAddProductModalVisible] = useState(false);
   const [isProductDetailModalVisible, setIsProductDetailModalVisible] = useState(false);
   const [isAllProductsModalVisible, setIsAllProductsModalVisible] = useState(false);
