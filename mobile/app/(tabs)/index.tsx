@@ -265,9 +265,9 @@ export default function HomeScreen() {
         if (response.data?.success && response.data.data && response.data.data.length > 0) {
           const backendProducts = response.data.data;
 
-          // SMART SYNC: Keep all locally created listings of the current user
+          // SMART SYNC: Keep all locally created listings flagged with isLocal or matching user ID
           const myLocalProducts = localProducts.filter(
-            p => p.sellerId === user?.id || p.sellerId === 'mock-current-user'
+            p => p.isLocal === true || p.sellerId === user?.id || p.sellerId === 'mock-current-user'
           );
 
           // Merge backend products with user's local products to avoid duplicates
@@ -504,6 +504,7 @@ export default function HomeScreen() {
       date: 'Bugün',
       image: newProdImages.length > 0 ? newProdImages[0] : null,
       images: newProdImages,
+      isLocal: true, // Flag to identify custom local products across logouts
     };
 
     setIsUploadingImage(true);
