@@ -2021,7 +2021,7 @@ export default function HomeScreen() {
                       imageStyle={{ borderRadius: 20 }}
                     >
                       <LinearGradient
-                        colors={['rgba(15, 23, 42, 0.3)', '#0F172A']}
+                        colors={['rgba(15, 23, 42, 0.55)', 'rgba(15, 23, 42, 0.85)', '#0F172A']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 0, y: 1 }}
                         style={[styles.marketCardGradient, { backgroundColor: 'transparent' }]}

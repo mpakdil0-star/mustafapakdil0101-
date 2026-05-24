@@ -110,13 +110,22 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               }}
             >
               <LinearGradient
-                colors={[colors.primary, colors.primaryDark || '#1D4ED8']}
+                colors={[colors.primary, '#4F46E5']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
-                style={[styles.centerButton, { shadowColor: colors.primary }]}
+                style={[
+                  styles.centerButton, 
+                  { 
+                    shadowColor: colors.primary, 
+                    shadowOffset: { width: 0, height: 6 }, 
+                    shadowOpacity: 0.55, 
+                    shadowRadius: 14, 
+                    elevation: 12 
+                  }
+                ]}
               >
                 <Ionicons name="chatbubble-ellipses" size={26} color="#FFF" />
-                <Text style={styles.centerButtonLabel}>KANALLAR</Text>
+                <Text style={styles.centerButtonLabel}>FORUM</Text>
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
