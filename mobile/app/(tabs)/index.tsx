@@ -281,12 +281,12 @@ export default function HomeScreen() {
       } else {
         // Fallback to beautiful mock showcase items if empty or error
         const mockItems = [
-          { id: 'sc-1', title: 'Pano Kablolama Tesisatı', description: 'Schneider şalt malzemesi ile özenle çekilmiş endüstriyel dağıtım panosu.', image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500', ustaName: 'Ahmet Yılmaz (Usta)', ustaId: 'mock-electrician-1' },
-          { id: 'sc-2', title: 'Akıllı Ev LED Tasarımları', description: 'Modern mimariye uygun lüks asma tavan aydınlatma ve otomasyon kurulumu.', image: 'https://images.unsplash.com/photo-1565538810844-1e119d81a207?w=500', ustaName: 'Mustafa Kaya (Usta)', ustaId: 'mock-electrician-3' },
-          { id: 'sc-3', title: 'Sigorta Kutusu Revizyonu', description: 'Eski tip panonun sıfır Siemens malzemeleri ile güvenli bir şekilde yenilenmesi.', image: 'https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=500', ustaName: 'Bülent Tan (Usta)', ustaId: 'mock-electrician-4' },
-          { id: 'sc-4', title: 'Güvenlik Kamera Altyapısı', description: '4K UltraHD Dahua IP kamera kurulumu ve kablo kanallama işçiliği.', image: 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=500', ustaName: 'Mustafa Yılmaz (Usta)', ustaId: 'mock-electrician-1' },
-          { id: 'sc-5', title: 'Klima Dezenfekte ve Bakımı', description: 'Antibakteriyel solüsyon ile detaylı klima iç ünite petek temizliği.', image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500', ustaName: 'Tuğçe Klimacı (Usta)', ustaId: 'mock-electrician-2' },
-          { id: 'sc-6', title: 'Sıfır Daire Kablo Çekimi', description: 'Tüm dairenin tadilat öncesi güvenli NYM kablolama ve borulama işlemi.', image: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=500', ustaName: 'Ahmet Kaya (Usta)', ustaId: 'mock-electrician-5' }
+          { id: 'sc-1', title: 'Pano Kablolama Tesisatı', description: 'Schneider şalt malzemesi ile özenle çekilmiş endüstriyel dağıtım panosu.', image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500', ustaName: 'Ahmet Yılmaz (Usta)', ustaId: 'mock-electrician-1', ustaAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100' },
+          { id: 'sc-2', title: 'Akıllı Ev LED Tasarımları', description: 'Modern mimariye uygun lüks asma tavan aydınlatma ve otomasyon kurulumu.', image: 'https://images.unsplash.com/photo-1565538810844-1e119d81a207?w=500', ustaName: 'Mustafa Kaya (Usta)', ustaId: 'mock-electrician-3', ustaAvatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100' },
+          { id: 'sc-3', title: 'Sigorta Kutusu Revizyonu', description: 'Eski tip panonun sıfır Siemens malzemeleri ile güvenli bir şekilde yenilenmesi.', image: 'https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=500', ustaName: 'Bülent Tan (Usta)', ustaId: 'mock-electrician-4', ustaAvatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100' },
+          { id: 'sc-4', title: 'Güvenlik Kamera Altyapısı', description: '4K UltraHD Dahua IP kamera kurulumu ve kablo kanallama işçiliği.', image: 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=500', ustaName: 'Mustafa Yılmaz (Usta)', ustaId: 'mock-electrician-1', ustaAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100' },
+          { id: 'sc-5', title: 'Klima Dezenfekte ve Bakımı', description: 'Antibakteriyel solüsyon ile detaylı klima iç ünite petek temizliği.', image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500', ustaName: 'Tuğçe Klimacı (Usta)', ustaId: 'mock-electrician-2', ustaAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100' },
+          { id: 'sc-6', title: 'Sıfır Daire Kablo Çekimi', description: 'Tüm dairenin tadilat öncesi güvenli NYM kablolama ve borulama işlemi.', image: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=500', ustaName: 'Ahmet Kaya (Usta)', ustaId: 'mock-electrician-5', ustaAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100' }
         ];
         const grouped: Record<string, any> = {};
         mockItems.forEach((item: any) => {
@@ -1650,7 +1650,15 @@ export default function HomeScreen() {
                           <LinearGradient colors={['transparent', 'rgba(0,0,0,0.85)']} style={styles.vitrinCardGradient}>
                             <View style={styles.vitrinCardContentRow}>
                               <View style={styles.vitrinIconCircleSm}>
-                                <Ionicons name="flash" size={20} color="#FFF" />
+                                {item.ustaAvatar ? (
+                                  <Image 
+                                    source={{ uri: getFileUrl(item.ustaAvatar) || '' }} 
+                                    style={{ width: 38, height: 38, borderRadius: 19 }} 
+                                    resizeMode="cover"
+                                  />
+                                ) : (
+                                  <Ionicons name="person" size={16} color="#FFF" />
+                                )}
                               </View>
                               <View style={styles.vitrinCardTextCol}>
                                 <Text style={styles.vitrinCardTitle} numberOfLines={1}>{item.title}</Text>

@@ -271,6 +271,7 @@ export default function ChannelsScreen() {
       ustaId: user?.id || 'mock-usta-id',
       ustaName: user?.fullName || 'Usta',
       ustaCity: user?.city || 'İstanbul',
+      ustaAvatar: user?.profileImageUrl || null,
     };
 
     try {
