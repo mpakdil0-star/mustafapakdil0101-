@@ -634,8 +634,15 @@ export default function ChannelsScreen() {
                         </View>
                       </View>
 
-                      <Text style={styles.jobCardTitle}>{offer.title}</Text>
-                      <Text style={styles.jobCardDesc}>{offer.description}</Text>
+                      <View style={styles.jobCardBody}>
+                        <View style={styles.jobCardTitleRow}>
+                          <Ionicons name="briefcase" size={14} color="#0891B2" style={{ marginRight: 6 }} />
+                          <Text style={styles.jobCardTitle} numberOfLines={1}>{offer.title}</Text>
+                        </View>
+                        <View style={styles.jobCardDescContainer}>
+                          <Text style={styles.jobCardDesc}>{offer.description}</Text>
+                        </View>
+                      </View>
 
                       <View style={styles.jobCardFooter}>
                         <View style={styles.jobPublisherRow}>
@@ -1376,16 +1383,29 @@ const styles = StyleSheet.create({
   },
   jobCardTitle: {
     color: '#0F172A', // Slate 900
-    fontSize: 14.5,
+    fontSize: 16.5,
     fontFamily: fonts.bold,
-    marginBottom: 6,
+    flex: 1,
   },
   jobCardDesc: {
-    color: '#334155', // Slate 700
+    color: '#475569', // Soft and highly readable Slate 600
     fontSize: 12.5,
-    fontFamily: fonts.regular,
-    lineHeight: 18,
-    marginBottom: 12,
+    fontFamily: fonts.medium,
+    lineHeight: 18.5,
+  },
+  jobCardBody: {
+    marginVertical: 12,
+    gap: 8,
+  },
+  jobCardTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  jobCardDescContainer: {
+    borderLeftWidth: 2,
+    borderLeftColor: 'rgba(8, 145, 178, 0.15)', // Subtle cyan left accent line
+    paddingLeft: 10,
+    marginLeft: 2,
   },
   jobCardFooter: {
     flexDirection: 'row',
