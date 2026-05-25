@@ -33,6 +33,13 @@ const initDatabase = async () => {
     await prisma.$connect();
     isDatabaseAvailable = true;
     logger.info('✅ Database connected successfully');
+
+    // Run Base64 to physical files migration asynchronously
+    import('../utils/dbMigration').then((m) => {
+      m.runBase64ToFilesMigration();
+    }).catch((err) => {
+      logger.error('Failed to import database migration:', err);
+    });
   } catch (error: any) {
     isDatabaseAvailable = false;
     logger.info('⚠️  Database URL not found or connection failed.');
