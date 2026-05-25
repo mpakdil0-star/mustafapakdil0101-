@@ -17,7 +17,7 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
         id: 'elektrik',
         name: 'Elektrik',
         icon: 'flash',
-        colors: ['#A78BFA', '#7C3AED'],
+        colors: ['#2DD4BF', '#0D9488'],
         description: 'Elektrik tesisatı, tamir, aydınlatma ve pano işleri',
     },
     {

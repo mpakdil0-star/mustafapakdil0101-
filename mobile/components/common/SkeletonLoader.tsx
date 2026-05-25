@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, ViewStyle } from 'react-native';
-import { colors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
+import { useAppColors } from '../../hooks/useAppColors';
 
 type SkeletonVariant = 'text' | 'title' | 'avatar' | 'card' | 'button' | 'image';
 
@@ -29,6 +29,7 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
     borderRadius,
     style,
 }) => {
+    const colors = useAppColors();
     const shimmerAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -53,7 +54,7 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
     const variantStyle = VARIANT_STYLES[variant];
     const opacity = shimmerAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: [0.3, 0.7],
+        outputRange: [0.35, 0.65],
     });
 
     return (
@@ -61,10 +62,11 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
             style={[
                 styles.skeleton,
                 {
-                    width: width ?? variantStyle.width,
+                    backgroundColor: colors.skeleton,
+                    width: (width ?? variantStyle.width) as any,
                     height: height ?? variantStyle.height,
                     borderRadius: borderRadius ?? variantStyle.borderRadius,
-                    opacity,
+                    opacity: opacity as any,
                 },
                 style,
             ]}
@@ -73,20 +75,23 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
 };
 
 // Predefined skeleton layouts
-export const SkeletonCard: React.FC<{ style?: ViewStyle }> = ({ style }) => (
-    <View style={[styles.cardContainer, style]}>
-        <View style={styles.cardHeader}>
-            <SkeletonLoader variant="avatar" />
-            <View style={styles.cardHeaderText}>
-                <SkeletonLoader variant="title" width="80%" />
-                <SkeletonLoader variant="text" width="50%" style={{ marginTop: 8 }} />
+export const SkeletonCard: React.FC<{ style?: ViewStyle }> = ({ style }) => {
+    const colors = useAppColors();
+    return (
+        <View style={[styles.cardContainer, { backgroundColor: colors.surface }, style]}>
+            <View style={styles.cardHeader}>
+                <SkeletonLoader variant="avatar" />
+                <View style={styles.cardHeaderText}>
+                    <SkeletonLoader variant="title" width="80%" />
+                    <SkeletonLoader variant="text" width="50%" style={{ marginTop: 8 }} />
+                </View>
             </View>
+            <SkeletonLoader variant="text" style={{ marginTop: 16 }} />
+            <SkeletonLoader variant="text" width="90%" style={{ marginTop: 8 }} />
+            <SkeletonLoader variant="text" width="70%" style={{ marginTop: 8 }} />
         </View>
-        <SkeletonLoader variant="text" style={{ marginTop: 16 }} />
-        <SkeletonLoader variant="text" width="90%" style={{ marginTop: 8 }} />
-        <SkeletonLoader variant="text" width="70%" style={{ marginTop: 8 }} />
-    </View>
-);
+    );
+};
 
 export const SkeletonListItem: React.FC<{ style?: ViewStyle }> = ({ style }) => (
     <View style={[styles.listItem, style]}>
@@ -100,10 +105,9 @@ export const SkeletonListItem: React.FC<{ style?: ViewStyle }> = ({ style }) => 
 
 const styles = StyleSheet.create({
     skeleton: {
-        backgroundColor: colors.backgroundDark,
+        // Base background is overriden by dynamic colors
     },
     cardContainer: {
-        backgroundColor: colors.surface,
         borderRadius: spacing.radius.lg,
         padding: spacing.cardPadding,
     },

@@ -1,19 +1,19 @@
-import React, { useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Image } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors as staticColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
-import { useAppSelector } from '../../hooks/redux';
 import { getFileUrl } from '../../constants/api';
+import { Card } from '../common/Card';
 
 interface FeaturedElectricianProps {
     name: string;
     rating: number;
     reviewCount: number;
     specialty: string;
-    location: string; // Real location from data
+    location: string;
     isVerified?: boolean;
     imageUrl?: string;
     onPress: () => void;
@@ -32,25 +32,6 @@ export const FeaturedElectrician = ({
     onBook,
 }: FeaturedElectricianProps) => {
     const colors = useAppColors();
-    const scaleAnim = useRef(new Animated.Value(1)).current;
-
-    const handlePressIn = () => {
-        Animated.spring(scaleAnim, {
-            toValue: 0.98,
-            useNativeDriver: true,
-            speed: 50,
-            bounciness: 4,
-        }).start();
-    };
-
-    const handlePressOut = () => {
-        Animated.spring(scaleAnim, {
-            toValue: 1,
-            useNativeDriver: true,
-            speed: 50,
-            bounciness: 4,
-        }).start();
-    };
 
     const renderStars = (rating: number) => {
         const stars = [];
@@ -68,28 +49,24 @@ export const FeaturedElectrician = ({
     };
 
     return (
-        <Animated.View style={[
-            styles.container,
-            { transform: [{ scale: scaleAnim }] }
-        ]}>
-            <TouchableOpacity
-                onPress={onPress}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-                activeOpacity={0.9}
-                style={styles.touchable}
-            >
+        <Card
+            onPress={onPress}
+            variant="default"
+            padding={10}
+            style={{ width: '100%', marginBottom: 10 }}
+        >
+            <View style={styles.touchable}>
                 {/* Profile Image - Left Side */}
                 <View style={styles.avatarContainer}>
                     {imageUrl ? (
                         <Image source={{ uri: getFileUrl(imageUrl) || '' }} style={styles.avatar} />
                     ) : (
-                        <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primaryLight + '20' }]}>
-                            <Ionicons name="person" size={28} color={colors.primary} />
+                        <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary + '12' }]}>
+                            <Ionicons name="person" size={26} color={colors.primary} />
                         </View>
                     )}
                     {isVerified && (
-                        <View style={styles.verifiedBadge}>
+                        <View style={[styles.verifiedBadge, { borderColor: colors.surface }]}>
                             <Ionicons name="checkmark" size={8} color={staticColors.white} />
                         </View>
                     )}
@@ -98,48 +75,35 @@ export const FeaturedElectrician = ({
                 {/* Content - Right Side */}
                 <View style={styles.infoContent}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                        <Text style={[styles.name, { flex: 1, marginBottom: 0, marginRight: 8 }]} numberOfLines={1}>{name}</Text>
+                        <Text style={[styles.name, { color: colors.text, flex: 1, marginBottom: 0, marginRight: 8 }]} numberOfLines={1}>{name}</Text>
                         {specialty && (
-                            <View style={[styles.specialtyBadge, { backgroundColor: colors.primary + '15' }]}>
+                            <View style={[styles.specialtyBadge, { backgroundColor: colors.primary + '12' }]}>
                                 <Text style={[styles.specialtyText, { color: colors.primary }]}>{specialty}</Text>
                             </View>
                         )}
                     </View>
 
                     <View style={styles.ratingRow}>
-                        <Text style={styles.ratingText}>{Number(rating || 0).toFixed(1)}</Text>
+                        <Text style={[styles.ratingText, { color: colors.text }]}>{Number(rating || 0).toFixed(1)}</Text>
                         <View style={styles.starsContainer}>
                             {renderStars(Number(rating || 0))}
                         </View>
                     </View>
 
                     <View style={styles.reviewRow}>
-                        <Text style={styles.reviewText}>{Number(rating || 0).toFixed(1)} ({reviewCount || 0} yorum)</Text>
+                        <Text style={[styles.reviewText, { color: colors.textSecondary }]}>{reviewCount || 0} değerlendirme</Text>
                         <View style={styles.locationContainer}>
                             <Ionicons name="location" size={14} color="#10B981" />
-                            <Text style={styles.locationText}>{location}</Text>
+                            <Text style={[styles.locationText, { color: colors.textSecondary }]}>{location}</Text>
                         </View>
                     </View>
                 </View>
-            </TouchableOpacity>
-        </Animated.View>
+            </View>
+        </Card>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        width: '100%',
-        backgroundColor: staticColors.white,
-        borderRadius: 16,
-        padding: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 6,
-        elevation: 2,
-        borderWidth: 1,
-        borderColor: 'rgba(0, 0, 0, 0.03)',
-    },
     touchable: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -172,7 +136,6 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         backgroundColor: '#10B981',
         borderWidth: 1.5,
-        borderColor: staticColors.white,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -182,7 +145,6 @@ const styles = StyleSheet.create({
     name: {
         fontFamily: fonts.bold,
         fontSize: 16,
-        color: staticColors.black,
         marginBottom: 2,
     },
     specialtyBadge: {

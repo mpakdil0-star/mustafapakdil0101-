@@ -45,6 +45,7 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
     const scaleAnim = useRef(new Animated.Value(0.9)).current;
     const [shouldRender, setShouldRender] = useState(visible);
     const colors = useAppColors();
+    const isLight = colors.background === '#FFFFFF' || colors.background === '#F8FAFC';
 
     useEffect(() => {
         if (visible) {
@@ -84,15 +85,18 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
 
     const getIcon = () => {
         switch (type) {
-            case 'success': return { name: 'checkmark-circle', color: '#10B981', glow: '#10B98130' };
-            case 'error': return { name: 'alert-circle', color: '#EF4444', glow: '#EF444430' };
-            case 'warning': return { name: 'warning', color: '#F59E0B', glow: '#F59E0B30' };
-            case 'confirm': return { name: 'help-circle', color: colors.primary, glow: colors.primary + '30' };
-            default: return { name: 'information-circle', color: colors.primary, glow: colors.primary + '30' };
+            case 'success': return { name: 'checkmark-circle', color: '#10B981', glow: '#10B98115' };
+            case 'error': return { name: 'alert-circle', color: colors.error, glow: colors.error + '15' };
+            case 'warning': return { name: 'warning', color: '#F59E0B', glow: '#F59E0B15' };
+            case 'confirm': return { name: 'help-circle', color: colors.primary, glow: colors.primary + '15' };
+            default: return { name: 'information-circle', color: colors.primary, glow: colors.primary + '15' };
         }
     };
 
     const iconData = getIcon();
+    const titleColor = isLight ? '#0F172A' : '#FFFFFF';
+    const messageColor = isLight ? '#475569' : 'rgba(255, 255, 255, 0.6)';
+    const ghostBorderColor = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.1)';
 
     return (
         <Modal
@@ -119,6 +123,8 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
                     style={[
                         styles.alertContainer,
                         {
+                            backgroundColor: isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(30, 41, 59, 0.96)',
+                            borderColor: isLight ? 'rgba(13, 148, 136, 0.1)' : 'rgba(255, 255, 255, 0.08)',
                             opacity: fadeAnim,
                             transform: [{ scale: scaleAnim }]
                         }
@@ -127,11 +133,11 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
                     <View style={styles.glassBackground}>
                         {/* Status Icon with Glow */}
                         <View style={[styles.iconContainer, { backgroundColor: iconData.glow }]}>
-                            <Ionicons name={iconData.name as any} size={40} color={iconData.color} />
+                            <Ionicons name={iconData.name as any} size={36} color={iconData.color} />
                         </View>
 
-                        <Text style={styles.title}>{title}</Text>
-                        <Text style={styles.message}>{message}</Text>
+                        <Text style={[styles.title, { color: titleColor }]}>{title}</Text>
+                        <Text style={[styles.message, { color: messageColor }]}>{message}</Text>
 
                         <View style={styles.buttonContainer}>
                             {buttons.length > 0 ? (
@@ -142,8 +148,8 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
                                         style={[
                                             styles.button,
                                             buttons.length > 2 ? styles.buttonStack : styles.buttonSide,
-                                            btn.variant === 'ghost' && styles.buttonGhost,
-                                            btn.variant === 'danger' && styles.buttonDanger
+                                            btn.variant === 'ghost' && [styles.buttonGhost, { borderColor: ghostBorderColor }],
+                                            btn.variant === 'danger' && [styles.buttonDanger, { borderColor: colors.error + '30', backgroundColor: colors.error + '10' }]
                                         ]}
                                     >
                                         {btn.variant === 'primary' || !btn.variant ? (
@@ -158,8 +164,9 @@ export const PremiumAlert: React.FC<PremiumAlertProps> = ({
                                         ) : (
                                             <Text style={[
                                                 styles.buttonTextSecondary,
-                                                btn.variant === 'danger' && { color: '#EF4444' },
-                                                btn.variant === 'ghost' && { color: 'rgba(255,255,255,0.4)' }
+                                                { color: isLight ? '#475569' : '#F8FAFC' },
+                                                btn.variant === 'danger' && { color: colors.error },
+                                                btn.variant === 'ghost' && { color: isLight ? '#94A3B8' : 'rgba(255,255,255,0.4)' }
                                             ]}>
                                                 {btn.text}
                                             </Text>
@@ -201,16 +208,14 @@ const styles = StyleSheet.create({
     },
     alertContainer: {
         width: width * 0.85,
-        borderRadius: 32,
+        borderRadius: 28,
         overflow: 'hidden',
         borderWidth: 1.5,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        backgroundColor: 'rgba(30, 41, 59, 0.85)',
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 10 },
-                shadowOpacity: 0.3,
+                shadowOpacity: 0.15,
                 shadowRadius: 20,
             },
             android: {
@@ -223,27 +228,25 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     iconContainer: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        width: 72,
+        height: 72,
+        borderRadius: 36,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
     },
     title: {
         fontFamily: fonts.bold,
-        fontSize: 22,
-        color: '#fff',
+        fontSize: 20,
         textAlign: 'center',
-        marginBottom: 12,
-        letterSpacing: -0.5,
+        marginBottom: 10,
+        letterSpacing: -0.4,
     },
     message: {
         fontFamily: fonts.medium,
-        fontSize: 15,
-        color: 'rgba(255, 255, 255, 0.6)',
+        fontSize: 14,
         textAlign: 'center',
-        lineHeight: 22,
+        lineHeight: 20,
         marginBottom: 28,
         paddingHorizontal: 10,
     },
@@ -255,7 +258,7 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     button: {
-        borderRadius: 16,
+        borderRadius: 14,
         overflow: 'hidden',
     },
     buttonSide: {
@@ -266,34 +269,30 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     buttonGradient: {
-        paddingVertical: 14,
+        paddingVertical: 12,
         alignItems: 'center',
         justifyContent: 'center',
     },
     buttonGhost: {
         backgroundColor: 'transparent',
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        paddingVertical: 14,
+        paddingVertical: 12,
         alignItems: 'center',
         justifyContent: 'center',
     },
     buttonDanger: {
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
         borderWidth: 1,
-        borderColor: 'rgba(239, 68, 68, 0.2)',
-        paddingVertical: 14,
+        paddingVertical: 12,
         alignItems: 'center',
         justifyContent: 'center',
     },
     buttonTextPrimary: {
         fontFamily: fonts.bold,
-        fontSize: 16,
+        fontSize: 15,
         color: '#fff',
     },
     buttonTextSecondary: {
         fontFamily: fonts.bold,
-        fontSize: 16,
-        color: '#fff',
+        fontSize: 15,
     }
 });

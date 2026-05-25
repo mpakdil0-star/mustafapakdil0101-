@@ -147,42 +147,42 @@ export const AuthGuardModal: React.FC<AuthGuardModalProps> = ({
                                 <View style={styles.roleContainer}>
                                     {/* Citizen Option */}
                                     <TouchableOpacity
-                                        style={[styles.roleOptionWrapper, { shadowColor: '#7C3AED' }]}
+                                        style={[styles.roleOptionWrapper, { shadowColor: '#0D9488' }]}
                                         onPress={() => handleRoleSelect('CITIZEN')}
                                         activeOpacity={0.9}
                                     >
                                         <LinearGradient
-                                            colors={['#FFFFFF', '#F8F9FF']}
+                                            colors={['#FFFFFF', '#F0FDFA']}
                                             style={styles.roleOptionCard}
                                         >
                                             <LinearGradient
-                                                colors={['#7C3AED', '#6D28D9']}
+                                                colors={['#0D9488', '#2DD4BF']}
                                                 style={styles.roleIconContainer}
                                             >
                                                 <Ionicons name="people" size={24} color="#FFF" />
                                             </LinearGradient>
                                             <View style={styles.roleTextContainer}>
-                                                <Text style={[styles.roleOptionTitle, { color: '#1E1B4B' }]}>Vatandaş</Text>
+                                                <Text style={[styles.roleOptionTitle, { color: '#0F172A' }]}>Vatandaş</Text>
                                                 <Text style={styles.roleOptionDesc}>Usta bulmak, ilan vermek istiyorum</Text>
                                             </View>
-                                            <View style={[styles.roleArrowBox, { backgroundColor: '#7C3AED10' }]}>
-                                                <Ionicons name="chevron-forward" size={18} color="#7C3AED" />
+                                            <View style={[styles.roleArrowBox, { backgroundColor: 'rgba(13, 148, 136, 0.1)' }]}>
+                                                <Ionicons name="chevron-forward" size={18} color="#0D9488" />
                                             </View>
                                         </LinearGradient>
                                     </TouchableOpacity>
 
                                     {/* Electrician Option */}
                                     <TouchableOpacity
-                                        style={[styles.roleOptionWrapper, { shadowColor: '#3B82F6' }]}
+                                        style={[styles.roleOptionWrapper, { shadowColor: '#F97316' }]}
                                         onPress={() => handleRoleSelect('ELECTRICIAN')}
                                         activeOpacity={0.9}
                                     >
                                         <LinearGradient
-                                            colors={['#FFFFFF', '#F0F7FF']}
+                                            colors={['#FFFFFF', '#FFF7ED']}
                                             style={styles.roleOptionCard}
                                         >
                                             <LinearGradient
-                                                colors={['#3B82F6', '#2563EB']}
+                                                colors={['#F97316', '#F59E0B']}
                                                 style={styles.roleIconContainer}
                                             >
                                                 <Ionicons name="construct" size={24} color="#FFF" />
@@ -191,8 +191,8 @@ export const AuthGuardModal: React.FC<AuthGuardModalProps> = ({
                                                 <Text style={[styles.roleOptionTitle, { color: '#0F172A' }]}>Usta</Text>
                                                 <Text style={styles.roleOptionDesc}>İş almak, teklif vermek istiyorum</Text>
                                             </View>
-                                            <View style={[styles.roleArrowBox, { backgroundColor: '#3B82F610' }]}>
-                                                <Ionicons name="chevron-forward" size={18} color="#3B82F6" />
+                                            <View style={[styles.roleArrowBox, { backgroundColor: 'rgba(249, 115, 22, 0.1)' }]}>
+                                                <Ionicons name="chevron-forward" size={18} color="#F97316" />
                                             </View>
                                         </LinearGradient>
                                     </TouchableOpacity>
@@ -347,7 +347,10 @@ const styles = StyleSheet.create({
     },
     backButton: {
         paddingVertical: 12,
+        flexDirection: 'row',
+        justifyContent: 'center',
         alignItems: 'center',
+        gap: 6,
     },
     backButtonInner: {
         flexDirection: 'row',
@@ -417,13 +420,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginLeft: 8,
     },
-    backButton: {
-        paddingVertical: 12,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: 6,
-    },
+
     backButtonText: {
         fontFamily: fonts.bold,
         fontSize: 14,

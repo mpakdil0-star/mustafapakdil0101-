@@ -31,7 +31,7 @@ interface User {
     serviceCategory?: string;
     isAuthorizedEngineer?: boolean;
     locations?: { city: string; district?: string }[];
-    pushStatus?: 'ACTIVE' | 'PENDING' | 'DISABLED';
+    pushStatus?: 'ACTIVE' | 'PENDING' | 'DISABLED' | 'UNINSTALLED';
 }
 
 type FilterType = 'ALL' | 'CITIZEN' | 'ELECTRICIAN' | 'ENGINEER';

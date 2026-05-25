@@ -66,13 +66,15 @@ export const Button: React.FC<ButtonProps> = ({
     }).start();
   };
 
+  const isElectrician = colors.background !== '#FFFFFF';
+
   const buttonStyles = [
     styles.button,
     variant === 'primary' && [styles.primary, { backgroundColor: colors.primary, shadowColor: colors.primary }],
     variant === 'secondary' && [styles.secondary, { backgroundColor: colors.secondary, shadowColor: colors.secondary }],
-    variant === 'success' && styles.success,
-    variant === 'danger' && styles.danger,
-    variant === 'outline' && [styles.outline, { borderColor: colors.primary }],
+    variant === 'success' && [styles.success, { backgroundColor: colors.success, shadowColor: colors.success }],
+    variant === 'danger' && [styles.danger, { backgroundColor: colors.error, shadowColor: colors.error }],
+    variant === 'outline' && [styles.outline, { borderColor: colors.primary, backgroundColor: isElectrician ? 'rgba(30, 41, 59, 0.4)' : 'rgba(255, 255, 255, 0.4)' }],
     variant === 'text' && styles.text,
     styles[`size_${size}` as keyof typeof styles],
     fullWidth && styles.fullWidth,
@@ -136,7 +138,6 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -147,34 +148,29 @@ const styles = StyleSheet.create({
   // Variants
   primary: {
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.22,
     shadowRadius: 10,
     elevation: 6,
   },
   secondary: {
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.22,
     shadowRadius: 10,
     elevation: 6,
   },
   success: {
-    backgroundColor: staticColors.success,
-    shadowColor: staticColors.success,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.2,
     shadowRadius: 10,
     elevation: 6,
   },
   danger: {
-    backgroundColor: staticColors.error,
-    shadowColor: staticColors.error,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.2,
     shadowRadius: 10,
     elevation: 6,
   },
   outline: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
     borderWidth: 1.5,
   },
   text: {
@@ -182,21 +178,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
 
-  // Sizes - Modern & Balanced
+  // Sizes - Modern & Balanced with spacing radius tokens
   size_small: {
     paddingVertical: 8,
     paddingHorizontal: 14,
     minHeight: 36,
+    borderRadius: spacing.radius.sm,
   },
   size_medium: {
     paddingVertical: 12,
     paddingHorizontal: 20,
     minHeight: 46,
+    borderRadius: spacing.radius.md,
   },
   size_large: {
     paddingVertical: 14,
     paddingHorizontal: 26,
     minHeight: 54,
+    borderRadius: spacing.radius.lg,
   },
 
   fullWidth: {

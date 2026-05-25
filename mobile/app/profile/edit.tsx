@@ -139,12 +139,7 @@ export default function EditProfileScreen() {
         }
     }, [mandatory]);
 
-    // Auto-focus phone if mandatory and empty
-    useEffect(() => {
-        if (mandatory && !phoneNumber) {
-            setTimeout(() => phoneInputRef.current?.focus(), 500);
-        }
-    }, []);
+    // Auto-focus logic removed due to missing ref support in Input component
 
     // === Photo Upload Logic ===
     const handlePhotoOptions = () => {
@@ -454,8 +449,7 @@ export default function EditProfileScreen() {
             <Stack.Screen 
                 options={{ 
                     gestureEnabled: !mandatory,
-                    headerShown: false,
-                    swipeEnabled: !mandatory
+                    headerShown: false
                 }} 
             />
             
@@ -577,7 +571,6 @@ export default function EditProfileScreen() {
                             keyboardType="phone-pad"
                             containerStyle={styles.input}
                             editable={!user?.phone || phoneNumber !== user?.phone || !!mandatory || !user?.isVerified}
-                            ref={phoneInputRef}
                             error={errors.phoneNumber}
                             maxLength={11}
                             helperText={isElectrician && !errors.phoneNumber

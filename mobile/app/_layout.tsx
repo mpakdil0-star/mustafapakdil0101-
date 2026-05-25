@@ -190,7 +190,8 @@ function RootLayoutNav() {
 
               console.log('🛠️ [RootNav] Electrician check - Incomplete:', isIncomplete, 'SetupDone:', profileSetupDone);
 
-              const isAllowedProfileScreen = segments[1] === 'edit' || segments[1] === 'addresses' || (segments[1] === 'addresses' && segments[2] === 'add');
+              const segs = segments as any;
+              const isAllowedProfileScreen = segs[1] === 'edit' || segs[1] === 'addresses' || (segs[1] === 'addresses' && segs[2] === 'add');
 
               if (isIncomplete && !isAllowedProfileScreen && !profileSetupDone) {
                 if (lastRedirectPath.current !== '/profile/edit') {

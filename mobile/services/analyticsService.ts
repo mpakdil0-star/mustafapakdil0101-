@@ -26,6 +26,7 @@ const initAnalytics = async () => {
 
     try {
         // Dynamic import to avoid errors in Expo Go
+        // @ts-ignore
         analyticsModule = await import('@react-native-firebase/analytics');
         isAnalyticsEnabled = true;
         console.log('📊 [Analytics] Firebase Analytics initialized');

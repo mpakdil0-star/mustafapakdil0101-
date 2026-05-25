@@ -6,6 +6,44 @@ import prisma, { isDatabaseAvailable } from '../config/database';
 const router = Router();
 const SHOWCASE_FILE = path.join(process.cwd(), 'data', 'showcase.json');
 
+// Helper to save a base64 image to local uploads disk and return its static URL
+const saveBase64Image = (base64Str: string, req: any): string => {
+  if (!base64Str || !base64Str.startsWith('data:image')) {
+    return base64Str; // Return as-is if already a URL
+  }
+
+  try {
+    // Extract base64 content
+    const matches = base64Str.match(/^data:image\/([A-Za-z+-]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      return base64Str;
+    }
+
+    const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+    const data = matches[2];
+    const buffer = Buffer.from(data, 'base64');
+
+    // Create showcase upload directory if not exists
+    const uploadDir = path.join(process.cwd(), 'uploads', 'showcase');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const fileName = `showcase-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+    const filePath = path.join(uploadDir, fileName);
+
+    // Save file
+    fs.writeFileSync(filePath, buffer);
+
+    // Build absolute URL using host headers dynamically
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    return `${baseUrl}/uploads/showcase/${fileName}`;
+  } catch (error) {
+    console.error('Failed to save base64 image to disk:', error);
+    return base64Str;
+  }
+};
+
 // Helper to save data
 const saveShowcase = (data: any[]) => {
   const dataDir = path.dirname(SHOWCASE_FILE);
@@ -49,14 +87,23 @@ router.get('/', async (req, res) => {
 // POST /api/v1/showcase - Add new showcase item
 router.post('/', async (req, res) => {
   try {
+    let { title, description, image, images, ustaId, ustaName, ustaCity, ustaAvatar } = req.body;
+
+    // Convert base64 images to file-based URLs
+    if (image) {
+      image = saveBase64Image(image, req);
+    }
+    if (Array.isArray(images)) {
+      images = images.map(img => saveBase64Image(img, req));
+    }
+
     if (isDatabaseAvailable) {
-      const { title, description, image, images, ustaId, ustaName, ustaCity, ustaAvatar } = req.body;
       await prisma.showcaseItem.create({
         data: {
           title: title || '',
           description: description || '',
           image: image || '',
-          images: Array.isArray(images) ? images : [],
+          images: images || [],
           ustaId: ustaId || '',
           ustaName: ustaName || '',
           ustaCity: ustaCity || '',
@@ -72,7 +119,14 @@ router.post('/', async (req, res) => {
     const items = loadShowcase();
     const newItem = {
       id: `showcase-${Date.now()}`,
-      ...req.body,
+      title: title || '',
+      description: description || '',
+      image: image || '',
+      images: images || [],
+      ustaId: ustaId || '',
+      ustaName: ustaName || '',
+      ustaCity: ustaCity || '',
+      ustaAvatar: ustaAvatar || null,
       createdAt: new Date().toISOString()
     };
     items.unshift(newItem);

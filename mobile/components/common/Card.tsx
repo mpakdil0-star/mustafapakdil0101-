@@ -53,15 +53,30 @@ export const Card: React.FC<CardProps> = ({
 
   const paddingValue = typeof padding === 'string' ? (spacing[padding] as any) : padding;
 
-  const { user } = useAppSelector((state) => state.auth);
-  const isElectrician = user?.userType === 'ELECTRICIAN';
+  const isLight = colors.background === '#FFFFFF' || colors.background === '#F8FAFC';
 
   const cardStyles: any[] = [
     styles.card,
-    { padding: paddingValue, borderColor: isElectrician ? 'rgba(255, 255, 255, 0.8)' : (colors as any).borderAmethyst || 'rgba(167, 139, 250, 0.3)' },
-    elevated && [styles.elevated, { shadowColor: isElectrician ? colors.primary : (colors as any).shadowAmethyst || colors.primary }],
-    variant === 'outlined' && [styles.outlined, { borderColor: colors.borderLight }],
-    variant === 'glass' && [styles.glass, !isElectrician && { backgroundColor: (colors as any).glassWhitePurple || 'rgba(255, 255, 255, 0.92)' }],
+    { 
+      padding: paddingValue, 
+      backgroundColor: colors.surface,
+      borderColor: isLight ? 'rgba(13, 148, 136, 0.08)' : 'rgba(255, 255, 255, 0.08)',
+      borderRadius: spacing.radius.xl,
+    },
+    elevated && [
+      styles.elevated, 
+      { 
+        shadowColor: isLight ? colors.primary : '#000000',
+        shadowOpacity: isLight ? 0.06 : 0.28,
+        shadowRadius: 16,
+      }
+    ],
+    variant === 'outlined' && [styles.outlined, { borderColor: colors.border }],
+    variant === 'glass' && {
+      backgroundColor: isLight ? 'rgba(255, 255, 255, 0.88)' : 'rgba(30, 41, 59, 0.82)',
+      borderColor: isLight ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.06)',
+      borderWidth: 1.5,
+    },
     variant === 'accent' && [styles.accent, { borderLeftColor: finalAccentColor }],
     style,
   ];
@@ -92,22 +107,12 @@ export const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: staticColors.white,
-    borderRadius: 28,
-    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    overflow: 'hidden',
   },
   elevated: {
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 15,
     elevation: 4,
-  },
-  glass: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderColor: 'rgba(255, 255, 255, 1)',
-    borderWidth: 1.5,
   },
   outlined: {
     borderWidth: 1.5,
@@ -118,6 +123,5 @@ const styles = StyleSheet.create({
   },
   accent: {
     borderLeftWidth: 5,
-    borderRadius: 24,
   },
 });

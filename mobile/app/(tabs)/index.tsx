@@ -9,6 +9,14 @@ import { useAppColors } from '../../hooks/useAppColors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { FeaturedElectrician } from '../../components/home/FeaturedElectrician';
+import { CitizenHeader } from '../../components/home/CitizenHeader';
+import { CitizenExploreCategories } from '../../components/home/CitizenExploreCategories';
+import { CitizenUstaAndJobsSection } from '../../components/home/CitizenUstaAndJobsSection';
+import { CitizenMarketplace } from '../../components/home/CitizenMarketplace';
+import { CitizenReelsShowcase } from '../../components/home/CitizenReelsShowcase';
+import { ElectricianHeader } from '../../components/home/ElectricianHeader';
+import { ElectricianTools } from '../../components/home/ElectricianTools';
+import { ElectricianRecentJobs } from '../../components/home/ElectricianRecentJobs';
 import { LinearGradient } from 'expo-linear-gradient';
 import api from '../../services/api';
 import { authService } from '../../services/authService';
@@ -30,50 +38,72 @@ const ServiceCategoryItem = ({ cat, index, onPress, styles, colors }: any) => {
 
   useEffect(() => {
     Animated.sequence([
-      Animated.delay(index * 60),
+      Animated.delay(index * 40),
       Animated.spring(scaleAnim, {
         toValue: 1,
-        friction: 7,
-        tension: 50,
+        friction: 8,
+        tension: 45,
         useNativeDriver: true,
       }),
     ]).start();
   }, []);
 
-  const getCategoryImage = (id: string) => {
-    switch (id) {
-      case 'elektrik': return require('../../assets/images/categories/electric.png');
-      case 'cilingir': return require('../../assets/images/categories/locksmith_3d_clean.png');
-      case 'klima': return require('../../assets/images/categories/ac_3d_clean.png');
-      case 'beyaz-esya': return require('../../assets/images/categories/appliances_3d_clean.png');
-      case 'tesisat': return require('../../assets/images/categories/plumbing.png');
-      default: return undefined;
-    }
+  const getProfessionalName = (id: string, defaultName: string) => {
+    if (id === 'elektrik') return 'Elektrik Ustası';
+    if (id === 'cilingir') return 'Çilingir Hizmeti';
+    if (id === 'klima') return 'Klima Servisi';
+    if (id === 'beyaz-esya') return 'Beyaz Eşya Ustası';
+    if (id === 'tesisat') return 'Tesisat Ustası';
+    return defaultName;
+  };
+
+  const getCategorySubtext = (id: string) => {
+    if (id === 'elektrik') return 'Arıza, Tesisat & Montaj';
+    if (id === 'cilingir') return '7/24 Kilit & Kapı Açma';
+    if (id === 'klima') return 'Bakım, Montaj & Onarım';
+    if (id === 'beyaz-esya') return 'Cihaz Tamir & Onarım';
+    if (id === 'tesisat') return 'Tesisat, Kaçak & Montaj';
+    return 'Güvenilir Hizmetler';
   };
 
   return (
-    <Animated.View style={{ width: '18%', transform: [{ scale: scaleAnim }] }}>
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
       <TouchableOpacity
-        style={[styles.serviceCategoryCard, { shadowColor: cat.colors[0] + '30', borderColor: colors.borderLight }]}
+        style={[
+          styles.serviceCategoryHorizontalCard,
+          { 
+            shadowColor: '#0F172A',
+            borderColor: 'rgba(13, 148, 136, 0.05)',
+          }
+        ]}
         onPress={() => onPress(cat.id)}
         activeOpacity={0.88}
       >
-        <View style={[styles.serviceCategoryIconBg, { backgroundColor: cat.colors[0] + '08' }]}>
-          <View style={StyleSheet.absoluteFill}>
-            <LinearGradient
-              colors={[`${cat.colors[0]}12`, `${cat.colors[1]}18`]}
-              style={[StyleSheet.absoluteFill, { borderRadius: 18, justifyContent: 'center', alignItems: 'center' }]}
-            >
-              <Ionicons name={cat.icon} size={26} color={cat.colors[0]} />
-            </LinearGradient>
-          </View>
-          <Image
-            source={getCategoryImage(cat.id)}
-            style={styles.serviceCategoryImage}
-            resizeMode="contain"
+        {/* Modern Circular Lens Icon Container */}
+        <View style={styles.serviceCategoryIconContainer}>
+          <LinearGradient
+            colors={['rgba(13, 148, 136, 0.06)', 'rgba(6, 182, 212, 0.12)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
           />
+          <Ionicons name={cat.icon} size={20} color={colors.primary} />
         </View>
-        <Text style={[styles.serviceCategoryName, { color: colors.text }]} numberOfLines={2}>{cat.name}</Text>
+
+        {/* Text Content */}
+        <View style={styles.serviceCategoryTextContainer}>
+          <Text style={[styles.serviceCategoryTitleText, { color: colors.text }]} numberOfLines={1}>
+            {getProfessionalName(cat.id, cat.name)}
+          </Text>
+          <Text style={styles.serviceCategorySubtextText} numberOfLines={1}>
+            {getCategorySubtext(cat.id)}
+          </Text>
+        </View>
+
+        {/* Interactive Chevron Indicator */}
+        <View style={styles.categoryCardChevron}>
+          <Ionicons name="chevron-forward" size={12} color="#94A3B8" />
+        </View>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -1137,129 +1167,29 @@ export default function HomeScreen() {
             <View style={[styles.headerDecorativeCircle3, isElectrician && { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]} />
         {/* Premium Welcome Header with Background Image and Enhanced Decoration */}
 
-
-
-            <View style={[styles.headerTopRow, !isElectrician && { marginBottom: 0 }]}>
-              {!isAuthenticated && (
-                <TouchableOpacity
-                  style={styles.headerIconButton}
-                  onPress={() => router.canGoBack() ? router.back() : router.replace('/(auth)/welcome')}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="arrow-back" size={24} color={colors.white} />
-                </TouchableOpacity>
-              )}
-
-              {isElectrician ? (
-                <>
-                  {/* Left: Name on two lines, large & uppercase */}
-                  <View style={styles.ustaHeaderNameContainer}>
-                    <Text style={styles.ustaHeaderNameLine}>{firstName}</Text>
-                    {lastName ? <Text style={styles.ustaHeaderNameLine}>{lastName}</Text> : null}
-                  </View>
-
-                  {/* Right: Rating + Role + Avatar & Notification */}
-                  <View style={styles.ustaHeaderRightContainer}>
-                    <View style={styles.ustaRatingAndRoleColumn}>
-                      <View style={styles.ustaRatingRow}>
-                        <Text style={styles.ustaRatingText}>{(user as any)?.averageRating?.toFixed(1) || '4.9'}</Text>
-                        <Ionicons name="star" size={13} color="#FBBF24" style={{ marginLeft: 2 }} />
-                      </View>
-                      <Text style={styles.ustaRoleText}>
-                        {getUstaCategory(user || { serviceCategory: 'elektrik' })} Ustası
-                      </Text>
-                    </View>
-
-                    <TouchableOpacity
-                      style={styles.ustaAvatarContainer}
-                      activeOpacity={0.8}
-                      onPress={() => handleActionWithAuth('/profile')}
-                    >
-                      {user?.profileImageUrl ? (
-                        <Image source={{ uri: getFileUrl(user.profileImageUrl) || '' }} style={styles.ustaAvatarImage} />
-                      ) : (
-                        <View style={styles.ustaAvatarPlaceholder}>
-                          <Ionicons name="person" size={20} color="#043A2F" />
-                        </View>
-                      )}
-                    </TouchableOpacity>
-
-                    {/* Elegant notification bell */}
-                    <TouchableOpacity
-                      style={styles.headerLinkButton}
-                      activeOpacity={0.7}
-                      onPress={() => handleActionWithAuth('/profile/notifications')}
-                    >
-                      <Ionicons name="notifications-outline" size={24} color={colors.white} />
-                      {unreadCount > 0 && (
-                        <Animated.View style={[styles.notificationBadge, { transform: [{ scale: badgePulseAnim }] }]}>
-                          <Text style={styles.notificationBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-                        </Animated.View>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                </>
-              ) : (
-                <>
-                  {/* Citizen Compact Header */}
-                  <TouchableOpacity 
-                    style={styles.compactSearchButton}
-                    activeOpacity={0.8}
-                    onPress={() => handleActionWithAuth('/electricians')}
-                  >
-                    <Ionicons name="search" size={16} color="rgba(255,255,255,0.7)" />
-                    <Text style={styles.compactSearchText}>Ara...</Text>
-                  </TouchableOpacity>
-                  
-                  <View style={styles.citizenTitleContainer}>
-                    <Text style={styles.citizenTitleText}>İşbitir</Text>
-                  </View>
-
-                  <View style={styles.citizenRightIcons}>
-                    <TouchableOpacity style={styles.headerLinkButton} activeOpacity={0.7} onPress={() => handleActionWithAuth('/profile')}>
-                      <Ionicons name="person-outline" size={26} color={colors.white} />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.headerLinkButton} activeOpacity={0.7} onPress={() => handleActionWithAuth('/profile/notifications')}>
-                      <Ionicons name="notifications-outline" size={24} color={colors.white} />
-                      {unreadCount > 0 && (
-                        <Animated.View style={[styles.notificationBadge, { transform: [{ scale: badgePulseAnim }] }]}>
-                          <Text style={styles.notificationBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-                        </Animated.View>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                </>
-              )}
-            </View>
-
-            {/* Dashboard cards inside the gradient background exactly as in mockup */}
-            {isElectrician && (
-               <View style={styles.ustaHeaderDashboardRow}>
-                 <TouchableOpacity
-                   style={[styles.ustaDashboardCardDark, styles.glowPrimary]}
-                   onPress={() => handleActionWithAuth('/electrician/stats')}
-                   activeOpacity={0.85}
-                 >
-                   <Text style={styles.ustaDashCardLabel}>Toplam Kazanç</Text>
-                   <Text style={styles.ustaDashCardValue}>
-                     {stats ? `₺${stats.totalEarnings.toLocaleString('tr-TR')}` : '₺0.00'}
-                   </Text>
-                   <Text style={styles.ustaDashCardSub}>Tüm Zamanlar</Text>
-                 </TouchableOpacity>
- 
-                 <TouchableOpacity
-                   style={[styles.ustaDashboardCardDark, styles.glowAccent]}
-                   onPress={() => handleActionWithAuth('/(tabs)/jobs', { tab: 'bids' })}
-                   activeOpacity={0.85}
-                 >
-                   <Text style={styles.ustaDashCardLabel}>Aktif Teklifler</Text>
-                   <Text style={styles.ustaDashCardValue}>
-                     {stats ? stats.activeBids : '0'}
-                   </Text>
-                   <Text style={styles.ustaDashCardSub}>Bekleyen</Text>
-                 </TouchableOpacity>
-               </View>
-             )}
+            {isElectrician ? (
+              <ElectricianHeader
+                user={user}
+                firstName={firstName}
+                lastName={lastName}
+                unreadCount={unreadCount}
+                badgePulseAnim={badgePulseAnim}
+                handleActionWithAuth={handleActionWithAuth}
+                colors={colors}
+                stats={stats}
+                ustaCategoryTitle={getUstaCategory(user || { serviceCategory: 'elektrik' })}
+                isAuthenticated={isAuthenticated}
+              />
+            ) : (
+              <CitizenHeader
+                user={user}
+                isAuthenticated={isAuthenticated}
+                unreadCount={unreadCount}
+                badgePulseAnim={badgePulseAnim}
+                handleActionWithAuth={handleActionWithAuth}
+                colors={colors}
+              />
+            )}
             </ImageBackground>
           </View>
 
@@ -1345,749 +1275,75 @@ export default function HomeScreen() {
           )
         }
 
-
         {/* Electrician Quick Actions (RESTORED) */}
         {isElectrician && (
-          <View style={styles.section}>
+          <>
+            <ElectricianTools
+              handleActionWithAuth={handleActionWithAuth}
+              colors={colors}
+            />
 
-
-
-            {/* Professional Tools Section */}
-            <View style={styles.sectionHeaderRow}>
-              <View style={styles.sectionTitleContainer}>
-                <Text style={styles.sectionTitle}>PROFESYONEL ARAÇLAR</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-            </View>
-
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScrollContainer}>
-              <TouchableOpacity
-                style={styles.toolCardModern}
-                onPress={() => handleActionWithAuth('/tools/calendar')}
-                activeOpacity={0.85}
-              >
-                <LinearGradient
-                  colors={[colors.primary, colors.primaryDark || '#B91C1C', '#431407']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={[styles.toolIconBoxGradient, { shadowColor: colors.primary }]}
-                >
-                  <Image
-                    source={require('../../assets/images/tool_calendar.jpg')}
-                    style={styles.toolIconImage}
-                  />
-                </LinearGradient>
-                <Text style={styles.toolCardTitle}>Takvim</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.toolCardModern}
-                onPress={() => handleActionWithAuth('/tools/ledger')}
-                activeOpacity={0.85}
-              >
-                <LinearGradient
-                  colors={[colors.primary, colors.primaryDark || '#B91C1C', '#431407']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={[styles.toolIconBoxGradient, { shadowColor: colors.primary }]}
-                >
-                  <Image
-                    source={require('../../assets/images/tool_ledger.jpg')}
-                    style={styles.toolIconImage}
-                  />
-                </LinearGradient>
-                <Text style={styles.toolCardTitle}>Defter</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.toolCardModern}
-                onPress={() => handleActionWithAuth('/tools/quote')}
-                activeOpacity={0.85}
-              >
-                <LinearGradient
-                  colors={[colors.primary, colors.primaryDark || '#B91C1C', '#431407']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={[styles.toolIconBoxGradient, { shadowColor: colors.primary }]}
-                >
-                  <Image
-                    source={require('../../assets/images/tool_quotes.jpg')}
-                    style={styles.toolIconImage}
-                  />
-                </LinearGradient>
-                <Text style={styles.toolCardTitle}>PDF Teklifler</Text>
-              </TouchableOpacity>
-            </ScrollView>
-
-            {/* İş İlanları Section */}
-            <TouchableOpacity
-              style={styles.sectionHeaderRow}
-              activeOpacity={0.7}
-              onPress={() => router.push('/(tabs)/jobs')}
-            >
-              <View style={styles.sectionTitleContainer}>
-                <Text style={styles.sectionTitle}>İŞ İLANLARI</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-            </TouchableOpacity>
-
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScrollContainer}>
-              {recentJobs.length > 0 ? recentJobs.slice(0, 5).map((job: any, index: number) => {
-                const isUrgent = job.urgencyLevel === 'HIGH' || job.urgencyLevel === 'MEDIUM';
-                const statusColor = isUrgent ? colors.primary : '#F59E0B';
-                const badgeBgColor = isUrgent ? 'rgba(255, 75, 43, 0.1)' : 'rgba(245, 158, 11, 0.1)';
-                const iconColor = isUrgent ? colors.primary : '#F59E0B';
-                
-                return (
-                  <TouchableOpacity
-                    key={job.id}
-                    style={[styles.hotLeadCard, isUrgent ? styles.glowPrimary : styles.glowAccent]}
-                    onPress={() => handleActionWithAuth(`/jobs/${job.id}`)}
-                    activeOpacity={0.85}
-                  >
-                    <View style={styles.hotLeadHeaderRow}>
-                      <Text style={styles.hotLeadTitle} numberOfLines={1}>{job.title || 'İş İlanı'}</Text>
-                      <View style={[styles.hotLeadUrgentBadge, { backgroundColor: badgeBgColor }]}>
-                        <Ionicons name="time" size={10} color={statusColor} />
-                        <Text style={[styles.hotLeadUrgentText, { color: statusColor }]}>
-                          {isUrgent ? 'Acil' : 'Yeni'}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.hotLeadLocationRow}>
-                      <Ionicons name="location" size={12} color={iconColor} />
-                      <Text style={styles.hotLeadLocationText} numberOfLines={1}>
-                        {job.location?.district ? `${job.location.district}, ` : ''}{job.location?.city || 'İstanbul'}
-                      </Text>
-                    </View>
-
-                    {(job.expiresAt || job.earliestBidExpiresAt) && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8, paddingHorizontal: 2 }}>
-                        <Ionicons name="time-outline" size={12} color="#D97706" />
-                        <CountdownTimer 
-                          expiresAt={job.expiresAt || job.earliestBidExpiresAt} 
-                          minimal={true}
-                          size="small"
-                        />
-                      </View>
-                    )}
-
-                    <View style={styles.hotLeadBottomRow}>
-                      <View style={styles.hotLeadPriceCol}>
-                        {job.estimatedBudget ? (
-                          <>
-                            <Text style={[styles.hotLeadPrice, { color: statusColor }]}>
-                              ₺{Number(job.estimatedBudget).toLocaleString('tr-TR')}
-                            </Text>
-                            <Text style={[styles.hotLeadPriceStatus, { color: statusColor }]}>
-                              {isUrgent ? ' - Acil!' : ' - Standart'}
-                            </Text>
-                          </>
-                        ) : (
-                          <Text style={[styles.hotLeadPriceStatus, { color: statusColor }]}>
-                            {isUrgent ? 'Acil İlan' : 'Standart İlan'}
-                          </Text>
-                        )}
-                      </View>
-                      <TouchableOpacity
-                        style={[styles.hotLeadActionBtn, { backgroundColor: isUrgent ? colors.primary : '#F59E0B' }]}
-                        onPress={() => handleActionWithAuth(`/jobs/${job.id}`)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={styles.hotLeadActionBtnText}>Teklif Ver</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </TouchableOpacity>
-                );
-              }) : (
-                <>
-                  {/* Mockup Job 1 */}
-                  <TouchableOpacity
-                    style={[styles.hotLeadCard, styles.glowPrimary]}
-                    onPress={() => handleActionWithAuth('/(tabs)/jobs')}
-                    activeOpacity={0.85}
-                  >
-                    <View style={styles.hotLeadHeaderRow}>
-                      <Text style={styles.hotLeadTitle} numberOfLines={1}>Acil Pano Arızası</Text>
-                      <View style={[styles.hotLeadUrgentBadge, { backgroundColor: 'rgba(255, 75, 43, 0.1)' }]}>
-                        <Ionicons name="time" size={10} color={colors.primary} />
-                        <Text style={[styles.hotLeadUrgentText, { color: colors.primary }]}>14dk</Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.hotLeadLocationRow}>
-                      <Ionicons name="location" size={12} color={colors.primary} />
-                      <Text style={styles.hotLeadLocationText} numberOfLines={1}>Kadıköy, 1.2km</Text>
-                    </View>
-
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8, paddingHorizontal: 2 }}>
-                      <Ionicons name="time-outline" size={12} color="#D97706" />
-                      <CountdownTimer 
-                        expiresAt={mockExpire1} 
-                        minimal={true}
-                        size="small"
-                      />
-                    </View>
-
-                    <View style={styles.hotLeadBottomRow}>
-                      <View style={styles.hotLeadPriceCol}>
-                        <Text style={[styles.hotLeadPrice, { color: colors.primary }]}>₺850</Text>
-                        <Text style={[styles.hotLeadPriceStatus, { color: colors.primary }]}> - Acil!</Text>
-                      </View>
-                      <TouchableOpacity
-                        style={[styles.hotLeadActionBtn, { backgroundColor: colors.primary }]}
-                        onPress={() => handleActionWithAuth('/(tabs)/jobs')}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={styles.hotLeadActionBtnText}>Teklif Ver</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Mockup Job 2 */}
-                  <TouchableOpacity
-                    style={[styles.hotLeadCard, styles.glowAccent]}
-                    onPress={() => handleActionWithAuth('/(tabs)/jobs')}
-                    activeOpacity={0.85}
-                  >
-                    <View style={styles.hotLeadHeaderRow}>
-                      <Text style={styles.hotLeadTitle} numberOfLines={1}>Priz Değişimi</Text>
-                      <View style={[styles.hotLeadUrgentBadge, { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
-                        <Ionicons name="time" size={10} color="#F59E0B" />
-                        <Text style={[styles.hotLeadUrgentText, { color: '#F59E0B' }]}>25dk</Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.hotLeadLocationRow}>
-                      <Ionicons name="location" size={12} color="#F59E0B" />
-                      <Text style={styles.hotLeadLocationText} numberOfLines={1}>Üsküdar, 2.5km</Text>
-                    </View>
-
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8, paddingHorizontal: 2 }}>
-                      <Ionicons name="time-outline" size={12} color="#D97706" />
-                      <CountdownTimer 
-                        expiresAt={mockExpire2} 
-                        minimal={true}
-                        size="small"
-                      />
-                    </View>
-
-                    <View style={styles.hotLeadBottomRow}>
-                      <View style={styles.hotLeadPriceCol}>
-                        <Text style={[styles.hotLeadPrice, { color: '#F59E0B' }]}>₺350</Text>
-                        <Text style={[styles.hotLeadPriceStatus, { color: '#F59E0B' }]}> - Standart</Text>
-                      </View>
-                      <TouchableOpacity
-                        style={[styles.hotLeadActionBtn, { backgroundColor: '#F59E0B' }]}
-                        onPress={() => handleActionWithAuth('/(tabs)/jobs')}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={styles.hotLeadActionBtnText}>Teklif Ver</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Mockup Job 3 */}
-                  <TouchableOpacity
-                    style={[styles.hotLeadCard, styles.glowAccent]}
-                    onPress={() => handleActionWithAuth('/(tabs)/jobs')}
-                    activeOpacity={0.85}
-                  >
-                    <View style={styles.hotLeadHeaderRow}>
-                      <Text style={styles.hotLeadTitle} numberOfLines={1}>Aydınlatma Montajı</Text>
-                      <View style={[styles.hotLeadUrgentBadge, { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
-                        <Ionicons name="time" size={10} color="#F59E0B" />
-                        <Text style={[styles.hotLeadUrgentText, { color: '#F59E0B' }]}>45dk</Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.hotLeadLocationRow}>
-                      <Ionicons name="location" size={12} color="#F59E0B" />
-                      <Text style={styles.hotLeadLocationText} numberOfLines={1}>Beşiktaş, 3.1km</Text>
-                    </View>
-
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8, paddingHorizontal: 2 }}>
-                      <Ionicons name="time-outline" size={12} color="#D97706" />
-                      <CountdownTimer 
-                        expiresAt={mockExpire3} 
-                        minimal={true}
-                        size="small"
-                      />
-                    </View>
-
-                    <View style={styles.hotLeadBottomRow}>
-                      <View style={styles.hotLeadPriceCol}>
-                        <Text style={[styles.hotLeadPrice, { color: '#F59E0B' }]}>₺1,200</Text>
-                        <Text style={[styles.hotLeadPriceStatus, { color: '#F59E0B' }]}> - Fırsat</Text>
-                      </View>
-                      <TouchableOpacity
-                        style={[styles.hotLeadActionBtn, { backgroundColor: '#F59E0B' }]}
-                        onPress={() => handleActionWithAuth('/(tabs)/jobs')}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={styles.hotLeadActionBtnText}>Teklif Ver</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </TouchableOpacity>
-                </>
-              )}
-            </ScrollView>
-          </View>
+            <ElectricianRecentJobs
+              recentJobs={recentJobs}
+              colors={colors}
+              handleActionWithAuth={handleActionWithAuth}
+              mockExpire1={mockExpire1}
+              mockExpire2={mockExpire2}
+              mockExpire3={mockExpire3}
+            />
+          </>
         )}
 
         {/* Vitrin / Showcase Section (Citizen Only) */}
+        {/* Vitrin / Showcase Section (Citizen Only) */}
         {!isElectrician && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeaderRow}>
-              <View style={styles.sectionTitleContainer}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>REELS</Text>
-              </View>
-            </View>
-
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false} 
-              contentContainerStyle={styles.vitrinScroller}
-              snapToInterval={262} // vitrinCardSmall width (250) + gap (12)
-              decelerationRate="fast"
-              scrollEventThrottle={16}
-              onScroll={(e) => {
-                const scrollPosition = e.nativeEvent.contentOffset.x;
-                const index = Math.max(0, Math.min(2, Math.round(scrollPosition / 262)));
-                if (activeReelsIndex !== index) {
-                  setActiveReelsIndex(index);
-                }
-              }}
-            >
-              {Array.from({ length: 3 }).map((_, colIndex) => {
-                const colItems = homeShowcaseItems.slice(colIndex * 2, colIndex * 2 + 2);
-                if (colItems.length === 0) return null;
-                return (
-                  <View key={colIndex} style={styles.vitrinColumn}>
-                    {colItems.map((item) => (
-                      <TouchableOpacity
-                        key={item.id}
-                        activeOpacity={0.85}
-                        onPress={() => {
-                          setSelectedShowcaseItem(item);
-                          setShowcaseActiveImageIndex(0);
-                          setIsShowcaseDetailModalVisible(true);
-                        }}
-                        style={styles.vitrinCardSmall}
-                      >
-                        <ImageBackground 
-                          source={typeof item.image === 'string' ? { uri: item.image } : item.image} 
-                          style={styles.vitrinCardBg} 
-                          imageStyle={styles.vitrinCardBgImage}
-                        >
-                          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.85)']} style={styles.vitrinCardGradient}>
-                            <View style={styles.vitrinCardContentRow}>
-                              <View style={styles.vitrinIconCircleSm}>
-                                {item.ustaAvatar ? (
-                                  <Image 
-                                    source={{ uri: getFileUrl(item.ustaAvatar) || '' }} 
-                                    style={{ width: 38, height: 38, borderRadius: 19 }} 
-                                    resizeMode="cover"
-                                  />
-                                ) : (
-                                  <Ionicons name="person" size={16} color="#FFF" />
-                                )}
-                              </View>
-                              <View style={styles.vitrinCardTextCol}>
-                                <Text style={styles.vitrinCardTitle} numberOfLines={1}>{item.title}</Text>
-                                <Text style={styles.vitrinCardDesc} numberOfLines={1}>@{item.ustaName.split(' ')[0]}</Text>
-                              </View>
-                            </View>
-                          </LinearGradient>
-                        </ImageBackground>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                );
-              })}
-            </ScrollView>
-
-            {/* Pagination Indicators */}
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 12, gap: 6 }}>
-              {[0, 1, 2].map((i) => (
-                <View 
-                  key={i} 
-                  style={{
-                    width: activeReelsIndex === i ? 20 : 6,
-                    height: 6,
-                    borderRadius: 3,
-                    backgroundColor: activeReelsIndex === i ? colors.primary : colors.primary + '30',
-                  }}
-                />
-              ))}
-            </View>
-          </View>
+          <CitizenReelsShowcase
+            homeShowcaseItems={homeShowcaseItems}
+            colors={colors}
+            setSelectedShowcaseItem={setSelectedShowcaseItem}
+            setShowcaseActiveImageIndex={setShowcaseActiveImageIndex}
+            setIsShowcaseDetailModalVisible={setIsShowcaseDetailModalVisible}
+            isAuthenticated={isAuthenticated}
+            onAuthRequired={() => setShowAuthModal(true)}
+          />
         )}
 
         {/* KEŞFET - Main Service Categories Section (Citizen Only) */}
-        {
-          !isElectrician && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeaderRow}>
-                <View style={styles.sectionTitleContainer}>
-                  <Text style={[styles.sectionTitle, { color: colors.text }]}>KEŞFET</Text>
-                </View>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  style={styles.headerProjectAction}
-                  onPress={() => handleActionWithAuth('/jobs/create', { category: 'Elektrik Proje Çizimi', serviceCategory: 'elektrik' })}
-                >
-                  <LinearGradient
-                    colors={['#A78BFA', '#7C3AED']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.headerProjectGradient}
-                  >
-                    <View style={styles.headerProjectIconWrapper}>
-                      <Ionicons name="flash" size={10} color="#FBBF24" />
-                    </View>
-                    <Text style={styles.headerProjectText}>Elektrik Proje Çizimi</Text>
-                    <Ionicons name="chevron-forward" size={12} color="rgba(255,255,255,0.7)" />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.serviceCategoryGrid}>
-                {SERVICE_CATEGORIES.map((cat, index) => (
-                  <ServiceCategoryItem
-                    key={cat.id}
-                    cat={cat}
-                    index={index}
-                    onPress={(id: string) => handleActionWithAuth('/jobs/create', { serviceCategory: id })}
-                    styles={styles}
-                    colors={colors}
-                  />
-                ))}
-              </View>
-            </View>
-          )
-        }
+        {!isElectrician && (
+          <CitizenExploreCategories
+            colors={colors}
+            handleActionWithAuth={handleActionWithAuth}
+          />
+        )}
 
 
 
         {/* Toggleable Section: Son İş İlanları / Öne Çıkan Ustalar (Citizen Only) */}
-        {
-          !isElectrician && (
-            <View style={[styles.section, { paddingBottom: 10, marginTop: -6 }]}>
-              <View style={{ flexDirection: 'row', marginBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.borderLight }}>
-                <TouchableOpacity
-                  style={{ flex: 1, paddingVertical: 10, alignItems: 'center', borderBottomWidth: activeHomeTab === 'ustalar' ? 2 : 0, borderBottomColor: colors.primary }}
-                  onPress={() => setActiveHomeTab('ustalar')}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.sectionTitle, { color: activeHomeTab === 'ustalar' ? colors.text : colors.textSecondary, fontSize: 13, textTransform: 'uppercase' }]}>ÖNE ÇIKAN USTALAR</Text>
-                </TouchableOpacity>
-                
-                <View style={{ flex: 1 }}>
-                  <TouchableOpacity
-                    style={{ flex: 1, paddingVertical: 10, alignItems: 'center', borderBottomWidth: activeHomeTab === 'ilanlar' ? 2 : 0, borderBottomColor: colors.primary }}
-                    onPress={() => setActiveHomeTab('ilanlar')}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.sectionTitle, { color: activeHomeTab === 'ilanlar' ? colors.text : colors.textSecondary, fontSize: 13, textTransform: 'uppercase' }]}>SON İŞ İLANLARI</Text>
-                  </TouchableOpacity>
-
-                  {activeHomeTab === 'ustalar' && (
-                    <TouchableOpacity 
-                      style={{ position: 'absolute', bottom: -10, right: 0, zIndex: 10, paddingHorizontal: 10 }}
-                      onPress={() => router.push('/electricians' as any)}
-                    >
-                      <Text style={{ color: colors.primary, fontFamily: fonts.bold, fontSize: 11 }}>Tüm Ustalar &gt;</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
-
-              {activeHomeTab === 'ilanlar' ? (
-                isLoadingRecentJobs ? (
-                  <View style={{ padding: 40, alignItems: 'center' }}>
-                    <ActivityIndicator size="small" color={colors.primary} />
-                    <Text style={{ marginTop: 10, color: staticColors.textSecondary, fontFamily: fonts.medium }}>İlanlar yükleniyor...</Text>
-                  </View>
-                ) : recentJobs.length > 0 ? (
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentJobsHorizontalScroller}>
-                    {recentJobs.map((job) => (
-                      <TouchableOpacity
-                        key={job.id}
-                        style={styles.recentJobCardHorizontal}
-                        activeOpacity={0.85}
-                        onPress={() => router.push(`/jobs/${job.id}` as any)}
-                      >
-                        <View style={styles.recentJobUserAvatar}>
-                           {job.citizen?.profileImageUrl ? (
-                              <Image source={{ uri: getFileUrl(job.citizen.profileImageUrl) || '' }} style={{width: '100%', height: '100%', borderRadius: 16}} />
-                            ) : (
-                              <Ionicons name="person" size={28} color={colors.primary} />
-                            )}
-                        </View>
-                        
-                        <View style={styles.recentJobInfoHorizontal}>
-                          <View style={styles.recentJobHeaderHorizontal}>
-                            <View style={{ flex: 1, paddingRight: 8 }}>
-                              <Text style={styles.recentJobTitleHorizontal} numberOfLines={1}>{job.serviceCategory ? getUstaCategory({ serviceCategory: job.serviceCategory }) : 'Genel'}</Text>
-                              <Text style={styles.recentJobSubtextHorizontal} numberOfLines={1}>{job.title}</Text>
-                              <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 2}}>
-                                <Ionicons name="location-outline" size={10} color={staticColors.textLight} style={{marginRight: 2}} />
-                                <Text style={styles.recentJobCategoryTextHorizontal} numberOfLines={1}>{job.location?.city || 'Türkiye'}</Text>
-                              </View>
-                            </View>
-                            {job.hasTimedBids && (
-                              <View style={styles.homeTimerContainer}>
-                                <View style={styles.homeTimerBadgeMinimal}>
-                                  <Ionicons name="time-outline" size={10} color="#D97706" style={{ marginRight: 3 }} />
-                                  <Text style={styles.homeTimerLabelSmall}>SÜRELİ TEKLİF</Text>
-                                </View>
-                                {job.earliestBidExpiresAt && (
-                                  <View style={styles.homeTimerValueWrapper}>
-                                    <CountdownTimer 
-                                      expiresAt={job.earliestBidExpiresAt} 
-                                      minimal={true}
-                                      size="small"
-                                    />
-                                  </View>
-                                )}
-                              </View>
-                            )}
-                          </View>
-                          
-                          <View style={styles.bidStatProfessionalBadge}>
-                             <Ionicons name="chatbubble-ellipses-outline" size={12} color="#059669" style={{marginRight: 4}} />
-                             <Text style={styles.bidStatProfessionalNumber}>{job.bidCount || 0}</Text>
-                             <Text style={styles.bidStatProfessionalLabel}>TEKLİF</Text>
-                          </View>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                ) : (
-                  <View style={{ padding: 40, alignItems: 'center' }}>
-                    <Ionicons name="briefcase-outline" size={36} color={colors.textLight} />
-                    <Text style={{ marginTop: 12, color: colors.textSecondary, fontFamily: fonts.medium, textAlign: 'center' }}>
-                      Henüz iş ilanı bulunmuyor.
-                    </Text>
-                  </View>
-                )
-              ) : (
-                isLoadingElectricians ? (
-                  <View style={{ padding: 40, alignItems: 'center' }}>
-                    <ActivityIndicator size="small" color={colors.primary} />
-                    <Text style={{ marginTop: 10, color: staticColors.textSecondary, fontFamily: fonts.medium }}>Ustalar yükleniyor...</Text>
-                  </View>
-                ) : featuredElectricians.length > 0 ? (
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentJobsHorizontalScroller}>
-                    {featuredElectricians.map((elec) => (
-                      <TouchableOpacity
-                        key={elec.id}
-                        style={styles.recentJobCardHorizontal}
-                        activeOpacity={0.85}
-                        onPress={() => router.push(`/electricians/${elec.id}` as any)}
-                      >
-                        <View style={styles.recentJobUserAvatar}>
-                           {elec.profileImageUrl ? (
-                              <Image source={{ uri: getFileUrl(elec.profileImageUrl) || '' }} style={{width: '100%', height: '100%', borderRadius: 16}} />
-                            ) : (
-                              <Ionicons name="person" size={28} color={colors.primary} />
-                            )}
-                        </View>
-                        
-                        <View style={styles.recentJobInfoHorizontal}>
-                          <View style={styles.recentJobHeaderHorizontal}>
-                            <View style={{ flex: 1, paddingRight: 8 }}>
-                              <View style={{flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2}}>
-                                 <Text style={[styles.recentJobTitleHorizontal, {marginBottom: 0}]} numberOfLines={1}>{elec.fullName || 'Usta'}</Text>
-                                 {elec.isVerified === true && elec.electricianProfile?.verificationStatus === 'VERIFIED' && (
-                                    <Ionicons name="shield-checkmark" size={14} color="#10B981" />
-                                 )}
-                              </View>
-                              <Text style={styles.recentJobSubtextHorizontal} numberOfLines={1}>{getUstaCategory(elec)}</Text>
-                              <Text style={styles.recentJobCategoryTextHorizontal} numberOfLines={1}>{elec.locations?.[0] ? `${elec.locations[0].district || ''}, ${elec.locations[0].city || ''}`.replace(/^, /, '').replace(/, $/, '') || 'Türkiye' : 'Türkiye'}</Text>
-                            </View>
-                          </View>
-                          
-                          <View style={[styles.timerBadge, { backgroundColor: 'rgba(16, 185, 129, 0.1)' }]}>
-                            <Ionicons name="star" size={10} color="#10B981" style={{ marginRight: 2 }} />
-                            <Text style={[styles.timerBadgeText, { color: '#10B981' }]}>{Number(elec.electricianProfile?.ratingAverage || 0).toFixed(1)} Puan</Text>
-                          </View>
-                          <View style={styles.priceTextContainer}>
-                             <Text style={styles.priceTextLarge}>{elec.electricianProfile?.totalReviews || 0}</Text>
-                             <Text style={styles.priceTextSmall}>Değerlendirme</Text>
-                          </View>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                ) : (
-                  <View style={{ padding: 40, alignItems: 'center' }}>
-                    <Ionicons name="people-outline" size={36} color={colors.textLight} />
-                    <Text style={{ marginTop: 12, color: colors.textSecondary, fontFamily: fonts.medium, textAlign: 'center' }}>
-                      Şu an için öne çıkan usta bulunmuyor.
-                    </Text>
-                  </View>
-                )
-              )}
-            </View>
-          )
-        }
+        {!isElectrician && (
+          <CitizenUstaAndJobsSection
+            activeHomeTab={activeHomeTab}
+            setActiveHomeTab={setActiveHomeTab}
+            isLoadingRecentJobs={isLoadingRecentJobs}
+            recentJobs={recentJobs}
+            isLoadingElectricians={isLoadingElectricians}
+            featuredElectricians={featuredElectricians}
+            colors={colors}
+            isAuthenticated={isAuthenticated}
+            onAuthRequired={() => setShowAuthModal(true)}
+          />
+        )}
 
         {/* ==================== PAZAR YERİ & İKİNCİ EL ==================== */}
-        <View style={styles.section}>
-          {/* Header Container */}
-          <View style={{ marginBottom: 16 }}>
-            {/* Row 1: Title and Tümünü Gör */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-              <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 17, marginBottom: 0 }]} numberOfLines={1}>PAZAR YERİ & İKİNCİ EL</Text>
-              <TouchableOpacity 
-                onPress={() => setIsAllProductsModalVisible(true)}
-                style={{ paddingVertical: 2, paddingLeft: 10 }}
-                activeOpacity={0.7}
-              >
-                <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: colors.primary }}>Tümünü Gör &gt;</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Row 2: Subtitle and İlan Ekle */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={[styles.sectionSubtitle, { flex: 1, marginRight: 12, marginBottom: 0 }]}>Ustalar ve vatandaşlar arası malzeme satışı</Text>
-              <TouchableOpacity
-                style={styles.addProductBtn}
-                activeOpacity={0.8}
-                onPress={() => setIsAddProductModalVisible(true)}
-              >
-                <LinearGradient
-                  colors={[colors.primary, colors.primaryDark || '#B91C1C']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.addProductBtnGradient}
-                >
-                  <Ionicons name="add-circle" size={14} color="#FFF" style={{ marginRight: 2 }} />
-                  <Text style={styles.addProductBtnText}>İlan Ekle</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false} 
-            contentContainerStyle={styles.marketScrollContainer}
-          >
-            {marketplaceProducts.map((prod) => {
-              const isUsta = prod.sellerType === 'ELECTRICIAN';
-              return (
-                <TouchableOpacity
-                  key={prod.id}
-                  style={styles.marketCard}
-                  activeOpacity={0.9}
-                  onPress={() => {
-                    setSelectedProduct(prod);
-                    setIsProductDetailModalVisible(true);
-                  }}
-                >
-                  {prod.isSold && (
-                    <View style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      backgroundColor: 'rgba(15, 23, 42, 0.75)',
-                      borderRadius: 20,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      zIndex: 10,
-                    }}>
-                      <View style={{
-                        borderWidth: 2,
-                        borderColor: '#10B981',
-                        paddingHorizontal: 16,
-                        paddingVertical: 6,
-                        borderRadius: 8,
-                        transform: [{ rotate: '-10deg' }]
-                      }}>
-                        <Text style={{ color: '#10B981', fontSize: 16, fontFamily: fonts.extraBold, letterSpacing: 1.5 }}>SATILDI</Text>
-                      </View>
-                    </View>
-                  )}
-                  {prod.image ? (
-                    <ImageBackground
-                      source={{ uri: prod.image }}
-                      style={{ width: '100%', height: 185 }}
-                      imageStyle={{ borderRadius: 20 }}
-                    >
-                      <LinearGradient
-                        colors={['rgba(15, 23, 42, 0.55)', 'rgba(15, 23, 42, 0.85)', '#0F172A']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={[styles.marketCardGradient, { backgroundColor: 'transparent' }]}
-                      >
-                        <View style={styles.marketCardHeader}>
-                          <View style={[styles.marketCategoryBadge, { backgroundColor: isUsta ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)' }]}>
-                            <Text style={[styles.marketCategoryText, { color: isUsta ? '#F59E0B' : '#10B981' }]}>{prod.category}</Text>
-                          </View>
-                          <Text style={styles.marketDateText}>{prod.date}</Text>
-                        </View>
-
-                        <Text style={styles.marketProductTitle} numberOfLines={1}>{prod.title}</Text>
-                        <Text style={styles.marketProductDesc} numberOfLines={2}>{prod.desc}</Text>
-
-                        <View style={styles.marketCardFooter}>
-                          <View style={styles.marketPriceWrapper}>
-                            <Text style={styles.marketPriceLabel}>Fiyat</Text>
-                            <Text style={styles.marketPriceValue}>₺{prod.price}</Text>
-                          </View>
-
-                          <View style={styles.marketSellerBadge}>
-                            <Ionicons name={isUsta ? "build" : "person"} size={10} color="#94A3B8" style={{ marginRight: 3 }} />
-                            <Text style={styles.marketSellerText} numberOfLines={1}>
-                              {isUsta ? 'Usta' : 'Vatandaş'}
-                            </Text>
-                          </View>
-                        </View>
-                      </LinearGradient>
-                    </ImageBackground>
-                  ) : (
-                    <LinearGradient
-                      colors={['#1E293B', '#0F172A']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.marketCardGradient}
-                    >
-                      <View style={styles.marketCardHeader}>
-                        <View style={[styles.marketCategoryBadge, { backgroundColor: isUsta ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)' }]}>
-                          <Text style={[styles.marketCategoryText, { color: isUsta ? '#F59E0B' : '#10B981' }]}>{prod.category}</Text>
-                        </View>
-                        <Text style={styles.marketDateText}>{prod.date}</Text>
-                      </View>
-
-                      <Text style={styles.marketProductTitle} numberOfLines={1}>{prod.title}</Text>
-                      <Text style={styles.marketProductDesc} numberOfLines={2}>{prod.desc}</Text>
-
-                      <View style={styles.marketCardFooter}>
-                        <View style={styles.marketPriceWrapper}>
-                          <Text style={styles.marketPriceLabel}>Fiyat</Text>
-                          <Text style={styles.marketPriceValue}>₺{prod.price}</Text>
-                        </View>
-
-                        <View style={styles.marketSellerBadge}>
-                          <Ionicons name={isUsta ? "build" : "person"} size={10} color="#94A3B8" style={{ marginRight: 3 }} />
-                          <Text style={styles.marketSellerText} numberOfLines={1}>
-                            {isUsta ? 'Usta' : 'Vatandaş'}
-                          </Text>
-                        </View>
-                      </View>
-                    </LinearGradient>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
+        <CitizenMarketplace
+          marketplaceProducts={marketplaceProducts}
+          colors={colors}
+          setIsAllProductsModalVisible={setIsAllProductsModalVisible}
+          setIsAddProductModalVisible={setIsAddProductModalVisible}
+          setSelectedProduct={setSelectedProduct}
+          setIsProductDetailModalVisible={setIsProductDetailModalVisible}
+          isAuthenticated={isAuthenticated}
+          onAuthRequired={() => setShowAuthModal(true)}
+        />
 
         {/* ==================== YENİ İLAN EKLE MODAL ==================== */}
         <Modal
@@ -3071,6 +2327,150 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  // ========== PREMIUM CITIZEN DESIGN SYSTEM ==========
+
+  // --- Modern Capsule Tab Switcher ---
+  modernTabSwitcherContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+    borderRadius: 14,
+    padding: 3,
+    marginBottom: 14,
+  },
+  modernTabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 12,
+    justifyContent: 'center',
+  },
+  modernTabButtonActive: {
+    backgroundColor: '#0D9488',
+    shadowColor: '#0D9488',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  modernTabText: {
+    fontFamily: fonts.bold,
+    fontSize: 13,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+
+  // --- Neon-Glass Quick Search Pills ---
+  quickPillsContainer: {
+    paddingVertical: 10,
+    paddingHorizontal: 0,
+    gap: 8,
+  },
+  quickPillButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 1,
+    gap: 6,
+  },
+  quickPillText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12.5,
+    color: 'rgba(255, 255, 255, 0.95)',
+    letterSpacing: 0.2,
+  },
+
+  // --- Enhanced Reels Section ---
+  reelsSectionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginLeft: 8,
+    gap: 3,
+  },
+  reelsSectionBadgeText: {
+    fontFamily: fonts.extraBold,
+    fontSize: 10,
+    color: '#EF4444',
+    letterSpacing: 0.5,
+  },
+
+  // --- Featured Usta Premium Card ---
+  featuredUstaCard: {
+    width: 265,
+    backgroundColor: staticColors.white,
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
+  },
+  featuredUstaAvatarBorder: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 2.5,
+    borderColor: '#FBBF24',
+    padding: 2,
+    shadowColor: '#FBBF24',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  featuredUstaAvatarInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 25,
+    overflow: 'hidden',
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  featuredUstaRatingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(251, 191, 36, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    gap: 3,
+  },
+  featuredUstaRatingText: {
+    fontFamily: fonts.extraBold,
+    fontSize: 13,
+    color: '#D97706',
+  },
+  featuredUstaSkillChip: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  featuredUstaSkillText: {
+    fontFamily: fonts.medium,
+    fontSize: 10.5,
+    color: '#64748B',
+  },
+  featuredUstaProfileBtn: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  featuredUstaProfileBtnText: {
+    fontFamily: fonts.bold,
+    fontSize: 12,
+    color: '#FFF',
+    letterSpacing: 0.3,
+  },
   container: {
     flex: 1,
   },
@@ -3099,30 +2499,44 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 20,
   },
-  compactSearchButton: {
+  headerFullSearchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-    width: 90,
-    gap: 6,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 14,
+    height: 46,
+    paddingLeft: 12,
+    paddingRight: 5,
+    marginTop: 12,
+    marginBottom: 4,
   },
-  compactSearchText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  citizenTitleContainer: {
+  headerFullSearchInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
+  },
+  headerFullSearchPlaceholder: {
+    fontFamily: fonts.medium,
+    fontSize: 13.5,
+    color: 'rgba(255, 255, 255, 0.75)',
+    marginLeft: 10,
+  },
+  headerSearchActionCircleGlass: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   citizenTitleText: {
-    fontFamily: fonts.extraBold,
-    fontSize: 22,
+    fontFamily: fonts.bold,
+    fontSize: 20,
     color: staticColors.white,
     letterSpacing: 0.5,
   },
@@ -4459,58 +3873,114 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
   },
-  toolsGridTwo: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 8,
-  },
-  toolCardHalf: {
-    width: '30%',
-    flexGrow: 1,
-    backgroundColor: staticColors.white,
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
-  },
-  toolIconBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  toolCardTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 12,
-    color: staticColors.text,
-    textAlign: 'center',
-    marginTop: 6,
-  },
-  toolCardDesc: {
-    fontFamily: fonts.regular,
-    fontSize: 11,
-    color: staticColors.textSecondary,
-    textAlign: 'center',
-    marginTop: 4,
-  },
   toolsScrollContainer: {
     paddingVertical: 8,
     gap: 12,
   },
-  toolCardModern: {
-    width: 85,
+  toolsGridContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    height: 176,
+    marginTop: 6,
+    paddingHorizontal: 2,
+    width: '100%',
+  },
+  toolGridLeftCard: {
+    flex: 1.1,
+    height: '100%',
+    borderRadius: 18,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  toolLeftCardContent: {
+    flex: 1,
+    padding: 14,
+    justifyContent: 'space-between',
+  },
+  toolIconBadgeCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 4,
-    marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  toolLeftCardTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    color: '#FFF',
+  },
+  toolLeftCardSubtitle: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.75)',
+    marginTop: 2,
+  },
+  toolGridRightColumn: {
+    flex: 1,
+    height: '100%',
+    flexDirection: 'column',
+    gap: 10,
+  },
+  toolGridRightCard: {
+    flex: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  toolRightCardContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  toolIconBadgeCircleSmall: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  toolRightCardTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 12.5,
+    color: '#FFF',
+  },
+  toolRightCardSubtitle: {
+    fontFamily: fonts.medium,
+    fontSize: 9.5,
+    color: 'rgba(255, 255, 255, 0.75)',
+    marginTop: 1,
+  },
+  watermarkIconContainerLeft: {
+    position: 'absolute',
+    bottom: -25,
+    right: -25,
+    transform: [{ rotate: '-15deg' }],
+  },
+  watermarkIconContainerRight: {
+    position: 'absolute',
+    bottom: -15,
+    right: -15,
+    transform: [{ rotate: '-10deg' }],
   },
   addProductBtn: {
     borderRadius: 20,
@@ -4533,21 +4003,28 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   marketCard: {
-    width: 230,
-    borderRadius: 20,
+    width: 215,
+    height: 245,
+    borderRadius: 18,
     overflow: 'hidden',
     marginRight: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(0, 0, 0, 0.05)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
     shadowRadius: 10,
-    elevation: 4,
+    elevation: 3,
   },
-  marketCardGradient: {
-    padding: 16,
-    height: 185,
+  marketImageContainer: {
+    width: '100%',
+    height: 120,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  marketDetailsContainer: {
+    flex: 1,
+    padding: 12,
     justifyContent: 'space-between',
   },
   marketModalContent: {
@@ -4575,8 +4052,8 @@ const styles = StyleSheet.create({
   },
   marketCategoryBadge: {
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   marketCategoryText: {
     fontFamily: fonts.bold,
@@ -4584,20 +4061,18 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   marketDateText: {
-    fontFamily: fonts.medium,
+    fontFamily: fonts.bold,
     fontSize: 10,
-    color: '#64748B',
+    color: '#94A3B8',
   },
   marketProductTitle: {
     fontFamily: fonts.bold,
     fontSize: 13.5,
-    color: '#FFFFFF',
-    marginTop: 8,
+    marginTop: 0,
   },
   marketProductDesc: {
-    fontFamily: fonts.regular,
+    fontFamily: fonts.medium,
     fontSize: 11,
-    color: '#94A3B8',
     lineHeight: 15,
     marginTop: 4,
   },
@@ -4606,9 +4081,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+    borderTopColor: 'rgba(0, 0, 0, 0.05)',
     paddingTop: 8,
-    marginTop: 8,
+    marginTop: 6,
   },
   marketPriceWrapper: {
     flexDirection: 'column',
@@ -4616,13 +4091,12 @@ const styles = StyleSheet.create({
   marketPriceLabel: {
     fontFamily: fonts.medium,
     fontSize: 8.5,
-    color: '#64748B',
+    color: '#94A3B8',
     textTransform: 'uppercase',
   },
   marketPriceValue: {
     fontFamily: fonts.extraBold,
     fontSize: 14,
-    color: '#FFF',
   },
   marketSellerBadge: {
     flexDirection: 'row',
@@ -4694,50 +4168,60 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  serviceCategoryGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 6,
-    paddingHorizontal: 4,
-    gap: 6,
-  },
-  serviceCategoryCard: {
-    width: '100%',
-    aspectRatio: 0.62,
+  serviceCategoryHorizontalCard: {
+    width: 230,
+    height: 72,
     backgroundColor: staticColors.white,
-    borderRadius: 18,
+    borderRadius: 16,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    shadowColor: '#000',
+    paddingLeft: 12,
+    paddingRight: 12,
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.03,
     shadowRadius: 10,
-    elevation: 5,
-    borderWidth: 1.5,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
-  serviceCategoryIconBg: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
+  serviceCategoryIconContainer: {
+    width: 46,
+    height: 46,
+    borderRadius: 23, // perfect circle
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
     position: 'relative',
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(13, 148, 136, 0.15)',
   },
-  serviceCategoryImage: {
-    width: '100%',
-    height: '100%',
+  serviceCategoryTextContainer: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: 'center',
   },
-  serviceCategoryName: {
-    fontFamily: fonts.semiBold,
-    fontSize: 11,
-    textAlign: 'center',
-    width: '100%',
-    lineHeight: 14,
-    paddingHorizontal: 2,
+  serviceCategoryTitleText: {
+    fontFamily: fonts.bold,
+    fontSize: 13.5,
+    lineHeight: 17,
+    letterSpacing: 0.1,
+  },
+  serviceCategorySubtextText: {
+    fontFamily: fonts.medium,
+    fontSize: 10.5,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  categoryCardChevron: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   categoryIconCircleMinimal: {
     width: 52,
@@ -4752,7 +4236,7 @@ const styles = StyleSheet.create({
   headerProjectAction: {
     borderRadius: 30,
     overflow: 'hidden',
-    shadowColor: '#7C3AED', // Match Purple Glow
+    shadowColor: '#0EA5E9', // Match Sky Blue/Teal Glow
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 10,
@@ -4818,10 +4302,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   vitrinCardBg: {
     flex: 1,

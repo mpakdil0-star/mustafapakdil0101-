@@ -88,8 +88,8 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
         : variant === 'transparent'
             ? (['transparent', 'transparent'] as [string, string, ...string[]])
             : isElectrician
-                ? ([colors.primary, colors.primary] as [string, string, ...string[]])
-                : (colors.gradientHeaderAmethyst || [colors.primary + '88', colors.primaryLight + 'DD']) as [string, string, ...string[]];
+                ? (colors.gradientPrimary as [string, string, ...string[]])
+                : (colors.gradientHeaderAmethyst || [colors.primary, colors.primaryLight]) as [string, string, ...string[]];
 
 
     const isTransparent = variant === 'transparent';
@@ -100,7 +100,7 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
     return (
         <View style={[
             styles.container,
-            { backgroundColor: colors.primary, shadowColor: isElectrician ? colors.primary : (colors as any).shadowAmethyst || colors.primary },
+            { backgroundColor: colors.primary, shadowColor: isElectrician ? '#000000' : colors.primary },
             variant === 'transparent' && { backgroundColor: 'transparent', elevation: 0, shadowOpacity: 0 },
             style
         ]}>
@@ -115,12 +115,12 @@ export const PremiumHeader: React.FC<PremiumHeaderProps> = ({
                     end={{ x: 1, y: 1 }}
                     style={styles.headerGradient}
                 >
-                    {/* Decorative Elements - Hidden if transparent for cleaner look over light themes */}
+                    {/* Decorative Elements - Glowing mesh abstract blobs */}
                     {!isTransparent && (
                         <>
-                            <View style={[styles.headerDecorativeCircle1, !isElectrician && { backgroundColor: (colors as any).glowAmethystSoft || 'rgba(167, 139, 250, 0.15)' }]} />
-                            <View style={[styles.headerDecorativeCircle2, !isElectrician && { backgroundColor: (colors as any).glassPurple || 'rgba(139, 92, 246, 0.15)' }]} />
-                            <View style={[styles.headerDecorativeCircle3, !isElectrician && { backgroundColor: (colors as any).glowAmethyst || 'rgba(139, 92, 246, 0.3)' }]} />
+                            <View style={[styles.headerDecorativeCircle1, { backgroundColor: isElectrician ? 'rgba(249, 115, 22, 0.15)' : 'rgba(45, 212, 191, 0.15)' }]} />
+                            <View style={[styles.headerDecorativeCircle2, { backgroundColor: isElectrician ? 'rgba(245, 158, 11, 0.08)' : 'rgba(6, 182, 212, 0.08)' }]} />
+                            <View style={[styles.headerDecorativeCircle3, { backgroundColor: isElectrician ? 'rgba(249, 115, 22, 0.2)' : 'rgba(13, 148, 136, 0.2)' }]} />
                         </>
                     )}
 
@@ -202,7 +202,6 @@ const styles = StyleSheet.create({
         width: 220,
         height: 220,
         borderRadius: 110,
-        backgroundColor: 'rgba(255, 255, 255, 0.12)',
     },
     headerDecorativeCircle2: {
         position: 'absolute',
@@ -211,7 +210,6 @@ const styles = StyleSheet.create({
         width: 140,
         height: 140,
         borderRadius: 70,
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
     },
     headerDecorativeCircle3: {
         position: 'absolute',
@@ -220,7 +218,6 @@ const styles = StyleSheet.create({
         width: 60,
         height: 60,
         borderRadius: 30,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
     },
     headerTop: {
         flexDirection: 'row',
@@ -236,11 +233,11 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 14,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: 'rgba(255, 255, 255, 0.16)',
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.15)',
+        borderColor: 'rgba(255, 255, 255, 0.12)',
     },
     titleContainer: {
         alignItems: 'center',

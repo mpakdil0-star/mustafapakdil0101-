@@ -41,6 +41,7 @@ export const Input: React.FC<InputProps> = ({
 }) => {
   const colors = useAppColors();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   // Check if this input is intended to be secure
   const isSecureInput = props.secureTextEntry === true;
@@ -51,15 +52,30 @@ export const Input: React.FC<InputProps> = ({
   // Determine the actual secureTextEntry value based on state
   const secureTextEntry = isSecureInput ? !isPasswordVisible : props.secureTextEntry;
 
+  const isLight = colors.background === '#FFFFFF' || colors.background === '#F8FAFC';
+  const containerBorderColor = error 
+    ? colors.error 
+    : (isFocused ? colors.primary : colors.border);
+    
+  const containerBgColor = props.editable === false 
+    ? colors.backgroundDark 
+    : (isFocused 
+        ? (isLight ? '#FFFFFF' : '#1E293B') 
+        : colors.backgroundLight);
+
   return (
     <View style={[styles.container, containerStyle]}>
       {label && <Text style={[styles.label, { color: colors.text }, labelStyle]}>{label}</Text>}
       <View
         style={[
           styles.inputContainer,
-          { backgroundColor: colors.backgroundLight, borderColor: colors.border },
+          { 
+            backgroundColor: containerBgColor, 
+            borderColor: containerBorderColor,
+            borderWidth: isFocused ? 1.5 : 1,
+          },
           inputContainerStyle,
-          error ? styles.inputContainerError : null,
+          error ? [styles.inputContainerError, { borderColor: colors.error, backgroundColor: colors.error + '10' }] : null,
           props.editable === false ? [styles.inputContainerDisabled, { backgroundColor: colors.backgroundDark }] : null,
         ]}
       >
@@ -73,6 +89,14 @@ export const Input: React.FC<InputProps> = ({
             style,
           ]}
           placeholderTextColor={colors.textLight}
+          onFocus={(e) => {
+            setIsFocused(true);
+            props.onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setIsFocused(false);
+            props.onBlur?.(e);
+          }}
           {...props}
           secureTextEntry={secureTextEntry}
         />
@@ -91,7 +115,7 @@ export const Input: React.FC<InputProps> = ({
         )}
       </View>
       {(error || helperText) && (
-        <Text style={[styles.helperText, { color: colors.textSecondary }, error ? styles.errorText : null]}>
+        <Text style={[styles.helperText, { color: colors.textSecondary }, error ? { color: colors.error } : null]}>
           {error || helperText}
         </Text>
       )}
@@ -112,13 +136,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: spacing.radius.md,
-    borderWidth: 1,
     paddingHorizontal: spacing.lg,
     minHeight: 48,
   },
   inputContainerError: {
-    borderColor: staticColors.error,
-    backgroundColor: staticColors.errorLight + '20',
+    borderWidth: 1.5,
   },
   inputContainerDisabled: {
     opacity: 0.6,
@@ -145,8 +167,5 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 12,
     marginTop: spacing.xs,
-  },
-  errorText: {
-    color: staticColors.error,
   },
 });

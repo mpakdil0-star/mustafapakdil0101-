@@ -29,20 +29,23 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     const colors = useAppColors();
     const { user, guestRole } = useAppSelector((state) => state.auth);
     const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
+    const isLight = colors.background === '#FFFFFF' || colors.background === '#F8FAFC';
 
     return (
         <View style={[styles.container, style]}>
-            <Card variant="default" style={[
-                styles.card,
-                { shadowColor: isElectrician ? colors.primary : (colors as any).shadowAmethyst || colors.primary },
-                !isElectrician && {
-                    backgroundColor: (colors as any).backgroundAmethyst || colors.backgroundLight
-                }
-            ]}>
-
-                <View style={[styles.iconCircle, { backgroundColor: colors.primary + '10' }]}>
-                    <Ionicons name={icon} size={40} color={colors.primary} />
-                    <View style={[styles.iconGlow, { backgroundColor: colors.primary + '20' }]} />
+            <Card 
+                variant="default" 
+                style={[
+                    styles.card,
+                    { 
+                        shadowColor: isElectrician ? '#000000' : colors.primary,
+                        backgroundColor: isLight ? '#F0FDFA' : colors.surface,
+                    }
+                ]}
+            >
+                <View style={[styles.iconCircle, { backgroundColor: colors.primary + '12' }]}>
+                    <Ionicons name={icon} size={36} color={colors.primary} />
+                    <View style={[styles.iconGlow, { backgroundColor: colors.primary + '18' }]} />
                 </View>
                 <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
                 <Text style={[styles.description, { color: colors.textSecondary }]}>{description}</Text>
@@ -69,19 +72,18 @@ const styles = StyleSheet.create({
         width: '100%',
         alignItems: 'center',
         padding: 32,
-        borderRadius: 32,
-        backgroundColor: staticColors.white,
+        borderRadius: 28,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.8)',
+        borderColor: 'rgba(255, 255, 255, 0.08)',
         shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.05,
-        shadowRadius: 16,
+        shadowOpacity: 0.06,
+        shadowRadius: 20,
         elevation: 4,
     },
     iconCircle: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        width: 72,
+        height: 72,
+        borderRadius: 36,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
@@ -89,28 +91,27 @@ const styles = StyleSheet.create({
     },
     iconGlow: {
         position: 'absolute',
-        width: 100,
-        height: 100,
-        borderRadius: 50,
+        width: 90,
+        height: 90,
+        borderRadius: 45,
         zIndex: -1,
-        opacity: 0.5,
+        opacity: 0.4,
     },
     title: {
         fontFamily: fonts.bold,
-        fontSize: 20,
+        fontSize: 18,
         textAlign: 'center',
-        marginBottom: 12,
+        marginBottom: 10,
+        letterSpacing: -0.4,
     },
     description: {
         fontFamily: fonts.medium,
-        fontSize: 14,
+        fontSize: 13,
         textAlign: 'center',
-        lineHeight: 22,
+        lineHeight: 20,
         marginBottom: 24,
     },
     button: {
-        minWidth: 180,
-        height: 52,
-        borderRadius: 16,
+        minWidth: 160,
     },
 });

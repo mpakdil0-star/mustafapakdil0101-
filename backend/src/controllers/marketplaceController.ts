@@ -1,5 +1,45 @@
 import { Request, Response, NextFunction } from 'express';
 import { isDatabaseAvailable } from '../config/database';
+import fs from 'fs';
+import path from 'path';
+
+// Helper to save a base64 image to local uploads disk and return its static URL
+const saveBase64Image = (base64Str: string, req: any): string => {
+  if (!base64Str || !base64Str.startsWith('data:image')) {
+    return base64Str; // Return as-is if already a URL
+  }
+
+  try {
+    // Extract base64 content
+    const matches = base64Str.match(/^data:image\/([A-Za-z+-]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      return base64Str;
+    }
+
+    const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+    const data = matches[2];
+    const buffer = Buffer.from(data, 'base64');
+
+    // Create marketplace upload directory if not exists
+    const uploadDir = path.join(process.cwd(), 'uploads', 'marketplace');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const fileName = `marketplace-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+    const filePath = path.join(uploadDir, fileName);
+
+    // Save file
+    fs.writeFileSync(filePath, buffer);
+
+    // Build absolute URL using host headers dynamically
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    return `${baseUrl}/uploads/marketplace/${fileName}`;
+  } catch (error) {
+    console.error('Failed to save base64 image to disk:', error);
+    return base64Str;
+  }
+};
 
 interface AuthRequest extends Request {
     user?: {
@@ -40,6 +80,14 @@ export const getProducts = async (req: Request, res: Response, next: NextFunctio
 export const addProduct = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const productData = req.body;
+
+        // Convert base64 images to file-based URLs
+        if (productData.image) {
+            productData.image = saveBase64Image(productData.image, req);
+        }
+        if (Array.isArray(productData.images)) {
+            productData.images = productData.images.map((img: string) => saveBase64Image(img, req));
+        }
 
         if (isDatabaseAvailable) {
             try {

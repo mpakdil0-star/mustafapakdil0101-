@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors as staticColors } from '../../constants/colors';
 import { fonts } from '../../constants/typography';
+import { useAppColors } from '../../hooks/useAppColors';
 
 const { width } = Dimensions.get('window');
 
@@ -12,6 +13,7 @@ interface GiftCardProps {
 }
 
 export const GiftCard: React.FC<GiftCardProps> = ({ onPress }) => {
+    const colors = useAppColors();
     // Shimmer animation
     const shimmerAnim = useRef(new Animated.Value(-1)).current;
 
@@ -37,12 +39,12 @@ export const GiftCard: React.FC<GiftCardProps> = ({ onPress }) => {
 
     return (
         <TouchableOpacity
-            style={styles.container}
+            style={[styles.container, { shadowColor: colors.primary }]}
             activeOpacity={0.9}
             onPress={onPress}
         >
             <LinearGradient
-                colors={['#4F46E5', '#7C3AED']} // Indigo to Violet
+                colors={colors.gradientSecondary || ['#0EA5E9', '#38BDF8']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0.9, y: 0.6 }}
                 style={styles.gradient}
@@ -82,7 +84,7 @@ export const GiftCard: React.FC<GiftCardProps> = ({ onPress }) => {
                     </View>
                     <View style={styles.rightSide}>
                         <View style={styles.arrowCircle}>
-                            <Ionicons name="chevron-forward" size={20} color="#7C3AED" />
+                            <Ionicons name="chevron-forward" size={20} color={colors.primary} />
                         </View>
                     </View>
                 </View>
@@ -97,7 +99,6 @@ const styles = StyleSheet.create({
         height: 80, // Slightly taller for premium feel
         borderRadius: 20,
         marginVertical: 12,
-        shadowColor: '#7C3AED',
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.25,
         shadowRadius: 10,

@@ -1728,6 +1728,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  formGroup: {
+    marginBottom: 20,
+  },
   scrollView: {
     flex: 1,
   },

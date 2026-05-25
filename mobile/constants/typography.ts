@@ -36,7 +36,7 @@ export const fontFiles = {
   Inter_900Black,
 };
 
-// Typography - Purple Premium Theme
+// Typography - Premium Dynamic Design Theme
 export const typography = {
   // Font Sizes - Premium Scale
   h1: 28,          // Page titles
@@ -50,56 +50,61 @@ export const typography = {
   tiny: 11,        // Captions, labels
 
   // Line Heights
-  lineHeightTight: 1.25,
+  lineHeightTight: 1.2,
   lineHeightNormal: 1.5,
-  lineHeightRelaxed: 1.75,
+  lineHeightRelaxed: 1.7,
 
   // Legacy Object Structure (keeping for compatibility with existing styles)
   h1Style: {
     fontFamily: fonts.bold,
     fontSize: 28,
-    lineHeight: 35,
-    letterSpacing: -0.5,
+    lineHeight: 36,
+    letterSpacing: -0.8,
   },
   h2Style: {
     fontFamily: fonts.bold,
     fontSize: 24,
-    lineHeight: 30,
-    letterSpacing: -0.3,
+    lineHeight: 32,
+    letterSpacing: -0.5,
   },
   h3Style: {
     fontFamily: fonts.semiBold,
     fontSize: 20,
     lineHeight: 26,
-    letterSpacing: 0,
+    letterSpacing: -0.2,
   },
   h4Style: {
     fontFamily: fonts.bold,
     fontSize: 18,
-    lineHeight: 22,
-    letterSpacing: 0,
+    lineHeight: 24,
+    letterSpacing: -0.1,
   },
   body1: {
     fontFamily: fonts.regular,
     fontSize: 16,
     lineHeight: 24,
+    letterSpacing: 0,
   },
   body2: {
     fontFamily: fonts.regular,
     fontSize: 14,
-    lineHeight: 21,
+    lineHeight: 20,
+    letterSpacing: 0,
   },
   caption: {
     fontFamily: fonts.regular,
     fontSize: 12,
-    lineHeight: 18,
+    lineHeight: 16,
+    letterSpacing: 0.1,
   },
   button: {
     fontFamily: fonts.semiBold,
     fontSize: 15,
+    letterSpacing: 0.2,
   },
   label: {
     fontFamily: fonts.medium,
     fontSize: 13,
+    letterSpacing: 0.1,
   }
 };
