@@ -802,7 +802,7 @@ export default function ChannelsScreen() {
             <TextInput
               style={styles.input}
               placeholder="Örn: 24W Akıllı Led Sürücü arızası"
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor="#94A3B8"
               value={newPostTitle}
               onChangeText={setNewPostTitle}
             />
@@ -811,7 +811,7 @@ export default function ChannelsScreen() {
             <TextInput
               style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
               placeholder="Sorununuzu, hata kodunu veya detayları yazın..."
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor="#94A3B8"
               multiline
               numberOfLines={4}
               value={newPostDesc}
@@ -880,7 +880,7 @@ export default function ChannelsScreen() {
               <TextInput
                 style={styles.commentInput}
                 placeholder="Yardımcı olacak cevabınızı yazın..."
-                placeholderTextColor="rgba(255,255,255,0.3)"
+                placeholderTextColor="#94A3B8"
                 value={newCommentText}
                 onChangeText={setNewCommentText}
               />
@@ -907,7 +907,7 @@ export default function ChannelsScreen() {
             <TextInput
               style={styles.input}
               placeholder="Örn: Kadıköy'de 3 Günlük Yardımcı Usta Arayışı"
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor="#94A3B8"
               value={newJobTitle}
               onChangeText={setNewJobTitle}
             />
@@ -916,17 +916,17 @@ export default function ChannelsScreen() {
             <TextInput
               style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
               placeholder="Aradığınız şartları, işin niteliğini ve ödeme bilgisini yazın..."
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor="#94A3B8"
               multiline
               numberOfLines={4}
               value={newJobDesc}
               onChangeText={setNewJobDesc}
             />
 
-            <View style={{ backgroundColor: 'rgba(245, 158, 11, 0.1)', borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.2)', borderRadius: 12, padding: 12, marginVertical: 12 }}>
-              <Text style={{ color: '#F59E0B', fontSize: 12.5, fontFamily: fonts.bold }}>Önemli Not</Text>
-              <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, fontFamily: fonts.medium, marginTop: 2 }}>
-                Bu iş paslama teklifi sadece sizin kayıtlı olduğunuz şehirdeki ({user?.city || 'İstanbul'}) ustalar tarafından görülecektir.
+            <View style={{ backgroundColor: 'rgba(245, 158, 11, 0.08)', borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.22)', borderRadius: 12, padding: 12, marginVertical: 12 }}>
+              <Text style={{ color: '#D97706', fontSize: 12.5, fontFamily: fonts.bold }}>Önemli Not</Text>
+              <Text style={{ color: '#78350F', fontSize: 11, fontFamily: fonts.medium, marginTop: 3 }}>
+                Bu iş paslama teklifi sadece sizin kayıtlu olduğunuz şehirdeki ({user?.city || 'İstanbul'}) ustalar tarafından görülecektir.
               </Text>
             </View>
 
@@ -979,7 +979,7 @@ export default function ChannelsScreen() {
             <TextInput
               style={styles.input}
               placeholder="Örn: 24'lü Dağıtım Panosu Kablolama"
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor="#94A3B8"
               value={newShowcaseTitle}
               onChangeText={setNewShowcaseTitle}
             />
@@ -988,7 +988,7 @@ export default function ChannelsScreen() {
             <TextInput
               style={styles.input}
               placeholder="Kullandığınız marka, şantiye bilgisi vb."
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor="#94A3B8"
               value={newShowcaseDesc}
               onChangeText={setNewShowcaseDesc}
             />
