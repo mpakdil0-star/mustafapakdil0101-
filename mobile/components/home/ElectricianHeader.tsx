@@ -204,11 +204,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#4682B4',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.02, // Soft shadow
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   centeredAvatarImage: {
     width: '100%',

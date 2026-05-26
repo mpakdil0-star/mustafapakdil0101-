@@ -1162,7 +1162,15 @@ export default function HomeScreen() {
           }
         ]}>
           {isElectrician ? (
-            <View style={[styles.premiumHeader, { backgroundColor: '#FFFFFF' }]}>
+            <ImageBackground
+              source={require('../../assets/images/header_bg.png')}
+              style={[styles.premiumHeader, { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }]}
+              imageStyle={[styles.headerImage, { opacity: 0.05 }]}
+            >
+              <LinearGradient
+                colors={['#FFFFFF', '#F4F7FA']}
+                style={StyleSheet.absoluteFill}
+              />
               <StatusBar 
                 barStyle="dark-content" 
                 backgroundColor="#FFFFFF" 
@@ -1180,7 +1188,7 @@ export default function HomeScreen() {
                 ustaCategoryTitle={getUstaCategory(user || { serviceCategory: 'elektrik' })}
                 isAuthenticated={isAuthenticated}
               />
-            </View>
+            </ImageBackground>
           ) : (
             <ImageBackground
               source={require('../../assets/images/header_bg.png')}
