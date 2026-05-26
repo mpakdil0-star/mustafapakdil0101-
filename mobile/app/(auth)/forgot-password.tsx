@@ -113,13 +113,13 @@ export default function ForgotPasswordScreen() {
         >
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <LinearGradient
-                    colors={['#1E1B4B', '#4C1D95', '#1E1B4B']}
+                    colors={['#07111E', '#09252A', '#07111E']}
                     style={StyleSheet.absoluteFill}
                 />
 
                 {/* Decorative Blobs */}
-                <View style={[styles.glowBlob, { top: -100, right: -100, backgroundColor: '#7C3AED' }]} />
-                <View style={[styles.glowBlob, { bottom: -100, left: -100, backgroundColor: '#4F46E5', opacity: 0.2 }]} />
+                <View style={[styles.glowBlob, { top: -100, right: -100, backgroundColor: '#0D9488' }]} />
+                <View style={[styles.glowBlob, { bottom: -100, left: -100, backgroundColor: '#4682B4', opacity: 0.15 }]} />
 
                 <View style={styles.innerContent}>
                     {/* Header */}
@@ -156,19 +156,35 @@ export default function ForgotPasswordScreen() {
                                     error={errors.email}
                                     editable={!isLoading}
                                     labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
-                                    inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }}
+                                    inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }}
                                     style={{ color: colors.white }}
                                     placeholderTextColor="rgba(255,255,255,0.45)"
                                 />
 
                                 {error && <Text style={styles.errorFull}>{error}</Text>}
 
-                                <Button
-                                    title={isLoading ? 'Gönderiliyor...' : 'Kod Gönder'}
+                                <TouchableOpacity
                                     onPress={handleSendCode}
                                     disabled={isLoading}
-                                    style={{ marginTop: 20 }}
-                                />
+                                    activeOpacity={0.8}
+                                    style={styles.submitButtonWrapper}
+                                >
+                                    <LinearGradient
+                                        colors={['#0D9488', '#4682B4']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                        style={styles.submitButtonGradient}
+                                    >
+                                        {isLoading ? (
+                                            <ActivityIndicator size="small" color="#FFFFFF" />
+                                        ) : (
+                                            <>
+                                                <Text style={styles.submitButtonText}>Kod Gönder</Text>
+                                                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+                                            </>
+                                        )}
+                                    </LinearGradient>
+                                </TouchableOpacity>
                             </>
                         ) : (
                             <>
@@ -189,7 +205,7 @@ export default function ForgotPasswordScreen() {
                                     error={errors.code}
                                     editable={!isLoading}
                                     labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
-                                    inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }}
+                                    inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }}
                                     style={{ color: colors.white }}
                                 />
 
@@ -202,7 +218,7 @@ export default function ForgotPasswordScreen() {
                                     error={errors.newPassword}
                                     editable={!isLoading}
                                     labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
-                                    inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }}
+                                    inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }}
                                     style={{ color: colors.white }}
                                 />
 
@@ -215,18 +231,34 @@ export default function ForgotPasswordScreen() {
                                     error={errors.confirmPassword}
                                     editable={!isLoading}
                                     labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
-                                    inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }}
+                                    inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }}
                                     style={{ color: colors.white }}
                                 />
 
                                 {error && <Text style={styles.errorFull}>{error}</Text>}
 
-                                <Button
-                                    title={isLoading ? 'Güncelleniyor...' : 'Şifreyi Yenile'}
+                                <TouchableOpacity
                                     onPress={handleResetPassword}
                                     disabled={isLoading}
-                                    style={{ marginTop: 20 }}
-                                />
+                                    activeOpacity={0.8}
+                                    style={styles.submitButtonWrapper}
+                                >
+                                    <LinearGradient
+                                        colors={['#0D9488', '#4682B4']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                        style={styles.submitButtonGradient}
+                                    >
+                                        {isLoading ? (
+                                            <ActivityIndicator size="small" color="#FFFFFF" />
+                                        ) : (
+                                            <>
+                                                <Text style={styles.submitButtonText}>Şifreyi Yenile</Text>
+                                                <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
+                                            </>
+                                        )}
+                                    </LinearGradient>
+                                </TouchableOpacity>
                             </>
                         )}
                     </View>
@@ -256,7 +288,7 @@ export default function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0F172A',
+        backgroundColor: '#07111E',
     },
     scrollContent: {
         flexGrow: 1,
@@ -294,12 +326,17 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: 'rgba(255,255,255,0.1)',
+        backgroundColor: 'rgba(255,255,255,0.05)',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
+        borderColor: 'rgba(13, 148, 136, 0.3)',
+        shadowColor: '#0D9488',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 10,
+        elevation: 5,
     },
     title: {
         fontFamily: fonts.bold,
@@ -334,7 +371,7 @@ const styles = StyleSheet.create({
         fontFamily: fonts.medium,
     },
     changeText: {
-        color: '#7C3AED',
+        color: '#0D9488',
         fontFamily: fonts.bold,
         fontSize: 12,
     },
@@ -343,5 +380,27 @@ const styles = StyleSheet.create({
         fontFamily: fonts.medium,
         textAlign: 'center',
         marginVertical: 10,
+    },
+    submitButtonWrapper: {
+        marginTop: 20,
+        borderRadius: 16,
+        overflow: 'hidden',
+        shadowColor: '#0D9488',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        elevation: 6,
+    },
+    submitButtonGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 16,
+        gap: 10,
+    },
+    submitButtonText: {
+        fontFamily: fonts.bold,
+        fontSize: 16,
+        color: '#FFFFFF',
     },
 });
