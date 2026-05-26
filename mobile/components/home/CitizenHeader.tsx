@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity, Image }
 import { Ionicons } from '@expo/vector-icons';
 import { fonts } from '../../constants/typography';
 import { getFileUrl } from '../../constants/api';
+import { useRouter } from 'expo-router';
 
 interface CitizenHeaderProps {
   user: any;
@@ -21,43 +22,67 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
   handleActionWithAuth,
   colors,
 }) => {
+  const router = useRouter();
+
+  const fullName = isAuthenticated ? (user?.fullName || 'VATANDAŞ') : 'MİSAFİR';
+  const nameParts = fullName.toUpperCase().split(' ');
+  const firstName = nameParts[0] || 'MİSAFİR';
+  const lastName = nameParts.slice(1).join(' ') || 'VATANDAŞ';
+
   return (
     <View style={styles.container}>
-      {/* Top Header Row (Logo, Profile/Avatar, Notification Bell) */}
-      <View style={styles.headerTopRow}>
-        <View style={styles.logoContainer}>
-          <Text style={styles.citizenTitleText}>İşbitir</Text>
-          <View style={[styles.logoDot, { backgroundColor: colors.secondary || '#0EA5E9' }]} />
-        </View>
+      {/* Mutlak Konumlanmış Geri Butonu (Misafir için) */}
+      {!isAuthenticated && (
+        <TouchableOpacity
+          style={styles.backButtonAbsolute}
+          onPress={() => router.canGoBack() ? router.back() : router.replace('/(auth)/welcome')}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+      )}
 
-        <View style={styles.citizenRightIcons}>
-          {/* Circular avatar if authenticated, otherwise person icon */}
-          <TouchableOpacity
-            style={[styles.citizenAvatarContainer, { borderColor: 'rgba(255, 255, 255, 0.35)' }]}
-            activeOpacity={0.8}
-            onPress={() => handleActionWithAuth('/profile')}
-          >
-            {isAuthenticated && user?.profileImageUrl ? (
-              <Image
-                source={{ uri: getFileUrl(user.profileImageUrl) || '' }}
-                style={styles.citizenAvatarImage}
-              />
-            ) : (
-              <View style={styles.citizenAvatarPlaceholder}>
-                <Ionicons name="person-outline" size={17} color="#FFF" />
-              </View>
-            )}
-          </TouchableOpacity>
+      {/* Başlık Düzeni (Centered Header) */}
+      <View style={styles.centeredHeader}>
+        <Text style={styles.headerTitleMain}>İŞBİTİR</Text>
+        <Text style={styles.headerSubtitleSub}>
+          {isAuthenticated ? `${firstName} ${lastName}` : 'Misafir Vatandaş'}
+        </Text>
+      </View>
 
-          {/* Elegant Notification Bell with Pulsing Badge */}
+      {/* Profil Avatarı & Bildirim İkonu Alanı */}
+      <View style={styles.profileRow}>
+        {/* Sol Sütun Boşluk / Sürgülü Ayar (Simetri) */}
+        <View style={styles.symmetricalLeftCol} />
+
+        {/* Ortalanmış dairesel bir avatar (Etrafında gold/white border) */}
+        <TouchableOpacity
+          style={[styles.centeredAvatarContainer, { borderColor: 'rgba(255, 255, 255, 0.35)' }]}
+          activeOpacity={0.8}
+          onPress={() => handleActionWithAuth('/profile')}
+        >
+          {isAuthenticated && user?.profileImageUrl ? (
+            <Image
+              source={{ uri: getFileUrl(user.profileImageUrl) || '' }}
+              style={styles.centeredAvatarImage}
+            />
+          ) : (
+            <View style={styles.centeredAvatarPlaceholder}>
+              <Ionicons name="person" size={32} color="rgba(255, 255, 255, 0.85)" />
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {/* Bildirim zili avatarın sağ tarafında simetrik duracak */}
+        <View style={styles.symmetricalRightCol}>
           <TouchableOpacity
-            style={styles.headerLinkButton}
+            style={styles.notificationButton}
             activeOpacity={0.7}
             onPress={() => handleActionWithAuth('/profile/notifications')}
           >
-            <Ionicons name="notifications-outline" size={24} color="#FFF" />
+            <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
             {unreadCount > 0 && (
-              <Animated.View style={[styles.notificationBadge, { transform: [{ scale: badgePulseAnim }] }]}>
+              <Animated.View style={[styles.notificationBadge, { transform: [{ scale: badgePulseAnim }], borderColor: colors.primary || '#0D9488' }]}>
                 <Text style={styles.notificationBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
               </Animated.View>
             )}
@@ -113,87 +138,108 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 2,
   },
-  headerTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    width: '100%',
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 4,
-  },
-  citizenTitleText: {
-    fontFamily: fonts.bold,
-    fontSize: 22,
-    color: '#FFF',
-    letterSpacing: 0.5,
-  },
-  logoDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginBottom: 4,
-  },
-  citizenRightIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  citizenAvatarContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1.5,
+  backButtonAbsolute: {
+    position: 'absolute',
+    left: 0,
+    top: 4,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 10,
+  },
+  centeredHeader: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    marginBottom: 12,
+  },
+  headerTitleMain: {
+    fontFamily: fonts.extraBold,
+    fontSize: 18,
+    color: '#FFFFFF',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  headerSubtitleSub: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.75)',
+    marginTop: 1,
+  },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  symmetricalLeftCol: {
+    flex: 1,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  symmetricalRightCol: {
+    flex: 1,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    paddingLeft: 22,
+  },
+  centeredAvatarContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
     overflow: 'hidden',
     backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    shadowColor: '#FFF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  citizenAvatarImage: {
+  centeredAvatarImage: {
     width: '100%',
     height: '100%',
   },
-  citizenAvatarPlaceholder: {
+  centeredAvatarPlaceholder: {
     width: '100%',
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerLinkButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  notificationButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
   },
   notificationBadge: {
     position: 'absolute',
-    top: -2,
-    right: -2,
+    top: -4,
+    right: -4,
     backgroundColor: '#EF4444',
     borderRadius: 8,
     minWidth: 16,
     height: 16,
+    paddingHorizontal: 4,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 3,
-    borderWidth: 1,
-    borderColor: '#FFF',
+    borderWidth: 1.5,
   },
   notificationBadgeText: {
-    color: '#FFF',
+    color: '#FFFFFF',
+    fontSize: 8,
     fontFamily: fonts.bold,
-    fontSize: 9,
-    textAlign: 'center',
   },
   headerFullSearchBar: {
     flexDirection: 'row',
