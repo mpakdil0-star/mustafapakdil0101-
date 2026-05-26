@@ -279,14 +279,14 @@ const styles = StyleSheet.create({
   glowPrimary: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.02,
     shadowRadius: 8,
     elevation: 2,
   },
   glowAccent: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.02,
     shadowRadius: 8,
     elevation: 2,
   },

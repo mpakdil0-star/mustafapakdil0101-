@@ -1140,7 +1140,7 @@ export default function HomeScreen() {
   const lastName = nameParts.slice(1).join(' ') || 'USTA';
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.backgroundLight }]}>
+    <View style={[styles.container, { backgroundColor: isElectrician ? colors.background : colors.backgroundLight }]}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.content}
@@ -1149,7 +1149,7 @@ export default function HomeScreen() {
         <View style={[
           styles.premiumHeaderContainer, 
           isElectrician ? { 
-            backgroundColor: '#FFFFFF', 
+            backgroundColor: '#253342', 
             shadowColor: '#000', 
             shadowOffset: { width: 0, height: 4 }, 
             shadowOpacity: 0.03,
@@ -1164,16 +1164,16 @@ export default function HomeScreen() {
           {isElectrician ? (
             <ImageBackground
               source={require('../../assets/images/header_bg.png')}
-              style={[styles.premiumHeader, { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }]}
+              style={[styles.premiumHeader, { backgroundColor: '#253342', borderBottomWidth: 1, borderBottomColor: 'rgba(148, 163, 184, 0.15)' }]}
               imageStyle={[styles.headerImage, { opacity: 0.05 }]}
             >
               <LinearGradient
-                colors={['#FFFFFF', '#F4F7FA']}
+                colors={['#253342', '#253342']}
                 style={StyleSheet.absoluteFill}
               />
               <StatusBar 
-                barStyle="dark-content" 
-                backgroundColor="#FFFFFF" 
+                barStyle="light-content" 
+                backgroundColor="#253342" 
                 translucent={false}
               />
               <ElectricianHeader

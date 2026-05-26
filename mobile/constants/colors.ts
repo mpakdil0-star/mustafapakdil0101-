@@ -131,12 +131,11 @@ export const ELECTRICIAN_COLORS = {
   primaryLight: '#63B8FF',         // Steel Blue Lighter
   primaryGradient: ['#4682B4', '#63B8FF'] as [string, string],
 
-  // Light Theme Header Architecture Variables (Faz 25 RFC & Minimalist Redesign)
-  headerLight: '#FFFFFF',          // COLOR_BG_PURE_WHITE
-  textMain: '#000000',             // COLOR_TEXT_MAIN_DARK
-  dividerLight: '#E2E8F0',         // COLOR_BORDER_LIGHT
-  brandBlue: '#4682B4',            // COLOR_BRAND_BLUE
-  textMutedGrey: '#64748B',        // COLOR_TEXT_MUTED_GREY
+  // Premium Deep Slate & Gold Theme Variables (Faz 25 RFC & Minimalist Redesign)
+  headerDeepSlate: '#253342',      // COLOR_HEADER_DEEP_SLATE
+  accentGold: '#E5C158',           // COLOR_ACCENT_GOLD
+  textWhite: '#FFFFFF',            // COLOR_TEXT_WHITE
+  textMuted: '#94A3B8',            // COLOR_TEXT_MUTED
 
   // Secondary Deep Charcoal Slate Shades (Corporate Navy / COLOR_PRIMARY_DARK)
   secondary: '#1E293B',            // Slate 800 (Header BG)
