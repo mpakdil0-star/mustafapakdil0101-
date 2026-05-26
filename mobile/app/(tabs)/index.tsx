@@ -1155,7 +1155,7 @@ export default function HomeScreen() {
             {/* Vibrant Orange Gradient Overlay for Usta */}
             <LinearGradient
               colors={isElectrician
-                ? [colors.primary, colors.primaryDark || '#B91C1C']
+                ? ['#1E293B', '#111827']
                 : (colors.gradientHeaderAmethyst as any) || [colors.primary + '88', colors.primaryLight + 'DD']
               }
               style={StyleSheet.absoluteFill}

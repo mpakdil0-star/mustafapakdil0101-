@@ -41,9 +41,8 @@ export const ElectricianRecentJobs: React.FC<ElectricianRecentJobsProps> = ({
         {recentJobs.length > 0 ? (
           recentJobs.slice(0, 5).map((job: any) => {
             const isUrgent = job.urgencyLevel === 'HIGH' || job.urgencyLevel === 'MEDIUM';
-            const statusColor = isUrgent ? colors.primary : '#F59E0B';
-            const badgeBgColor = isUrgent ? 'rgba(255, 75, 43, 0.1)' : 'rgba(245, 158, 11, 0.1)';
-            const iconColor = isUrgent ? colors.primary : '#F59E0B';
+            const statusColor = isUrgent ? '#C2410C' : '#0284C7';
+            const badgeBgColor = isUrgent ? '#FFEDD5' : '#E0F2FE';
             
             return (
               <TouchableOpacity
@@ -63,7 +62,7 @@ export const ElectricianRecentJobs: React.FC<ElectricianRecentJobsProps> = ({
                 </View>
 
                 <View style={styles.hotLeadLocationRow}>
-                  <Ionicons name="location" size={12} color={iconColor} />
+                  <Ionicons name="location" size={12} color={colors.primary} />
                   <Text style={styles.hotLeadLocationText} numberOfLines={1}>
                     {job.location?.district ? `${job.location.district}, ` : ''}{job.location?.city || 'İstanbul'}
                   </Text>
@@ -84,21 +83,21 @@ export const ElectricianRecentJobs: React.FC<ElectricianRecentJobsProps> = ({
                   <View style={styles.hotLeadPriceCol}>
                     {job.estimatedBudget ? (
                       <>
-                        <Text style={[styles.hotLeadPrice, { color: statusColor }]}>
+                        <Text style={[styles.hotLeadPrice, { color: colors.primary }]}>
                           ₺{Number(job.estimatedBudget).toLocaleString('tr-TR')}
                         </Text>
-                        <Text style={[styles.hotLeadPriceStatus, { color: statusColor }]}>
+                        <Text style={[styles.hotLeadPriceStatus, { color: isUrgent ? '#C2410C' : colors.textSecondary }]}>
                           {isUrgent ? ' - Acil!' : ' - Standart'}
                         </Text>
                       </>
                     ) : (
-                      <Text style={[styles.hotLeadPriceStatus, { color: statusColor }]}>
+                      <Text style={[styles.hotLeadPriceStatus, { color: isUrgent ? '#C2410C' : colors.textSecondary }]}>
                         {isUrgent ? 'Acil İlan' : 'Standart İlan'}
                       </Text>
                     )}
                   </View>
                   <TouchableOpacity
-                    style={[styles.hotLeadActionBtn, { backgroundColor: isUrgent ? colors.primary : '#F59E0B' }]}
+                    style={[styles.hotLeadActionBtn, { backgroundColor: colors.primary }]}
                     onPress={() => handleActionWithAuth(`/jobs/${job.id}`)}
                     activeOpacity={0.8}
                   >
@@ -118,9 +117,9 @@ export const ElectricianRecentJobs: React.FC<ElectricianRecentJobsProps> = ({
             >
               <View style={styles.hotLeadHeaderRow}>
                 <Text style={styles.hotLeadTitle} numberOfLines={1}>Acil Pano Arızası</Text>
-                <View style={[styles.hotLeadUrgentBadge, { backgroundColor: 'rgba(255, 75, 43, 0.1)' }]}>
-                  <Ionicons name="time" size={10} color={colors.primary} />
-                  <Text style={[styles.hotLeadUrgentText, { color: colors.primary }]}>14dk</Text>
+                <View style={[styles.hotLeadUrgentBadge, { backgroundColor: '#FFEDD5' }]}>
+                  <Ionicons name="time" size={10} color="#C2410C" />
+                  <Text style={[styles.hotLeadUrgentText, { color: '#C2410C' }]}>14dk</Text>
                 </View>
               </View>
 
@@ -141,7 +140,7 @@ export const ElectricianRecentJobs: React.FC<ElectricianRecentJobsProps> = ({
               <View style={styles.hotLeadBottomRow}>
                 <View style={styles.hotLeadPriceCol}>
                   <Text style={[styles.hotLeadPrice, { color: colors.primary }]}>₺850</Text>
-                  <Text style={[styles.hotLeadPriceStatus, { color: colors.primary }]}> - Acil!</Text>
+                  <Text style={[styles.hotLeadPriceStatus, { color: '#C2410C' }]}> - Acil!</Text>
                 </View>
                 <TouchableOpacity
                   style={[styles.hotLeadActionBtn, { backgroundColor: colors.primary }]}
@@ -161,14 +160,14 @@ export const ElectricianRecentJobs: React.FC<ElectricianRecentJobsProps> = ({
             >
               <View style={styles.hotLeadHeaderRow}>
                 <Text style={styles.hotLeadTitle} numberOfLines={1}>Priz Değişimi</Text>
-                <View style={[styles.hotLeadUrgentBadge, { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
-                  <Ionicons name="time" size={10} color="#F59E0B" />
-                  <Text style={[styles.hotLeadUrgentText, { color: '#F59E0B' }]}>25dk</Text>
+                <View style={[styles.hotLeadUrgentBadge, { backgroundColor: '#E0F2FE' }]}>
+                  <Ionicons name="time" size={10} color="#0284C7" />
+                  <Text style={[styles.hotLeadUrgentText, { color: '#0284C7' }]}>25dk</Text>
                 </View>
               </View>
 
               <View style={styles.hotLeadLocationRow}>
-                <Ionicons name="location" size={12} color="#F59E0B" />
+                <Ionicons name="location" size={12} color={colors.primary} />
                 <Text style={styles.hotLeadLocationText} numberOfLines={1}>Üsküdar, 2.5km</Text>
               </View>
 
@@ -183,11 +182,11 @@ export const ElectricianRecentJobs: React.FC<ElectricianRecentJobsProps> = ({
 
               <View style={styles.hotLeadBottomRow}>
                 <View style={styles.hotLeadPriceCol}>
-                  <Text style={[styles.hotLeadPrice, { color: '#F59E0B' }]}>₺350</Text>
-                  <Text style={[styles.hotLeadPriceStatus, { color: '#F59E0B' }]}> - Standart</Text>
+                  <Text style={[styles.hotLeadPrice, { color: colors.primary }]}>₺350</Text>
+                  <Text style={[styles.hotLeadPriceStatus, { color: colors.textSecondary }]}> - Standart</Text>
                 </View>
                 <TouchableOpacity
-                  style={[styles.hotLeadActionBtn, { backgroundColor: '#F59E0B' }]}
+                  style={[styles.hotLeadActionBtn, { backgroundColor: colors.primary }]}
                   onPress={() => handleActionWithAuth('/(tabs)/jobs')}
                   activeOpacity={0.8}
                 >
@@ -204,14 +203,14 @@ export const ElectricianRecentJobs: React.FC<ElectricianRecentJobsProps> = ({
             >
               <View style={styles.hotLeadHeaderRow}>
                 <Text style={styles.hotLeadTitle} numberOfLines={1}>Aydınlatma Montajı</Text>
-                <View style={[styles.hotLeadUrgentBadge, { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
-                  <Ionicons name="time" size={10} color="#F59E0B" />
-                  <Text style={[styles.hotLeadUrgentText, { color: '#F59E0B' }]}>45dk</Text>
+                <View style={[styles.hotLeadUrgentBadge, { backgroundColor: '#E0F2FE' }]}>
+                  <Ionicons name="time" size={10} color="#0284C7" />
+                  <Text style={[styles.hotLeadUrgentText, { color: '#0284C7' }]}>45dk</Text>
                 </View>
               </View>
 
               <View style={styles.hotLeadLocationRow}>
-                <Ionicons name="location" size={12} color="#F59E0B" />
+                <Ionicons name="location" size={12} color={colors.primary} />
                 <Text style={styles.hotLeadLocationText} numberOfLines={1}>Beşiktaş, 3.1km</Text>
               </View>
 
@@ -226,11 +225,11 @@ export const ElectricianRecentJobs: React.FC<ElectricianRecentJobsProps> = ({
 
               <View style={styles.hotLeadBottomRow}>
                 <View style={styles.hotLeadPriceCol}>
-                  <Text style={[styles.hotLeadPrice, { color: '#F59E0B' }]}>₺1,200</Text>
-                  <Text style={[styles.hotLeadPriceStatus, { color: '#F59E0B' }]}> - Fırsat</Text>
+                  <Text style={[styles.hotLeadPrice, { color: colors.primary }]}>₺1,200</Text>
+                  <Text style={[styles.hotLeadPriceStatus, { color: colors.textSecondary }]}> - Fırsat</Text>
                 </View>
                 <TouchableOpacity
-                  style={[styles.hotLeadActionBtn, { backgroundColor: '#F59E0B' }]}
+                  style={[styles.hotLeadActionBtn, { backgroundColor: colors.primary }]}
                   onPress={() => handleActionWithAuth('/(tabs)/jobs')}
                   activeOpacity={0.8}
                 >
@@ -272,24 +271,24 @@ const styles = StyleSheet.create({
   hotLeadCard: {
     width: 250,
     backgroundColor: staticColors.white,
-    borderRadius: 20,
+    borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.03)',
+    borderColor: '#E2E8F0',
   },
   glowPrimary: {
-    shadowColor: '#FF4B2B',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   glowAccent: {
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   hotLeadHeaderRow: {
     flexDirection: 'row',
@@ -348,7 +347,7 @@ const styles = StyleSheet.create({
   hotLeadActionBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 10,
+    borderRadius: 8,
   },
   hotLeadActionBtnText: {
     color: '#FFF',

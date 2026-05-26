@@ -87,7 +87,7 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
           >
             <Ionicons name="notifications-outline" size={24} color={colors.white} />
             {unreadCount > 0 && (
-              <Animated.View style={[styles.notificationBadge, { transform: [{ scale: badgePulseAnim }] }]}>
+              <Animated.View style={[styles.notificationBadge, { borderColor: colors.secondary || '#1E293B', transform: [{ scale: badgePulseAnim }] }]}>
                 <Text style={styles.notificationBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
               </Animated.View>
             )}
@@ -220,7 +220,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#0D9488',
   },
   notificationBadgeText: {
     color: '#FFF',
@@ -235,39 +234,41 @@ const styles = StyleSheet.create({
   },
   ustaDashboardCardDark: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.22)',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   glowPrimary: {
-    shadowColor: '#FF4B2B',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   glowAccent: {
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   ustaDashCardLabel: {
     fontFamily: fonts.semiBold,
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: '#64748B',
     marginBottom: 6,
   },
   ustaDashCardValue: {
     fontFamily: fonts.extraBold,
     fontSize: 22,
-    color: '#FFFFFF',
+    color: '#0284C7',
     marginBottom: 4,
   },
   ustaDashCardSub: {
     fontFamily: fonts.medium,
     fontSize: 10,
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: '#94A3B8',
   },
 });

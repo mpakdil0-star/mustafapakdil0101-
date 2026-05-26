@@ -125,28 +125,28 @@ export const CITIZEN_COLORS = {
 
 // Midnight Amber & Gold Theme - Energetic, Light & Premium ⚡ (For Electricians)
 export const ELECTRICIAN_COLORS = {
-  // Core Gold/Amber Palette (Prestigious Gold Highlights)
-  primary: '#D97706',              // Amber 600 (Prestigious Gold)
-  primaryDark: '#B45309',          // Amber 700
-  primaryLight: '#FBBF24',         // Amber 400 (Platinum Gold)
-  primaryGradient: ['#D97706', '#FBBF24'] as [string, string],
+  // Core Gold/Amber Palette (Updated to Corporate Blue / COLOR_BRAND_BLUE)
+  primary: '#0284C7',              // Brand Blue 600
+  primaryDark: '#0369A1',          // Brand Blue 700
+  primaryLight: '#38BDF8',         // Sky Blue 400
+  primaryGradient: ['#0284C7', '#38BDF8'] as [string, string],
 
-  // Secondary Deep Charcoal Slate Shades (Key Visual Accents)
-  secondary: '#1E293B',            // Slate 800 (Charcoal Gray)
-  secondaryDark: '#0F172A',        // Slate 900 (Dark Charcoal)
+  // Secondary Deep Charcoal Slate Shades (Corporate Navy / COLOR_PRIMARY_DARK)
+  secondary: '#1E293B',            // Slate 800 (Header BG)
+  secondaryDark: '#0F172A',        // Slate 900
   secondaryLight: '#334155',       // Slate 700
   secondaryGradient: ['#1E293B', '#334155'] as [string, string],
 
-  // Spectrum Shades (Mapped for backward compatibility)
-  amethystDeep: '#B45309',
-  amethystMedium: '#D97706',
-  amethystLight: '#FBBF24',
-  amethystPale: '#FEF3C7',
-  amethystUltraLight: '#FFFBEB',
+  // Spectrum Shades (Mapped for backward compatibility to Brand Blue)
+  amethystDeep: '#0369A1',
+  amethystMedium: '#0284C7',
+  amethystLight: '#38BDF8',
+  amethystPale: '#E0F2FE',
+  amethystUltraLight: '#F0F9FF',
 
   // Backgrounds (Light & Clean)
-  background: '#F8FAFC',           // Light slate 50/100
-  backgroundLight: '#FFFFFF',      // Pure White
+  background: '#F8FAFC',           // COLOR_BG_MAIN (Clean slate 50 background)
+  backgroundLight: '#FFFFFF',      // COLOR_CARD_WHITE (Pure White cards)
   backgroundDark: '#F1F5F9',       // Cool Gray
   backgroundAmethyst: '#F8FAFC',
   surface: '#FFFFFF',
@@ -154,7 +154,7 @@ export const ELECTRICIAN_COLORS = {
 
   // Text
   text: '#0F172A',                 // Dark Slate (high contrast)
-  textSecondary: '#475569',        // Cool Gray
+  textSecondary: '#64748B',        // COLOR_TEXT_MUTED
   textLight: '#94A3B8',            // Medium Gray
   textDisabled: '#CBD5E1',
   textInverse: '#FFFFFF',
@@ -166,9 +166,9 @@ export const ELECTRICIAN_COLORS = {
   error: '#F43F5E',
   errorLight: '#FFE4E6',
   errorDark: '#E11D48',
-  warning: '#D97706',
+  warning: '#F59E0B',
   warningLight: '#FFFBEB',
-  warningDark: '#B45309',
+  warningDark: '#D97706',
   info: '#0EA5E9',
   infoLight: '#DBEAFE',
   infoDark: '#1E40AF',
@@ -178,68 +178,68 @@ export const ELECTRICIAN_COLORS = {
   borderLight: '#F1F5F9',
   borderDark: '#CBD5E1',
   divider: '#E2E8F0',
-  borderAccent: '#FBBF24',
-  borderAmethyst: 'rgba(217, 119, 6, 0.2)',
+  borderAccent: '#38BDF8',
+  borderAmethyst: 'rgba(2, 132, 199, 0.2)',
 
   // Shadows (Soft depth shadows)
   shadow: 'rgba(0, 0, 0, 0.05)',
   shadowDark: 'rgba(0, 0, 0, 0.08)',
   shadowLight: 'rgba(0, 0, 0, 0.03)',
-  shadowAmethyst: 'rgba(217, 119, 6, 0.08)',
+  shadowAmethyst: 'rgba(2, 132, 199, 0.08)',
 
   // Overlays
   overlay: 'rgba(0, 0, 0, 0.5)',
   overlayLight: 'rgba(0, 0, 0, 0.25)',
-  overlayAmethyst: 'rgba(217, 119, 6, 0.05)',
+  overlayAmethyst: 'rgba(2, 132, 199, 0.05)',
 
   // Job Status Colors
   jobOpen: '#0EA5E9',
-  jobInProgress: '#D97706',
+  jobInProgress: '#0284C7',
   jobCompleted: '#10B981',
   jobCancelled: '#F43F5E',
   jobBidding: '#38BDF8',
 
   // Rating
-  rating: '#FBBF24',
+  rating: '#F59E0B',
   ratingDark: '#D97706',
 
-  // Accent Colors
-  accent: '#FBBF24',
-  accentLight: '#FDE68A',
-  accentDark: '#D97706',
+  // Accent Colors (COLOR_TEAL_ACCENT)
+  accent: '#0D9488',
+  accentLight: '#2DD4BF',
+  accentDark: '#115E59',
 
   // Skeleton Loading
   skeleton: '#F1F5F9',
   skeletonHighlight: '#E2E8F0',
 
-  // Glow Effects (Gold Glows)
-  glow: 'rgba(217, 119, 6, 0.08)',
-  glowPurple: 'rgba(217, 119, 6, 0.1)',
-  glowLavender: 'rgba(217, 119, 6, 0.08)',
-  glowAmethyst: 'rgba(217, 119, 6, 0.12)',
-  glowAmethystStrong: 'rgba(217, 119, 6, 0.2)',
-  glowAmethystSoft: 'rgba(217, 119, 6, 0.05)',
+  // Glow Effects (Blue/Teal Glows)
+  glow: 'rgba(2, 132, 199, 0.08)',
+  glowPurple: 'rgba(2, 132, 199, 0.1)',
+  glowLavender: 'rgba(2, 132, 199, 0.08)',
+  glowAmethyst: 'rgba(2, 132, 199, 0.12)',
+  glowAmethystStrong: 'rgba(2, 132, 199, 0.2)',
+  glowAmethystSoft: 'rgba(2, 132, 199, 0.05)',
 
   // Glassmorphism (Light Gold Glass Effects)
-  glassPurple: 'rgba(217, 119, 6, 0.06)',
-  glassAmethyst: 'rgba(217, 119, 6, 0.05)',
+  glassPurple: 'rgba(2, 132, 199, 0.06)',
+  glassAmethyst: 'rgba(2, 132, 199, 0.05)',
   glassWhitePurple: 'rgba(255, 255, 255, 0.95)',
   glassLavender: 'rgba(255, 255, 255, 0.85)',
 
   // Gradients
-  gradientPrimary: ['#D97706', '#FBBF24'] as [string, string],       // Gold Gradient
+  gradientPrimary: ['#0284C7', '#38BDF8'] as [string, string],       // Blue Gradient
   gradientSecondary: ['#1E293B', '#0F172A'] as [string, string],     // Charcoal Gradient
   gradientDark: ['#1E293B', '#0F172A'] as [string, string],          // Charcoal Gradient
   gradientSuccess: ['#10B981', '#059669'] as [string, string],
   gradientError: ['#F43F5E', '#E11D48'] as [string, string],
   gradientLavender: ['#F8FAFC', '#FFFFFF'] as [string, string],
-  gradientEmergency: ['#F43F5E', '#D97706'] as [string, string],
+  gradientEmergency: ['#F43F5E', '#C2410C'] as [string, string],
 
   // Advanced Gradients (Mapped to Gold and Charcoal)
   gradientAmethystDark: ['#1E293B', '#0F172A', '#020617'] as [string, string, string],
   gradientAmethystLight: ['#FFFFFF', '#F8FAFC', '#F1F5F9'] as [string, string, string],
-  gradientAmethystGlow: ['rgba(217, 119, 6, 0)', 'rgba(251, 191, 36, 0.08)', 'rgba(217, 119, 6, 0)'] as [string, string, string],
-  gradientAmethystRich: ['#B45309', '#D97706', '#FBBF24', '#FEF3C7'] as [string, string, string, string],
+  gradientAmethystGlow: ['rgba(2, 132, 199, 0)', 'rgba(56, 189, 248, 0.08)', 'rgba(2, 132, 199, 0)'] as [string, string, string],
+  gradientAmethystRich: ['#0369A1', '#0284C7', '#38BDF8', '#E0F2FE'] as [string, string, string, string],
   gradientHeaderAmethyst: ['rgba(30, 41, 59, 0.98)', 'rgba(15, 23, 42, 0.98)'] as [string, string],
 
   // Base Colors

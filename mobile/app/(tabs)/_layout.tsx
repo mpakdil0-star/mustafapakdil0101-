@@ -64,7 +64,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     const icon = getIcon(route.name, focused);
     const label = getLabel(route.name);
     const activeColor = colors.primary;
-    const inactiveColor = isElectrician ? '#64748B' : '#94A3B8';
+    const inactiveColor = isElectrician ? '#475569' : '#94A3B8';
     const color = focused ? activeColor : inactiveColor;
     const showBadge = route.name === 'messages' && unreadMessageCount > 0;
 
@@ -78,7 +78,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         <View style={[
           styles.tabContentWrapper,
           focused && {
-            backgroundColor: isElectrician ? 'rgba(249, 115, 22, 0.08)' : 'rgba(13, 148, 136, 0.08)',
+            backgroundColor: isElectrician ? 'rgba(2, 132, 199, 0.08)' : 'rgba(13, 148, 136, 0.08)',
           }
         ]}>
           <View style={styles.tabIconWrapper}>
@@ -109,7 +109,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         height: TAB_HEIGHT,
         backgroundColor: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(30, 41, 59, 0.95)',
         borderColor: isLight 
-          ? (isElectrician ? 'rgba(249, 115, 22, 0.12)' : 'rgba(13, 148, 136, 0.12)') 
+          ? (isElectrician ? 'rgba(2, 132, 199, 0.12)' : 'rgba(13, 148, 136, 0.12)') 
           : 'rgba(255, 255, 255, 0.08)',
         shadowColor: colors.primary,
         shadowOpacity: isLight ? 0.08 : 0.35,
@@ -132,14 +132,14 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               }}
             >
               <LinearGradient
-                colors={[colors.primary, colors.primaryDark]}
+                colors={['#0D9488', '#0D9488']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
                 style={[
                   styles.centerButton,
                   {
                     borderColor: isLight ? '#FFFFFF' : '#1E293B',
-                    shadowColor: colors.primary,
+                    shadowColor: '#0D9488',
                     shadowOffset: { width: 0, height: 6 },
                     shadowOpacity: 0.5,
                     shadowRadius: 12,

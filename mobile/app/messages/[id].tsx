@@ -57,7 +57,8 @@ export default function ChatScreen() {
     const { id: conversationId, sellerName, sellerId } = useLocalSearchParams<{ id: string; sellerName?: string; sellerId?: string }>();
     const router = useRouter();
     const dispatch = useAppDispatch();
-    const { user } = useAppSelector((state) => state.auth);
+    const { user, guestRole } = useAppSelector((state: any) => state.auth);
+    const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
     const colors = useAppColors();
     const insets = useSafeAreaInsets();
     const flatListRef = useRef<FlatList>(null);
@@ -512,19 +513,20 @@ export default function ChatScreen() {
                     isMyMessage ? styles.myBubbleWrapper : styles.otherBubbleWrapper
                 ]}>
                     <LinearGradient
-                        colors={isMyMessage ? [colors.primary, colors.primaryDark || colors.primary] : ['#FFFFFF', '#F8FAFC']}
+                        colors={isMyMessage ? [colors.primary, colors.primaryDark || colors.primary] : (isElectrician ? ['#E2E8F0', '#E2E8F0'] : ['#FFFFFF', '#F8FAFC'])}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={[
                             styles.messageBubble,
                             isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble,
+                            !isMyMessage && isElectrician && { borderColor: '#E2E8F0', borderWidth: 0 },
                             !isFirstInGroup && (isMyMessage ? { borderTopRightRadius: 6 } : { borderTopLeftRadius: 6 }),
                             !isLastInGroup && (isMyMessage ? { borderBottomRightRadius: 6 } : { borderBottomLeftRadius: 6 })
                         ]}
                     >
                         <Text style={[
                             styles.messageText,
-                            isMyMessage ? styles.myMessageText : styles.otherMessageText
+                            isMyMessage ? styles.myMessageText : (isElectrician ? { color: '#0F172A' } : styles.otherMessageText)
                         ]}>
                             {item.content}
                         </Text>
@@ -532,7 +534,7 @@ export default function ChatScreen() {
                         <View style={styles.messageFooter}>
                             <Text style={[
                                 styles.messageTime,
-                                isMyMessage ? styles.myMessageTime : styles.otherMessageTime
+                                isMyMessage ? styles.myMessageTime : (isElectrician ? { color: '#64748B' } : styles.otherMessageTime)
                             ]}>
                                 {new Date(item.createdAt).toLocaleTimeString('tr-TR', {
                                     hour: '2-digit',

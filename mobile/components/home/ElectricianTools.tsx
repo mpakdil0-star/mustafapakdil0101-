@@ -34,7 +34,7 @@ export const ElectricianTools: React.FC<ElectricianToolsProps> = ({
           activeOpacity={0.85}
         >
           <LinearGradient
-            colors={['#4F46E5', '#1E1B4B']}
+            colors={['#1E3A8A', '#172554']}
             style={StyleSheet.absoluteFill}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -65,7 +65,7 @@ export const ElectricianTools: React.FC<ElectricianToolsProps> = ({
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={['#10B981', '#064E3B']}
+              colors={['#15803D', '#14532D']}
               style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -94,7 +94,7 @@ export const ElectricianTools: React.FC<ElectricianToolsProps> = ({
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={['#F97316', '#7C2D12']}
+              colors={['#C2410C', '#7C2D12']}
               style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -149,12 +149,12 @@ const styles = StyleSheet.create({
   },
   toolGridLeftCard: {
     flex: 1.1,
-    borderRadius: 22,
+    borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#4F46E5',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 4,
   },
   watermarkIconContainerLeft: {
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
   },
