@@ -1,5 +1,5 @@
 import { Tabs, useRouter } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { useAppColors } from '../../hooks/useAppColors';
 import { fonts } from '../../constants/typography';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { fetchNotifications, fetchUnreadCount } from '../../store/slices/notificationSlice';
+import { AuthGuardModal } from '../../components/common/AuthGuardModal';
 
 // Custom Tab Bar Component
 function CustomTabBar({ state, descriptors, navigation }: any) {
@@ -17,6 +18,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   const { user, guestRole, isAuthenticated } = useAppSelector((state: any) => state.auth);
   const { unreadMessageCount } = useAppSelector((state: any) => state.notifications);
   const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Pulse animation for ACİL/FORUM button
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -128,7 +130,11 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={() => {
-                navigation.navigate('channels');
+                if (!isAuthenticated) {
+                  setShowAuthModal(true);
+                } else {
+                  navigation.navigate('channels');
+                }
               }}
             >
               <LinearGradient
@@ -188,6 +194,31 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       <View style={styles.tabSection}>
         {rightTabs.map((route: any) => renderTab(route))}
       </View>
+
+      <AuthGuardModal
+        visible={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onLogin={() => {
+          setShowAuthModal(false);
+          router.push('/(auth)/login');
+        }}
+        onRegister={(role) => {
+          setShowAuthModal(false);
+          if (role === 'ELECTRICIAN') {
+            router.push({
+              pathname: '/(auth)/role-select',
+              params: { initialRole: 'ELECTRICIAN' }
+            });
+          } else {
+            router.push({
+              pathname: '/(auth)/register',
+              params: { type: role }
+            });
+          }
+        }}
+        title="Usta Forumuna Katılın"
+        message="Usta Kanallarına erişmek, diğer ustalarla yardımlaşmak ve Hünerlerinizi sergilemek için lütfen kayıt olun veya giriş yapın."
+      />
     </View>
   );
 }
