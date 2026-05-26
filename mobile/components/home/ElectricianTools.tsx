@@ -34,7 +34,7 @@ export const ElectricianTools: React.FC<ElectricianToolsProps> = ({
           activeOpacity={0.85}
         >
           <LinearGradient
-            colors={['#60A5FA', '#93C5FD']}
+            colors={['#93C5FD', '#BFDBFE']}
             style={StyleSheet.absoluteFill}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}

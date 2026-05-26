@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity, Modal, ImageBackground, Image, Platform, Dimensions, PanResponder, Alert, ActivityIndicator, AppState, Linking, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity, Modal, ImageBackground, Image, Platform, Dimensions, PanResponder, Alert, ActivityIndicator, AppState, Linking, TextInput, StatusBar } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
@@ -1149,7 +1149,7 @@ export default function HomeScreen() {
         <View style={[
           styles.premiumHeaderContainer, 
           isElectrician ? { 
-            backgroundColor: '#F0F4F8', 
+            backgroundColor: '#FFFFFF', 
             shadowColor: '#000', 
             shadowOffset: { width: 0, height: 4 }, 
             shadowOpacity: 0.03,
@@ -1162,7 +1162,12 @@ export default function HomeScreen() {
           }
         ]}>
           {isElectrician ? (
-            <View style={[styles.premiumHeader, { backgroundColor: '#F0F4F8' }]}>
+            <View style={[styles.premiumHeader, { backgroundColor: '#FFFFFF' }]}>
+              <StatusBar 
+                barStyle="dark-content" 
+                backgroundColor="#FFFFFF" 
+                translucent={false}
+              />
               <ElectricianHeader
                 user={user}
                 firstName={firstName}

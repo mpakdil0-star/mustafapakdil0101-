@@ -41,9 +41,17 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
           onPress={() => router.canGoBack() ? router.back() : router.replace('/(auth)/welcome')}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#1E293B" />
+          <Ionicons name="arrow-back" size={24} color="#000000" />
         </TouchableOpacity>
       )}
+
+      {/* Sağ Üst Köşede Simetrik Rating Rozeti (4.9 ★ Elektrik Ustası) */}
+      <View style={styles.ratingBadgeAbsolute}>
+        <Ionicons name="star" size={11} color="#FBBF24" style={{ marginRight: 2 }} />
+        <Text style={styles.ratingBadgeText}>
+          {((user as any)?.averageRating || 4.9).toFixed(1)} ★ {ustaCategoryTitle} Ustası
+        </Text>
+      </View>
 
       {/* Başlık Düzeni (Centered Header) */}
       <View style={styles.centeredHeader}>
@@ -53,20 +61,12 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
         </Text>
       </View>
 
-      {/* Profil Avatarı & Simetrik Elemanlar Satırı */}
+      {/* Profil Avatarı & Bildirim İkonu Alanı */}
       <View style={styles.profileRow}>
-        {/* Rating puanı (4.9 ⭐) avatarın sol tarafında simetrik duracak */}
-        <View style={styles.symmetricalLeftCol}>
-          <View style={styles.ratingBadge}>
-            <Text style={styles.ratingText}>
-              {(user as any)?.averageRating?.toFixed(1) || '4.9'}
-            </Text>
-            <Ionicons name="star" size={12} color="#FBBF24" style={{ marginLeft: 2 }} />
-          </View>
-          <Text style={styles.ustaRoleText}>{ustaCategoryTitle} Ustası</Text>
-        </View>
+        {/* Sol Sütun Boşluk / Sürgülü Ayar (Simetri) */}
+        <View style={styles.symmetricalLeftCol} />
 
-        {/* Ortalanmış dairesel bir avatar (borderRadius: 40, borderWidth: 2, borderColor: '#93C5FD') */}
+        {/* Ortalanmış dairesel bir avatar (Etrafında hafif platin/gold parıltılı border) */}
         <TouchableOpacity
           style={styles.centeredAvatarContainer}
           activeOpacity={0.8}
@@ -76,7 +76,7 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
             <Image source={{ uri: getFileUrl(user.profileImageUrl) || '' }} style={styles.centeredAvatarImage} />
           ) : (
             <View style={styles.centeredAvatarPlaceholder}>
-              <Ionicons name="person" size={32} color="#93C5FD" />
+              <Ionicons name="person" size={32} color="#4682B4" />
             </View>
           )}
         </TouchableOpacity>
@@ -88,20 +88,19 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
             activeOpacity={0.7}
             onPress={() => handleActionWithAuth('/profile/notifications')}
           >
-            <Ionicons name="notifications-outline" size={22} color="#1E293B" />
+            <Ionicons name="notifications-outline" size={22} color="#000000" />
             {unreadCount > 0 && (
               <Animated.View style={[styles.notificationBadge, { transform: [{ scale: badgePulseAnim }] }]}>
                 <Text style={styles.notificationBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
               </Animated.View>
             )}
           </TouchableOpacity>
-          <Text style={styles.notificationLabel}>Bildirimler</Text>
         </View>
       </View>
 
-      {/* Birleşik Finansal Özet Kartı (Unified Summary Card) */}
+      {/* Birleşik Finansal Özet Kartı (Unified Balanced Card) */}
       <View style={styles.unifiedCard}>
-        {/* Sol Bölüm (Toplam Kazanç) */}
+        {/* Sol Bölüm (Toplam Kazanç - Çelik Mavisi) */}
         <TouchableOpacity
           style={styles.unifiedCardHalf}
           onPress={() => handleActionWithAuth('/electrician/stats')}
@@ -114,10 +113,10 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
           <Text style={styles.unifiedCardSub}>Tüm Zamanlar</Text>
         </TouchableOpacity>
 
-        {/* Dikey ince ayırıcı çizgi (COLOR_DIVIDER_LIGHT) */}
+        {/* Dikey ince ayırıcı çizgi (COLOR_BORDER_LIGHT - #E2E8F0) */}
         <View style={styles.verticalDivider} />
 
-        {/* Sağ Bölüm (Aktif Teklifler) */}
+        {/* Sağ Bölüm (Aktif Teklifler - Siyah) */}
         <TouchableOpacity
           style={styles.unifiedCardHalf}
           onPress={() => handleActionWithAuth('/(tabs)/jobs', { tab: 'bids' })}
@@ -138,14 +137,15 @@ const styles = StyleSheet.create({
   headerContainer: {
     width: '100%',
     paddingBottom: 4,
+    backgroundColor: '#FFFFFF',
   },
   backButtonAbsolute: {
     position: 'absolute',
     left: 0,
     top: 4,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -161,27 +161,26 @@ const styles = StyleSheet.create({
   centeredHeader: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 6,
-    marginBottom: 16,
+    marginTop: 38, // Gave space for rating badge absolute
+    marginBottom: 12,
   },
   headerTitleMain: {
     fontFamily: fonts.extraBold,
-    fontSize: 20,
-    color: '#1E293B', // COLOR_TEXT_MAIN
-    letterSpacing: 0.5,
+    fontSize: 18,
+    color: '#000000', // COLOR_TEXT_MAIN_DARK
+    letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
   headerSubtitleSub: {
     fontFamily: fonts.regular,
-    fontSize: 14,
-    color: '#64748B', // COLOR_TEXT_MUTED
-    marginTop: 2,
+    fontSize: 13,
+    color: '#000000', // COLOR_TEXT_MAIN_DARK
+    marginTop: 1,
   },
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 20,
     marginBottom: 20,
   },
   symmetricalLeftCol: {
@@ -193,47 +192,21 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'flex-start',
     justifyContent: 'center',
-  },
-  ratingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  ratingText: {
-    fontFamily: fonts.bold,
-    fontSize: 13,
-    color: '#1E293B',
-  },
-  ustaRoleText: {
-    fontFamily: fonts.medium,
-    fontSize: 10,
-    color: '#64748B',
-    marginTop: 4,
-    textAlign: 'right',
+    paddingLeft: 22,
   },
   centeredAvatarContainer: {
     width: 80,
     height: 80,
     borderRadius: 40,
     borderWidth: 2,
-    borderColor: '#93C5FD',
+    borderColor: '#DFD7CA', // Soft Platin/Gold parıltılı border
     overflow: 'hidden',
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
+    shadowOpacity: 0.02, // Soft shadow
     shadowRadius: 6,
     elevation: 2,
   },
@@ -244,7 +217,7 @@ const styles = StyleSheet.create({
   centeredAvatarPlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -263,11 +236,28 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  notificationLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 10,
-    color: '#64748B',
-    marginTop: 4,
+  ratingBadgeAbsolute: {
+    position: 'absolute',
+    right: 0,
+    top: 4,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  ratingBadgeText: {
+    fontFamily: fonts.bold,
+    fontSize: 9,
+    color: '#1E293B',
   },
   notificationBadge: {
     position: 'absolute',
@@ -295,10 +285,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     marginHorizontal: 4,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E2E8F0', // COLOR_BORDER_LIGHT
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.03,
+    shadowOpacity: 0.03, // Opacity between 0.02 and 0.04
     shadowRadius: 10,
     elevation: 2,
   },
@@ -310,25 +300,25 @@ const styles = StyleSheet.create({
   verticalDivider: {
     width: 1,
     height: '70%',
-    backgroundColor: '#CBD5E1', // COLOR_DIVIDER_LIGHT
+    backgroundColor: '#E2E8F0', // COLOR_BORDER_LIGHT
     alignSelf: 'center',
   },
   unifiedCardLabel: {
     fontFamily: fonts.semiBold,
     fontSize: 11,
-    color: '#64748B',
+    color: '#64748B', // COLOR_TEXT_MUTED_GREY
     marginBottom: 4,
   },
   unifiedCardValue: {
     fontFamily: fonts.extraBold,
     fontSize: 20,
-    color: '#0284C7', // COLOR_BRAND_BLUE
+    color: '#4682B4', // COLOR_BRAND_BLUE (Çelik Mavisi!)
     marginBottom: 2,
   },
   unifiedCardValueDark: {
     fontFamily: fonts.extraBold,
     fontSize: 20,
-    color: '#1E293B', // COLOR_TEXT_MAIN
+    color: '#000000', // COLOR_TEXT_MAIN_DARK (Siyah!)
     marginBottom: 2,
   },
   unifiedCardSub: {

@@ -125,17 +125,18 @@ export const CITIZEN_COLORS = {
 
 // Midnight Amber & Gold Theme - Energetic, Light & Premium ⚡ (For Electricians)
 export const ELECTRICIAN_COLORS = {
-  // Core Gold/Amber Palette (Updated to Corporate Blue / COLOR_BRAND_BLUE)
-  primary: '#0284C7',              // Brand Blue 600
-  primaryDark: '#0369A1',          // Brand Blue 700
-  primaryLight: '#38BDF8',
-  primaryGradient: ['#0284C7', '#38BDF8'] as [string, string],
+  // Core Steel Blue Palette (COLOR_BRAND_BLUE)
+  primary: '#4682B4',              // Steel Blue
+  primaryDark: '#2E5C8A',          // Steel Blue Darker
+  primaryLight: '#63B8FF',         // Steel Blue Lighter
+  primaryGradient: ['#4682B4', '#63B8FF'] as [string, string],
 
-  // Light Theme Header Architecture Variables (Faz 25 RFC)
-  headerLight: '#F0F4F8',
-  textMain: '#1E293B',
-  dividerLight: '#CBD5E1',
-  brandBlue: '#0284C7',
+  // Light Theme Header Architecture Variables (Faz 25 RFC & Minimalist Redesign)
+  headerLight: '#FFFFFF',          // COLOR_BG_PURE_WHITE
+  textMain: '#000000',             // COLOR_TEXT_MAIN_DARK
+  dividerLight: '#E2E8F0',         // COLOR_BORDER_LIGHT
+  brandBlue: '#4682B4',            // COLOR_BRAND_BLUE
+  textMutedGrey: '#64748B',        // COLOR_TEXT_MUTED_GREY
 
   // Secondary Deep Charcoal Slate Shades (Corporate Navy / COLOR_PRIMARY_DARK)
   secondary: '#1E293B',            // Slate 800 (Header BG)
@@ -143,12 +144,12 @@ export const ELECTRICIAN_COLORS = {
   secondaryLight: '#334155',       // Slate 700
   secondaryGradient: ['#1E293B', '#334155'] as [string, string],
 
-  // Spectrum Shades (Mapped for backward compatibility to Brand Blue)
-  amethystDeep: '#0369A1',
-  amethystMedium: '#0284C7',
-  amethystLight: '#38BDF8',
-  amethystPale: '#E0F2FE',
-  amethystUltraLight: '#F0F9FF',
+  // Spectrum Shades (Mapped for backward compatibility to Steel Blue)
+  amethystDeep: '#2E5C8A',
+  amethystMedium: '#4682B4',
+  amethystLight: '#63B8FF',
+  amethystPale: '#EBF4FA',
+  amethystUltraLight: '#F4F8FB',
 
   // Backgrounds (Light & Clean)
   background: '#F8FAFC',           // COLOR_BG_MAIN (Clean slate 50 background)
@@ -181,7 +182,7 @@ export const ELECTRICIAN_COLORS = {
 
   // Borders & Dividers
   border: '#E2E8F0',
-  borderLight: '#F1F5F9',
+  borderLight: '#E2E8F0',
   borderDark: '#CBD5E1',
   divider: '#E2E8F0',
   borderAccent: '#38BDF8',
