@@ -151,7 +151,7 @@ export default function ChannelsScreen() {
 
       const options: ImagePicker.ImagePickerOptions = {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: source === 'camera', // Only allow cropping in camera mode
+        allowsEditing: source === 'camera',
         quality: 0.6,
         base64: true,
       };
@@ -324,8 +324,8 @@ export default function ChannelsScreen() {
     const newItem = {
       title: newShowcaseTitle,
       description: newShowcaseDesc,
-      image: newShowcaseImages[0], // primary fallback image
-      images: newShowcaseImages,    // all images
+      image: newShowcaseImages[0],
+      images: newShowcaseImages,
       ustaId: user?.id || 'mock-usta-id',
       ustaName: user?.fullName || 'Usta',
       ustaCity: user?.city || 'İstanbul',
@@ -375,54 +375,36 @@ export default function ChannelsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: '#F8FAFC' }]}>
-      {/* Header (Premium Curved Blue Design matching Jobs tab) */}
+      {/* Header */}
       <PremiumHeader
         title="Usta Kanalları"
         subtitle="Meslektaşlarınla yardımlaş, iş paylaş ve zanaatini sergile"
         layout="tab"
         backgroundImage={require('../../assets/images/header_bg.png')}
-        rightElement={
-          <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.headerActionBtn} activeOpacity={0.7}>
-              <Ionicons name="search" size={20} color="#FFF" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.headerAvatarContainer} activeOpacity={0.7}>
-              <Image 
-                source={{ uri: user?.profileImageUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80' }} 
-                style={styles.headerAvatarImage} 
-              />
-            </TouchableOpacity>
-          </View>
-        }
       />
 
-      {/* Tabs (Horizontal Card Segmented Selector below curved header with breathing space) */}
-      <View style={{ height: 95, marginTop: 14, marginBottom: 8 }}>
+      {/* Tabs */}
+      <View style={{ height: 80, marginTop: 12, marginBottom: 4 }}>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabScrollView}
         >
           {[
-            { id: 'forum', label: 'Teknik Destek', icon: 'construct-outline', activeColor: '#3B82F6', gradientColors: ['#3B82F6', '#0F4C81'] },
+            { id: 'forum', label: 'Teknik Destek', icon: 'construct-outline', activeColor: colors.primary, gradientColors: [colors.primary, colors.primaryDark || '#1E40AF'] },
             { id: 'jobs', label: 'İş Paslama', icon: 'briefcase-outline', activeColor: '#06B6D4', gradientColors: ['#06B6D4', '#0891B2'] },
             { id: 'gallery', label: 'Hünerlerim', icon: 'bulb-outline', activeColor: '#10B981', gradientColors: ['#10B981', '#047857'] },
             { id: 'materials', label: 'Malzeme', icon: 'document-text-outline', activeColor: '#059669', gradientColors: ['#059669', '#064E3B'] },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
-            const borderColor = isActive ? tab.activeColor : '#CBD5E1'; // Increased contrast for inactive tabs
-            const iconColor = isActive ? '#FFF' : tab.activeColor; // Vibrant solid themed icon
-            const textColor = isActive ? '#FFF' : '#475569'; // Crisp Slate 600 for clear legibility
+            const iconColor = isActive ? '#FFF' : tab.activeColor;
+            const textColor = isActive ? '#FFF' : '#475569';
             return (
               <TouchableOpacity
                 key={tab.id}
                 style={[
                   styles.tabCardBtn,
-                  { 
-                    borderColor: borderColor,
-                    shadowColor: isActive ? tab.activeColor : 'transparent',
-                  },
-                  isActive && styles.tabCardBtnActive
+                  isActive && [styles.tabCardBtnActive, { shadowColor: tab.activeColor }]
                 ]}
                 onPress={() => {
                   if (tab.id !== 'materials') {
@@ -436,14 +418,14 @@ export default function ChannelsScreen() {
                 {isActive && (
                   <LinearGradient
                     colors={tab.gradientColors as any}
-                    style={[StyleSheet.absoluteFillObject, { borderRadius: 14 }]}
+                    style={[StyleSheet.absoluteFillObject, { borderRadius: 12 }]}
                   />
                 )}
                 <Ionicons 
                   name={tab.icon as any} 
-                  size={20} 
+                  size={18} 
                   color={iconColor} 
-                  style={{ marginBottom: 6 }} 
+                  style={{ marginBottom: 4 }} 
                 />
                 <Text style={[styles.tabCardLabel, { color: textColor }]}>{tab.label}</Text>
               </TouchableOpacity>
@@ -468,7 +450,7 @@ export default function ChannelsScreen() {
                   onPress={() => setIsNewPostModalVisible(true)}
                 >
                   <LinearGradient
-                    colors={['#3B82F6', '#0F4C81']}
+                    colors={[colors.primary, colors.primaryDark || '#1E40AF']}
                     style={styles.actionBtnGradient}
                   >
                     <Ionicons name="add-circle" size={18} color="#FFF" />
@@ -498,16 +480,28 @@ export default function ChannelsScreen() {
                   >
                     {/* Header Row */}
                     <View style={styles.forumHeader}>
-                      <Image 
-                        source={{ uri: post.ustaAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80' }} 
-                        style={styles.forumAvatar} 
-                      />
-                      <View style={{ flex: 1, marginLeft: 10 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                          <Text style={styles.forumAuthor}>{post.ustaName}</Text>
-                          <Ionicons name="checkmark-circle" size={13} color="#10B981" style={{ marginLeft: 4 }} />
+                      <View style={styles.avatarWrapper}>
+                        <Image 
+                          source={{ uri: post.ustaAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80' }} 
+                          style={styles.forumAvatar} 
+                        />
+                        <View style={[styles.verifiedBadgeMini, { backgroundColor: colors.primary }]}>
+                          <Ionicons name="checkmark" size={8} color="#FFF" />
                         </View>
-                        <Text style={styles.forumMeta}>Kıdemli Usta</Text>
+                      </View>
+                      <View style={{ flex: 1, marginLeft: 10 }}>
+                        <Text style={styles.forumAuthor}>{post.ustaName}</Text>
+                        <View style={styles.authorBadgeRow}>
+                          <View style={styles.authorRoleBadge}>
+                            <Text style={styles.authorRoleBadgeText}>Zanaatkar</Text>
+                          </View>
+                          {post.ustaCity && (
+                            <View style={styles.authorCityBadge}>
+                              <Ionicons name="location-outline" size={10} color="#64748B" />
+                              <Text style={styles.authorCityBadgeText}>{post.ustaCity}</Text>
+                            </View>
+                          )}
+                        </View>
                       </View>
                       <Text style={styles.metaTime}>3 saat önce</Text>
                     </View>
@@ -521,39 +515,42 @@ export default function ChannelsScreen() {
 
                     {/* Title & Description & Tags */}
                     <Text style={styles.forumTitle}>{post.title || '3-Phase Smart Panel Issue'}</Text>
-                    <Text style={styles.forumDesc}>{post.description || 'Asking for advice: Troubleshooting fluctuating voltage on a Siemens 3-Phase Smart Panel. The main breaker trips sporadically under load...'}</Text>
+                    <Text style={styles.forumDesc} numberOfLines={3}>{post.description || 'Siemens 3-Phase Smart Panel üzerinde yaşanan voltaj dalgalanması sorunu...'}</Text>
                     
-                    <Text style={styles.forumTags}>#SmartGrid #VoltageFluctuation #Siemens</Text>
+                    {/* structured capsules instead of raw text */}
+                    <View style={styles.tagCapsulesRow}>
+                      <View style={[styles.tagCapsule, { backgroundColor: colors.primary + '08', borderColor: colors.primary + '18' }]}>
+                        <Ionicons name="construct-outline" size={10} color={colors.primary} />
+                        <Text style={[styles.tagCapsuleText, { color: colors.primary }]}>Teknik Soru</Text>
+                      </View>
+                      <View style={[styles.tagCapsule, { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' }]}>
+                        <Ionicons name="flash-outline" size={10} color="#0284C7" />
+                        <Text style={[styles.tagCapsuleText, { color: '#0284C7' }]}>Elektrik</Text>
+                      </View>
+                    </View>
 
-                    {/* Footer Row matching mockup */}
+                    {/* Footer Row */}
                     <View style={styles.forumFooter}>
-                      <ScrollView 
-                        horizontal 
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.footerPillsRow}
-                      >
-                        <View style={[styles.footerPill, { backgroundColor: '#0F4C81' }]}>
-                          <Ionicons name="chatbubble" size={12} color="#FFF" style={{ marginRight: 4 }} />
-                          <Text style={styles.footerPillText}>{post.comments?.length ? `${post.comments.length + 20} Yorum` : '24 Yorum'}</Text>
+                      <View style={styles.footerPillsRow}>
+                        <View style={[styles.footerPill, { backgroundColor: colors.primary + '10' }]}>
+                          <Ionicons name="chatbubble-outline" size={12} color={colors.primary} style={{ marginRight: 4 }} />
+                          <Text style={[styles.footerPillText, { color: colors.primary }]}>
+                            {post.comments?.length ? `${post.comments.length} Cevap` : '0 Yorum'}
+                          </Text>
                         </View>
-                        <View style={[styles.footerPill, { backgroundColor: '#0F4C81' }]}>
-                          <Ionicons name="chatbubbles" size={12} color="#FFF" style={{ marginRight: 4 }} />
-                          <Text style={styles.footerPillText}>12 Yanıt</Text>
+                        <View style={styles.footerShareBtn}>
+                          <Ionicons name="share-social-outline" size={12} color="#64748B" />
                         </View>
-                        <View style={[styles.footerPill, { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.08)' }]}>
-                          <Ionicons name="share-social-outline" size={12} color="#94A3B8" style={{ marginRight: 4 }} />
-                          <Text style={[styles.footerPillText, { color: '#94A3B8' }]}>Paylaş</Text>
-                        </View>
-                        <View style={[styles.footerPill, { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.08)' }]}>
-                          <Ionicons name="bookmark-outline" size={12} color="#94A3B8" style={{ marginRight: 4 }} />
-                          <Text style={[styles.footerPillText, { color: '#94A3B8' }]}>Kaydet</Text>
-                        </View>
-                      </ScrollView>
+                      </View>
                       
                       <View style={styles.mockVoteContainer}>
-                        <Ionicons name="caret-up" size={13} color="#FFF" />
+                        <TouchableOpacity style={styles.voteBtn}>
+                          <Ionicons name="caret-up" size={14} color="#64748B" />
+                        </TouchableOpacity>
                         <Text style={styles.mockVoteText}>+189</Text>
-                        <Ionicons name="caret-down" size={13} color="rgba(255,255,255,0.35)" />
+                        <TouchableOpacity style={styles.voteBtn}>
+                          <Ionicons name="caret-down" size={14} color="#94A3B8" />
+                        </TouchableOpacity>
                       </View>
                     </View>
                   </TouchableOpacity>
@@ -567,7 +564,7 @@ export default function ChannelsScreen() {
             <View style={{ width: '100%' }}>
               <View style={styles.jobsHeaderRow}>
                 <TouchableOpacity
-                  style={[styles.cityFilterBtn, { borderColor: 'rgba(8, 145, 178, 0.25)' }]}
+                  style={[styles.cityFilterBtn, { borderColor: 'rgba(8, 145, 178, 0.2)' }]}
                   onPress={() => setIsCityFilterModalVisible(true)}
                 >
                   <Ionicons name="location-outline" size={14} color="#0891B2" />
@@ -580,7 +577,7 @@ export default function ChannelsScreen() {
                   onPress={() => setIsNewJobModalVisible(true)}
                 >
                   <LinearGradient
-                    colors={['#3B82F6', '#0F4C81']}
+                    colors={[colors.primary, colors.primaryDark || '#1E40AF']}
                     style={styles.miniAddBtnGradient}
                   >
                     <Ionicons name="add" size={16} color="#FFF" />
@@ -603,7 +600,7 @@ export default function ChannelsScreen() {
                   return (
                     <TouchableOpacity
                       key={offer.id}
-                      style={styles.jobCard}
+                      style={[styles.jobCard, { borderLeftColor: colors.primary }]}
                       activeOpacity={isOwnJob ? 1 : 0.85}
                       onPress={() => {
                         if (isOwnJob) {
@@ -624,23 +621,23 @@ export default function ChannelsScreen() {
                       }}
                     >
                       <View style={styles.jobCardHeader}>
-                        <View style={styles.cityBadge}>
-                          <Ionicons name="location" size={10} color="#0891B2" style={{ marginRight: 4 }} />
-                          <Text style={styles.cityBadgeText}>{offer.ustaCity || offer.city || 'İstanbul'}</Text>
+                        <View style={[styles.cityBadge, { backgroundColor: colors.primary + '08', borderColor: colors.primary + '20' }]}>
+                          <Ionicons name="location" size={10} color={colors.primary} style={{ marginRight: 4 }} />
+                          <Text style={[styles.cityBadgeText, { color: colors.primary }]}>{offer.ustaCity || offer.city || 'İstanbul'}</Text>
                         </View>
                         <View style={styles.jobCardUrgencyBadge}>
-                          <Ionicons name="flash" size={9} color="#F59E0B" style={{ marginRight: 2 }} />
+                          <Ionicons name="flash" size={10} color="#F59E0B" style={{ marginRight: 2 }} />
                           <Text style={styles.jobCardUrgencyText}>Aktif Fırsat</Text>
                         </View>
                       </View>
 
                       <View style={styles.jobCardBody}>
                         <View style={styles.jobCardTitleRow}>
-                          <Ionicons name="briefcase" size={14} color="#0891B2" style={{ marginRight: 6 }} />
+                          <Ionicons name="briefcase-outline" size={14} color={colors.primary} style={{ marginRight: 6 }} />
                           <Text style={styles.jobCardTitle} numberOfLines={1}>{offer.title}</Text>
                         </View>
                         <View style={styles.jobCardDescContainer}>
-                          <Text style={styles.jobCardDesc}>{offer.description}</Text>
+                          <Text style={styles.jobCardDesc} numberOfLines={2}>{offer.description}</Text>
                         </View>
                       </View>
 
@@ -653,7 +650,7 @@ export default function ChannelsScreen() {
                             />
                           ) : (
                             <LinearGradient
-                              colors={['#06B6D4', '#0891B2']}
+                              colors={[colors.primary, colors.primaryDark || '#1E40AF']}
                               style={styles.jobPublisherAvatar}
                             >
                               <Text style={styles.jobPublisherAvatarText}>
@@ -665,7 +662,7 @@ export default function ChannelsScreen() {
                             <Text style={styles.jobCardAuthorLabel}>Paslayan Usta</Text>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
                               <Text style={styles.jobCardAuthor}>{offer.ustaName}</Text>
-                              <Ionicons name="checkmark-circle" size={13} color="#10B981" />
+                              <Ionicons name="checkmark-circle" size={12} color="#10B981" />
                             </View>
                           </View>
                         </View>
@@ -708,7 +705,7 @@ export default function ChannelsScreen() {
                             style={styles.jobDeleteBtn}
                             onPress={() => handleDeleteJobOffer(offer.id)}
                           >
-                            <Ionicons name="trash" size={13} color="#EF4444" style={{ marginRight: 4 }} />
+                            <Ionicons name="trash" size={12} color="#EF4444" style={{ marginRight: 4 }} />
                             <Text style={styles.jobDeleteBtnText}>İptal Et</Text>
                           </TouchableOpacity>
                         </View>
@@ -729,7 +726,7 @@ export default function ChannelsScreen() {
                   onPress={() => setIsNewShowcaseModalVisible(true)}
                 >
                   <LinearGradient
-                    colors={['#3B82F6', '#0F4C81']}
+                    colors={[colors.primary, colors.primaryDark || '#1E40AF']}
                     style={styles.actionBtnGradient}
                   >
                     <Ionicons name="camera" size={18} color="#FFF" />
@@ -759,13 +756,17 @@ export default function ChannelsScreen() {
                           </View>
                         )}
                         <LinearGradient
-                          colors={['transparent', 'rgba(15, 23, 42, 0.7)']}
+                          colors={['transparent', 'rgba(15, 23, 42, 0.85)']}
                           style={styles.masonryImageOverlay}
-                        />
-                      </View>
-                      <View style={styles.masonryContent}>
-                        <Text style={styles.masonryTitle} numberOfLines={1}>{item.title}</Text>
-                        <Text style={styles.masonryUsta}>@{item.ustaName.split(' ')[0]}</Text>
+                        >
+                          <View style={styles.masonryImageOverlayContent}>
+                            <Text style={styles.masonryTitle} numberOfLines={1}>{item.title}</Text>
+                            <View style={styles.masonryUstaRow}>
+                              <Ionicons name="person-circle-outline" size={11} color="rgba(255,255,255,0.85)" />
+                              <Text style={styles.masonryUstaText}>{item.ustaName ? item.ustaName.split(' ')[0] : 'Usta'}</Text>
+                            </View>
+                          </View>
+                        </LinearGradient>
                       </View>
                       
                       {item.ustaId === user?.id && (
@@ -773,7 +774,7 @@ export default function ChannelsScreen() {
                           style={styles.masonryDeleteBtn}
                           onPress={() => handleDeleteShowcaseItem(item.id)}
                         >
-                          <Ionicons name="trash" size={11} color="#EF4444" />
+                          <Ionicons name="trash" size={12} color="#EF4444" />
                         </TouchableOpacity>
                       )}
                     </View>
@@ -799,24 +800,30 @@ export default function ChannelsScreen() {
             </View>
 
             <Text style={styles.label}>Soru Başlığı *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Örn: 24W Akıllı Led Sürücü arızası"
-              placeholderTextColor="#94A3B8"
-              value={newPostTitle}
-              onChangeText={setNewPostTitle}
-            />
+            <View style={styles.inputWrapper}>
+              <Ionicons name="help-circle-outline" size={18} color="#64748B" style={styles.inputIcon} />
+              <TextInput
+                style={styles.inputWithIcon}
+                placeholder="Örn: 24W Akıllı Led Sürücü arızası"
+                placeholderTextColor="#94A3B8"
+                value={newPostTitle}
+                onChangeText={setNewPostTitle}
+              />
+            </View>
 
             <Text style={styles.label}>Sorunun Açıklaması *</Text>
-            <TextInput
-              style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-              placeholder="Sorununuzu, hata kodunu veya detayları yazın..."
-              placeholderTextColor="#94A3B8"
-              multiline
-              numberOfLines={4}
-              value={newPostDesc}
-              onChangeText={setNewPostDesc}
-            />
+            <View style={styles.inputWrapper}>
+              <Ionicons name="document-text-outline" size={18} color="#64748B" style={[styles.inputIcon, { top: 12 }]} />
+              <TextInput
+                style={[styles.inputWithIcon, { height: 100, textAlignVertical: 'top', paddingTop: 10 }]}
+                placeholder="Sorununuzu, hata kodunu veya detayları yazın..."
+                placeholderTextColor="#94A3B8"
+                multiline
+                numberOfLines={4}
+                value={newPostDesc}
+                onChangeText={setNewPostDesc}
+              />
+            </View>
 
             <Text style={styles.label}>Fotoğraf Ekle (Opsiyonel)</Text>
             {newPostImage ? (
@@ -860,7 +867,7 @@ export default function ChannelsScreen() {
 
                 <View style={styles.divider} />
 
-                <Text style={[styles.sectionTitle, { color: '#E2E8F0', marginVertical: 12 }]}>Topluluk Cevapları ({selectedPost.comments?.length || 0})</Text>
+                <Text style={[styles.sectionTitle, { color: '#1E293B', marginVertical: 12 }]}>Topluluk Cevapları ({selectedPost.comments?.length || 0})</Text>
 
                 {selectedPost.comments && selectedPost.comments.length === 0 ? (
                   <Text style={styles.noCommentsText}>Henüz hiç yorum yapılmamış. Meslektaşına ilk yardımı sen et!</Text>
@@ -904,29 +911,35 @@ export default function ChannelsScreen() {
             </View>
 
             <Text style={styles.label}>İş Başlığı *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Örn: Kadıköy'de 3 Günlük Yardımcı Usta Arayışı"
-              placeholderTextColor="#94A3B8"
-              value={newJobTitle}
-              onChangeText={setNewJobTitle}
-            />
+            <View style={styles.inputWrapper}>
+              <Ionicons name="briefcase-outline" size={18} color="#64748B" style={styles.inputIcon} />
+              <TextInput
+                style={styles.inputWithIcon}
+                placeholder="Örn: Kadıköy'de 3 Günlük Yardımcı Usta Arayışı"
+                placeholderTextColor="#94A3B8"
+                value={newJobTitle}
+                onChangeText={setNewJobTitle}
+              />
+            </View>
 
             <Text style={styles.label}>İşin ve Şartların Detayı *</Text>
-            <TextInput
-              style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-              placeholder="Aradığınız şartları, işin niteliğini ve ödeme bilgisini yazın..."
-              placeholderTextColor="#94A3B8"
-              multiline
-              numberOfLines={4}
-              value={newJobDesc}
-              onChangeText={setNewJobDesc}
-            />
+            <View style={styles.inputWrapper}>
+              <Ionicons name="document-text-outline" size={18} color="#64748B" style={[styles.inputIcon, { top: 12 }]} />
+              <TextInput
+                style={[styles.inputWithIcon, { height: 100, textAlignVertical: 'top', paddingTop: 10 }]}
+                placeholder="Aradığınız şartları, işin niteliğini ve ödeme bilgisini yazın..."
+                placeholderTextColor="#94A3B8"
+                multiline
+                numberOfLines={4}
+                value={newJobDesc}
+                onChangeText={setNewJobDesc}
+              />
+            </View>
 
-            <View style={{ backgroundColor: 'rgba(245, 158, 11, 0.08)', borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.22)', borderRadius: 12, padding: 12, marginVertical: 12 }}>
+            <View style={{ backgroundColor: 'rgba(245, 158, 11, 0.06)', borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.18)', borderRadius: 12, padding: 12, marginVertical: 12 }}>
               <Text style={{ color: '#D97706', fontSize: 12.5, fontFamily: fonts.bold }}>Önemli Not</Text>
               <Text style={{ color: '#78350F', fontSize: 11, fontFamily: fonts.medium, marginTop: 3 }}>
-                Bu iş paslama teklifi sadece sizin kayıtlu olduğunuz şehirdeki ({user?.city || 'İstanbul'}) ustalar tarafından görülecektir.
+                Bu iş paslama teklifi sadece sizin kayıtlı olduğunuz şehirdeki ({user?.city || 'İstanbul'}) ustalar tarafından görülecektir.
               </Text>
             </View>
 
@@ -976,22 +989,28 @@ export default function ChannelsScreen() {
             </View>
 
             <Text style={styles.label}>Çalışmanın Başlığı *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Örn: 24'lü Dağıtım Panosu Kablolama"
-              placeholderTextColor="#94A3B8"
-              value={newShowcaseTitle}
-              onChangeText={setNewShowcaseTitle}
-            />
+            <View style={styles.inputWrapper}>
+              <Ionicons name="image-outline" size={18} color="#64748B" style={styles.inputIcon} />
+              <TextInput
+                style={styles.inputWithIcon}
+                placeholder="Örn: 24'lü Dağıtım Panosu Kablolama"
+                placeholderTextColor="#94A3B8"
+                value={newShowcaseTitle}
+                onChangeText={setNewShowcaseTitle}
+              />
+            </View>
 
             <Text style={styles.label}>Açıklama (Opsiyonel)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Kullandığınız marka, şantiye bilgisi vb."
-              placeholderTextColor="#94A3B8"
-              value={newShowcaseDesc}
-              onChangeText={setNewShowcaseDesc}
-            />
+            <View style={styles.inputWrapper}>
+              <Ionicons name="document-text-outline" size={18} color="#64748B" style={styles.inputIcon} />
+              <TextInput
+                style={styles.inputWithIcon}
+                placeholder="Kullandığınız marka, şantiye bilgisi vb."
+                placeholderTextColor="#94A3B8"
+                value={newShowcaseDesc}
+                onChangeText={setNewShowcaseDesc}
+              />
+            </View>
 
             <Text style={styles.label}>Çalışma Görselleri * (En fazla 5 adet)</Text>
             <View style={{ marginBottom: 16 }}>
@@ -1016,7 +1035,7 @@ export default function ChannelsScreen() {
               {newShowcaseImages.length < 5 && (
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   <TouchableOpacity 
-                    style={{ flex: 1, height: 48, borderRadius: 12, borderWidth: 1.5, borderColor: colors.primary, borderStyle: 'dashed', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                    style={{ flex: 1, height: 44, borderRadius: 12, borderWidth: 1.5, borderColor: colors.primary, borderStyle: 'dashed', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                     onPress={() => handlePickShowcaseImage('gallery')}
                   >
                     <Ionicons name="images-outline" size={20} color={colors.primary} />
@@ -1024,7 +1043,7 @@ export default function ChannelsScreen() {
                   </TouchableOpacity>
 
                   <TouchableOpacity 
-                    style={{ flex: 1, height: 48, borderRadius: 12, borderWidth: 1.5, borderColor: colors.primary, borderStyle: 'dashed', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                    style={{ flex: 1, height: 44, borderRadius: 12, borderWidth: 1.5, borderColor: colors.primary, borderStyle: 'dashed', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                     onPress={() => handlePickShowcaseImage('camera')}
                   >
                     <Ionicons name="camera-outline" size={20} color={colors.primary} />
@@ -1054,25 +1073,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Premium mockup header
-  header: {
-    width: '100%',
-    paddingTop: Platform.OS === 'ios' ? 60 : 30,
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-    backgroundColor: 'transparent',
-  },
-  headerContentRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-  },
-  headerTitleText: {
-    color: '#0F4C81', // Sapphire deep blue for header title on light bg
-    fontSize: 26,
-    fontFamily: fonts.bold,
-  },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1099,63 +1099,49 @@ const styles = StyleSheet.create({
     height: '100%',
     resizeMode: 'cover',
   },
-  // Scrollable tab cards
+  // Premium tabs styling
   tabScrollView: {
     paddingHorizontal: 16,
-    gap: 10,
+    gap: 8,
     alignItems: 'center',
     height: '100%',
   },
   tabCardBtn: {
-    width: 95,
-    height: 75,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF', // Clean white card background
+    width: 90,
+    height: 60,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1.5,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     overflow: 'hidden',
-    shadowColor: 'rgba(0,0,0,0.02)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
   tabCardBtnActive: {
     backgroundColor: 'transparent',
+    borderWidth: 0,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
   },
   tabCardLabel: {
     fontFamily: fonts.bold,
-    fontSize: 10.5,
+    fontSize: 10,
     textAlign: 'center',
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 100,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-    gap: 12,
-  },
-  emptyText: {
-    color: '#64748B',
-    fontSize: 14,
-    fontFamily: fonts.medium,
+    padding: 12,
+    paddingBottom: 80,
   },
   actionBtn: {
     height: 44,
     borderRadius: 12,
-    marginBottom: 16,
+    marginBottom: 12,
     shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
     elevation: 3,
   },
   actionBtnGradient: {
@@ -1169,75 +1155,124 @@ const styles = StyleSheet.create({
   actionBtnText: {
     color: '#FFF',
     fontFamily: fonts.bold,
-    fontSize: 13.5,
+    fontSize: 13,
   },
-  // Birebir aynısı Forum Card
+  // Elite Forum Card
   forumCard: {
-    backgroundColor: '#FFFFFF', // Clean white background matching jobs tab
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(59, 130, 246, 0.2)', // Subtle sapphire blue border
-    shadowColor: 'rgba(15, 76, 129, 0.05)',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.02,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 1,
   },
   forumHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
+  },
+  avatarWrapper: {
+    position: 'relative',
   },
   forumAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  verifiedBadgeMini: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFF',
   },
   forumAuthor: {
-    color: '#0F172A', // Slate 900 for light bg readability
-    fontSize: 15,
+    color: '#0F172A',
+    fontSize: 13.5,
     fontFamily: fonts.bold,
   },
-  forumMeta: {
-    color: '#64748B',
-    fontSize: 12,
-    fontFamily: fonts.medium,
+  authorBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     marginTop: 1,
+  },
+  authorRoleBadge: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  authorRoleBadgeText: {
+    fontSize: 8.5,
+    fontFamily: fonts.bold,
+    color: '#475569',
+  },
+  authorCityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  authorCityBadgeText: {
+    fontSize: 9,
+    fontFamily: fonts.medium,
+    color: '#64748B',
   },
   metaTime: {
     color: '#94A3B8',
-    fontSize: 11.5,
+    fontSize: 10.5,
     fontFamily: fonts.medium,
   },
   forumTitle: {
-    color: '#0F172A', // Slate 900 for light bg readability
-    fontSize: 16.5,
+    color: '#0F172A',
+    fontSize: 15,
     fontFamily: fonts.bold,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   forumDesc: {
-    color: '#334155', // Slate 700 for light bg readability
-    fontSize: 13,
+    color: '#475569',
+    fontSize: 12,
     fontFamily: fonts.regular,
-    lineHeight: 19,
+    lineHeight: 17,
+    marginBottom: 8,
+  },
+  tagCapsulesRow: {
+    flexDirection: 'row',
+    gap: 6,
+    flexWrap: 'wrap',
     marginBottom: 10,
   },
-  forumTags: {
-    color: '#38BDF8',
-    fontSize: 12.5,
+  tagCapsule: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    gap: 3,
+  },
+  tagCapsuleText: {
+    fontSize: 9.5,
     fontFamily: fonts.bold,
-    marginBottom: 12,
   },
   forumImage: {
     width: '100%',
-    height: 180,
-    borderRadius: 16,
+    height: 160,
+    borderRadius: 12,
     resizeMode: 'cover',
-    marginBottom: 12,
+    marginBottom: 10,
     backgroundColor: '#0F172A',
   },
   forumFooter: {
@@ -1245,8 +1280,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.04)',
-    paddingTop: 12,
+    borderTopColor: '#F1F5F9',
+    paddingTop: 10,
     marginTop: 4,
   },
   footerPillsRow: {
@@ -1258,70 +1293,79 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 12,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   footerPillText: {
-    color: '#FFF',
-    fontSize: 9.5,
+    fontSize: 10,
     fontFamily: fonts.bold,
+  },
+  footerShareBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   mockVoteContainer: {
-    width: 44,
-    height: 64,
-    borderRadius: 22,
-    backgroundColor: '#3B82F6',
-    justifyContent: 'space-between',
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 8,
-    elevation: 4,
-    marginLeft: 6,
+    borderRadius: 10,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 4,
+    height: 26,
+    gap: 2,
+  },
+  voteBtn: {
+    paddingHorizontal: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   mockVoteText: {
-    color: '#FFF',
-    fontSize: 8.5,
+    color: '#334155',
+    fontSize: 10.5,
     fontFamily: fonts.bold,
-    marginTop: -2,
+    paddingHorizontal: 2,
   },
   // Jobs Styles
   jobsHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   cityFilterBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(6, 182, 212, 0.05)',
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    paddingHorizontal: 12,
-    height: 36,
-    borderRadius: 18,
-    gap: 6,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 10,
+    height: 32,
+    borderRadius: 10,
+    gap: 4,
   },
   cityFilterText: {
     fontFamily: fonts.bold,
-    fontSize: 12.5,
+    fontSize: 11.5,
   },
   miniAddBtn: {
-    height: 36,
-    borderRadius: 18,
-    shadowColor: '#8B5CF6',
+    height: 32,
+    borderRadius: 10,
+    shadowColor: '#3B82F6',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
   miniAddBtnGradient: {
     height: '100%',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -1329,73 +1373,71 @@ const styles = StyleSheet.create({
   miniAddBtnText: {
     color: '#FFF',
     fontFamily: fonts.bold,
-    fontSize: 12,
+    fontSize: 11,
   },
   jobCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0', // Sleek Slate-200 border
+    borderColor: '#E2E8F0',
+    borderLeftWidth: 4,
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.02,
+    shadowRadius: 8,
+    elevation: 2,
   },
   jobCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   cityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(8, 145, 178, 0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(8, 145, 178, 0.22)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   cityBadgeText: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: fonts.bold,
     textTransform: 'uppercase',
-    color: '#0891B2',
   },
   jobCardUrgencyBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(245, 158, 11, 0.08)',
+    backgroundColor: 'rgba(245, 158, 11, 0.06)',
     borderWidth: 0.5,
-    borderColor: 'rgba(245, 158, 11, 0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    borderColor: 'rgba(245, 158, 11, 0.18)',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   jobCardUrgencyText: {
     color: '#F59E0B',
-    fontSize: 10.5,
+    fontSize: 9.5,
     fontFamily: fonts.bold,
   },
   jobCardTitle: {
-    color: '#0F172A', // Slate 900
-    fontSize: 16.5,
+    color: '#0F172A',
+    fontSize: 14.5,
     fontFamily: fonts.bold,
     flex: 1,
   },
   jobCardDesc: {
-    color: '#475569', // Soft and highly readable Slate 600
-    fontSize: 12.5,
+    color: '#475569',
+    fontSize: 11.5,
     fontFamily: fonts.medium,
-    lineHeight: 18.5,
+    lineHeight: 16,
   },
   jobCardBody: {
-    marginVertical: 12,
-    gap: 8,
+    marginVertical: 8,
+    gap: 6,
   },
   jobCardTitleRow: {
     flexDirection: 'row',
@@ -1403,8 +1445,8 @@ const styles = StyleSheet.create({
   },
   jobCardDescContainer: {
     borderLeftWidth: 2,
-    borderLeftColor: 'rgba(8, 145, 178, 0.15)', // Subtle cyan left accent line
-    paddingLeft: 10,
+    borderLeftColor: '#E2E8F0',
+    paddingLeft: 8,
     marginLeft: 2,
   },
   jobCardFooter: {
@@ -1412,93 +1454,93 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9', // Clearly visible divider line
-    paddingTop: 12,
+    borderTopColor: '#F1F5F9',
+    paddingTop: 8,
   },
   jobPublisherRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   jobPublisherAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   jobPublisherAvatarText: {
     color: '#FFF',
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: fonts.bold,
   },
   jobCardAuthorLabel: {
     color: '#64748B',
-    fontSize: 9.5,
+    fontSize: 8.5,
     fontFamily: fonts.medium,
   },
   jobCardAuthor: {
-    color: '#334155', // Slate 700
-    fontSize: 12,
+    color: '#334155',
+    fontSize: 11,
     fontFamily: fonts.bold,
   },
   jobContactBtnContainer: {
-    borderRadius: 8,
+    borderRadius: 6,
     overflow: 'hidden',
     shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
   jobContactGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    height: 32,
-    gap: 6,
+    paddingHorizontal: 10,
+    height: 28,
+    gap: 4,
   },
   jobContactText: {
     color: '#FFF',
     fontFamily: fonts.bold,
-    fontSize: 11.5,
+    fontSize: 10.5,
   },
   ownJobBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    backgroundColor: 'rgba(16, 185, 129, 0.06)',
     borderWidth: 0.5,
-    borderColor: 'rgba(16, 185, 129, 0.25)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    gap: 4,
+    borderColor: 'rgba(16, 185, 129, 0.18)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    gap: 3,
   },
   ownJobBadgeText: {
     color: '#059669',
-    fontSize: 10.5,
+    fontSize: 9.5,
     fontFamily: fonts.bold,
   },
   jobDeleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    backgroundColor: 'rgba(239, 68, 68, 0.06)',
     borderWidth: 0.5,
-    borderColor: 'rgba(239, 68, 68, 0.25)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
+    borderColor: 'rgba(239, 68, 68, 0.18)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   jobDeleteBtnText: {
     color: '#EF4444',
-    fontSize: 10.5,
+    fontSize: 9.5,
     fontFamily: fonts.bold,
   },
   ownerControlRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 10,
   },
   // Masonry Showcase Gallery Styles
   masonryGrid: {
@@ -1507,23 +1549,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   masonryItem: {
-    width: (width - 44) / 2,
-    backgroundColor: '#FFFFFF', // Clean white background
+    width: (width - 34) / 2,
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    marginBottom: 14,
+    marginBottom: 10,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E2E8F0', // Subtle light grey border
+    borderColor: '#E2E8F0',
     position: 'relative',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
     elevation: 1,
   },
   imageWrapper: {
     width: '100%',
-    height: 160,
+    height: 150,
     position: 'relative',
     backgroundColor: '#0F172A',
   },
@@ -1534,46 +1576,53 @@ const styles = StyleSheet.create({
   },
   masonryImageOverlay: {
     ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+  },
+  masonryImageOverlayContent: {
+    padding: 8,
   },
   multiPhotoBadge: {
     position: 'absolute',
-    top: 8,
-    left: 8,
+    top: 6,
+    left: 6,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(15, 23, 42, 0.75)',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
-    gap: 3,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 5,
+    gap: 2,
+    zIndex: 2,
   },
   multiPhotoText: {
     color: '#FFF',
-    fontSize: 9.5,
+    fontSize: 8.5,
     fontFamily: fonts.bold,
-  },
-  masonryContent: {
-    padding: 10,
   },
   masonryTitle: {
-    color: '#0F172A', // Slate 900
-    fontSize: 12,
+    color: '#FFFFFF',
+    fontSize: 11.5,
     fontFamily: fonts.bold,
   },
-  masonryUsta: {
-    color: '#475569', // Slate 600
-    fontSize: 10,
-    fontFamily: fonts.medium,
+  masonryUstaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
     marginTop: 2,
+  },
+  masonryUstaText: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 9.5,
+    fontFamily: fonts.medium,
   },
   masonryDeleteBtn: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 6,
+    right: 6,
     backgroundColor: 'rgba(15, 23, 42, 0.85)',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
@@ -1581,14 +1630,14 @@ const styles = StyleSheet.create({
   // Modals Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)', // Slightly lighter overlay
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#FFFFFF', // Clean white modal content background
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
@@ -1598,51 +1647,74 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
-    paddingBottom: 14,
-    marginBottom: 16,
+    paddingBottom: 10,
+    marginBottom: 12,
   },
   modalTitle: {
-    color: '#0F172A', // Slate 900
-    fontSize: 16.5,
+    color: '#0F172A',
+    fontSize: 15,
     fontFamily: fonts.bold,
   },
   label: {
-    color: '#475569', // Slate 600
-    fontSize: 12.5,
+    color: '#475569',
+    fontSize: 11.5,
     fontFamily: fonts.bold,
-    marginBottom: 6,
-    marginTop: 10,
+    marginBottom: 4,
+    marginTop: 6,
   },
-  input: {
-    backgroundColor: '#F8FAFC', // Light background for inputs
+  inputWrapper: {
+    position: 'relative',
+    width: '100%',
+    marginBottom: 8,
+  },
+  inputIcon: {
+    position: 'absolute',
+    left: 12,
+    top: 11,
+    zIndex: 2,
+  },
+  inputWithIcon: {
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 12,
+    borderRadius: 10,
+    color: '#0F172A',
+    paddingLeft: 38,
+    paddingRight: 12,
+    height: 40,
+    fontFamily: fonts.medium,
+    fontSize: 12.5,
+  },
+  input: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 10,
     color: '#0F172A',
     paddingHorizontal: 12,
-    height: 44,
+    height: 40,
     fontFamily: fonts.medium,
-    fontSize: 13.5,
-    marginBottom: 10,
+    fontSize: 12.5,
+    marginBottom: 8,
   },
   imageSelector: {
-    height: 80,
-    borderRadius: 12,
+    height: 70,
+    borderRadius: 10,
     borderStyle: 'dashed',
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
     backgroundColor: '#F8FAFC',
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 10,
+    marginVertical: 8,
   },
   previewContainer: {
     position: 'relative',
-    width: 100,
-    height: 100,
-    borderRadius: 12,
+    width: 80,
+    height: 80,
+    borderRadius: 10,
     overflow: 'hidden',
-    marginVertical: 10,
+    marginVertical: 8,
   },
   previewImage: {
     width: '100%',
@@ -1653,135 +1725,135 @@ const styles = StyleSheet.create({
     top: 4,
     right: 4,
     backgroundColor: 'rgba(0,0,0,0.7)',
-    padding: 4,
-    borderRadius: 10,
+    padding: 3,
+    borderRadius: 8,
   },
   submitBtn: {
-    height: 48,
-    borderRadius: 12,
+    height: 42,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
+    marginTop: 12,
   },
   submitBtnText: {
     color: '#FFF',
     fontFamily: fonts.bold,
-    fontSize: 14.5,
+    fontSize: 13.5,
   },
   postBody: {
-    color: '#334155', // Slate 700
-    fontSize: 13.5,
+    color: '#334155',
+    fontSize: 12.5,
     fontFamily: fonts.regular,
-    lineHeight: 20,
-    marginBottom: 12,
+    lineHeight: 18,
+    marginBottom: 10,
   },
   divider: {
     height: 1,
     backgroundColor: '#F1F5F9',
-    marginVertical: 14,
+    marginVertical: 10,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: fonts.bold,
   },
   noCommentsText: {
     color: '#64748B',
-    fontSize: 12,
+    fontSize: 11.5,
     fontFamily: fonts.medium,
     textAlign: 'center',
-    marginVertical: 24,
-    paddingHorizontal: 20,
+    marginVertical: 16,
+    paddingHorizontal: 16,
   },
   commentBox: {
-    backgroundColor: '#F8FAFC', // Light comment background
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
   commentAuthor: {
-    color: '#0F172A', // Slate 900
-    fontSize: 12,
+    color: '#0F172A',
+    fontSize: 11.5,
     fontFamily: fonts.bold,
     marginBottom: 2,
   },
   commentText: {
-    color: '#334155', // Slate 700
-    fontSize: 12.5,
+    color: '#334155',
+    fontSize: 12,
     fontFamily: fonts.regular,
   },
   commentTime: {
     color: '#64748B',
-    fontSize: 9,
+    fontSize: 8.5,
     fontFamily: fonts.medium,
-    marginTop: 6,
+    marginTop: 4,
     textAlign: 'right',
   },
   commentInputRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 8,
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
-    paddingTop: 12,
+    paddingTop: 8,
   },
   commentInput: {
     flex: 1,
     backgroundColor: '#F8FAFC',
-    borderRadius: 12,
+    borderRadius: 10,
     color: '#0F172A',
     paddingHorizontal: 12,
-    height: 40,
+    height: 36,
     fontFamily: fonts.medium,
-    fontSize: 13,
+    fontSize: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
   sendCommentBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   // City Filter Modal Styles
   centerModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   cityModalContent: {
-    backgroundColor: '#FFFFFF', // Clean white background for city list
-    width: '80%',
-    borderRadius: 20,
-    padding: 20,
+    backgroundColor: '#FFFFFF',
+    width: '75%',
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
   cityModalTitle: {
-    color: '#0F172A', // Slate 900
-    fontSize: 15,
+    color: '#0F172A',
+    fontSize: 14,
     fontFamily: fonts.bold,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
-    paddingBottom: 10,
-    marginBottom: 10,
+    paddingBottom: 8,
+    marginBottom: 8,
   },
   cityListItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    marginVertical: 2,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    marginVertical: 1,
   },
   cityListItemText: {
-    color: '#475569', // Slate 600
-    fontSize: 13,
+    color: '#475569',
+    fontSize: 12.5,
     fontFamily: fonts.medium,
   },
 });
