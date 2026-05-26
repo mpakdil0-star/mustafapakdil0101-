@@ -193,12 +193,12 @@ export default function LoginScreen() {
       >
         <View style={styles.content}>
           <LinearGradient
-            colors={['#1E1B4B', '#4C1D95', '#1E1B4B']}
+            colors={['#07111E', '#09252A', '#07111E']}
             style={StyleSheet.absoluteFill}
           />
 
-          <View style={[styles.glowBlob, { top: -100, right: -100, backgroundColor: '#7C3AED' }]} />
-          <View style={[styles.glowBlob, { bottom: -100, left: -100, backgroundColor: '#4F46E5', opacity: 0.2 }]} />
+          <View style={[styles.glowBlob, { top: -100, right: -100, backgroundColor: '#0D9488' }]} />
+          <View style={[styles.glowBlob, { bottom: -100, left: -100, backgroundColor: '#4682B4', opacity: 0.15 }]} />
 
           <View style={styles.innerContent}>
             <View style={styles.headerTop}>
@@ -221,7 +221,7 @@ export default function LoginScreen() {
             >
               <View style={styles.logoCircle}>
                 <LinearGradient
-                  colors={['#8B5CF6', '#7C3AED']}
+                  colors={['#0D9488', '#4682B4']}
                   style={styles.logoGradient}
                 >
                   <Ionicons name="flash" size={42} color={colors.white} />
@@ -341,7 +341,7 @@ export default function LoginScreen() {
                   style={styles.loginButtonWrapper}
                 >
                   <LinearGradient
-                    colors={colors.gradientPrimary as any}
+                    colors={['#0D9488', '#4682B4']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.loginButtonGradient}
@@ -390,7 +390,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#07111E',
   },
   scrollContent: {
     flexGrow: 1,
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
     padding: 3,
     backgroundColor: 'rgba(255,255,255,0.1)',
     marginBottom: 20,
-    shadowColor: '#7C3AED',
+    shadowColor: '#0D9488',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     borderRadius: 18,
     overflow: 'hidden',
-    shadowColor: '#7C3AED',
+    shadowColor: '#0D9488',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 15,

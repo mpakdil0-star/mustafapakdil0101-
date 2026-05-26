@@ -270,7 +270,7 @@ export default function RegisterScreen() {
     }
   };
 
-  const accentColor = userType === 'CITIZEN' ? '#7C3AED' : '#3B82F6';
+  const accentColor = userType === 'CITIZEN' ? '#0D9488' : '#4682B4';
   const [legalModal, setLegalModal] = useState<{ visible: boolean; type: 'KVKK' | 'TERMS' }>({ visible: false, type: 'KVKK' });
 
   return (
@@ -381,10 +381,11 @@ export default function RegisterScreen() {
       >
         <View style={styles.content}>
           <LinearGradient
-            colors={userType === 'CITIZEN' ? ['#1E1B4B', '#4C1D95', '#1E1B4B'] : ['#0F172A', '#1E3A8A', '#0F172A']}
+            colors={['#07111E', '#09252A', '#07111E']}
             style={StyleSheet.absoluteFill}
           />
           <View style={[styles.glowBlob, { top: -100, right: -100, backgroundColor: accentColor }]} />
+          <View style={[styles.glowBlob, { bottom: -100, left: -100, backgroundColor: accentColor === '#0D9488' ? '#4682B4' : '#0D9488', opacity: 0.15 }]} />
 
           <View style={styles.innerContent}>
             <View style={styles.headerTop}>
@@ -618,7 +619,7 @@ export default function RegisterScreen() {
                     ]}
                   >
                     <LinearGradient
-                      colors={[accentColor, accentColor + 'CC']}
+                      colors={[accentColor, accentColor === '#0D9488' ? '#0EA5E9' : '#2E5C8A']}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                       style={styles.registerButtonGradient}
@@ -682,7 +683,7 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#07111E',
   },
   scrollContent: {
     flexGrow: 1,
@@ -964,7 +965,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#0F172A',
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,

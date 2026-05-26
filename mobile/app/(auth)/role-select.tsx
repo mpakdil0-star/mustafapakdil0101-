@@ -56,12 +56,12 @@ export default function RoleSelectScreen() {
 
     return (
         <LinearGradient
-            colors={['#0F172A', '#1E293B']}
+            colors={['#07111E', '#09252A', '#07111E']}
             style={styles.container}
         >
             {/* Glow Blobs */}
-            <View style={[styles.glowBlob, { top: -80, left: -80, backgroundColor: '#7C3AED' }]} />
-            <View style={[styles.glowBlob, { bottom: -100, right: -100, backgroundColor: '#3B82F6' }]} />
+            <View style={[styles.glowBlob, { top: -80, left: -80, backgroundColor: '#0D9488' }]} />
+            <View style={[styles.glowBlob, { bottom: -100, right: -100, backgroundColor: '#4682B4', opacity: 0.15 }]} />
 
             <ScrollView
                 contentContainerStyle={styles.content}
@@ -88,7 +88,7 @@ export default function RoleSelectScreen() {
                         style={[
                             styles.roleCard,
                             userType === 'CITIZEN' && styles.roleCardSelected,
-                            userType === 'CITIZEN' && { borderColor: '#7C3AED' },
+                            userType === 'CITIZEN' && { borderColor: '#0D9488' },
                         ]}
                         onPress={() => {
                             setUserType('CITIZEN');
@@ -97,7 +97,7 @@ export default function RoleSelectScreen() {
                         activeOpacity={0.8}
                     >
                         <LinearGradient
-                            colors={userType === 'CITIZEN' ? ['#7C3AED', '#6D28D9'] : ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)']}
+                            colors={userType === 'CITIZEN' ? ['#0D9488', '#0EA5E9'] : ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)']}
                             style={styles.roleIconBg}
                         >
                             <Ionicons name="person" size={32} color={userType === 'CITIZEN' ? '#FFFFFF' : 'rgba(255,255,255,0.5)'} />
@@ -105,7 +105,7 @@ export default function RoleSelectScreen() {
                         <Text style={[styles.roleTitle, userType === 'CITIZEN' && { color: '#FFFFFF' }]}>Vatandaş</Text>
                         <Text style={styles.roleDesc}>Hizmet almak istiyorum</Text>
                         {userType === 'CITIZEN' && (
-                            <View style={[styles.checkBadge, { backgroundColor: '#7C3AED' }]}>
+                            <View style={[styles.checkBadge, { backgroundColor: '#0D9488' }]}>
                                 <Ionicons name="checkmark" size={14} color="#FFFFFF" />
                             </View>
                         )}
@@ -116,13 +116,13 @@ export default function RoleSelectScreen() {
                         style={[
                             styles.roleCard,
                             userType === 'ELECTRICIAN' && styles.roleCardSelected,
-                            userType === 'ELECTRICIAN' && { borderColor: '#3B82F6' },
+                            userType === 'ELECTRICIAN' && { borderColor: '#4682B4' },
                         ]}
                         onPress={() => setUserType('ELECTRICIAN')}
                         activeOpacity={0.8}
                     >
                         <LinearGradient
-                            colors={userType === 'ELECTRICIAN' ? ['#3B82F6', '#2563EB'] : ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)']}
+                            colors={userType === 'ELECTRICIAN' ? ['#4682B4', '#2E5C8A'] : ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)']}
                             style={styles.roleIconBg}
                         >
                             <Ionicons name="construct" size={32} color={userType === 'ELECTRICIAN' ? '#FFFFFF' : 'rgba(255,255,255,0.5)'} />
@@ -130,7 +130,7 @@ export default function RoleSelectScreen() {
                         <Text style={[styles.roleTitle, userType === 'ELECTRICIAN' && { color: '#FFFFFF' }]}>Usta</Text>
                         <Text style={styles.roleDesc}>Hizmet vermek istiyorum</Text>
                         {userType === 'ELECTRICIAN' && (
-                            <View style={[styles.checkBadge, { backgroundColor: '#3B82F6' }]}>
+                            <View style={[styles.checkBadge, { backgroundColor: '#4682B4' }]}>
                                 <Ionicons name="checkmark" size={14} color="#FFFFFF" />
                             </View>
                         )}
@@ -199,7 +199,7 @@ export default function RoleSelectScreen() {
                     activeOpacity={0.8}
                 >
                     <LinearGradient
-                        colors={canProceed ? (userType === 'CITIZEN' ? ['#7C3AED', '#6D28D9'] : ['#3B82F6', '#2563EB']) : ['#374151', '#374151']}
+                        colors={canProceed ? (userType === 'CITIZEN' ? ['#0D9488', '#0EA5E9'] : ['#4682B4', '#2E5C8A']) : ['#374151', '#374151']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.continueBtnGradient}
@@ -394,6 +394,6 @@ const styles = StyleSheet.create({
     loginLink: {
         fontFamily: fonts.bold,
         fontSize: 14,
-        color: '#7C3AED',
+        color: '#0D9488',
     },
 });
