@@ -81,7 +81,7 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
             onPress={() => handleActionWithAuth('/profile/notifications')}
           >
             <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
-            {unreadCount > 0 && (
+            {isAuthenticated && unreadCount > 0 && (
               <Animated.View style={[styles.notificationBadge, { transform: [{ scale: badgePulseAnim }], borderColor: colors.primary || '#0D9488' }]}>
                 <Text style={styles.notificationBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
               </Animated.View>

@@ -89,7 +89,7 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
             onPress={() => handleActionWithAuth('/profile/notifications')}
           >
             <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
-            {unreadCount > 0 && (
+            {isAuthenticated && unreadCount > 0 && (
               <Animated.View style={[styles.notificationBadge, { transform: [{ scale: badgePulseAnim }] }]}>
                 <Text style={styles.notificationBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
               </Animated.View>
