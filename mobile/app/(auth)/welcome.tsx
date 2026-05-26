@@ -89,13 +89,13 @@ export default function WelcomeScreen() {
 
             {/* Premium Background Gradient */}
             <LinearGradient
-                colors={['#0F172A', '#1E1B4B', '#0F172A']}
+                colors={['#07111E', '#09252A', '#07111E']}
                 style={StyleSheet.absoluteFill}
             />
 
             {/* Animated Glow Blobs */}
-            <View style={[styles.glowBlob, { top: -100, right: -100, backgroundColor: '#7C3AED' }]} />
-            <View style={[styles.glowBlob, { bottom: -100, left: -100, backgroundColor: '#3B82F6', opacity: 0.15 }]} />
+            <View style={[styles.glowBlob, { top: -100, right: -100, backgroundColor: '#0D9488' }]} />
+            <View style={[styles.glowBlob, { bottom: -100, left: -100, backgroundColor: '#4682B4', opacity: 0.15 }]} />
 
             <View style={styles.overlay}>
                 <Animated.View
@@ -121,10 +121,10 @@ export default function WelcomeScreen() {
                             ]} />
                             <View style={styles.logoIconContainer}>
                                 <LinearGradient
-                                    colors={['#8B5CF6', '#7C3AED']}
+                                    colors={['#0D9488', '#4682B4']}
                                     style={styles.logoGradient}
                                 >
-                                    <Ionicons name="flash" size={42} color={colors.white} />
+                                    <Ionicons name="flash" size={42} color="#FFFFFF" />
                                 </LinearGradient>
                             </View>
                         </View>
@@ -140,17 +140,17 @@ export default function WelcomeScreen() {
                         >
                             <View style={[styles.glassCard, styles.citizenBorder]}>
                                 <LinearGradient
-                                    colors={['rgba(124, 58, 237, 0.15)', 'rgba(124, 58, 237, 0.05)']}
+                                    colors={['rgba(13, 148, 136, 0.15)', 'rgba(13, 148, 136, 0.03)']}
                                     style={styles.cardGradient}
                                 >
-                                    <View style={[styles.buttonIcon, { backgroundColor: '#7C3AED' }]}>
-                                        <Ionicons name="people" size={24} color={colors.white} />
+                                    <View style={[styles.buttonIcon, { backgroundColor: '#0D9488' }]}>
+                                        <Ionicons name="people" size={24} color="#FFFFFF" />
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.buttonTitle}>Hizmet Alan</Text>
                                         <Text style={styles.buttonSubtitle}>Hızlıca uzman bul, ilan ver</Text>
                                     </View>
-                                    <Ionicons name="arrow-forward" size={20} color="#7C3AED" />
+                                    <Ionicons name="arrow-forward" size={20} color="#0D9488" />
                                 </LinearGradient>
                             </View>
                         </TouchableOpacity>
@@ -162,17 +162,17 @@ export default function WelcomeScreen() {
                         >
                             <View style={[styles.glassCard, styles.electricianBorder]}>
                                 <LinearGradient
-                                    colors={['rgba(59, 130, 246, 0.15)', 'rgba(59, 130, 246, 0.05)']}
+                                    colors={['rgba(70, 130, 180, 0.15)', 'rgba(70, 130, 180, 0.03)']}
                                     style={styles.cardGradient}
                                 >
-                                    <View style={[styles.buttonIcon, { backgroundColor: '#3B82F6' }]}>
-                                        <Ionicons name="construct" size={24} color={colors.white} />
+                                    <View style={[styles.buttonIcon, { backgroundColor: '#4682B4' }]}>
+                                        <Ionicons name="construct" size={24} color="#FFFFFF" />
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.buttonTitle}>Hizmet Veren</Text>
                                         <Text style={styles.buttonSubtitle}>İşleri gör, teklif ver</Text>
                                     </View>
-                                    <Ionicons name="arrow-forward" size={20} color="#3B82F6" />
+                                    <Ionicons name="arrow-forward" size={20} color="#4682B4" />
                                 </LinearGradient>
                             </View>
                         </TouchableOpacity>
@@ -184,7 +184,9 @@ export default function WelcomeScreen() {
                                 activeOpacity={0.8}
                             >
                                 <LinearGradient
-                                    colors={['rgba(255, 255, 255, 0.15)', 'rgba(255, 255, 255, 0.05)']}
+                                    colors={['#0D9488', '#4682B4']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
                                     style={styles.registerGradient}
                                 >
                                     <Text style={styles.registerText}>Ücretsiz Kayıt Ol</Text>
@@ -211,7 +213,7 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0F172A',
+        backgroundColor: '#07111E',
     },
     overlay: {
         flex: 1,
@@ -244,7 +246,7 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: '#7C3AED',
+        backgroundColor: '#0D9488',
     },
     logoIconContainer: {
         width: 100,
@@ -252,9 +254,9 @@ const styles = StyleSheet.create({
         borderRadius: 50,
         padding: 3,
         backgroundColor: 'rgba(255,255,255,0.1)',
-        shadowColor: '#7C3AED',
+        shadowColor: '#0D9488',
         shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.5,
+        shadowOpacity: 0.4,
         shadowRadius: 20,
         elevation: 10,
     },
@@ -269,7 +271,7 @@ const styles = StyleSheet.create({
         fontSize: 38,
         color: colors.white,
         letterSpacing: -1.5,
-        textShadowColor: 'rgba(124, 58, 237, 0.5)',
+        textShadowColor: 'rgba(13, 148, 136, 0.4)',
         textShadowOffset: { width: 0, height: 4 },
         textShadowRadius: 10,
     },
@@ -292,10 +294,10 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     citizenBorder: {
-        borderColor: 'rgba(124, 58, 237, 0.3)',
+        borderColor: 'rgba(13, 148, 136, 0.25)',
     },
     electricianBorder: {
-        borderColor: 'rgba(59, 130, 246, 0.3)',
+        borderColor: 'rgba(70, 130, 180, 0.25)',
     },
     cardGradient: {
         flexDirection: 'row',
@@ -330,17 +332,20 @@ const styles = StyleSheet.create({
     },
     registerButton: {
         width: '100%',
-        overflow: 'hidden',
         borderRadius: 16,
-        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+        backgroundColor: 'transparent',
     },
     registerGradient: {
         width: '100%',
         paddingVertical: 16,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: 16,
+        shadowColor: '#0D9488',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 3,
     },
     registerText: {
         color: '#FFFFFF',
