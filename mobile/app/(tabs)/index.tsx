@@ -1149,10 +1149,10 @@ export default function HomeScreen() {
         <View style={[
           styles.premiumHeaderContainer, 
           isElectrician ? { 
-            backgroundColor: '#253342', 
-            shadowColor: '#000', 
+            backgroundColor: colors.headerDeepSlate || '#F0F4F8', 
+            shadowColor: '#4682B4', 
             shadowOffset: { width: 0, height: 4 }, 
-            shadowOpacity: 0.03,
+            shadowOpacity: 0.04,
             shadowRadius: 8, 
             elevation: 2,
             borderBottomLeftRadius: 0,
@@ -1164,16 +1164,16 @@ export default function HomeScreen() {
           {isElectrician ? (
             <ImageBackground
               source={require('../../assets/images/header_bg.png')}
-              style={[styles.premiumHeader, { backgroundColor: '#253342', borderBottomWidth: 1, borderBottomColor: 'rgba(148, 163, 184, 0.15)' }]}
+              style={[styles.premiumHeader, { backgroundColor: colors.headerDeepSlate || '#F0F4F8', borderBottomWidth: 1, borderBottomColor: 'rgba(70, 130, 180, 0.15)' }]}
               imageStyle={[styles.headerImage, { opacity: 0.05 }]}
             >
               <LinearGradient
-                colors={['#253342', '#253342']}
+                colors={[colors.headerDeepSlate || '#F0F4F8', '#E6EEF4']}
                 style={StyleSheet.absoluteFill}
               />
               <StatusBar 
-                barStyle="light-content" 
-                backgroundColor="#253342" 
+                barStyle="dark-content" 
+                backgroundColor={colors.headerDeepSlate || '#F0F4F8'} 
                 translucent={false}
               />
               <ElectricianHeader

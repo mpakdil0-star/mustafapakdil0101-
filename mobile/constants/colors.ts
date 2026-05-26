@@ -117,6 +117,12 @@ export const CITIZEN_COLORS = {
   gradientAmethystRich: ['#115E59', '#0D9488', '#0EA5E9', '#38BDF8'] as [string, string, string, string],
   gradientHeaderAmethyst: ['rgba(17, 94, 89, 0.85)', 'rgba(13, 148, 136, 0.95)'] as [string, string],
 
+  // Premium Steel Blue & Platinum Theme Variables (Faz 25 RFC & Minimalist Redesign - Placeholders)
+  headerDeepSlate: '#FFFFFF',
+  accentGold: '#FFD700',
+  textWhite: '#FFFFFF',
+  textMuted: '#94A3B8',
+
   // Base Colors
   white: '#FFFFFF',
   black: '#000000',
@@ -131,11 +137,11 @@ export const ELECTRICIAN_COLORS = {
   primaryLight: '#63B8FF',         // Steel Blue Lighter
   primaryGradient: ['#4682B4', '#63B8FF'] as [string, string],
 
-  // Premium Deep Slate & Gold Theme Variables (Faz 25 RFC & Minimalist Redesign)
-  headerDeepSlate: '#253342',      // COLOR_HEADER_DEEP_SLATE
-  accentGold: '#E5C158',           // COLOR_ACCENT_GOLD
-  textWhite: '#FFFFFF',            // COLOR_TEXT_WHITE
-  textMuted: '#94A3B8',            // COLOR_TEXT_MUTED
+  // Premium Steel Blue & Platinum Theme Variables (Faz 25 RFC & Minimalist Redesign)
+  headerDeepSlate: '#F0F4F8',      // COLOR_HEADER_DEEP_SLATE (Fresh Light-Blue Slate!)
+  accentGold: '#E5C158',           // COLOR_ACCENT_GOLD (Champagne Gold)
+  textWhite: '#2E5C8A',            // COLOR_TEXT_WHITE (Mapped to Deep Steel Blue for high contrast!)
+  textMuted: '#64748B',            // COLOR_TEXT_MUTED (Slate Gray)
 
   // Secondary Deep Charcoal Slate Shades (Corporate Navy / COLOR_PRIMARY_DARK)
   secondary: '#1E293B',            // Slate 800 (Header BG)

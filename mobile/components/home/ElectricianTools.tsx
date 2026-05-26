@@ -34,7 +34,7 @@ export const ElectricianTools: React.FC<ElectricianToolsProps> = ({
           activeOpacity={0.85}
         >
           <LinearGradient
-            colors={['#102A43', '#0F172A']}
+            colors={['#4682B4', '#2E5C8A']}
             style={StyleSheet.absoluteFill}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -65,7 +65,7 @@ export const ElectricianTools: React.FC<ElectricianToolsProps> = ({
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={['#15803D', '#14532D']}
+              colors={['#16A34A', '#15803D']}
               style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -94,7 +94,7 @@ export const ElectricianTools: React.FC<ElectricianToolsProps> = ({
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={['#C2410C', '#7C2D12']}
+              colors={['#EA580C', '#C2410C']}
               style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}

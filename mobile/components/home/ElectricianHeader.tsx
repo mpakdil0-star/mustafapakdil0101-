@@ -41,7 +41,7 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
           onPress={() => router.canGoBack() ? router.back() : router.replace('/(auth)/welcome')}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          <Ionicons name="arrow-back" size={24} color="#4682B4" />
         </TouchableOpacity>
       )}
 
@@ -76,7 +76,7 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
             <Image source={{ uri: getFileUrl(user.profileImageUrl) || '' }} style={styles.centeredAvatarImage} />
           ) : (
             <View style={styles.centeredAvatarPlaceholder}>
-              <Ionicons name="person" size={32} color="#E5C158" />
+              <Ionicons name="person" size={32} color="#4682B4" />
             </View>
           )}
         </TouchableOpacity>
@@ -88,7 +88,7 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
             activeOpacity={0.7}
             onPress={() => handleActionWithAuth('/profile/notifications')}
           >
-            <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
+            <Ionicons name="notifications-outline" size={22} color="#4682B4" />
             {unreadCount > 0 && (
               <Animated.View style={[styles.notificationBadge, { transform: [{ scale: badgePulseAnim }] }]}>
                 <Text style={styles.notificationBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
@@ -146,9 +146,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(70, 130, 180, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.2)',
+    borderColor: 'rgba(70, 130, 180, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
@@ -162,14 +162,14 @@ const styles = StyleSheet.create({
   headerTitleMain: {
     fontFamily: fonts.extraBold,
     fontSize: 18,
-    color: '#E5C158', // COLOR_ACCENT_GOLD
+    color: '#2E5C8A', // Deep Steel Blue
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
   headerSubtitleSub: {
     fontFamily: fonts.regular,
     fontSize: 13,
-    color: '#94A3B8', // COLOR_TEXT_MUTED
+    color: '#64748B', // Slate Gray
     marginTop: 1,
   },
   profileRow: {
@@ -194,14 +194,14 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     borderWidth: 2,
-    borderColor: '#E5C158', // COLOR_ACCENT_GOLD
+    borderColor: '#E5C158', // Champagne Gold border
     overflow: 'hidden',
-    backgroundColor: '#253342',
+    backgroundColor: '#E6EEF4',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#E5C158',
+    shadowColor: '#4682B4',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 4,
   },
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   centeredAvatarPlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#253342',
+    backgroundColor: '#E6EEF4',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -220,9 +220,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(70, 130, 180, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.2)',
+    borderColor: 'rgba(70, 130, 180, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -230,9 +230,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     top: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(70, 130, 180, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.2)',
+    borderColor: 'rgba(70, 130, 180, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   ratingBadgeText: {
     fontFamily: fonts.bold,
     fontSize: 9,
-    color: '#E5C158',
+    color: '#2E5C8A', // Deep Steel Blue
   },
   notificationBadge: {
     position: 'absolute',
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#253342',
+    borderColor: '#F0F4F8',
   },
   notificationBadgeText: {
     color: '#FFFFFF',
@@ -265,12 +265,17 @@ const styles = StyleSheet.create({
   },
   unifiedCard: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: '#FFFFFF', // Pure White Card
     borderRadius: 16,
     paddingVertical: 16,
     marginHorizontal: 4,
     borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.15)',
+    borderColor: 'rgba(70, 130, 180, 0.12)',
+    shadowColor: '#4682B4',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.03, // Opacity between 0.02 and 0.04
+    shadowRadius: 10,
+    elevation: 2,
   },
   unifiedCardHalf: {
     flex: 1,
@@ -281,25 +286,25 @@ const styles = StyleSheet.create({
     width: 1,
     height: '70%',
     borderLeftWidth: 1,
-    borderLeftColor: 'rgba(148, 163, 184, 0.2)',
+    borderLeftColor: 'rgba(70, 130, 180, 0.15)',
     alignSelf: 'center',
   },
   unifiedCardLabel: {
     fontFamily: fonts.semiBold,
     fontSize: 11,
-    color: '#94A3B8',
+    color: '#64748B', // Slate Gray
     marginBottom: 4,
   },
   unifiedCardValue: {
     fontFamily: fonts.extraBold,
     fontSize: 20,
-    color: '#FFFFFF',
+    color: '#2E5C8A', // Deep Steel Blue
     marginBottom: 2,
   },
   unifiedCardValueDark: {
     fontFamily: fonts.extraBold,
     fontSize: 20,
-    color: '#FFFFFF',
+    color: '#2E5C8A', // Deep Steel Blue
     marginBottom: 2,
   },
   unifiedCardSub: {
