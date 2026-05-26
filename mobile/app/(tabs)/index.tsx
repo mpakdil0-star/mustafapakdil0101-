@@ -1146,28 +1146,23 @@ export default function HomeScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.premiumHeaderContainer}>
-          <ImageBackground
-            source={require('../../assets/images/header_bg.png')}
-            style={styles.premiumHeader}
-            imageStyle={styles.headerImage}
-          >
-            {/* Vibrant Orange Gradient Overlay for Usta */}
-            <LinearGradient
-              colors={isElectrician
-                ? ['#1E293B', '#111827']
-                : (colors.gradientHeaderAmethyst as any) || [colors.primary + '88', colors.primaryLight + 'DD']
-              }
-              style={StyleSheet.absoluteFill}
-            />
-
-            {/* Glowing Decorative Circles */}
-            <View style={[styles.headerDecorativeCircle1, isElectrician && { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]} />
-            <View style={[styles.headerDecorativeCircle2, isElectrician && { backgroundColor: 'rgba(255, 255, 255, 0.05)' }]} />
-            <View style={[styles.headerDecorativeCircle3, isElectrician && { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]} />
-        {/* Premium Welcome Header with Background Image and Enhanced Decoration */}
-
-            {isElectrician ? (
+        <View style={[
+          styles.premiumHeaderContainer, 
+          isElectrician ? { 
+            backgroundColor: '#F0F4F8', 
+            shadowColor: '#000', 
+            shadowOffset: { width: 0, height: 4 }, 
+            shadowOpacity: 0.03,
+            shadowRadius: 8, 
+            elevation: 2,
+            borderBottomLeftRadius: 0,
+            borderBottomRightRadius: 0,
+          } : {
+            shadowColor: colors.primary,
+          }
+        ]}>
+          {isElectrician ? (
+            <View style={[styles.premiumHeader, { backgroundColor: '#F0F4F8' }]}>
               <ElectricianHeader
                 user={user}
                 firstName={firstName}
@@ -1180,7 +1175,24 @@ export default function HomeScreen() {
                 ustaCategoryTitle={getUstaCategory(user || { serviceCategory: 'elektrik' })}
                 isAuthenticated={isAuthenticated}
               />
-            ) : (
+            </View>
+          ) : (
+            <ImageBackground
+              source={require('../../assets/images/header_bg.png')}
+              style={styles.premiumHeader}
+              imageStyle={styles.headerImage}
+            >
+              {/* Vibrant Gradient Overlay */}
+              <LinearGradient
+                colors={(colors.gradientHeaderAmethyst as any) || [colors.primary + '88', colors.primaryLight + 'DD']}
+                style={StyleSheet.absoluteFill}
+              />
+
+              {/* Glowing Decorative Circles */}
+              <View style={styles.headerDecorativeCircle1} />
+              <View style={styles.headerDecorativeCircle2} />
+              <View style={styles.headerDecorativeCircle3} />
+
               <CitizenHeader
                 user={user}
                 isAuthenticated={isAuthenticated}
@@ -1189,9 +1201,9 @@ export default function HomeScreen() {
                 handleActionWithAuth={handleActionWithAuth}
                 colors={colors}
               />
-            )}
             </ImageBackground>
-          </View>
+          )}
+        </View>
 
         {/* Push Notification Banner — Fallback for users who dismissed the initial popup */}
         {showPushBanner && isAuthenticated && (

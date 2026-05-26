@@ -34,7 +34,7 @@ export const ElectricianTools: React.FC<ElectricianToolsProps> = ({
           activeOpacity={0.85}
         >
           <LinearGradient
-            colors={['#1E3A8A', '#172554']}
+            colors={['#60A5FA', '#93C5FD']}
             style={StyleSheet.absoluteFill}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   toolLeftCardSubtitle: {
     fontFamily: fonts.medium,
     fontSize: 11,
-    color: 'rgba(255, 255, 255, 0.75)',
+    color: 'rgba(255, 255, 255, 0.8)',
   },
   toolGridRightColumn: {
     flex: 1,

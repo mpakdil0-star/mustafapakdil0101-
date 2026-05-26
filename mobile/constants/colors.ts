@@ -128,8 +128,14 @@ export const ELECTRICIAN_COLORS = {
   // Core Gold/Amber Palette (Updated to Corporate Blue / COLOR_BRAND_BLUE)
   primary: '#0284C7',              // Brand Blue 600
   primaryDark: '#0369A1',          // Brand Blue 700
-  primaryLight: '#38BDF8',         // Sky Blue 400
+  primaryLight: '#38BDF8',
   primaryGradient: ['#0284C7', '#38BDF8'] as [string, string],
+
+  // Light Theme Header Architecture Variables (Faz 25 RFC)
+  headerLight: '#F0F4F8',
+  textMain: '#1E293B',
+  dividerLight: '#CBD5E1',
+  brandBlue: '#0284C7',
 
   // Secondary Deep Charcoal Slate Shades (Corporate Navy / COLOR_PRIMARY_DARK)
   secondary: '#1E293B',            // Slate 800 (Header BG)
