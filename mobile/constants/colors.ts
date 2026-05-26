@@ -137,11 +137,11 @@ export const ELECTRICIAN_COLORS = {
   primaryLight: '#63B8FF',         // Steel Blue Lighter
   primaryGradient: ['#4682B4', '#63B8FF'] as [string, string],
 
-  // Premium Steel Blue & Platinum Theme Variables (Faz 25 RFC & Minimalist Redesign)
-  headerDeepSlate: '#F0F4F8',      // COLOR_HEADER_DEEP_SLATE (Fresh Light-Blue Slate!)
+  // Premium Steel Blue Theme Variables (Faz 25 RFC & Minimalist Redesign)
+  headerDeepSlate: '#4682B4',      // COLOR_HEADER_DEEP_SLATE (Ferah Çelik Mavisi!)
   accentGold: '#E5C158',           // COLOR_ACCENT_GOLD (Champagne Gold)
-  textWhite: '#2E5C8A',            // COLOR_TEXT_WHITE (Mapped to Deep Steel Blue for high contrast!)
-  textMuted: '#64748B',            // COLOR_TEXT_MUTED (Slate Gray)
+  textWhite: '#FFFFFF',            // COLOR_TEXT_WHITE (Pure White)
+  textMuted: '#CBD5E1',            // COLOR_TEXT_MUTED (Light Gray for Subtitles)
 
   // Secondary Deep Charcoal Slate Shades (Corporate Navy / COLOR_PRIMARY_DARK)
   secondary: '#1E293B',            // Slate 800 (Header BG)
