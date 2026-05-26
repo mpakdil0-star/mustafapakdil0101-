@@ -66,17 +66,17 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
         {/* Sol Sütun Boşluk / Sürgülü Ayar (Simetri) */}
         <View style={styles.symmetricalLeftCol} />
 
-        {/* Ortalanmış dairesel bir avatar (Etrafında altın border) */}
+        {/* Ortalanmış dairesel bir avatar (Etrafında beyaz border) */}
         <TouchableOpacity
-          style={styles.centeredAvatarContainer}
+          style={[styles.centeredAvatarContainer, { borderColor: 'rgba(255, 255, 255, 0.35)' }]}
           activeOpacity={0.8}
           onPress={() => handleActionWithAuth('/profile')}
         >
-          {user?.profileImageUrl ? (
+          {isAuthenticated && user?.profileImageUrl ? (
             <Image source={{ uri: getFileUrl(user.profileImageUrl) || '' }} style={styles.centeredAvatarImage} />
           ) : (
             <View style={styles.centeredAvatarPlaceholder}>
-              <Ionicons name="person" size={32} color="#E5C158" />
+              <Ionicons name="person" size={32} color="rgba(255, 255, 255, 0.85)" />
             </View>
           )}
         </TouchableOpacity>
@@ -194,12 +194,12 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     borderWidth: 2,
-    borderColor: '#E5C158', // Champagne Gold border
+    borderColor: 'rgba(255, 255, 255, 0.35)', // Clean White border like Citizen
     overflow: 'hidden',
-    backgroundColor: '#2E5C8A', // Deep Steel Blue zemin
+    backgroundColor: 'rgba(255, 255, 255, 0.12)', // Translucent white like Citizen
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#E5C158', // Gold Glow
+    shadowColor: '#FFFFFF', // White Glow like Citizen
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   centeredAvatarPlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#2E5C8A',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
   },
