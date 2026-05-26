@@ -445,6 +445,10 @@ export default function EditProfileScreen() {
 
     return (
         <View style={styles.container}>
+            {/* Ambient Background Glow Blobs */}
+            <View style={[styles.glowBlob, { top: -80, right: -80, backgroundColor: colors.primary, opacity: 0.05 }]} />
+            <View style={[styles.glowBlob, { bottom: -80, left: -80, backgroundColor: isElectrician ? '#6366F1' : '#06B6D4', opacity: 0.05 }]} />
+
             {/* Prevent escape via gestures or header for mandatory flow */}
             <Stack.Screen 
                 options={{ 
@@ -463,9 +467,10 @@ export default function EditProfileScreen() {
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Profile Photo Card - Premium Centered Layout */}
-                <View style={[styles.previewCard, { shadowColor: colors.primary }]}>
-                    <View style={styles.previewCardInner}>
+                {/* Main Card: Kişisel Bilgiler & Profil Künyesi & Adres Yönetimi */}
+                <Card variant="default" style={[styles.mainCard, { shadowColor: colors.primary, marginBottom: spacing.sm }]}>
+                    {/* Üst Profil Künyesi (Inline Horizontal Layout) */}
+                    <View style={styles.inlineProfileHeader}>
                         <TouchableOpacity
                             style={styles.previewAvatarWrapper}
                             onPress={handlePhotoOptions}
@@ -490,49 +495,49 @@ export default function EditProfileScreen() {
                             </LinearGradient>
                             <View style={[styles.photoCameraBadge, { backgroundColor: colors.primary }]}>
                                 {photoLoading ? (
-                                    <ActivityIndicator size={10} color="#FFF" />
+                                    <ActivityIndicator size={8} color="#FFF" />
                                 ) : (
-                                    <Ionicons name="camera" size={11} color="#FFF" />
+                                    <Ionicons name="camera" size={10} color="#FFF" />
                                 )}
                             </View>
                         </TouchableOpacity>
-                        <Text style={[styles.previewName, { color: colors.text }]}>{user?.fullName}</Text>
-                        {user?.userType === 'ELECTRICIAN' ? (
-                            <View style={styles.previewMetaRow}>
-                                <View style={[styles.previewBadge, { backgroundColor: colors.primary + '12' }]}>
-                                    <Text style={[styles.previewBadgeText, { color: colors.primary }]}>
-                                        {SERVICE_CATEGORIES.find(c => c.id === user?.electricianProfile?.serviceCategory)?.name || 'Usta'}
-                                    </Text>
-                                </View>
-                                <View style={styles.previewStat}>
-                                    <Ionicons name="star" size={11} color="#F59E0B" />
-                                    <Text style={styles.previewStatText}>{Number((user?.electricianProfile as any)?.ratingAverage || 0).toFixed(1)}</Text>
-                                </View>
-                                <View style={styles.previewStat}>
-                                    <Ionicons name="briefcase-outline" size={11} color={staticColors.textLight} />
-                                    <Text style={styles.previewStatText}>{experienceYears || '0'} Yıl</Text>
-                                </View>
-                            </View>
-                        ) : (
-                            <TouchableOpacity onPress={handlePhotoOptions} style={styles.photoChangeBtn}>
-                                <Ionicons name={user?.profileImageUrl ? "refresh-outline" : "camera-outline"} size={13} color={colors.primary} />
-                                <Text style={[styles.photoChangeHint, { color: colors.primary }]}>
-                                    {user?.profileImageUrl ? 'Fotoğrafı değiştir' : 'Fotoğraf ekle'}
-                                </Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                </View>
 
-                <Card variant="default" style={[styles.mainCard, { shadowColor: colors.primary }]}>
-                    {/* Temel Bilgiler */}
-                    <View style={styles.sectionPadding}>
-                        <View style={[styles.sectionHeader, { marginTop: 0 }]}>
-                            <View style={[styles.sectionIconBox, { backgroundColor: colors.primary + '10' }]}>
-                                <Ionicons name="person-outline" size={15} color={colors.primary} />
-                            </View>
-                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Kişisel Bilgiler</Text>
+                        <View style={styles.inlineProfileInfo}>
+                            <Text style={[styles.previewName, { color: colors.text }]} numberOfLines={1}>
+                                {user?.fullName}
+                            </Text>
+                            
+                            {user?.userType === 'ELECTRICIAN' ? (
+                                <View style={styles.previewMetaRow}>
+                                    <View style={[styles.previewBadge, { backgroundColor: colors.primary + '12' }]}>
+                                        <Text style={[styles.previewBadgeText, { color: colors.primary }]}>
+                                            {SERVICE_CATEGORIES.find(c => c.id === user?.electricianProfile?.serviceCategory)?.name || 'Usta'}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.previewStat}>
+                                        <Ionicons name="star" size={11} color="#F59E0B" />
+                                        <Text style={styles.previewStatText}>{Number((user?.electricianProfile as any)?.ratingAverage || 0).toFixed(1)}</Text>
+                                    </View>
+                                    <View style={styles.previewStat}>
+                                        <Ionicons name="briefcase-outline" size={11} color={staticColors.textLight} />
+                                        <Text style={styles.previewStatText}>{experienceYears || '0'} Yıl</Text>
+                                    </View>
+                                </View>
+                            ) : (
+                                <TouchableOpacity onPress={handlePhotoOptions} style={styles.photoChangeBtn}>
+                                    <Ionicons name={user?.profileImageUrl ? "refresh-outline" : "camera-outline"} size={12} color={colors.primary} />
+                                    <Text style={[styles.photoChangeHint, { color: colors.primary }]}>
+                                        {user?.profileImageUrl ? 'Fotoğrafı değiştir' : 'Fotoğraf ekle'}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
+                    </View>
+
+                    <View style={styles.inlineDivider} />
+
+                    {/* Kişisel Bilgiler Form Alanı */}
+                    <View style={styles.sectionPadding}>
                         <Input
                             label="Ad Soyad *"
                             value={fullName}
@@ -542,7 +547,7 @@ export default function EditProfileScreen() {
                             containerStyle={styles.input}
                             editable={false}
                             error={errors.fullName}
-                            helperText={!fullName && !errors.fullName ? "Profilinizde görünmesi için ad soyad zorunludur." : undefined}
+                            leftIcon={<Ionicons name="person-outline" size={16} color={staticColors.textLight} />}
                         />
 
                         <Input
@@ -555,6 +560,7 @@ export default function EditProfileScreen() {
                             containerStyle={styles.input}
                             editable={false}
                             error={errors.email}
+                            leftIcon={<Ionicons name="mail-outline" size={16} color={staticColors.textLight} />}
                         />
 
                         <Input
@@ -573,10 +579,7 @@ export default function EditProfileScreen() {
                             editable={!user?.phone || phoneNumber !== user?.phone || !!mandatory || !user?.isVerified}
                             error={errors.phoneNumber}
                             maxLength={11}
-                            helperText={isElectrician && !errors.phoneNumber
-                                ? (phoneNumber ? "Bu numara iş teklifleri için kullanılacaktır." : "İş alabilmeniz için telefon numarası zorunludur.")
-                                : undefined
-                            }
+                            leftIcon={<Ionicons name="call-outline" size={16} color={staticColors.textLight} />}
                         />
 
                         {user?.userType === 'ELECTRICIAN' && (
@@ -588,127 +591,123 @@ export default function EditProfileScreen() {
                                 keyboardType="numeric"
                                 containerStyle={styles.inputNoMargin}
                                 error={errors.experienceYears}
-                                helperText={!experienceYears && !errors.experienceYears ? "Müşterilerin size güvenmesi için deneyim yılı zorunludur." : undefined}
+                                leftIcon={<Ionicons name="briefcase-outline" size={16} color={staticColors.textLight} />}
                             />
                         )}
                     </View>
 
-                    {/* Adres/Bölge Yönetimi Bölümü */}
-                    <>
-                        <View style={styles.divider} />
+                    <View style={styles.inlineDivider} />
+
+                    {/* Adres/Konum Yönetim Satırı (Inline Row) */}
+                    <View style={styles.sectionPadding}>
+                        <TouchableOpacity
+                            style={[
+                                styles.inlineServiceRow, 
+                                errors.locations && { borderColor: '#EF4444', borderWidth: 1.5, backgroundColor: '#FEF2F2', padding: 8, borderRadius: 8 }
+                            ]}
+                            onPress={() => { router.push('/profile/addresses'); setErrors(prev => ({ ...prev, locations: '' })); }}
+                            activeOpacity={0.7}
+                        >
+                            <View style={[styles.serviceAreaIconBox, { backgroundColor: colors.primary + '10' }]}>
+                                <Ionicons name={isElectrician ? "map-outline" : "location-outline"} size={16} color={colors.primary} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.serviceAreaCardTitle}>
+                                    {isElectrician ? 'Hizmet Bölgelerimi Seç *' : 'Adreslerimi Yönet'}
+                                </Text>
+                                <Text style={styles.serviceAreaCardSubtitle}>
+                                    {isElectrician
+                                        ? (locations.length > 0 ? `${locations.length} bölgede aktifsiniz` : 'Hizmet verilecek ilçeler')
+                                        : (locations.length > 0 ? `${locations.length} kayıtlı adres` : 'Henüz adres eklenmedi')}
+                                </Text>
+                            </View>
+                            {locations.length > 0 ? (
+                                <View style={[styles.locationCountBadge, { backgroundColor: colors.primary }]}>
+                                    <Text style={styles.locationCountText}>{locations.length}</Text>
+                                </View>
+                            ) : isElectrician ? (
+                                <View style={[styles.locationCountBadge, { backgroundColor: colors.primary, paddingHorizontal: 6, paddingVertical: 3 }]}>
+                                    <Ionicons name="add" size={12} color={staticColors.white} />
+                                </View>
+                            ) : null}
+                            <Ionicons name="chevron-forward" size={14} color={staticColors.textLight} />
+                        </TouchableOpacity>
+                        {errors.locations && (
+                            <Text style={{ fontSize: 11, color: '#EF4444', marginTop: 4, marginLeft: 4, fontFamily: fonts.medium }}>
+                                {errors.locations}
+                            </Text>
+                        )}
+                    </View>
+                </Card>
+
+                {/* Card 2: Uzmanlık Alanları (Usta/Electrician için) */}
+                {user?.userType === 'ELECTRICIAN' && (
+                    <Card variant="default" style={[styles.mainCard, { shadowColor: colors.primary, marginBottom: spacing.md }]}>
                         <View style={styles.sectionPadding}>
                             <TouchableOpacity
-                                style={[
-                                    styles.serviceAreaCard, 
-                                    errors.locations && { borderColor: '#EF4444', borderWidth: 1.5, backgroundColor: '#FEF2F2' }
-                                ]}
-                                onPress={() => { router.push('/profile/addresses'); setErrors(prev => ({ ...prev, locations: '' })); }}
+                                style={styles.expandableHeader}
+                                onPress={() => setIsExpertiseExpanded(!isExpertiseExpanded)}
                                 activeOpacity={0.7}
                             >
-                                <View style={styles.serviceAreaCardInner}>
-                                    <View style={styles.serviceAreaIconBox}>
-                                        <Ionicons name={isElectrician ? "map-outline" : "location-outline"} size={22} color={colors.primary} />
+                                <View style={styles.sectionHeaderNoMargin}>
+                                    <View style={[styles.sectionIconBox, { backgroundColor: colors.primary + '10' }]}>
+                                        <Ionicons name="sparkles" size={15} color={colors.primary} />
                                     </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={styles.serviceAreaCardTitle}>
-                                            {isElectrician ? 'Hizmet Bölgelerimi Seç *' : 'Adreslerimi Yönet'}
-                                        </Text>
-                                        <Text style={styles.serviceAreaCardSubtitle}>
-                                            {isElectrician
-                                                ? (locations.length > 0 ? `${locations.length} bölgede hizmet veriyorsunuz` : 'İş almak istediğiniz ilçeleri ekleyin')
-                                                : (locations.length > 0 ? `${locations.length} kayıtlı adres` : 'Henüz adres eklenmedi')}
+                                    <View>
+                                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Uzmanlık Alanları *</Text>
+                                        <Text style={[styles.sectionSubtitle, { color: errors.specialties ? '#EF4444' : (selectedExpertise.length > 0 ? colors.textSecondary : '#EF4444'), marginTop: 1 }]}>
+                                            {errors.specialties || (selectedExpertise.length > 0 ? 'Hangi alanlarda uzmansın?' : 'Lütfen en az bir alan seçiniz.')}
                                         </Text>
                                     </View>
-                                    {locations.length > 0 ? (
-                                        <View style={styles.locationCountBadge}>
-                                            <Text style={styles.locationCountText}>{locations.length}</Text>
-                                        </View>
-                                    ) : isElectrician ? (
-                                        <View style={[styles.locationCountBadge, { backgroundColor: colors.primary, paddingHorizontal: 6 }]}>
-                                            <Ionicons name="add" size={16} color={staticColors.white} />
-                                        </View>
-                                    ) : null}
-                                    <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
                                 </View>
+                                <Ionicons
+                                    name={isExpertiseExpanded ? "chevron-up" : "chevron-down"}
+                                    size={18}
+                                    color={colors.textLight}
+                                />
                             </TouchableOpacity>
-                            {errors.locations && (
-                                <Text style={{ fontSize: 11, color: '#EF4444', marginTop: 6, marginLeft: 4, fontFamily: fonts.medium }}>
-                                    {errors.locations}
-                                </Text>
+
+                            {isExpertiseExpanded && (
+                                <View style={styles.expertiseGrid}>
+                                    {currentExpertiseOptions.map((option) => {
+                                        const isSelected = selectedExpertise.includes(option.label);
+                                        return (
+                                            <TouchableOpacity
+                                                key={option.id}
+                                                style={styles.expertiseItemWrapper}
+                                                onPress={() => { toggleExpertise(option.label); setErrors(prev => ({ ...prev, specialties: '' })); }}
+                                                activeOpacity={0.8}
+                                            >
+                                                <LinearGradient
+                                                    colors={(isSelected ? (colors.primaryGradient || [colors.primary, colors.primaryDark]) : ['#FFFFFF', '#F8FAFC']) as any}
+                                                    style={[
+                                                        styles.expertiseItem,
+                                                        isSelected && [styles.expertiseItemSelected, { borderColor: colors.primary, shadowColor: colors.primary }]
+                                                    ]}
+                                                >
+                                                    <View style={[styles.expertiseIconBox, { backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : colors.primary + '10' }]}>
+                                                        <Ionicons
+                                                            name={option.icon as any}
+                                                            size={13}
+                                                            color={isSelected ? staticColors.white : colors.primary}
+                                                        />
+                                                    </View>
+                                                    <Text style={[
+                                                        styles.expertiseLabel,
+                                                        { color: isSelected ? staticColors.white : colors.textSecondary },
+                                                        isSelected && styles.expertiseLabelSelected
+                                                    ]}>
+                                                        {option.label}
+                                                    </Text>
+                                                </LinearGradient>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </View>
                             )}
                         </View>
-                    </>
-
-                    {/* Uzmanlık Alanları - Ustalar için */}
-                    {user?.userType === 'ELECTRICIAN' && (
-                        <>
-                            <View style={styles.divider} />
-                            <View style={styles.sectionPadding}>
-                                <TouchableOpacity
-                                    style={styles.expandableHeader}
-                                    onPress={() => setIsExpertiseExpanded(!isExpertiseExpanded)}
-                                    activeOpacity={0.7}
-                                >
-                                    <View style={styles.sectionHeaderNoMargin}>
-                                        <View style={[styles.sectionIconBox, { backgroundColor: colors.primary + '10' }]}>
-                                            <Ionicons name="sparkles" size={20} color={colors.primary} />
-                                        </View>
-                                        <View>
-                                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Uzmanlık Alanları *</Text>
-                                            <Text style={[styles.sectionSubtitle, { color: errors.specialties ? '#EF4444' : (selectedExpertise.length > 0 ? colors.textSecondary : '#EF4444') }]}>
-                                                {errors.specialties || (selectedExpertise.length > 0 ? 'Hangi alanlarda uzmansın?' : 'Lütfen en az bir alan seçiniz.')}
-                                            </Text>
-                                        </View>
-                                    </View>
-                                    <Ionicons
-                                        name={isExpertiseExpanded ? "chevron-up" : "chevron-down"}
-                                        size={20}
-                                        color={colors.textLight}
-                                    />
-                                </TouchableOpacity>
-
-                                {isExpertiseExpanded && (
-                                    <View style={styles.expertiseGrid}>
-                                        {currentExpertiseOptions.map((option) => {
-                                            const isSelected = selectedExpertise.includes(option.label);
-                                            return (
-                                                <TouchableOpacity
-                                                    key={option.id}
-                                                    style={styles.expertiseItemWrapper}
-                                                    onPress={() => { toggleExpertise(option.label); setErrors(prev => ({ ...prev, specialties: '' })); }}
-                                                    activeOpacity={0.8}
-                                                >
-                                                    <LinearGradient
-                                                        colors={(isSelected ? (colors.primaryGradient || [colors.primary, colors.primaryDark]) : [staticColors.white, '#F8FAFC']) as any}
-                                                        style={[
-                                                            styles.expertiseItem,
-                                                            isSelected && [styles.expertiseItemSelected, { borderColor: colors.primary, shadowColor: colors.primary }]
-                                                        ]}
-                                                    >
-                                                        <View style={styles.expertiseIconBox}>
-                                                            <Ionicons
-                                                                name={option.icon as any}
-                                                                size={16}
-                                                                color={isSelected ? staticColors.white : colors.primary}
-                                                            />
-                                                        </View>
-                                                        <Text style={[
-                                                            styles.expertiseLabel,
-                                                            { color: isSelected ? staticColors.white : colors.textSecondary },
-                                                            isSelected && styles.expertiseLabelSelected
-                                                        ]}>
-                                                            {option.label}
-                                                        </Text>
-                                                    </LinearGradient>
-                                                </TouchableOpacity>
-                                            );
-                                        })}
-                                    </View>
-                                )}
-                            </View>
-                        </>
-                    )}
-                </Card>
+                    </Card>
+                )}
 
                 <View style={styles.saveButtonContainer}>
                     {user?.userType === 'ELECTRICIAN' && hasChanges && (
@@ -732,10 +731,10 @@ export default function EditProfileScreen() {
             </ScrollView>
 
             <Modal visible={showSuccessModal} transparent animationType="fade">
-                <View style={[styles.modalOverlay, { backgroundColor: 'rgba(15, 23, 42, 0.85)' }]}>
+                <View style={styles.modalOverlay}>
                     <LinearGradient
-                        colors={['rgba(30, 41, 59, 0.98)', 'rgba(15, 23, 42, 0.95)']}
-                        style={[styles.successModal, { borderColor: 'rgba(255,255,255,0.1)' }]}
+                        colors={['rgba(255, 255, 255, 0.98)', 'rgba(248, 250, 252, 0.96)']}
+                        style={styles.successModal}
                     >
                         <View style={styles.successIconWrapper}>
                             <View style={styles.successIconGlow} />
@@ -747,8 +746,8 @@ export default function EditProfileScreen() {
                             </LinearGradient>
                         </View>
 
-                        <Text style={[styles.successTitle, { color: staticColors.white }]}>Başarılı!</Text>
-                        <Text style={[styles.successMessage, { color: 'rgba(255,255,255,0.6)' }]}>Profil bilgileriniz güvenle güncellendi.</Text>
+                        <Text style={[styles.successTitle, { color: colors.text }]}>Başarılı!</Text>
+                        <Text style={[styles.successMessage, { color: staticColors.textSecondary }]}>Profil bilgileriniz güvenle güncellendi.</Text>
 
                         <TouchableOpacity
                             style={[styles.successModalBtn, { shadowColor: colors.primary }]}
@@ -778,10 +777,10 @@ export default function EditProfileScreen() {
 
             {/* Warning Modal - Glass Glow Design */}
             <Modal visible={showWarningModal} transparent animationType="fade">
-                <View style={[styles.modalOverlay, { backgroundColor: 'rgba(15, 23, 42, 0.85)' }]}>
+                <View style={styles.modalOverlay}>
                     <LinearGradient
-                        colors={['rgba(30, 41, 59, 0.98)', 'rgba(15, 23, 42, 0.95)']}
-                        style={[styles.warningModal, { borderColor: 'rgba(255,255,255,0.1)' }]}
+                        colors={['rgba(255, 255, 255, 0.98)', 'rgba(248, 250, 252, 0.96)']}
+                        style={styles.warningModal}
                     >
                         <View style={styles.warningIconWrapper}>
                             <View style={styles.warningIconGlow} />
@@ -793,8 +792,8 @@ export default function EditProfileScreen() {
                             </LinearGradient>
                         </View>
 
-                        <Text style={[styles.warningTitle, { color: staticColors.white }]}>Eksik Bilgi</Text>
-                        <Text style={[styles.warningMessage, { color: 'rgba(255,255,255,0.6)' }]}>{warningMessage}</Text>
+                        <Text style={[styles.warningTitle, { color: colors.text }]}>Eksik Bilgi</Text>
+                        <Text style={[styles.warningMessage, { color: staticColors.textSecondary }]}>{warningMessage}</Text>
 
                         <TouchableOpacity
                             style={[styles.warningModalBtn, { shadowColor: colors.primary }]}
@@ -830,93 +829,177 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F8FAFC',
+        position: 'relative',
+    },
+    glowBlob: {
+        position: 'absolute',
+        width: 300,
+        height: 300,
+        borderRadius: 150,
+        zIndex: 0,
     },
     scrollView: {
         flex: 1,
+        zIndex: 1,
     },
     content: {
-        padding: 12,
-        paddingBottom: 24,
+        padding: 10,
+        paddingBottom: 16,
+    },
+    previewCard: {
+        backgroundColor: staticColors.white,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(226, 232, 240, 0.8)',
+        shadowColor: '#0F172A',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.03,
+        shadowRadius: 12,
+        elevation: 2,
+    },
+    previewCardInner: {
+        alignItems: 'center',
+    },
+    inlineProfileHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingTop: 10,
+        paddingBottom: 10,
+        gap: 10,
+    },
+    inlineProfileInfo: {
+        flex: 1,
+        gap: 2,
+    },
+    inlineDivider: {
+        height: 1,
+        backgroundColor: '#E2E8F0',
+        opacity: 0.5,
+    },
+    inlineServiceRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    previewAvatarWrapper: {
+        position: 'relative',
+        marginBottom: 0,
+    },
+    avatarRing: {
+        width: 58,
+        height: 58,
+        borderRadius: 29,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 2,
+    },
+    previewAvatar: {
+        width: 54,
+        height: 54,
+        borderRadius: 27,
+    },
+    previewAvatarPlaceholder: {
+        width: 54,
+        height: 54,
+        borderRadius: 27,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    previewAvatarText: {
+        fontFamily: fonts.extraBold,
+        fontSize: 20,
+    },
+    photoCameraBadge: {
+        position: 'absolute',
+        bottom: -2,
+        right: -2,
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1.5,
+        borderColor: staticColors.white,
+    },
+    previewName: {
+        fontFamily: fonts.extraBold,
+        fontSize: 15,
+        color: staticColors.text,
+        marginBottom: 2,
+        letterSpacing: -0.3,
+    },
+    previewMetaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+    },
+    previewBadge: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 6,
+    },
+    previewBadgeText: {
+        fontFamily: fonts.bold,
+        fontSize: 9,
+        letterSpacing: 0.3,
+    },
+    previewStat: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 2,
+    },
+    previewStatText: {
+        fontFamily: fonts.bold,
+        fontSize: 10,
+        color: staticColors.textSecondary,
+    },
+    photoChangeBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: 1,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 6,
+    },
+    photoChangeHint: {
+        fontFamily: fonts.bold,
+        fontSize: 10,
     },
     mainCard: {
-        borderRadius: 18,
+        borderRadius: 16,
         backgroundColor: staticColors.white,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
+        borderWidth: 1,
+        borderColor: 'rgba(226, 232, 240, 0.8)',
+        shadowColor: '#0F172A',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.02,
         shadowRadius: 8,
         elevation: 2,
         overflow: 'hidden',
     },
     sectionPadding: {
-        padding: 14,
-    },
-    divider: {
-        height: 1,
-        backgroundColor: '#F1F5F9',
-        marginHorizontal: 14,
-    },
-    infoCard: {
-        borderRadius: 20,
-        padding: 16,
-        backgroundColor: staticColors.white,
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.04,
-        shadowRadius: 12,
-        elevation: 3,
-    },
-    infoTitleRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        marginBottom: 10,
-    },
-    infoCardTitle: {
-        fontFamily: fonts.bold,
-        fontSize: 15,
-        color: staticColors.text,
-    },
-    infoText: {
-        fontFamily: fonts.medium,
-        fontSize: 13,
-        color: staticColors.textSecondary,
-        lineHeight: 19,
-        marginBottom: 16,
-    },
-    input: {
-        marginBottom: 4,
-    },
-    inputNoMargin: {
-        marginBottom: 0,
-    },
-    button: {
-        marginTop: 8,
-    },
-    expertiseButton: {
-        marginTop: 4,
+        padding: 12,
     },
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        marginTop: 8,
-        marginBottom: 6,
+        gap: 6,
+        marginBottom: 10,
     },
     sectionHeaderNoMargin: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-    },
-    expandableHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: 2,
+        gap: 6,
+        flex: 1,
     },
     sectionIconBox: {
-        width: 28,
-        height: 28,
-        borderRadius: 8,
-        backgroundColor: staticColors.primary + '10',
+        width: 22,
+        height: 22,
+        borderRadius: 6,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -930,24 +1013,75 @@ const styles = StyleSheet.create({
         fontSize: 10,
         color: staticColors.textSecondary,
     },
-    expertiseContainer: {
-        marginBottom: 12,
+    input: {
+        marginBottom: 8,
+    },
+    inputNoMargin: {
+        marginBottom: 0,
+    },
+    serviceAreaCard: {
+        backgroundColor: '#F8FAFC',
+        borderRadius: 10,
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    serviceAreaCardInner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    serviceAreaIconBox: {
+        width: 30,
+        height: 30,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    serviceAreaCardTitle: {
+        fontFamily: fonts.bold,
+        fontSize: 12,
+        color: staticColors.text,
+    },
+    serviceAreaCardSubtitle: {
+        fontFamily: fonts.medium,
+        fontSize: 10,
+        color: staticColors.textSecondary,
+        marginTop: 1,
+    },
+    locationCountBadge: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 4,
+    },
+    locationCountText: {
+        fontFamily: fonts.bold,
+        fontSize: 10,
+        color: staticColors.white,
+    },
+    expandableHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
     },
     expertiseGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 5,
-        marginTop: 8,
+        marginTop: 10,
     },
     expertiseItemWrapper: {
-        width: '48.5%',
+        width: '49%',
     },
     expertiseItem: {
         paddingHorizontal: 8,
-        paddingVertical: 6,
+        paddingVertical: 5,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: '#E8ECF0',
+        borderColor: '#E2E8F0',
         flexDirection: 'row',
         alignItems: 'center',
         gap: 5,
@@ -955,97 +1089,114 @@ const styles = StyleSheet.create({
     expertiseItemSelected: {
         borderColor: 'transparent',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.12,
-        shadowRadius: 4,
+        shadowOpacity: 0.08,
+        shadowRadius: 3,
         elevation: 2,
     },
     expertiseIconBox: {
-        width: 18,
-        height: 18,
+        width: 16,
+        height: 16,
         borderRadius: 5,
         justifyContent: 'center',
         alignItems: 'center',
     },
     expertiseLabel: {
-        fontFamily: fonts.semiBold,
-        fontSize: 10,
+        fontFamily: fonts.bold,
+        fontSize: 9.5,
         color: staticColors.textSecondary,
         flex: 1,
     },
     expertiseLabelSelected: {
         color: staticColors.white,
     },
-    checkBadge: {
-        marginLeft: 'auto',
+    saveButtonContainer: {
+        marginTop: 10,
+        marginBottom: 8,
+    },
+    changesIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
+        marginBottom: 6,
+    },
+    changesIndicatorText: {
+        fontFamily: fonts.bold,
+        fontSize: 11,
+        color: '#10B981',
+    },
+    saveButton: {
+        height: 42,
+        borderRadius: 12,
+    },
+    saveButtonActive: {
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 4,
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(15, 23, 42, 0.6)',
+        backgroundColor: 'rgba(15, 23, 42, 0.4)',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 24,
+        padding: 20,
     },
     successModal: {
         width: '100%',
-        borderRadius: 28,
-        padding: 28,
+        borderRadius: 20,
+        padding: 20,
         alignItems: 'center',
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.5)',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 16 },
-        shadowOpacity: 0.2,
-        shadowRadius: 24,
-        elevation: 16,
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+        elevation: 12,
     },
     successIconWrapper: {
-        width: 72,
-        height: 72,
+        width: 60,
+        height: 60,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 12,
     },
     successIconGlow: {
         position: 'absolute',
-        width: 54,
-        height: 54,
+        width: 44,
+        height: 44,
         backgroundColor: '#10B981',
-        borderRadius: 27,
-        opacity: 0.2,
-        transform: [{ scale: 1.5 }],
+        borderRadius: 22,
+        opacity: 0.15,
+        transform: [{ scale: 1.4 }],
     },
     successIconBox: {
-        width: 56,
-        height: 56,
-        borderRadius: 18,
+        width: 46,
+        height: 46,
+        borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 1,
     },
     successTitle: {
         fontFamily: fonts.extraBold,
-        fontSize: 22,
-        color: staticColors.text,
-        marginBottom: 6,
+        fontSize: 18,
+        marginBottom: 4,
     },
     successMessage: {
         fontFamily: fonts.medium,
-        fontSize: 14,
-        color: staticColors.textSecondary,
+        fontSize: 12,
         textAlign: 'center',
-        lineHeight: 20,
-        marginBottom: 20,
+        lineHeight: 16,
+        marginBottom: 16,
     },
     successModalBtn: {
         width: '100%',
-        height: 48,
-        borderRadius: 14,
+        height: 42,
+        borderRadius: 12,
         overflow: 'hidden',
-        shadowColor: staticColors.primary,
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-        elevation: 5,
     },
     successModalBtnGradient: {
         flex: 1,
@@ -1054,118 +1205,64 @@ const styles = StyleSheet.create({
     },
     successModalBtnText: {
         fontFamily: fonts.bold,
-        fontSize: 15,
-        color: staticColors.white,
-    },
-    serviceAreasContainer: {
-        marginBottom: 16,
-    },
-    serviceAreaCard: {
-        backgroundColor: '#F8FAFC',
-        borderRadius: 14,
-        padding: 10,
-        borderWidth: 1,
-        borderColor: '#E8ECF0',
-    },
-    serviceAreaCardInner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-    },
-    serviceAreaIconBox: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: staticColors.primary + '10',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    serviceAreaCardTitle: {
-        fontFamily: fonts.bold,
         fontSize: 13,
-        color: staticColors.text,
-    },
-    serviceAreaCardSubtitle: {
-        fontFamily: fonts.medium,
-        fontSize: 11,
-        color: staticColors.textSecondary,
-        marginTop: 1,
-    },
-    locationCountBadge: {
-        backgroundColor: staticColors.success,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 10,
-        marginRight: 4,
-    },
-    locationCountText: {
-        fontFamily: fonts.bold,
-        fontSize: 11,
         color: staticColors.white,
     },
-    // Warning Modal Styles
     warningModal: {
         width: '100%',
-        borderRadius: 28,
-        padding: 28,
+        borderRadius: 20,
+        padding: 20,
         alignItems: 'center',
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.5)',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 16 },
-        shadowOpacity: 0.2,
-        shadowRadius: 24,
-        elevation: 16,
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+        elevation: 12,
     },
     warningIconWrapper: {
-        width: 72,
-        height: 72,
+        width: 60,
+        height: 60,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 12,
     },
     warningIconGlow: {
         position: 'absolute',
-        width: 54,
-        height: 54,
+        width: 44,
+        height: 44,
         backgroundColor: '#F59E0B',
-        borderRadius: 27,
-        opacity: 0.2,
-        transform: [{ scale: 1.5 }],
+        borderRadius: 22,
+        opacity: 0.15,
+        transform: [{ scale: 1.4 }],
     },
     warningIconBox: {
-        width: 56,
-        height: 56,
-        borderRadius: 18,
+        width: 46,
+        height: 46,
+        borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 1,
     },
     warningTitle: {
         fontFamily: fonts.extraBold,
-        fontSize: 22,
-        color: staticColors.text,
-        marginBottom: 6,
+        fontSize: 18,
+        marginBottom: 4,
     },
     warningMessage: {
         fontFamily: fonts.medium,
-        fontSize: 14,
-        color: staticColors.textSecondary,
+        fontSize: 12,
         textAlign: 'center',
-        lineHeight: 20,
-        marginBottom: 20,
-        paddingHorizontal: 8,
+        lineHeight: 16,
+        marginBottom: 16,
+        paddingHorizontal: 6,
     },
     warningModalBtn: {
         width: '100%',
-        height: 48,
-        borderRadius: 14,
+        height: 42,
+        borderRadius: 12,
         overflow: 'hidden',
-        shadowColor: staticColors.primary,
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-        elevation: 5,
     },
     warningModalBtnGradient: {
         flex: 1,
@@ -1174,171 +1271,7 @@ const styles = StyleSheet.create({
     },
     warningModalBtnText: {
         fontFamily: fonts.bold,
-        fontSize: 15,
+        fontSize: 13,
         color: staticColors.white,
-    },
-    // Profile Preview Card Styles — Centered Layout
-    previewCard: {
-        backgroundColor: staticColors.white,
-        borderRadius: 18,
-        padding: 14,
-        marginBottom: 10,
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.06,
-        shadowRadius: 10,
-        elevation: 3,
-    },
-    previewCardInner: {
-        alignItems: 'center',
-    },
-    previewAvatarWrapper: {
-        marginBottom: 8,
-    },
-    avatarRing: {
-        width: 68,
-        height: 68,
-        borderRadius: 34,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 3,
-    },
-    previewAvatar: {
-        width: 62,
-        height: 62,
-        borderRadius: 31,
-    },
-    previewAvatarPlaceholder: {
-        width: 62,
-        height: 62,
-        borderRadius: 31,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    previewAvatarText: {
-        fontFamily: fonts.extraBold,
-        fontSize: 24,
-    },
-    previewInfo: {
-        flex: 1,
-        alignItems: 'center',
-    },
-    previewName: {
-        fontFamily: fonts.bold,
-        fontSize: 15,
-        color: staticColors.text,
-        marginBottom: 4,
-    },
-    previewMetaRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    previewBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 8,
-    },
-    previewBadgeText: {
-        fontFamily: fonts.semiBold,
-        fontSize: 10,
-    },
-    previewStat: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 2,
-    },
-    previewStatText: {
-        fontFamily: fonts.medium,
-        fontSize: 10,
-        color: staticColors.textSecondary,
-    },
-    previewHint: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        backgroundColor: '#F1F5F9',
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 8,
-    },
-    previewHintText: {
-        fontFamily: fonts.medium,
-        fontSize: 9,
-        color: staticColors.textLight,
-    },
-    photoCameraBadge: {
-        position: 'absolute',
-        bottom: 0,
-        right: 0,
-        width: 22,
-        height: 22,
-        borderRadius: 11,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: staticColors.white,
-    },
-    photoChangeBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        marginTop: 2,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 8,
-        backgroundColor: staticColors.primary + '08',
-    },
-    photoChangeHint: {
-        fontFamily: fonts.semiBold,
-        fontSize: 11,
-    },
-    // Save Button Container & Changes Indicator
-    saveButtonContainer: {
-        marginTop: 12,
-        marginBottom: 16,
-    },
-    changesIndicator: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 5,
-        marginBottom: 8,
-    },
-    changesIndicatorText: {
-        fontFamily: fonts.medium,
-        fontSize: 11,
-        color: '#10B981',
-    },
-    saveButton: {
-        // Base styles handled by Button component
-    },
-    saveButtonActive: {
-        shadowColor: '#10B981',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.25,
-        shadowRadius: 6,
-        elevation: 3,
-    },
-    categoryGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-        marginTop: 10,
-    },
-    categoryItem: {
-        flex: 1,
-        minWidth: '30%',
-        padding: 10,
-        borderRadius: 14,
-        borderWidth: 1,
-        borderColor: '#E2E8F0',
-        alignItems: 'center',
-        backgroundColor: '#F8FAFC',
-        gap: 4,
-    },
-    categoryText: {
-        fontFamily: fonts.medium,
-        fontSize: 10,
-        textAlign: 'center',
     },
 });

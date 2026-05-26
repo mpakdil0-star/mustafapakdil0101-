@@ -760,7 +760,7 @@ export const rejectBidController = async (
       });
     }
 
-    if (req.user.userType !== 'CITIZEN') {
+    if (req.user.userType !== 'CITIZEN' && req.user.userType !== 'ADMIN') {
       return res.status(403).json({
         success: false,
         error: { message: 'Only job owners can reject bids' },
@@ -778,6 +778,15 @@ export const rejectBidController = async (
         return res.status(404).json({
           success: false,
           error: { message: 'Bid not found' },
+        });
+      }
+
+      const { jobStoreById } = require('./jobController');
+      const job = jobStoreById.get(foundBid.jobPostId);
+      if (job && job.citizenId !== req.user.id && req.user.userType !== 'ADMIN') {
+        return res.status(403).json({
+          success: false,
+          error: { message: 'Only job owner can reject bids' },
         });
       }
 
@@ -1106,10 +1115,10 @@ export const requestPriceUpdateController = async (
       });
     }
 
-    if (req.user.userType !== 'CITIZEN') {
+    if (req.user.userType !== 'CITIZEN' && req.user.userType !== 'ADMIN') {
       return res.status(403).json({
         success: false,
-        error: { message: 'Only citizens can request price updates' },
+        error: { message: 'Only citizens or admins can request price updates' },
       });
     }
 
@@ -1127,9 +1136,16 @@ export const requestPriceUpdateController = async (
         });
       }
 
-      // Find job title
       const { jobStoreById } = require('./jobController');
       const job = jobStoreById.get(foundBid.jobPostId);
+      if (job && job.citizenId !== req.user.id && req.user.userType !== 'ADMIN') {
+        return res.status(403).json({
+          success: false,
+          error: { message: 'Only job owner can request price update' },
+        });
+      }
+
+      // Find job title
       const jobTitle = job?.title || 'ilanınız';
       
       const { mockStorage } = require('../utils/mockStorage');

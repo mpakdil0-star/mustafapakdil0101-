@@ -35,36 +35,50 @@ export default function ProfileScreen() {
   ];
 
   const CITIZEN_MENU_ITEMS = [
-    { icon: 'heart-outline', label: 'Favori Ustalarım', route: '/profile/favorites', color: '#EF4444' },
+    { icon: 'heart-outline', label: 'Favori Ustalarım', route: '/profile/favorites', color: colors.primary },
   ];
 
   const ELECTRICIAN_MENU_ITEMS = [
     { icon: 'wallet-outline', label: 'Cüzdanım ve Krediler', route: '/profile/wallet', color: colors.primary },
-    { icon: 'shield-checkmark-outline', label: 'Belge Onayı', route: '/profile/verification', color: '#10B981' },
-    { icon: 'stats-chart-outline', label: 'İstatistiklerim', route: '/electrician/stats', color: '#8B5CF6' },
-  ];
-
-  const BOTTOM_MENU_ITEMS = [
-    { icon: 'notifications-outline', label: 'Bildirim Ayarları', route: '/profile/notification_settings', color: '#6B7280' },
-    { icon: 'shield-checkmark-outline', label: 'Güvenlik', route: '/profile/security', color: '#10B981' },
-    { icon: 'headset-outline', label: 'Canlı Destek', route: '/profile/support', color: '#6366F1' },
-    { icon: 'document-text-outline', label: 'Kullanım Koşulları', route: '/legal/terms', color: '#6B7280' },
-    { icon: 'shield-outline', label: 'KVKK Politikası', route: '/legal/kvkk', color: '#6B7280' },
-    { icon: 'ban-outline', label: 'Engellenen Kullanıcılar', route: '/profile/blocked', color: '#F43F5E' },
-    { icon: 'help-circle-outline', label: 'Yardım & Destek', route: '/profile/help', color: '#374151' },
+    { icon: 'shield-checkmark-outline', label: 'Belge Onayı', route: '/profile/verification', color: colors.primary },
+    { icon: 'stats-chart-outline', label: 'İstatistiklerim', route: '/electrician/stats', color: colors.primary },
   ];
 
   const ADMIN_MENU_ITEMS = [
-    { icon: 'settings-outline', label: 'Sistem Yöneticisi', route: '/admin', color: '#6366F1' },
-    { icon: 'people-outline', label: 'Kullanıcı Yönetimi', route: '/admin/users', color: '#8B5CF6' },
-    { icon: 'shield-outline', label: 'Doğrulama Havuzu', route: '/profile/admin_verifications', color: staticColors.error },
+    { icon: 'settings-outline', label: 'Sistem Yöneticisi', route: '/admin', color: colors.primary },
+    { icon: 'people-outline', label: 'Kullanıcı Yönetimi', route: '/admin/users', color: colors.primary },
+    { icon: 'shield-outline', label: 'Doğrulama Havuzu', route: '/profile/admin_verifications', color: '#EF4444' },
   ];
 
-  const menuItems = [
-    ...BASE_MENU_ITEMS,
-    ...(user?.userType === 'ADMIN' ? ADMIN_MENU_ITEMS : []),
-    ...(isElectrician ? ELECTRICIAN_MENU_ITEMS : (user?.userType === 'CITIZEN' ? CITIZEN_MENU_ITEMS : [])),
-    ...BOTTOM_MENU_ITEMS,
+  const menuSections = [
+    {
+      title: 'PROFİL VE HESAP',
+      items: [
+        ...BASE_MENU_ITEMS,
+        ...(isElectrician ? ELECTRICIAN_MENU_ITEMS : (user?.userType === 'CITIZEN' ? CITIZEN_MENU_ITEMS : [])),
+      ]
+    },
+    ...(user?.userType === 'ADMIN' ? [{
+      title: 'SİSTEM YÖNETİMİ',
+      items: ADMIN_MENU_ITEMS
+    }] : []),
+    {
+      title: 'TERCİHLER VE GÜVENLİK',
+      items: [
+        { icon: 'notifications-outline', label: 'Bildirim Ayarları', route: '/profile/notification_settings', color: colors.primary },
+        { icon: 'shield-checkmark-outline', label: 'Güvenlik', route: '/profile/security', color: colors.primary },
+        { icon: 'ban-outline', label: 'Engellenen Kullanıcılar', route: '/profile/blocked', color: '#EF4444' },
+      ]
+    },
+    {
+      title: 'DESTEK VE BİLGİ',
+      items: [
+        { icon: 'headset-outline', label: 'Canlı Destek', route: '/profile/support', color: colors.primary },
+        { icon: 'help-circle-outline', label: 'Yardım & Destek', route: '/profile/help', color: colors.primary },
+        { icon: 'document-text-outline', label: 'Kullanım Koşulları', route: '/legal/terms', color: colors.primary },
+        { icon: 'shield-outline', label: 'KVKK Politikası', route: '/legal/kvkk', color: colors.primary },
+      ]
+    }
   ];
 
   const [showAuthModal, setShowAuthModal] = React.useState(false);
@@ -336,27 +350,31 @@ export default function ProfileScreen() {
 
         {/* Action Menu Sections */}
         <View style={styles.menuContainer}>
-          <Text style={[styles.menuSectionHeader, { color: staticColors.textLight }]}>HESAP VE AYARLAR</Text>
-          <Card variant="default" style={styles.menuGlassCard} padding={0}>
-            {menuItems.map((item, index) => (
-              <React.Fragment key={index}>
-                <TouchableOpacity
-                  style={styles.menuItem}
-                  onPress={() => handleMenuItemPress(item.route)}
-                  activeOpacity={0.6}
-                >
-                  <View style={styles.menuItemInner}>
-                    <View style={[styles.menuIconBox, { backgroundColor: item.color + '10' }]}>
-                      <Ionicons name={item.icon as any} size={20} color={item.color} />
-                    </View>
-                    <Text style={[styles.menuItemLabel, { color: colors.text }]}>{item.label}</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={staticColors.textLight} />
-                </TouchableOpacity>
-                {index < menuItems.length - 1 && <View style={styles.menuSeparator} />}
-              </React.Fragment>
-            ))}
-          </Card>
+          {menuSections.map((section, sIndex) => (
+            <View key={sIndex} style={{ marginBottom: 20 }}>
+              <Text style={[styles.menuSectionHeader, { color: staticColors.textLight }]}>{section.title}</Text>
+              <Card variant="default" style={styles.menuGlassCard} padding={0}>
+                {section.items.map((item, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={styles.menuItem}
+                      onPress={() => handleMenuItemPress(item.route)}
+                      activeOpacity={0.6}
+                    >
+                      <View style={styles.menuItemInner}>
+                        <View style={[styles.menuIconBox, { backgroundColor: item.color + '12' }]}>
+                          <Ionicons name={item.icon as any} size={18} color={item.color} />
+                        </View>
+                        <Text style={[styles.menuItemLabel, { color: colors.text, fontSize: 14.5, fontFamily: fonts.bold }]}>{item.label}</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color={staticColors.textLight} />
+                    </TouchableOpacity>
+                    {index < section.items.length - 1 && <View style={styles.menuSeparator} />}
+                  </React.Fragment>
+                ))}
+              </Card>
+            </View>
+          ))}
         </View>
 
 
@@ -448,76 +466,76 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: spacing.md,
-    paddingBottom: 100,
+    padding: 10,
+    paddingBottom: 80,
   },
   profileCardContainer: {
     marginTop: -20,
     zIndex: 10,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.12,
-    shadowRadius: 20,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 6,
   },
   profileCard: {
-    borderRadius: 30,
-    padding: 24,
+    borderRadius: 20,
+    padding: 16,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.8)',
   },
   avatarGlowWrapper: {
     position: 'relative',
-    marginBottom: 16,
+    marginBottom: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarGlow: {
     position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    opacity: 0.6,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    opacity: 0.4,
     transform: [{ scale: 1.2 }],
   },
   avatarMainContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     backgroundColor: staticColors.white,
-    padding: 4,
+    padding: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
   avatarImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 46,
+    borderRadius: 35,
   },
   avatarPlaceholder: {
     width: '100%',
     height: '100%',
-    borderRadius: 46,
+    borderRadius: 35,
     backgroundColor: staticColors.primary + '10',
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
     fontFamily: fonts.extraBold,
-    fontSize: 36,
+    fontSize: 28,
   },
   cameraIconBadge: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: staticColors.primary,
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: staticColors.white,
     justifyContent: 'center',
     alignItems: 'center',
@@ -527,127 +545,127 @@ const styles = StyleSheet.create({
   },
   userNameText: {
     fontFamily: fonts.extraBold,
-    fontSize: 22,
+    fontSize: 18,
     color: staticColors.text,
-    letterSpacing: -0.5,
+    letterSpacing: -0.4,
   },
   userEmailText: {
     fontFamily: fonts.medium,
-    fontSize: 14,
+    fontSize: 12,
     color: staticColors.textSecondary,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   userPhoneRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 12,
+    gap: 4,
+    marginBottom: 8,
   },
   userPhoneText: {
     fontFamily: fonts.medium,
-    fontSize: 13,
+    fontSize: 12,
     color: staticColors.textLight,
   },
   userBadgesRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
   typeBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   typeBadgeText: {
     fontFamily: fonts.bold,
-    fontSize: 10,
-    letterSpacing: 0.5,
+    fontSize: 9,
+    letterSpacing: 0.3,
   },
   verifiedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#10B981',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 10,
-    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 3,
   },
   verifiedText: {
     fontFamily: fonts.bold,
-    fontSize: 10,
+    fontSize: 9,
     color: staticColors.white,
   },
   menuContainer: {
-    marginTop: 16,
+    marginTop: 12,
   },
   menuSectionHeader: {
     fontFamily: fonts.bold,
-    fontSize: 12,
+    fontSize: 10,
     color: staticColors.textLight,
-    letterSpacing: 1,
-    marginBottom: 8,
-    marginLeft: 8,
+    letterSpacing: 0.8,
+    marginBottom: 4,
+    marginLeft: 4,
   },
   menuGlassCard: {
-    borderRadius: 24,
+    borderRadius: 16,
     backgroundColor: staticColors.white,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.8)',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
+    elevation: 1,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
   },
   menuItemInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 10,
   },
   menuIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
   menuItemLabel: {
     fontFamily: fonts.bold,
-    fontSize: 15,
+    fontSize: 13.5,
     color: staticColors.text,
   },
   menuSeparator: {
     height: 1,
     backgroundColor: staticColors.borderLight,
-    marginHorizontal: 16,
+    marginHorizontal: 12,
     opacity: 0.5,
   },
   exitBtn: {
-    marginTop: 30,
-    height: 56,
-    borderRadius: 18,
+    marginTop: 12,
+    height: 42,
+    borderRadius: 12,
     shadowColor: staticColors.error,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
   versionText: {
     textAlign: 'center',
-    marginTop: 24,
+    marginTop: 16,
     fontFamily: fonts.medium,
-    fontSize: 11,
+    fontSize: 10,
     color: staticColors.textLight,
   },
   headerIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -657,18 +675,18 @@ const styles = StyleSheet.create({
   creditRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
     backgroundColor: '#FFFBEB',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    marginTop: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginTop: 8,
     borderWidth: 1,
     borderColor: '#FEF3C7',
   },
   creditText: {
     fontFamily: fonts.medium,
-    fontSize: 13,
+    fontSize: 11,
     color: '#92400E',
   },
   creditValue: {
@@ -682,43 +700,43 @@ const styles = StyleSheet.create({
   guestCard: {
     marginTop: spacing.lg,
     width: '100%',
-    padding: 24,
+    padding: 20,
     alignItems: 'center',
-    borderRadius: 24,
+    borderRadius: 20,
     backgroundColor: staticColors.white,
   },
   guestIconContainer: {
-    marginBottom: 16,
+    marginBottom: 12,
     backgroundColor: staticColors.primary + '10',
-    padding: 16,
-    borderRadius: 40,
+    padding: 12,
+    borderRadius: 30,
   },
   guestTitle: {
     fontFamily: fonts.extraBold,
-    fontSize: 18,
+    fontSize: 16,
     color: staticColors.text,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   guestSubtitle: {
     fontFamily: fonts.medium,
-    fontSize: 13,
+    fontSize: 12,
     color: staticColors.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
+    lineHeight: 18,
+    marginBottom: 20,
   },
   guestButton: {
-    height: 50,
-    borderRadius: 14,
+    height: 44,
+    borderRadius: 12,
   },
   guestHelpButton: {
-    marginTop: 20,
-    padding: 10,
+    marginTop: 16,
+    padding: 8,
   },
   guestHelpText: {
     fontFamily: fonts.bold,
-    fontSize: 14,
+    fontSize: 13,
     color: staticColors.primary,
   },
   // Logout Modal Styles
@@ -727,82 +745,82 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(15, 23, 42, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: 20,
   },
   logoutModal: {
     width: '100%',
-    borderRadius: 32,
-    padding: 32,
+    borderRadius: 24,
+    padding: 24,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.5)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.2,
-    shadowRadius: 30,
-    elevation: 20,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 12,
   },
   logoutIconWrapper: {
-    width: 90,
-    height: 90,
+    width: 72,
+    height: 72,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   logoutIconGlow: {
     position: 'absolute',
-    width: 70,
-    height: 70,
+    width: 56,
+    height: 56,
     backgroundColor: '#EF4444',
-    borderRadius: 35,
-    opacity: 0.25,
-    transform: [{ scale: 1.5 }],
+    borderRadius: 28,
+    opacity: 0.2,
+    transform: [{ scale: 1.4 }],
   },
   logoutIconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
   },
   logoutTitle: {
     fontFamily: fonts.extraBold,
-    fontSize: 22,
+    fontSize: 18,
     color: staticColors.text,
-    marginBottom: 8,
+    marginBottom: 6,
     textAlign: 'center',
   },
   logoutMessage: {
     fontFamily: fonts.medium,
-    fontSize: 14,
+    fontSize: 12,
     color: staticColors.textSecondary,
     textAlign: 'center',
-    lineHeight: 21,
-    marginBottom: 24,
+    lineHeight: 18,
+    marginBottom: 20,
   },
   logoutBtnGroup: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
     width: '100%',
   },
   logoutCancelBtn: {
     flex: 1,
-    height: 52,
-    borderRadius: 16,
+    height: 44,
+    borderRadius: 12,
     backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
   },
   logoutCancelBtnText: {
     fontFamily: fonts.bold,
-    fontSize: 15,
+    fontSize: 13,
     color: staticColors.textSecondary,
   },
   logoutConfirmBtn: {
     flex: 1,
-    height: 52,
-    borderRadius: 16,
+    height: 44,
+    borderRadius: 12,
     overflow: 'hidden',
   },
   logoutConfirmBtnGradient: {
@@ -812,7 +830,7 @@ const styles = StyleSheet.create({
   },
   logoutConfirmBtnText: {
     fontFamily: fonts.bold,
-    fontSize: 15,
+    fontSize: 13,
     color: staticColors.white,
   },
 });

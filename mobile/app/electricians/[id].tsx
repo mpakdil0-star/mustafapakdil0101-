@@ -400,24 +400,30 @@ export default function ElectricianDetailScreen() {
 
                 {/* Stats Row */}
                 <View style={styles.statsRow}>
-                    <View style={styles.statItem}>
+                    <View style={[styles.statItem, styles.statItemRating]}>
                         <View style={styles.ratingContainer}>
-                            <Ionicons name="star" size={16} color={colors.warning} />
-                            <Text style={styles.statValue}>
+                            <Ionicons name="star" size={14} color="#D97706" />
+                            <Text style={[styles.statValue, { color: '#B45309' }]}>
                                 {profile.ratingAverage ? Number(profile.ratingAverage).toFixed(1) : '0.0'}
                             </Text>
                         </View>
-                        <Text style={styles.statLabel}>{profile.totalReviews || 0} değerlendirme</Text>
+                        <Text style={[styles.statLabel, { color: '#78350F' }]}>{profile.totalReviews || 0} Yorum</Text>
                     </View>
-                    <View style={styles.statDivider} />
-                    <View style={styles.statItem}>
-                        <Text style={styles.statValue}>{profile.completedJobsCount || 0}</Text>
-                        <Text style={styles.statLabel}>Tamamlanan İş</Text>
+                    
+                    <View style={[styles.statItem, styles.statItemJobs]}>
+                        <View style={styles.ratingContainer}>
+                            <Ionicons name="checkmark-circle-sharp" size={14} color="#059669" />
+                            <Text style={[styles.statValue, { color: '#047857' }]}>{profile.completedJobsCount || 0}</Text>
+                        </View>
+                        <Text style={[styles.statLabel, { color: '#065F46' }]}>Biten İş</Text>
                     </View>
-                    <View style={styles.statDivider} />
-                    <View style={styles.statItem}>
-                        <Text style={styles.statValue}>{profile.experienceYears || 0}</Text>
-                        <Text style={styles.statLabel}>Deneyim (Yıl)</Text>
+
+                    <View style={[styles.statItem, styles.statItemExp]}>
+                        <View style={styles.ratingContainer}>
+                            <Ionicons name="ribbon-sharp" size={14} color="#0284C7" />
+                            <Text style={[styles.statValue, { color: '#0369A1' }]}>{profile.experienceYears || 0} Yıl</Text>
+                        </View>
+                        <Text style={[styles.statLabel, { color: '#075985' }]}>Deneyim</Text>
                     </View>
                 </View>
             </Card>
@@ -453,14 +459,18 @@ export default function ElectricianDetailScreen() {
             {/* Services */}
             <Card style={styles.sectionCard}>
                 <Text style={styles.sectionTitle}>Sunduğu Hizmetler</Text>
-                {profile.specialties?.map((service: string, index: number) => (
-                    <View key={index} style={styles.serviceItem}>
-                        <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-                        <Text style={styles.serviceText}>{service}</Text>
-                    </View>
-                )) || (
+                <View style={styles.servicesContainer}>
+                    {profile.specialties?.map((service: string, index: number) => (
+                        <View key={index} style={styles.serviceRow}>
+                            <View style={styles.serviceIconBox}>
+                                <Ionicons name="checkmark-sharp" size={12} color={colors.primary} />
+                            </View>
+                            <Text style={styles.serviceTextDetail}>{service}</Text>
+                        </View>
+                    )) || (
                         <Text style={styles.emptyText}>Hizmet detayları henüz girilmemiş.</Text>
                     )}
+                </View>
             </Card>
 
             {/* Response Time & Availability */}
@@ -505,6 +515,12 @@ export default function ElectricianDetailScreen() {
                 electrician.reviewsReceived?.length > 0 ? (
                     (showAllReviews ? electrician.reviewsReceived : electrician.reviewsReceived.slice(0, 5)).map((review: any, index: number) => (
                         <Card key={index} style={styles.reviewCardSmall}>
+                            <Ionicons 
+                                name={"quote" as any} 
+                                size={32} 
+                                color="rgba(13, 148, 136, 0.03)" 
+                                style={{ position: 'absolute', right: 12, bottom: 8, zIndex: 0 }} 
+                            />
                             <View style={styles.reviewHeader}>
                                 <Image
                                     source={{ uri: getFileUrl(review.reviewer?.profileImageUrl) || '' }}
@@ -771,13 +787,32 @@ const styles = StyleSheet.create({
     },
     statsRow: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
+        justifyContent: 'space-between',
         paddingTop: 16,
         borderTopWidth: 1,
         borderTopColor: colors.border,
+        gap: 8,
     },
     statItem: {
+        flex: 1,
         alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 6,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    statItemRating: {
+        backgroundColor: '#FFFBEB', // premium warm amber background
+        borderColor: '#FEF3C7',
+    },
+    statItemJobs: {
+        backgroundColor: '#ECFDF5', // premium taze green background
+        borderColor: '#D1FAE5',
+    },
+    statItemExp: {
+        backgroundColor: '#EFF6FF', // premium electric blue background
+        borderColor: '#DBEAFE',
     },
     ratingContainer: {
         flexDirection: 'row',
@@ -787,19 +822,18 @@ const styles = StyleSheet.create({
     },
     statValue: {
         fontFamily: fonts.bold,
-        fontSize: 16,
+        fontSize: 15,
         color: colors.text,
-        marginBottom: 2,
     },
     statLabel: {
-        fontFamily: fonts.regular,
-        fontSize: 11,
+        fontFamily: fonts.bold,
+        fontSize: 10,
         color: colors.textSecondary,
         textAlign: 'center',
+        marginTop: 2,
     },
     statDivider: {
-        width: 1,
-        backgroundColor: colors.border,
+        width: 0,
     },
     sectionCard: {
         padding: 16,
@@ -818,16 +852,33 @@ const styles = StyleSheet.create({
         color: colors.textSecondary,
         lineHeight: 20,
     },
-    serviceItem: {
+    servicesContainer: {
+        marginTop: 4,
+    },
+    serviceRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        backgroundColor: '#F8FAFC',
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderRadius: 12,
         marginBottom: 8,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        gap: 10,
     },
-    serviceText: {
+    serviceIconBox: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        backgroundColor: 'rgba(13, 148, 136, 0.08)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    serviceTextDetail: {
         fontFamily: fonts.medium,
         fontSize: 13,
-        color: colors.text,
+        color: '#334155',
         flex: 1,
     },
     responseTimeContainer: {
@@ -948,6 +999,8 @@ const styles = StyleSheet.create({
         padding: 14,
         marginBottom: 10,
         borderRadius: 16,
+        position: 'relative',
+        overflow: 'hidden',
     },
     reviewHeader: {
         flexDirection: 'row',

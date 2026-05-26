@@ -84,14 +84,20 @@ export default function JobDetailScreen() {
   };
 
   const handleRequestPriceUpdate = async (bid: any) => {
-    Alert.alert(
+    showAlert(
       "Güncel Fiyat İste",
       `${bid.electrician?.fullName || 'Ustanın'} teklif süresi dolmuş. Kendisine fiyat teklifini güncellemesi için bildirim göndermek istiyor musunuz?`,
+      'confirm',
       [
-        { text: "Vazgeç", style: "cancel" },
+        {
+          text: "Vazgeç",
+          onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })),
+          variant: 'secondary'
+        },
         {
           text: "Evet, Bildir",
           onPress: async () => {
+            setAlertConfig(prev => ({ ...prev, visible: false }));
             setRequestingPriceBids(prev => ({ ...prev, [bid.id]: true }));
             try {
               await bidService.requestPriceUpdate(bid.id);
@@ -102,7 +108,8 @@ export default function JobDetailScreen() {
             } finally {
               setRequestingPriceBids(prev => ({ ...prev, [bid.id]: false }));
             }
-          }
+          },
+          variant: 'primary'
         }
       ]
     );

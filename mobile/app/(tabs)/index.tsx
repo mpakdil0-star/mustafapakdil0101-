@@ -1373,59 +1373,157 @@ export default function HomeScreen() {
         {/* ==================== YENİ İLAN EKLE MODAL ==================== */}
         <Modal
           visible={isAddProductModalVisible}
-          transparent={true}
+          transparent={false}
           animationType="slide"
+          presentationStyle="fullScreen"
           onRequestClose={() => setIsAddProductModalVisible(false)}
         >
-          <View style={styles.hiwModalOverlay}>
-            <View style={[styles.marketModalContent, { maxHeight: '90%', paddingBottom: 24 }]}>
-              <View style={styles.hiwHeader}>
-                <Text style={styles.marketModalTitle}>Ürün Satış İlanı Ekle</Text>
-                <TouchableOpacity onPress={() => setIsAddProductModalVisible(false)} style={styles.hiwCloseBtn}>
-                  <Ionicons name="close" size={24} color="#94A3B8" />
+          <LinearGradient
+            colors={['#F8FAFC', '#F0FDFA', '#F8FAFC']}
+            style={{ flex: 1 }}
+          >
+            {/* Background Glow Blobs */}
+            <View style={{ position: 'absolute', top: -100, right: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: colors.primary, opacity: 0.04 }} />
+            <View style={{ position: 'absolute', bottom: -100, left: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: '#0EA5E9', opacity: 0.03 }} />
+
+            <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 56 : 24, paddingBottom: 16 }}>
+              {/* Header Row */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, paddingHorizontal: 2 }}>
+                <View>
+                  <Text style={{ fontSize: 22, fontFamily: fonts.bold, color: '#0F172A', letterSpacing: -0.3 }}>
+                    Ürün Satış İlanı Ekle
+                  </Text>
+                  <Text style={{ fontSize: 12, fontFamily: fonts.medium, color: '#64748B', marginTop: 1 }}>
+                    Eşyalarınızı ustalar veya vatandaşlar ile paylaşın
+                  </Text>
+                </View>
+                <TouchableOpacity 
+                  onPress={() => setIsAddProductModalVisible(false)} 
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: '#FFFFFF',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderWidth: 1,
+                    borderColor: '#E2E8F0',
+                    shadowColor: '#0F172A',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 6,
+                    elevation: 2,
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close-outline" size={24} color="#475569" />
                 </TouchableOpacity>
               </View>
 
-              <ScrollView style={{ marginTop: 16 }} showsVerticalScrollIndicator={false}>
+              <ScrollView 
+                style={{ marginTop: 12 }} 
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 32 }}
+              >
                 {/* Photo Upload Zone */}
-                <Text style={styles.formLabel}>Ürün Fotoğrafları (En fazla 5 adet)</Text>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: '#334155', marginTop: 8, marginBottom: 8 }}>
+                  Ürün Fotoğrafları (En fazla 5 adet)
+                </Text>
+                
                 {newProdImages.length === 0 ? (
                   <TouchableOpacity
                     style={{
-                      height: 100,
-                      borderRadius: 16,
+                      height: 120,
+                      borderRadius: 18,
                       borderStyle: 'dashed',
                       borderWidth: 1.5,
-                      borderColor: 'rgba(255, 255, 255, 0.2)',
-                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      borderColor: colors.primary,
+                      backgroundColor: '#FFFFFF',
                       justifyContent: 'center',
                       alignItems: 'center',
                       marginBottom: 16,
-                      gap: 4
+                      gap: 6,
+                      shadowColor: '#0F172A',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.02,
+                      shadowRadius: 8,
+                      elevation: 1,
                     }}
                     onPress={handlePickProductImage}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="camera-outline" size={26} color="#F59E0B" />
-                    <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: '#FFF' }}>Fotoğraf Seç veya Çek (En Fazla 5)</Text>
-                    <Text style={{ fontSize: 9.5, fontFamily: fonts.medium, color: '#94A3B8' }}>Galeriden yükleyin veya kamera ile çekin</Text>
+                    <View style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 21,
+                      backgroundColor: 'rgba(13, 148, 136, 0.08)',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}>
+                      <Ionicons name="camera-outline" size={22} color={colors.primary} />
+                    </View>
+                    <View style={{ alignItems: 'center' }}>
+                      <Text style={{ fontSize: 12.5, fontFamily: fonts.bold, color: '#1E293B' }}>Fotoğraf Seç veya Çek</Text>
+                      <Text style={{ fontSize: 10, fontFamily: fonts.medium, color: '#64748B', marginTop: 2 }}>Galeriden yükleyin veya kamera ile çekin</Text>
+                    </View>
                   </TouchableOpacity>
                 ) : (
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }} contentContainerStyle={{ paddingVertical: 4 }}>
                     {newProdImages.map((img, index) => (
-                      <View key={index} style={{ position: 'relative', width: 90, height: 90, borderRadius: 12, overflow: 'hidden', marginRight: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                      <View 
+                        key={index} 
+                        style={{ 
+                          position: 'relative', 
+                          width: 88, 
+                          height: 88, 
+                          borderRadius: 14, 
+                          overflow: 'hidden', 
+                          marginRight: 12, 
+                          borderWidth: 1, 
+                          borderColor: '#E2E8F0',
+                          backgroundColor: '#FFFFFF',
+                          shadowColor: '#000',
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.05,
+                          shadowRadius: 4,
+                          elevation: 2,
+                        }}
+                      >
                         <Image source={{ uri: img }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
                         <TouchableOpacity
-                          style={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(15, 23, 42, 0.85)', padding: 4, borderRadius: 12 }}
+                          style={{ 
+                            position: 'absolute', 
+                            top: 4, 
+                            right: 4, 
+                            backgroundColor: 'rgba(239, 68, 68, 0.9)', 
+                            width: 22,
+                            height: 22,
+                            borderRadius: 11,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 1 },
+                            shadowOpacity: 0.2,
+                            shadowRadius: 2,
+                          }}
                           onPress={() => {
                             setNewProdImages(prev => prev.filter((_, i) => i !== index));
                           }}
                         >
-                          <Ionicons name="trash" size={12} color="#EF4444" />
+                          <Ionicons name="trash-outline" size={12} color="#FFFFFF" />
                         </TouchableOpacity>
+                        
                         {index === 0 && (
-                          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#F59E0B', paddingVertical: 2, alignItems: 'center' }}>
-                            <Text style={{ color: '#0F172A', fontSize: 8, fontFamily: fonts.bold }}>Kapak</Text>
+                          <View style={{ 
+                            position: 'absolute', 
+                            bottom: 0, 
+                            left: 0, 
+                            right: 0, 
+                            backgroundColor: colors.primary, 
+                            paddingVertical: 2, 
+                            alignItems: 'center' 
+                          }}>
+                            <Text style={{ color: '#FFFFFF', fontSize: 8.5, fontFamily: fonts.bold, letterSpacing: 0.3 }}>KAPAK</Text>
                           </View>
                         )}
                       </View>
@@ -1434,98 +1532,226 @@ export default function HomeScreen() {
                     {newProdImages.length < 5 && (
                       <TouchableOpacity
                         style={{
-                          width: 90,
-                          height: 90,
-                          borderRadius: 12,
+                          width: 88,
+                          height: 88,
+                          borderRadius: 14,
                           borderStyle: 'dashed',
                           borderWidth: 1.5,
-                          borderColor: 'rgba(255, 255, 255, 0.2)',
-                          backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                          borderColor: colors.primary,
+                          backgroundColor: '#FFFFFF',
                           justifyContent: 'center',
                           alignItems: 'center',
-                          gap: 2
+                          gap: 4
                         }}
                         onPress={handlePickProductImage}
                         activeOpacity={0.7}
                       >
-                        <Ionicons name="camera-outline" size={20} color="#F59E0B" />
-                        <Text style={{ fontSize: 9, fontFamily: fonts.bold, color: '#FFF', textAlign: 'center' }}>Fotoğraf Ekle</Text>
-                        <Text style={{ fontSize: 8, fontFamily: fonts.medium, color: '#94A3B8' }}>{newProdImages.length}/5</Text>
+                        <Ionicons name="add" size={20} color={colors.primary} />
+                        <Text style={{ fontSize: 9.5, fontFamily: fonts.bold, color: colors.primary }}>Görsel Ekle</Text>
+                        <Text style={{ fontSize: 8.5, fontFamily: fonts.medium, color: '#94A3B8' }}>{newProdImages.length}/5</Text>
                       </TouchableOpacity>
                     )}
                   </ScrollView>
                 )}
 
-                <Text style={styles.formLabel}>Ürün Adı *</Text>
-                <TextInput
-                  style={styles.formInput}
-                  placeholder="Örn: Makita Şarjlı Matkap, 50m Kablo vb."
-                  placeholderTextColor="rgba(255,255,255,0.3)"
-                  value={newProdTitle}
-                  onChangeText={setNewProdTitle}
-                />
-
-                <Text style={styles.formLabel}>Kategori *</Text>
-                <View style={styles.categoryPickerRow}>
-                  {['El Aleti', 'Kablo', 'Şalt / Malzeme', 'Diğer'].map((cat) => (
-                    <TouchableOpacity
-                      key={cat}
-                      style={[
-                        styles.categoryPickerBtn,
-                        newProdCategory === cat && { backgroundColor: colors.primary, borderColor: colors.primary }
-                      ]}
-                      onPress={() => setNewProdCategory(cat)}
-                    >
-                      <Text style={[styles.categoryPickerText, newProdCategory === cat && { color: '#FFF' }]}>{cat}</Text>
-                    </TouchableOpacity>
-                  ))}
+                {/* Form Group: Product Name */}
+                <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: '#334155', marginTop: 8, marginBottom: 8 }}>
+                  Ürün Adı *
+                </Text>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: '#FFFFFF',
+                  borderWidth: 1,
+                  borderColor: '#E2E8F0',
+                  borderRadius: 14,
+                  paddingHorizontal: 14,
+                  height: 50,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.01,
+                  shadowRadius: 4,
+                  elevation: 1,
+                }}>
+                  <Ionicons name="cube-outline" size={18} color="#94A3B8" style={{ marginRight: 10 }} />
+                  <TextInput
+                    style={{ flex: 1, color: '#0F172A', fontFamily: fonts.medium, fontSize: 13.5, height: '100%', paddingVertical: 0 }}
+                    placeholder="Örn: Makita Şarjlı Matkap, 50m Kablo vb."
+                    placeholderTextColor="#94A3B8"
+                    value={newProdTitle}
+                    onChangeText={setNewProdTitle}
+                  />
                 </View>
 
-                <Text style={styles.formLabel}>Fiyat (₺) *</Text>
-                <TextInput
-                  style={styles.formInput}
-                  placeholder="Örn: 1500"
-                  placeholderTextColor="rgba(255,255,255,0.3)"
-                  keyboardType="numeric"
-                  value={newProdPrice}
-                  onChangeText={setNewProdPrice}
-                />
+                {/* Form Group: Category Selection */}
+                <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: '#334155', marginTop: 14, marginBottom: 8 }}>
+                  Kategori Seçimi *
+                </Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 10, marginBottom: 4 }}>
+                  {['El Aleti', 'Kablo', 'Şalt / Malzeme', 'Diğer'].map((cat) => {
+                    const isSelected = newProdCategory === cat;
+                    
+                    let iconName: any = 'cube-outline';
+                    if (cat === 'El Aleti') iconName = 'hammer-outline';
+                    else if (cat === 'Kablo') iconName = 'git-commit-outline';
+                    else if (cat === 'Şalt / Malzeme') iconName = 'flash-outline';
 
-                <Text style={styles.formLabel}>Konum (Şehir/İlçe) *</Text>
-                <TextInput
-                  style={styles.formInput}
-                  placeholder="Örn: Ankara, Keçiören"
-                  placeholderTextColor="rgba(255,255,255,0.3)"
-                  value={newProdLocation}
-                  onChangeText={setNewProdLocation}
-                />
+                    return (
+                      <TouchableOpacity
+                        key={cat}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '48.4%',
+                          height: 44,
+                          borderRadius: 14,
+                          backgroundColor: isSelected ? colors.primary : '#FFFFFF',
+                          borderWidth: 1,
+                          borderColor: isSelected ? colors.primary : '#E2E8F0',
+                          shadowColor: isSelected ? colors.primary : '#000',
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: isSelected ? 0.08 : 0.01,
+                          shadowRadius: 4,
+                          elevation: 1,
+                        }}
+                        onPress={() => setNewProdCategory(cat)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name={iconName} size={15} color={isSelected ? '#FFFFFF' : '#64748B'} style={{ marginRight: 6 }} />
+                        <Text style={{ 
+                          color: isSelected ? '#FFFFFF' : '#475569', 
+                          fontFamily: isSelected ? fonts.bold : fonts.semiBold, 
+                          fontSize: 12.5 
+                        }}>
+                          {cat}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
 
-                <Text style={styles.formLabel}>Ürün Açıklaması *</Text>
-                <TextInput
-                  style={[styles.formInput, { height: 80, textAlignVertical: 'top', paddingTop: 10 }]}
-                  placeholder="Ürünün durumu, markası ve teslimat bilgileri..."
-                  placeholderTextColor="rgba(255,255,255,0.3)"
-                  multiline={true}
-                  numberOfLines={4}
-                  value={newProdDesc}
-                  onChangeText={setNewProdDesc}
-                />
+                {/* Form Group: Price */}
+                <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: '#334155', marginTop: 14, marginBottom: 8 }}>
+                  Fiyat (₺) *
+                </Text>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: '#FFFFFF',
+                  borderWidth: 1,
+                  borderColor: '#E2E8F0',
+                  borderRadius: 14,
+                  paddingHorizontal: 14,
+                  height: 50,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.01,
+                  shadowRadius: 4,
+                  elevation: 1,
+                }}>
+                  <Ionicons name="card-outline" size={18} color="#94A3B8" style={{ marginRight: 10 }} />
+                  <TextInput
+                    style={{ flex: 1, color: '#0F172A', fontFamily: fonts.medium, fontSize: 13.5, height: '100%', paddingVertical: 0 }}
+                    placeholder="Örn: 1500"
+                    placeholderTextColor="#94A3B8"
+                    keyboardType="numeric"
+                    value={newProdPrice}
+                    onChangeText={setNewProdPrice}
+                  />
+                </View>
 
+                {/* Form Group: Location */}
+                <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: '#334155', marginTop: 14, marginBottom: 8 }}>
+                  Konum (Şehir/İlçe) *
+                </Text>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: '#FFFFFF',
+                  borderWidth: 1,
+                  borderColor: '#E2E8F0',
+                  borderRadius: 14,
+                  paddingHorizontal: 14,
+                  height: 50,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.01,
+                  shadowRadius: 4,
+                  elevation: 1,
+                }}>
+                  <Ionicons name="pin-outline" size={18} color="#94A3B8" style={{ marginRight: 10 }} />
+                  <TextInput
+                    style={{ flex: 1, color: '#0F172A', fontFamily: fonts.medium, fontSize: 13.5, height: '100%', paddingVertical: 0 }}
+                    placeholder="Örn: Ankara, Keçiören"
+                    placeholderTextColor="#94A3B8"
+                    value={newProdLocation}
+                    onChangeText={setNewProdLocation}
+                  />
+                </View>
+
+                {/* Form Group: Description */}
+                <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: '#334155', marginTop: 14, marginBottom: 8 }}>
+                  Ürün Açıklaması *
+                </Text>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'flex-start',
+                  backgroundColor: '#FFFFFF',
+                  borderWidth: 1,
+                  borderColor: '#E2E8F0',
+                  borderRadius: 14,
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  height: 100,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.01,
+                  shadowRadius: 4,
+                  elevation: 1,
+                }}>
+                  <Ionicons name="document-text-outline" size={18} color="#94A3B8" style={{ marginRight: 10, marginTop: 2 }} />
+                  <TextInput
+                    style={{ flex: 1, color: '#0F172A', fontFamily: fonts.medium, fontSize: 13.5, height: '100%', paddingVertical: 0, textAlignVertical: 'top' }}
+                    placeholder="Ürünün durumu, markası ve teslimat bilgileri..."
+                    placeholderTextColor="#94A3B8"
+                    multiline={true}
+                    numberOfLines={4}
+                    value={newProdDesc}
+                    onChangeText={setNewProdDesc}
+                  />
+                </View>
+
+                {/* Submit button */}
                 <TouchableOpacity
-                  style={[styles.submitBtn, { backgroundColor: colors.primary, marginTop: 16 }]}
+                  style={{
+                    backgroundColor: colors.primary,
+                    borderRadius: 14,
+                    height: 52,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginTop: 24,
+                    shadowColor: colors.primary,
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 8,
+                    elevation: 3,
+                  }}
                   onPress={handleAddProduct}
                   activeOpacity={0.8}
                   disabled={isUploadingImage}
                 >
                   {isUploadingImage ? (
-                    <ActivityIndicator size="small" color="#FFF" />
+                    <ActivityIndicator size="small" color="#FFFFFF" />
                   ) : (
-                    <Text style={styles.submitBtnText}>İlanı Yayınla 🚀</Text>
+                    <Text style={{ color: '#FFFFFF', fontFamily: fonts.bold, fontSize: 14.5 }}>
+                      İlanı Yayınla
+                    </Text>
                   )}
                 </TouchableOpacity>
               </ScrollView>
             </View>
-          </View>
+          </LinearGradient>
         </Modal>
 
         {/* ==================== FOTOĞRAF SEÇİM YÖNTEMİ MODAL (PREMIUM THEME) ==================== */}
@@ -1628,98 +1854,350 @@ export default function HomeScreen() {
         {/* ==================== TÜM PAZAR YERİ İLANLARI MODAL ==================== */}
         <Modal
           visible={isAllProductsModalVisible}
-          transparent={true}
+          transparent={false}
           animationType="slide"
+          presentationStyle="fullScreen"
           onRequestClose={() => setIsAllProductsModalVisible(false)}
         >
-          <View style={{ flex: 1, backgroundColor: '#0F172A' }}>
-            <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 30, paddingBottom: 24 }}>
-              <View style={styles.hiwHeader}>
-                <Text style={styles.marketModalTitle}>Tüm Pazar Yeri İlanları</Text>
-                <TouchableOpacity onPress={() => setIsAllProductsModalVisible(false)} style={styles.hiwCloseBtn}>
-                  <Ionicons name="close" size={24} color="#94A3B8" />
+          <LinearGradient
+            colors={['#F8FAFC', '#F0FDFA', '#F8FAFC']}
+            style={{ flex: 1 }}
+          >
+            {/* Background Glow Blobs */}
+            <View style={{ position: 'absolute', top: -100, right: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: colors.primary, opacity: 0.04 }} />
+            <View style={{ position: 'absolute', bottom: -100, left: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: '#0EA5E9', opacity: 0.03 }} />
+
+            <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 56 : 24, paddingBottom: 16 }}>
+              {/* Header Row */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, paddingHorizontal: 4 }}>
+                <View>
+                  <Text style={{ fontSize: 22, fontFamily: fonts.bold, color: '#0F172A', letterSpacing: -0.3 }}>
+                    Pazar Yeri & İkinci El
+                  </Text>
+                  <Text style={{ fontSize: 12, fontFamily: fonts.medium, color: '#64748B', marginTop: 1 }}>
+                    {(() => {
+                      const totalCount = marketplaceProducts.length;
+                      const filteredCount = marketplaceProducts.filter((p) => {
+                        const matchesSearch = p.title.toLowerCase().includes(marketSearchQuery.toLowerCase()) ||
+                          p.desc.toLowerCase().includes(marketSearchQuery.toLowerCase()) ||
+                          p.sellerName.toLowerCase().includes(marketSearchQuery.toLowerCase());
+                        const matchesCat = marketSelectedFilter === '' || p.category.includes(marketSelectedFilter) || marketSelectedFilter.includes(p.category);
+                        return matchesSearch && matchesCat;
+                      }).length;
+                      return marketSearchQuery || marketSelectedFilter
+                        ? `${filteredCount} ilan bulundu (Toplam ${totalCount})`
+                        : `${totalCount} aktif ilan listeleniyor`;
+                    })()}
+                  </Text>
+                </View>
+                <TouchableOpacity 
+                  onPress={() => setIsAllProductsModalVisible(false)} 
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: '#FFFFFF',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderWidth: 1,
+                    borderColor: '#E2E8F0',
+                    shadowColor: '#0F172A',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 6,
+                    elevation: 2,
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close-outline" size={24} color="#475569" />
                 </TouchableOpacity>
               </View>
 
               {/* Search Bar */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, paddingHorizontal: 12, height: 44, marginTop: 16, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                <Ionicons name="search" size={18} color="#94A3B8" style={{ marginRight: 8 }} />
+              <View style={{ 
+                flexDirection: 'row', 
+                alignItems: 'center', 
+                backgroundColor: '#FFFFFF', 
+                borderRadius: 16, 
+                paddingHorizontal: 16, 
+                height: 52, 
+                marginTop: 12, 
+                marginBottom: 12, 
+                borderWidth: 1, 
+                borderColor: '#E2E8F0',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.02,
+                shadowRadius: 8,
+                elevation: 2,
+              }}>
+                <Ionicons name="search-outline" size={20} color={colors.primary} style={{ marginRight: 10 }} />
                 <TextInput
-                  style={{ flex: 1, color: '#FFF', fontFamily: fonts.medium, fontSize: 13.5, height: '100%', paddingVertical: 0 }}
+                  style={{ flex: 1, color: '#0F172A', fontFamily: fonts.medium, fontSize: 14, height: '100%', paddingVertical: 0 }}
                   placeholder="Ürün adı, satıcı veya kategori ara..."
-                  placeholderTextColor="rgba(255,255,255,0.3)"
+                  placeholderTextColor="#94A3B8"
                   value={marketSearchQuery}
                   onChangeText={setMarketSearchQuery}
                 />
                 {marketSearchQuery.length > 0 && (
-                  <TouchableOpacity onPress={() => setMarketSearchQuery('')}>
-                    <Ionicons name="close-circle" size={16} color="#94A3B8" />
+                  <TouchableOpacity 
+                    onPress={() => setMarketSearchQuery('')}
+                    style={{ padding: 4 }}
+                  >
+                    <Ionicons name="close-circle" size={18} color="#94A3B8" />
                   </TouchableOpacity>
                 )}
               </View>
 
               {/* Category Filter Tabs */}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxHeight: 36, marginBottom: 16 }} contentContainerStyle={{ alignItems: 'center' }}>
-                {['Tümü', 'El Aleti', 'Kablo', 'Şalt / Malzeme', 'Diğer'].map((cat) => {
-                  const isSelected = (cat === 'Tümü' && marketSelectedFilter === '') || (marketSelectedFilter === cat);
-                  return (
-                    <TouchableOpacity
-                      key={cat}
-                      style={{
-                        paddingHorizontal: 14,
-                        paddingVertical: 6,
-                        borderRadius: 20,
-                        backgroundColor: isSelected ? colors.primary : 'rgba(255,255,255,0.05)',
-                        marginRight: 8,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        height: 28
-                      }}
-                      onPress={() => setMarketSelectedFilter(cat === 'Tümü' ? '' : cat)}
-                    >
-                      <Text style={{ color: '#FFF', fontFamily: fonts.bold, fontSize: 11 }}>{cat}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
+              <View style={{ height: 42, marginBottom: 12 }}>
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false} 
+                  contentContainerStyle={{ alignItems: 'center', paddingHorizontal: 2 }}
+                >
+                  {['Tümü', 'El Aleti', 'Kablo', 'Şalt / Malzeme', 'Diğer'].map((cat) => {
+                    const isSelected = (cat === 'Tümü' && marketSelectedFilter === '') || (marketSelectedFilter === cat);
+                    
+                    // Count items in this category dynamically
+                    const categoryCount = (() => {
+                      if (cat === 'Tümü') return marketplaceProducts.length;
+                      return marketplaceProducts.filter(p => p.category.includes(cat) || cat.includes(p.category)).length;
+                    })();
 
-              <ScrollView showsVerticalScrollIndicator={false}>
-                {marketplaceProducts
-                  .filter((p) => {
+                    // Map categories to icons
+                    let iconName: any = 'grid-outline';
+                    if (cat === 'El Aleti') iconName = 'hammer-outline';
+                    else if (cat === 'Kablo') iconName = 'git-commit-outline';
+                    else if (cat === 'Şalt / Malzeme') iconName = 'flash-outline';
+                    else if (cat === 'Diğer') iconName = 'cube-outline';
+
+                    return (
+                      <TouchableOpacity
+                        key={cat}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          paddingHorizontal: 14,
+                          height: 36,
+                          borderRadius: 18,
+                          backgroundColor: isSelected ? colors.primary : '#FFFFFF',
+                          marginRight: 8,
+                          borderWidth: 1,
+                          borderColor: isSelected ? colors.primary : '#E2E8F0',
+                          shadowColor: isSelected ? colors.primary : '#000',
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: isSelected ? 0.2 : 0.02,
+                          shadowRadius: 4,
+                          elevation: 1,
+                        }}
+                        onPress={() => setMarketSelectedFilter(cat === 'Tümü' ? '' : cat)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons 
+                          name={iconName} 
+                          size={14} 
+                          color={isSelected ? '#FFFFFF' : '#64748B'} 
+                          style={{ marginRight: 6 }} 
+                        />
+                        <Text style={{ 
+                          color: isSelected ? '#FFFFFF' : '#475569', 
+                          fontFamily: isSelected ? fonts.bold : fonts.semiBold, 
+                          fontSize: 12.5 
+                        }}>
+                          {cat}
+                        </Text>
+                        <View style={{
+                          backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.25)' : '#F1F5F9',
+                          paddingHorizontal: 6,
+                          paddingVertical: 1.5,
+                          borderRadius: 8,
+                          marginLeft: 6,
+                        }}>
+                          <Text style={{
+                            color: isSelected ? '#FFFFFF' : '#64748B',
+                            fontSize: 9.5,
+                            fontFamily: fonts.bold,
+                          }}>
+                            {categoryCount}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
+              {/* Product List ScrollView */}
+              <ScrollView 
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 24 }}
+              >
+                {(() => {
+                  const filtered = marketplaceProducts.filter((p) => {
                     const matchesSearch = p.title.toLowerCase().includes(marketSearchQuery.toLowerCase()) ||
                       p.desc.toLowerCase().includes(marketSearchQuery.toLowerCase()) ||
                       p.sellerName.toLowerCase().includes(marketSearchQuery.toLowerCase());
                     const matchesCat = marketSelectedFilter === '' || p.category.includes(marketSelectedFilter) || marketSelectedFilter.includes(p.category);
                     return matchesSearch && matchesCat;
-                  })
-                  .map((prod) => {
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <View style={{ 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        marginTop: 40, 
+                        backgroundColor: '#FFFFFF', 
+                        borderRadius: 24, 
+                        padding: 32,
+                        borderWidth: 1,
+                        borderColor: '#E2E8F0',
+                        shadowColor: '#0F172A',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.02,
+                        shadowRadius: 12,
+                        elevation: 2,
+                      }}>
+                        <View style={{
+                          width: 80,
+                          height: 80,
+                          borderRadius: 40,
+                          backgroundColor: '#F0FDFA',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          marginBottom: 16,
+                        }}>
+                          <Ionicons name="search-outline" size={36} color={colors.primary} />
+                        </View>
+                        <Text style={{ 
+                          fontSize: 17, 
+                          fontFamily: fonts.bold, 
+                          color: '#1E293B',
+                          textAlign: 'center',
+                          marginBottom: 8
+                        }}>
+                          Aradığınız İlan Bulunamadı
+                        </Text>
+                        <Text style={{ 
+                          fontSize: 13, 
+                          fontFamily: fonts.medium, 
+                          color: '#64748B', 
+                          textAlign: 'center',
+                          lineHeight: 18,
+                          marginBottom: 20,
+                          paddingHorizontal: 12
+                        }}>
+                          Arama teriminizi değiştirerek ya da farklı bir kategori seçerek tekrar deneyebilirsiniz.
+                        </Text>
+                        <TouchableOpacity
+                          style={{
+                            backgroundColor: colors.primary,
+                            borderRadius: 12,
+                            paddingHorizontal: 20,
+                            paddingVertical: 10,
+                            shadowColor: colors.primary,
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.15,
+                            shadowRadius: 8,
+                            elevation: 3,
+                          }}
+                          onPress={() => {
+                            setMarketSearchQuery('');
+                            setMarketSelectedFilter('');
+                          }}
+                        >
+                          <Text style={{ color: '#FFFFFF', fontFamily: fonts.bold, fontSize: 13 }}>
+                            Filtreleri Temizle
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  }
+
+                  return filtered.map((prod) => {
                     const isUsta = prod.sellerType === 'ELECTRICIAN';
+                    const sellerDisplayName = prod.sellerName ? prod.sellerName.split(' (')[0] : (isUsta ? 'Usta' : 'Vatandaş');
+                    
+                    // Dynamic tag color logic
+                    let tagBg = '#F1F5F9';
+                    let tagText = '#475569';
+                    if (prod.category.includes('Alet')) {
+                      tagBg = '#FEF3C7';
+                      tagText = '#D97706';
+                    } else if (prod.category.includes('Kablo')) {
+                      tagBg = '#ECFDF5';
+                      tagText = '#059669';
+                    } else if (prod.category.includes('Şalt')) {
+                      tagBg = '#E0F2FE';
+                      tagText = '#0284C7';
+                    } else if (prod.category.includes('Diğer')) {
+                      tagBg = '#F3E8FF';
+                      tagText = '#7C3AED';
+                    }
+
                     return (
                       <TouchableOpacity
                         key={prod.id}
                         style={{
-                          backgroundColor: 'rgba(255,255,255,0.03)',
-                          borderRadius: 16,
+                          backgroundColor: '#FFFFFF',
+                          borderRadius: 20,
                           padding: 12,
                           marginBottom: 12,
                           borderWidth: 1,
-                          borderColor: 'rgba(255,255,255,0.06)',
+                          borderColor: '#E2E8F0',
                           flexDirection: 'row',
-                          gap: 12
+                          gap: 12,
+                          shadowColor: '#0F172A',
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowOpacity: 0.02,
+                          shadowRadius: 8,
+                          elevation: 2,
                         }}
                         onPress={() => {
                           setSelectedProduct(prod);
                           setIsProductDetailModalVisible(true);
                         }}
+                        activeOpacity={0.9}
                       >
-                        <View style={{ position: 'relative' }}>
+                        {/* Image Container with Badges */}
+                        <View style={{ position: 'relative', width: 90, height: 90, borderRadius: 14, overflow: 'hidden', backgroundColor: '#F8FAFC' }}>
                           {prod.image ? (
-                            <Image source={{ uri: prod.image }} style={{ width: 70, height: 70, borderRadius: 10, backgroundColor: '#1E293B' }} />
+                            <Image 
+                              source={{ uri: prod.image }} 
+                              style={{ width: '100%', height: '100%', resizeMode: 'cover' }} 
+                            />
                           ) : (
-                            <View style={{ width: 70, height: 70, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' }}>
-                              <Ionicons name={prod.category === 'Kablo' ? 'analytics' : 'construct'} size={24} color="#94A3B8" />
+                            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F1F5F9' }}>
+                              <Ionicons name="cube-outline" size={28} color="#94A3B8" />
                             </View>
                           )}
+                          
+                          {/* Left-top Category Tag */}
+                          <View style={{ position: 'absolute', top: 4, left: 4, zIndex: 2 }}>
+                            <View style={{
+                              backgroundColor: tagBg,
+                              paddingHorizontal: 6,
+                              paddingVertical: 2.5,
+                              borderRadius: 6,
+                              shadowColor: '#000',
+                              shadowOffset: { width: 0, height: 1 },
+                              shadowOpacity: 0.05,
+                              shadowRadius: 2,
+                            }}>
+                              <Text style={{ 
+                                color: tagText, 
+                                fontSize: 8, 
+                                fontFamily: fonts.extraBold, 
+                                textTransform: 'uppercase',
+                                letterSpacing: 0.2
+                              }}>
+                                {prod.category}
+                              </Text>
+                            </View>
+                          </View>
+
+                          {/* Sold status overlay */}
                           {prod.isSold && (
                             <View style={{
                               position: 'absolute',
@@ -1727,74 +2205,191 @@ export default function HomeScreen() {
                               left: 0,
                               right: 0,
                               bottom: 0,
-                              backgroundColor: 'rgba(15, 23, 42, 0.7)',
-                              borderRadius: 10,
+                              backgroundColor: 'rgba(15, 23, 42, 0.75)',
                               justifyContent: 'center',
                               alignItems: 'center',
+                              zIndex: 3
                             }}>
-                              <Text style={{ color: '#10B981', fontSize: 9.5, fontFamily: fonts.extraBold, letterSpacing: 0.5 }}>SATILDI</Text>
+                              <View style={{
+                                borderWidth: 1.5,
+                                borderColor: '#10B981',
+                                paddingHorizontal: 6,
+                                paddingVertical: 2,
+                                borderRadius: 4,
+                                transform: [{ rotate: '-12deg' }]
+                              }}>
+                                <Text style={{ color: '#10B981', fontSize: 9, fontFamily: fonts.extraBold, letterSpacing: 0.5 }}>SATILDI</Text>
+                              </View>
                             </View>
                           )}
                         </View>
+
+                        {/* Description & Details column */}
                         <View style={{ flex: 1, justifyContent: 'space-between' }}>
                           <View>
+                            {/* Seller Type + Date row */}
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <Text style={{ color: isUsta ? '#F59E0B' : '#10B981', fontSize: 9, fontFamily: fonts.bold, textTransform: 'uppercase' }}>{prod.category}</Text>
-                              <Text style={{ color: '#64748B', fontSize: 9, fontFamily: fonts.medium }}>{prod.date}</Text>
+                              <View style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                backgroundColor: isUsta ? 'rgba(217, 119, 6, 0.08)' : 'rgba(5, 150, 105, 0.08)',
+                                paddingHorizontal: 8,
+                                paddingVertical: 2,
+                                borderRadius: 6,
+                                gap: 3
+                              }}>
+                                <Ionicons 
+                                  name={isUsta ? "build-outline" : "person-outline"} 
+                                  size={10} 
+                                  color={isUsta ? '#D97706' : '#059669'} 
+                                />
+                                <Text style={{ 
+                                  color: isUsta ? '#D97706' : '#059669', 
+                                  fontSize: 8.5, 
+                                  fontFamily: fonts.bold, 
+                                  textTransform: 'uppercase',
+                                  letterSpacing: 0.2 
+                                }}>
+                                  {isUsta ? 'Usta Satıcı' : 'Vatandaş'}
+                                </Text>
+                              </View>
+                              <Text style={{ color: '#94A3B8', fontSize: 10, fontFamily: fonts.bold }}>{prod.date}</Text>
                             </View>
-                            <Text style={{ color: '#FFF', fontSize: 13, fontFamily: fonts.bold, marginTop: 2 }} numberOfLines={1}>{prod.title}</Text>
-                            <Text style={{ color: '#94A3B8', fontSize: 10.5, fontFamily: fonts.regular, marginTop: 2 }} numberOfLines={1}>{prod.desc}</Text>
+
+                            {/* Product Title */}
+                            <Text 
+                              style={{ color: '#0F172A', fontSize: 14.5, fontFamily: fonts.bold, marginTop: 4 }} 
+                              numberOfLines={1}
+                            >
+                              {prod.title}
+                            </Text>
+
+                            {/* Product Description */}
+                            <Text 
+                              style={{ color: '#64748B', fontSize: 11.5, fontFamily: fonts.medium, marginTop: 2, lineHeight: 15 }} 
+                              numberOfLines={1}
+                            >
+                              {prod.desc}
+                            </Text>
                           </View>
                           
+                          {/* Price & Seller badge row */}
                           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
-                            <Text style={{ color: colors.primary, fontSize: 13.5, fontFamily: fonts.extraBold }}>₺{prod.price}</Text>
-                            <Text style={{ color: '#94A3B8', fontSize: 10, fontFamily: fonts.medium }} numberOfLines={1}>{prod.sellerName.split(' ')[0]}</Text>
+                            <Text style={{ color: colors.primary, fontSize: 16, fontFamily: fonts.extraBold }}>
+                              ₺{prod.price}
+                            </Text>
+                            
+                            <View style={{ 
+                              flexDirection: 'row', 
+                              alignItems: 'center', 
+                              backgroundColor: '#F8FAFC', 
+                              paddingHorizontal: 8, 
+                              paddingVertical: 3, 
+                              borderRadius: 8, 
+                              borderWidth: 1, 
+                              borderColor: '#E2E8F0', 
+                              gap: 4 
+                            }}>
+                              <Ionicons name="person-circle-outline" size={12} color="#64748B" />
+                              <Text 
+                                style={{ color: '#475569', fontSize: 10, fontFamily: fonts.bold, maxWidth: 90 }} 
+                                numberOfLines={1}
+                              >
+                                {sellerDisplayName}
+                              </Text>
+                            </View>
                           </View>
                         </View>
                       </TouchableOpacity>
                     );
-                  })}
+                  });
+                })()}
               </ScrollView>
             </View>
-          </View>
+          </LinearGradient>
         </Modal>
 
         {/* ==================== ÜRÜN DETAY MODAL ==================== */}
         <Modal
           visible={isProductDetailModalVisible}
-          transparent={true}
-          animationType="fade"
+          transparent={false}
+          animationType="slide"
+          presentationStyle="fullScreen"
           onRequestClose={() => setIsProductDetailModalVisible(false)}
         >
-          <View style={styles.hiwModalOverlay}>
-            <View style={[styles.marketModalContent, { paddingBottom: 24 }]}>
-              <View style={styles.hiwHeader}>
-                <Text style={styles.marketModalTitle}>Ürün Detayları</Text>
-                <TouchableOpacity onPress={() => setIsProductDetailModalVisible(false)} style={styles.hiwCloseBtn}>
-                  <Ionicons name="close" size={24} color="#94A3B8" />
+          <LinearGradient
+            colors={['#F8FAFC', '#F0FDFA', '#F8FAFC']}
+            style={{ flex: 1 }}
+          >
+            {/* Background Glow Blobs */}
+            <View style={{ position: 'absolute', top: -100, right: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: colors.primary, opacity: 0.04 }} />
+            <View style={{ position: 'absolute', bottom: -100, left: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: '#0EA5E9', opacity: 0.03 }} />
+
+            <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 56 : 24, paddingBottom: 16 }}>
+              {/* Header Row */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, paddingHorizontal: 2 }}>
+                <View>
+                  <Text style={{ fontSize: 22, fontFamily: fonts.bold, color: '#0F172A', letterSpacing: -0.3 }}>
+                    Ürün Detayları
+                  </Text>
+                  <Text style={{ fontSize: 12, fontFamily: fonts.medium, color: '#64748B', marginTop: 1 }}>
+                    İkinci el pazar yerindeki ürün özelliklerini inceleyin
+                  </Text>
+                </View>
+                <TouchableOpacity 
+                  onPress={() => setIsProductDetailModalVisible(false)} 
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: '#FFFFFF',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderWidth: 1,
+                    borderColor: '#E2E8F0',
+                    shadowColor: '#0F172A',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 6,
+                    elevation: 2,
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close-outline" size={24} color="#475569" />
                 </TouchableOpacity>
               </View>
 
               {selectedProduct && (
-                <View style={{ marginTop: 20 }}>
-                  {/* Photo Header */}
+                <ScrollView 
+                  style={{ marginTop: 12 }} 
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingBottom: 32 }}
+                >
+                  {/* Photo Header swiper */}
                   {selectedProduct.images && selectedProduct.images.length > 0 ? (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                    <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={{ marginBottom: 16, borderRadius: 20, overflow: 'hidden' }}>
                       {selectedProduct.images.map((img: string, idx: number) => (
                         <TouchableOpacity
                           key={idx}
                           activeOpacity={0.9}
                           onPress={() => setShowFullscreenImage(img)}
-                          style={{ width: 280, height: 180, borderRadius: 16, overflow: 'hidden', marginRight: 10, position: 'relative' }}
+                          style={{ 
+                            width: Dimensions.get('window').width - 40, 
+                            height: 220, 
+                            position: 'relative',
+                            backgroundColor: '#FFFFFF',
+                            borderWidth: 1,
+                            borderColor: '#F1F5F9'
+                          }}
                         >
                           <Image source={{ uri: img }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
-                          <View style={{ position: 'absolute', bottom: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <View style={{ position: 'absolute', bottom: 8, right: 8, backgroundColor: 'rgba(0, 0, 0, 0.65)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                             <Ionicons name="expand" size={12} color="#FFF" />
                             <Text style={{ color: '#FFF', fontSize: 10, fontFamily: fonts.bold }}>Büyütmek için Dokunun</Text>
                           </View>
                           {selectedProduct.images.length > 1 && (
-                            <View style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 }}>
-                              <Text style={{ color: '#FFF', fontSize: 9.5, fontFamily: fonts.bold }}>{idx + 1}/{selectedProduct.images.length}</Text>
+                            <View style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.65)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                              <Text style={{ color: '#FFF', fontSize: 10, fontFamily: fonts.bold }}>{idx + 1}/{selectedProduct.images.length}</Text>
                             </View>
                           )}
                         </TouchableOpacity>
@@ -1804,49 +2399,177 @@ export default function HomeScreen() {
                     <TouchableOpacity
                       activeOpacity={0.9}
                       onPress={() => setShowFullscreenImage(selectedProduct.image)}
-                      style={{ width: '100%', height: 180, borderRadius: 16, overflow: 'hidden', marginBottom: 16, position: 'relative' }}
+                      style={{ 
+                        width: '100%', 
+                        height: 220, 
+                        borderRadius: 20, 
+                        overflow: 'hidden', 
+                        marginBottom: 16, 
+                        position: 'relative',
+                        backgroundColor: '#FFFFFF',
+                        borderWidth: 1,
+                        borderColor: '#F1F5F9',
+                        shadowColor: '#0F172A',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.02,
+                        shadowRadius: 10,
+                        elevation: 2,
+                      }}
                     >
                       <Image source={{ uri: selectedProduct.image }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
-                      <View style={{ position: 'absolute', bottom: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <View style={{ position: 'absolute', bottom: 8, right: 8, backgroundColor: 'rgba(0, 0, 0, 0.65)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                         <Ionicons name="expand" size={12} color="#FFF" />
                         <Text style={{ color: '#FFF', fontSize: 10, fontFamily: fonts.bold }}>Büyütmek için Dokunun</Text>
                       </View>
                     </TouchableOpacity>
                   ) : null}
 
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <View style={[styles.marketCategoryBadge, { backgroundColor: selectedProduct.sellerType === 'ELECTRICIAN' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)' }]}>
-                      <Text style={[styles.marketCategoryText, { color: selectedProduct.sellerType === 'ELECTRICIAN' ? '#F59E0B' : '#10B981' }]}>{selectedProduct.category}</Text>
+                  {/* Kategori, Tarih and SellerType Row */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                    <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                      {/* Category tag pill */}
+                      <View style={{
+                        backgroundColor: selectedProduct.sellerType === 'ELECTRICIAN' ? 'rgba(217, 119, 6, 0.08)' : 'rgba(5, 150, 105, 0.08)',
+                        paddingHorizontal: 10,
+                        paddingVertical: 4.5,
+                        borderRadius: 8,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 4
+                      }}>
+                        <Ionicons 
+                          name={selectedProduct.sellerType === 'ELECTRICIAN' ? "build-outline" : "person-outline"} 
+                          size={11} 
+                          color={selectedProduct.sellerType === 'ELECTRICIAN' ? '#D97706' : '#059669'} 
+                        />
+                        <Text style={{ 
+                          color: selectedProduct.sellerType === 'ELECTRICIAN' ? '#D97706' : '#059669', 
+                          fontSize: 9.5, 
+                          fontFamily: fonts.bold, 
+                          textTransform: 'uppercase',
+                          letterSpacing: 0.3 
+                        }}>
+                          {selectedProduct.sellerType === 'ELECTRICIAN' ? 'Usta Satıcı' : 'Vatandaş'}
+                        </Text>
+                      </View>
+
+                      {/* Product Category name tag */}
+                      <View style={{
+                        backgroundColor: '#F1F5F9',
+                        paddingHorizontal: 10,
+                        paddingVertical: 4.5,
+                        borderRadius: 8,
+                      }}>
+                        <Text style={{
+                          color: '#475569',
+                          fontSize: 9.5,
+                          fontFamily: fonts.bold,
+                        }}>
+                          {selectedProduct.category}
+                        </Text>
+                      </View>
                     </View>
-                    <Text style={{ color: '#94A3B8', fontSize: 12, fontFamily: fonts.medium }}>{selectedProduct.date}</Text>
+
+                    {/* Date label */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Ionicons name="time-outline" size={13} color="#94A3B8" />
+                      <Text style={{ color: '#94A3B8', fontSize: 11.5, fontFamily: fonts.medium }}>
+                        {selectedProduct.date}
+                      </Text>
+                    </View>
                   </View>
 
-                  <Text style={{ fontSize: 18, fontFamily: fonts.bold, color: '#FFF', marginTop: 12 }}>{selectedProduct.title}</Text>
+                  {/* Title & Location details */}
+                  <Text style={{ fontSize: 20, fontFamily: fonts.bold, color: '#0F172A', marginTop: 12, lineHeight: 26 }}>
+                    {selectedProduct.title}
+                  </Text>
                   
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 4 }}>
-                    <Ionicons name="location-outline" size={14} color="#94A3B8" />
-                    <Text style={{ color: '#94A3B8', fontSize: 12, fontFamily: fonts.medium }}>{selectedProduct.location}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 5 }}>
+                    <Ionicons name="pin-outline" size={14} color={colors.primary} />
+                    <Text style={{ color: '#64748B', fontSize: 13, fontFamily: fonts.medium }}>
+                      {selectedProduct.location}
+                    </Text>
                   </View>
 
-                  <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 12, marginTop: 16 }}>
-                    <Text style={{ color: '#E2E8F0', fontSize: 13, lineHeight: 20, fontFamily: fonts.regular }}>{selectedProduct.desc}</Text>
+                  {/* Description Box */}
+                  <View style={{ 
+                    backgroundColor: '#FFFFFF', 
+                    borderRadius: 20, 
+                    padding: 16, 
+                    marginTop: 16,
+                    borderWidth: 1,
+                    borderColor: '#E2E8F0',
+                    shadowColor: '#0F172A',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.01,
+                    shadowRadius: 8,
+                    elevation: 1,
+                  }}>
+                    <Text style={{ fontFamily: fonts.bold, fontSize: 13.5, color: '#1E293B', marginBottom: 6 }}>
+                      Açıklama
+                    </Text>
+                    <Text style={{ color: '#475569', fontSize: 13, lineHeight: 20, fontFamily: fonts.medium }}>
+                      {selectedProduct.desc}
+                    </Text>
                   </View>
 
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', paddingTop: 16 }}>
-                    <View style={{ flex: 1, marginRight: 8 }}>
-                      <Text style={{ color: '#94A3B8', fontSize: 11, fontFamily: fonts.medium }}>Satıcı</Text>
-                      <Text style={{ color: '#FFF', fontSize: 13.5, fontFamily: fonts.bold }} numberOfLines={1}>{selectedProduct.sellerName}</Text>
+                  {/* Seller & Price Info Card */}
+                  <View style={{ 
+                    flexDirection: 'row', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    marginTop: 16, 
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: 20,
+                    padding: 16,
+                    borderWidth: 1,
+                    borderColor: '#E2E8F0',
+                    shadowColor: '#0F172A',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.01,
+                    shadowRadius: 8,
+                    elevation: 1,
+                  }}>
+                    <View style={{ flex: 1, marginRight: 8, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 20,
+                        backgroundColor: '#F1F5F9',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}>
+                        <Ionicons name="person-outline" size={18} color={colors.primary} />
+                      </View>
+                      <View>
+                        <Text style={{ color: '#94A3B8', fontSize: 10.5, fontFamily: fonts.bold }}>SATICI</Text>
+                        <Text style={{ color: '#1E293B', fontSize: 13.5, fontFamily: fonts.bold }} numberOfLines={1}>
+                          {selectedProduct.sellerName}
+                        </Text>
+                      </View>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={{ color: '#94A3B8', fontSize: 11, fontFamily: fonts.medium }}>Fiyat</Text>
-                      <Text style={{ color: colors.primary, fontSize: 20, fontFamily: fonts.extraBold }}>₺{selectedProduct.price}</Text>
+                      <Text style={{ color: '#94A3B8', fontSize: 10.5, fontFamily: fonts.bold }}>FİYAT</Text>
+                      <Text style={{ color: colors.primary, fontSize: 22, fontFamily: fonts.extraBold }}>
+                        ₺{selectedProduct.price}
+                      </Text>
                     </View>
                   </View>
 
+                  {/* Owner options / Chat Action buttons */}
                   {selectedProduct.sellerId === user?.id ? (
                     <View style={{ marginTop: 24, gap: 12 }}>
-                      <View style={{ backgroundColor: 'rgba(59, 130, 246, 0.08)', borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.15)', borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ color: '#60A5FA', fontSize: 12.5, fontFamily: fonts.semiBold }}>
+                      <View style={{ 
+                        backgroundColor: '#F0FDF4', 
+                        borderWidth: 1, 
+                        borderColor: '#DCFCE7', 
+                        borderRadius: 16, 
+                        paddingVertical: 12, 
+                        paddingHorizontal: 16, 
+                        alignItems: 'center', 
+                        justifyContent: 'center' 
+                      }}>
+                        <Text style={{ color: '#15803D', fontSize: 13, fontFamily: fonts.bold, textAlign: 'center' }}>
                           {selectedProduct.isSold ? 'Bu ilanı başarıyla sattınız 🤝' : 'Bu ilan size aittir (Kendi ürününüz)'}
                         </Text>
                       </View>
@@ -1858,16 +2581,21 @@ export default function HomeScreen() {
                               flex: 1,
                               height: 48,
                               backgroundColor: '#10B981',
-                              borderRadius: 12,
+                              borderRadius: 14,
                               flexDirection: 'row',
                               alignItems: 'center',
                               justifyContent: 'center',
                               gap: 8,
+                              shadowColor: '#10B981',
+                              shadowOffset: { width: 0, height: 4 },
+                              shadowOpacity: 0.1,
+                              shadowRadius: 6,
+                              elevation: 2,
                             }}
                             activeOpacity={0.8}
                             onPress={() => handleMarkAsSold(selectedProduct.id)}
                           >
-                            <Ionicons name="checkmark-circle" size={18} color="#FFF" />
+                            <Ionicons name="checkmark-circle-outline" size={18} color="#FFF" />
                             <Text style={{ color: '#FFF', fontSize: 13.5, fontFamily: fonts.bold }}>Satıldı Yap</Text>
                           </TouchableOpacity>
                         )}
@@ -1876,14 +2604,19 @@ export default function HomeScreen() {
                           style={{
                             flex: 1,
                             height: 48,
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            backgroundColor: '#FFFFFF',
                             borderWidth: 1.5,
                             borderColor: '#EF4444',
-                            borderRadius: 12,
+                            borderRadius: 14,
                             flexDirection: 'row',
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: 8,
+                            shadowColor: '#EF4444',
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.02,
+                            shadowRadius: 6,
+                            elevation: 1,
                           }}
                           activeOpacity={0.8}
                           onPress={() => handleDeleteProduct(selectedProduct.id)}
@@ -1897,10 +2630,10 @@ export default function HomeScreen() {
                     <View
                       style={{
                         height: 48,
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        backgroundColor: '#F1F5F9',
                         borderWidth: 1,
-                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                        borderRadius: 12,
+                        borderColor: '#E2E8F0',
+                        borderRadius: 14,
                         marginTop: 24,
                         flexDirection: 'row',
                         alignItems: 'center',
@@ -1908,12 +2641,26 @@ export default function HomeScreen() {
                         gap: 8,
                       }}
                     >
-                      <Ionicons name="lock-closed" size={18} color="#94A3B8" />
-                      <Text style={{ color: '#94A3B8', fontSize: 14, fontFamily: fonts.bold }}>Bu Ürün Satıldı 🤝</Text>
+                      <Ionicons name="lock-closed-outline" size={18} color="#64748B" />
+                      <Text style={{ color: '#64748B', fontSize: 14, fontFamily: fonts.bold }}>Bu Ürün Satıldı 🤝</Text>
                     </View>
                   ) : (
                     <TouchableOpacity
-                      style={[styles.submitBtn, { backgroundColor: colors.primary, marginTop: 24, flexDirection: 'row', gap: 8, justifyContent: 'center' }]}
+                      style={{ 
+                        backgroundColor: colors.primary, 
+                        marginTop: 24, 
+                        flexDirection: 'row', 
+                        gap: 8, 
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: 52,
+                        borderRadius: 14,
+                        shadowColor: colors.primary,
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.15,
+                        shadowRadius: 8,
+                        elevation: 3,
+                      }}
                       onPress={() => handleContactSeller(selectedProduct.sellerId, selectedProduct.sellerName)}
                       activeOpacity={0.8}
                       disabled={isStartingChat}
@@ -1922,16 +2669,18 @@ export default function HomeScreen() {
                         <ActivityIndicator size="small" color="#FFF" />
                       ) : (
                         <>
-                          <Ionicons name="chatbubbles" size={18} color="#FFF" />
-                          <Text style={styles.submitBtnText}>Satıcıyla İletişime Geç (Sohbet Et)</Text>
+                          <Ionicons name="chatbubbles-outline" size={18} color="#FFF" />
+                          <Text style={{ color: '#FFFFFF', fontFamily: fonts.bold, fontSize: 14 }}>
+                            Satıcıyla İletişime Geç (Sohbet Et)
+                          </Text>
                         </>
                       )}
                     </TouchableOpacity>
                   )}
-                </View>
+                </ScrollView>
               )}
             </View>
-          </View>
+          </LinearGradient>
         </Modal>
 
         {/* ==================== FOTOĞRAF TAM EKRAN GÖSTERİCİ MODAL ==================== */}
