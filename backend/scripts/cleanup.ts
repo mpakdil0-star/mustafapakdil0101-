@@ -36,6 +36,11 @@ async function main() {
     await prisma.favorite.deleteMany({});
     await prisma.block.deleteMany({});
     await prisma.notification.deleteMany({});
+    await prisma.marketplaceProduct.deleteMany({});
+    await prisma.showcaseItem.deleteMany({});
+    await prisma.forumComment.deleteMany({});
+    await prisma.forumPost.deleteMany({});
+    await prisma.jobSharingPost.deleteMany({});
     await prisma.location.deleteMany({ where: { userId: { not: adminId } } }); 
 
     // 2. İlanları silelim
