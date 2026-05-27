@@ -2369,6 +2369,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 16,
+    paddingBottom: Platform.OS === 'android' ? 44 : 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
