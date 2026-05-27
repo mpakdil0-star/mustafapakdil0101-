@@ -962,7 +962,7 @@ export default function ChannelsScreen() {
                       style={styles.masonryItem}
                     >
                       <View style={styles.imageWrapper}>
-                        <Image source={{ uri: item.image }} style={styles.masonryImage} />
+                        <Image source={{ uri: getFileUrl(item.image) || '' }} style={styles.masonryImage} />
                         {item.images && item.images.length > 1 && (
                           <View style={styles.multiPhotoBadge}>
                             <Ionicons name="layers" size={10} color="#FFF" />
@@ -1356,7 +1356,7 @@ export default function ChannelsScreen() {
                               style={{ width: cardWidth, height: 280, overflow: 'hidden' }}
                             >
                               <Image
-                                source={typeof imgUrl === 'string' ? { uri: imgUrl } : imgUrl}
+                                source={typeof imgUrl === 'string' ? { uri: getFileUrl(imgUrl) || '' } : imgUrl}
                                 style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
                               />
                               <LinearGradient

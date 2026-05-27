@@ -2882,7 +2882,7 @@ export default function HomeScreen() {
                                 style={{ width: cardWidth, height: 280, overflow: 'hidden' }}
                               >
                                 <Image
-                                  source={typeof imgUrl === 'string' ? { uri: imgUrl } : imgUrl}
+                                  source={typeof imgUrl === 'string' ? { uri: getFileUrl(imgUrl) || '' } : imgUrl}
                                   style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
                                 />
                                 <LinearGradient

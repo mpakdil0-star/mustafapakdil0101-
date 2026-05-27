@@ -76,7 +76,7 @@ export const CitizenReelsShowcase: React.FC<CitizenReelsShowcaseProps> = ({
                   style={styles.vitrinCardSmall}
                 >
                   <ImageBackground 
-                    source={typeof item.image === 'string' ? { uri: item.image } : item.image} 
+                    source={typeof item.image === 'string' ? { uri: getFileUrl(item.image) || '' } : item.image} 
                     style={styles.vitrinCardBg} 
                     imageStyle={styles.vitrinCardBgImage}
                   >
