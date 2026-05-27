@@ -844,7 +844,7 @@ const styles = StyleSheet.create({
     },
     content: {
         padding: 10,
-        paddingBottom: 16,
+        paddingBottom: 80,
     },
     previewCard: {
         backgroundColor: staticColors.white,
