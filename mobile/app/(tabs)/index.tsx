@@ -1875,7 +1875,7 @@ export default function HomeScreen() {
             <View style={{ position: 'absolute', top: -100, right: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: colors.primary, opacity: 0.04 }} />
             <View style={{ position: 'absolute', bottom: -100, left: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: '#0EA5E9', opacity: 0.03 }} />
 
-            <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 56 : (StatusBar.currentHeight ? StatusBar.currentHeight + 12 : 36), paddingBottom: 16 }}>
+            <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 56 : 12, paddingBottom: 16 }}>
               {/* Header Row */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, paddingHorizontal: 4 }}>
                 <View>
