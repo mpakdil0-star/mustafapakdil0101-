@@ -1871,39 +1871,45 @@ export default function HomeScreen() {
             colors={['#F8FAFC', '#F0FDFA', '#F8FAFC']}
             style={{ flex: 1 }}
           >
-            {/* Background Glow Blobs */}
-            <View style={{ position: 'absolute', top: -100, right: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: colors.primary, opacity: 0.04 }} />
-            <View style={{ position: 'absolute', bottom: -100, left: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: '#0EA5E9', opacity: 0.03 }} />
+            {/* Background Ambient Glow Blobs */}
+            <View style={{ position: 'absolute', top: -80, right: -80, width: 280, height: 280, borderRadius: 140, backgroundColor: colors.primary, opacity: 0.05 }} />
+            <View style={{ position: 'absolute', bottom: -80, left: -80, width: 280, height: 280, borderRadius: 140, backgroundColor: '#0EA5E9', opacity: 0.04 }} />
 
-            <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 56 : 12, paddingBottom: 16 }}>
-              {/* Header Row */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, paddingHorizontal: 4 }}>
+            <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 56 : 12, paddingBottom: 0 }}>
+              
+              {/* Premium Header Row */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, paddingHorizontal: 2 }}>
                 <View>
-                  <Text style={{ fontSize: 22, fontFamily: fonts.bold, color: '#0F172A', letterSpacing: -0.3 }}>
+                  <Text style={{ fontSize: 23, fontFamily: fonts.extraBold, color: '#0F172A', letterSpacing: -0.5 }}>
                     Pazar Yeri & İkinci El
                   </Text>
-                  <Text style={{ fontSize: 12, fontFamily: fonts.medium, color: '#64748B', marginTop: 1 }}>
-                    {(() => {
-                      const totalCount = marketplaceProducts.length;
-                      const filteredCount = marketplaceProducts.filter((p) => {
-                        const matchesSearch = p.title.toLowerCase().includes(marketSearchQuery.toLowerCase()) ||
-                          p.desc.toLowerCase().includes(marketSearchQuery.toLowerCase()) ||
-                          p.sellerName.toLowerCase().includes(marketSearchQuery.toLowerCase());
-                        const matchesCat = marketSelectedFilter === '' || p.category.includes(marketSelectedFilter) || marketSelectedFilter.includes(p.category);
-                        return matchesSearch && matchesCat;
-                      }).length;
-                      return marketSearchQuery || marketSelectedFilter
-                        ? `${filteredCount} ilan bulundu (Toplam ${totalCount})`
-                        : `${totalCount} aktif ilan listeleniyor`;
-                    })()}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3, gap: 4 }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' }} />
+                    <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: '#64748B' }}>
+                      {(() => {
+                        const totalCount = marketplaceProducts.length;
+                        const filteredCount = marketplaceProducts.filter((p) => {
+                          const matchesSearch = p.title.toLowerCase().includes(marketSearchQuery.toLowerCase()) ||
+                            p.desc.toLowerCase().includes(marketSearchQuery.toLowerCase()) ||
+                            p.sellerName.toLowerCase().includes(marketSearchQuery.toLowerCase());
+                          const matchesCat = marketSelectedFilter === '' || p.category.includes(marketSelectedFilter) || marketSelectedFilter.includes(p.category);
+                          return matchesSearch && matchesCat;
+                        }).length;
+                        return marketSearchQuery || marketSelectedFilter
+                          ? `${filteredCount} ilan bulundu (Toplam ${totalCount})`
+                          : `${totalCount} aktif ilan listeleniyor`;
+                      })()}
+                    </Text>
+                  </View>
                 </View>
+                
+                {/* Minimalist Close Button */}
                 <TouchableOpacity 
                   onPress={() => setIsAllProductsModalVisible(false)} 
                   style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
+                    width: 38,
+                    height: 38,
+                    borderRadius: 19,
                     backgroundColor: '#FFFFFF',
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -1911,37 +1917,37 @@ export default function HomeScreen() {
                     borderColor: '#E2E8F0',
                     shadowColor: '#0F172A',
                     shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.05,
+                    shadowOpacity: 0.04,
                     shadowRadius: 6,
                     elevation: 2,
                   }}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="close-outline" size={24} color="#475569" />
+                  <Ionicons name="close" size={20} color="#475569" />
                 </TouchableOpacity>
               </View>
 
-              {/* Search Bar */}
+              {/* Advanced Search Bar with Focus Shadows */}
               <View style={{ 
                 flexDirection: 'row', 
                 alignItems: 'center', 
                 backgroundColor: '#FFFFFF', 
-                borderRadius: 16, 
-                paddingHorizontal: 16, 
-                height: 52, 
-                marginTop: 12, 
-                marginBottom: 12, 
+                borderRadius: 14, 
+                paddingHorizontal: 14, 
+                height: 48, 
+                marginTop: 10, 
+                marginBottom: 10, 
                 borderWidth: 1, 
                 borderColor: '#E2E8F0',
-                shadowColor: '#000',
+                shadowColor: '#0F172A',
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.02,
                 shadowRadius: 8,
                 elevation: 2,
               }}>
-                <Ionicons name="search-outline" size={20} color={colors.primary} style={{ marginRight: 10 }} />
+                <Ionicons name="search-outline" size={18} color={colors.primary} style={{ marginRight: 8 }} />
                 <TextInput
-                  style={{ flex: 1, color: '#0F172A', fontFamily: fonts.medium, fontSize: 14, height: '100%', paddingVertical: 0 }}
+                  style={{ flex: 1, color: '#0F172A', fontFamily: fonts.medium, fontSize: 13.5, height: '100%', paddingVertical: 0 }}
                   placeholder="Ürün adı, satıcı veya kategori ara..."
                   placeholderTextColor="#94A3B8"
                   value={marketSearchQuery}
@@ -1957,8 +1963,8 @@ export default function HomeScreen() {
                 )}
               </View>
 
-              {/* Category Filter Tabs */}
-              <View style={{ height: 42, marginBottom: 12 }}>
+              {/* Dynamic Category Selector Tabs */}
+              <View style={{ height: 40, marginBottom: 10 }}>
                 <ScrollView 
                   horizontal 
                   showsHorizontalScrollIndicator={false} 
@@ -1973,7 +1979,7 @@ export default function HomeScreen() {
                       return marketplaceProducts.filter(p => p.category.includes(cat) || cat.includes(p.category)).length;
                     })();
 
-                    // Map categories to icons
+                    // Map categories to modern outline icons
                     let iconName: any = 'grid-outline';
                     if (cat === 'El Aleti') iconName = 'hammer-outline';
                     else if (cat === 'Kablo') iconName = 'git-commit-outline';
@@ -1986,16 +1992,16 @@ export default function HomeScreen() {
                         style={{
                           flexDirection: 'row',
                           alignItems: 'center',
-                          paddingHorizontal: 14,
-                          height: 36,
-                          borderRadius: 18,
+                          paddingHorizontal: 12,
+                          height: 34,
+                          borderRadius: 17,
                           backgroundColor: isSelected ? colors.primary : '#FFFFFF',
                           marginRight: 8,
                           borderWidth: 1,
                           borderColor: isSelected ? colors.primary : '#E2E8F0',
                           shadowColor: isSelected ? colors.primary : '#000',
                           shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: isSelected ? 0.2 : 0.02,
+                          shadowOpacity: isSelected ? 0.15 : 0.01,
                           shadowRadius: 4,
                           elevation: 1,
                         }}
@@ -2004,27 +2010,27 @@ export default function HomeScreen() {
                       >
                         <Ionicons 
                           name={iconName} 
-                          size={14} 
+                          size={13} 
                           color={isSelected ? '#FFFFFF' : '#64748B'} 
-                          style={{ marginRight: 6 }} 
+                          style={{ marginRight: 5 }} 
                         />
                         <Text style={{ 
                           color: isSelected ? '#FFFFFF' : '#475569', 
                           fontFamily: isSelected ? fonts.bold : fonts.semiBold, 
-                          fontSize: 12.5 
+                          fontSize: 12 
                         }}>
                           {cat}
                         </Text>
                         <View style={{
-                          backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.25)' : '#F1F5F9',
-                          paddingHorizontal: 6,
-                          paddingVertical: 1.5,
-                          borderRadius: 8,
-                          marginLeft: 6,
+                          backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.22)' : '#F1F5F9',
+                          paddingHorizontal: 5,
+                          paddingVertical: 1,
+                          borderRadius: 7,
+                          marginLeft: 5,
                         }}>
                           <Text style={{
                             color: isSelected ? '#FFFFFF' : '#64748B',
-                            fontSize: 9.5,
+                            fontSize: 9,
                             fontFamily: fonts.bold,
                           }}>
                             {categoryCount}
@@ -2036,10 +2042,10 @@ export default function HomeScreen() {
                 </ScrollView>
               </View>
 
-              {/* Product List ScrollView */}
+              {/* Sleek Vertical Product Feed */}
               <ScrollView 
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 24 }}
+                contentContainerStyle={{ paddingBottom: 88 }}
               >
                 {(() => {
                   const filtered = marketplaceProducts.filter((p) => {
@@ -2057,65 +2063,65 @@ export default function HomeScreen() {
                         justifyContent: 'center', 
                         marginTop: 40, 
                         backgroundColor: '#FFFFFF', 
-                        borderRadius: 24, 
+                        borderRadius: 20, 
                         padding: 32,
                         borderWidth: 1,
                         borderColor: '#E2E8F0',
                         shadowColor: '#0F172A',
-                        shadowOffset: { width: 0, height: 4 },
+                        shadowOffset: { width: 0, height: 6 },
                         shadowOpacity: 0.02,
                         shadowRadius: 12,
                         elevation: 2,
                       }}>
                         <View style={{
-                          width: 80,
-                          height: 80,
-                          borderRadius: 40,
+                          width: 72,
+                          height: 72,
+                          borderRadius: 36,
                           backgroundColor: '#F0FDFA',
                           justifyContent: 'center',
                           alignItems: 'center',
                           marginBottom: 16,
                         }}>
-                          <Ionicons name="search-outline" size={36} color={colors.primary} />
+                          <Ionicons name="search-outline" size={32} color={colors.primary} />
                         </View>
                         <Text style={{ 
-                          fontSize: 17, 
+                          fontSize: 16, 
                           fontFamily: fonts.bold, 
                           color: '#1E293B',
                           textAlign: 'center',
-                          marginBottom: 8
+                          marginBottom: 6
                         }}>
                           Aradığınız İlan Bulunamadı
                         </Text>
                         <Text style={{ 
-                          fontSize: 13, 
+                          fontSize: 12.5, 
                           fontFamily: fonts.medium, 
                           color: '#64748B', 
                           textAlign: 'center',
-                          lineHeight: 18,
-                          marginBottom: 20,
+                          lineHeight: 17,
+                          marginBottom: 16,
                           paddingHorizontal: 12
                         }}>
-                          Arama teriminizi değiştirerek ya da farklı bir kategori seçerek tekrar deneyebilirsiniz.
+                          Arama teriminizi değiştirerek ya da farklı bir filtre seçerek tekrar deneyebilirsiniz.
                         </Text>
                         <TouchableOpacity
                           style={{
                             backgroundColor: colors.primary,
-                            borderRadius: 12,
-                            paddingHorizontal: 20,
-                            paddingVertical: 10,
+                            borderRadius: 10,
+                            paddingHorizontal: 18,
+                            paddingVertical: 9,
                             shadowColor: colors.primary,
                             shadowOffset: { width: 0, height: 4 },
-                            shadowOpacity: 0.15,
-                            shadowRadius: 8,
-                            elevation: 3,
+                            shadowOpacity: 0.12,
+                            shadowRadius: 6,
+                            elevation: 2,
                           }}
                           onPress={() => {
                             setMarketSearchQuery('');
                             setMarketSelectedFilter('');
                           }}
                         >
-                          <Text style={{ color: '#FFFFFF', fontFamily: fonts.bold, fontSize: 13 }}>
+                          <Text style={{ color: '#FFFFFF', fontFamily: fonts.bold, fontSize: 12.5 }}>
                             Filtreleri Temizle
                           </Text>
                         </TouchableOpacity>
@@ -2127,7 +2133,7 @@ export default function HomeScreen() {
                     const isUsta = prod.sellerType === 'ELECTRICIAN';
                     const sellerDisplayName = prod.sellerName ? prod.sellerName.split(' (')[0] : (isUsta ? 'Usta' : 'Vatandaş');
                     
-                    // Dynamic tag color logic
+                    // Dynamic theme badge styling
                     let tagBg = '#F1F5F9';
                     let tagText = '#475569';
                     if (prod.category.includes('Alet')) {
@@ -2149,17 +2155,17 @@ export default function HomeScreen() {
                         key={prod.id}
                         style={{
                           backgroundColor: '#FFFFFF',
-                          borderRadius: 20,
+                          borderRadius: 18,
                           padding: 12,
-                          marginBottom: 12,
+                          marginBottom: 10,
                           borderWidth: 1,
-                          borderColor: '#E2E8F0',
+                          borderColor: '#F1F5F9',
                           flexDirection: 'row',
                           gap: 12,
                           shadowColor: '#0F172A',
-                          shadowOffset: { width: 0, height: 4 },
-                          shadowOpacity: 0.02,
-                          shadowRadius: 8,
+                          shadowOffset: { width: 0, height: 6 },
+                          shadowOpacity: 0.03,
+                          shadowRadius: 10,
                           elevation: 2,
                         }}
                         onPress={() => {
@@ -2168,8 +2174,8 @@ export default function HomeScreen() {
                         }}
                         activeOpacity={0.9}
                       >
-                        {/* Image Container with Badges */}
-                        <View style={{ position: 'relative', width: 90, height: 90, borderRadius: 14, overflow: 'hidden', backgroundColor: '#F8FAFC' }}>
+                        {/* Premium Aspect Image Container */}
+                        <View style={{ position: 'relative', width: 96, height: 96, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F8FAFC' }}>
                           {prod.image ? (
                             <Image 
                               source={{ uri: prod.image }} 
@@ -2177,17 +2183,17 @@ export default function HomeScreen() {
                             />
                           ) : (
                             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F1F5F9' }}>
-                              <Ionicons name="cube-outline" size={28} color="#94A3B8" />
+                              <Ionicons name="cube-outline" size={26} color="#94A3B8" />
                             </View>
                           )}
                           
-                          {/* Left-top Category Tag */}
+                          {/* Top-left float category pill */}
                           <View style={{ position: 'absolute', top: 4, left: 4, zIndex: 2 }}>
                             <View style={{
                               backgroundColor: tagBg,
                               paddingHorizontal: 6,
-                              paddingVertical: 2.5,
-                              borderRadius: 6,
+                              paddingVertical: 2,
+                              borderRadius: 5,
                               shadowColor: '#000',
                               shadowOffset: { width: 0, height: 1 },
                               shadowOpacity: 0.05,
@@ -2195,7 +2201,7 @@ export default function HomeScreen() {
                             }}>
                               <Text style={{ 
                                 color: tagText, 
-                                fontSize: 8, 
+                                fontSize: 7.5, 
                                 fontFamily: fonts.extraBold, 
                                 textTransform: 'uppercase',
                                 letterSpacing: 0.2
@@ -2205,7 +2211,7 @@ export default function HomeScreen() {
                             </View>
                           </View>
 
-                          {/* Sold status overlay */}
+                          {/* Beautiful angled sold banner overlay */}
                           {prod.isSold && (
                             <View style={{
                               position: 'absolute',
@@ -2213,7 +2219,7 @@ export default function HomeScreen() {
                               left: 0,
                               right: 0,
                               bottom: 0,
-                              backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                              backgroundColor: 'rgba(15, 23, 42, 0.7)',
                               justifyContent: 'center',
                               alignItems: 'center',
                               zIndex: 3
@@ -2221,34 +2227,36 @@ export default function HomeScreen() {
                               <View style={{
                                 borderWidth: 1.5,
                                 borderColor: '#10B981',
-                                paddingHorizontal: 6,
-                                paddingVertical: 2,
+                                paddingHorizontal: 5,
+                                paddingVertical: 1.5,
                                 borderRadius: 4,
                                 transform: [{ rotate: '-12deg' }]
                               }}>
-                                <Text style={{ color: '#10B981', fontSize: 9, fontFamily: fonts.extraBold, letterSpacing: 0.5 }}>SATILDI</Text>
+                                <Text style={{ color: '#10B981', fontSize: 8.5, fontFamily: fonts.extraBold, letterSpacing: 0.5 }}>SATILDI</Text>
                               </View>
                             </View>
                           )}
                         </View>
 
-                        {/* Description & Details column */}
+                        {/* Premium Content / Information Column */}
                         <View style={{ flex: 1, justifyContent: 'space-between' }}>
                           <View>
-                            {/* Seller Type + Date row */}
+                            {/* Seller badge & Date Row */}
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                               <View style={{
                                 flexDirection: 'row',
                                 alignItems: 'center',
-                                backgroundColor: isUsta ? 'rgba(217, 119, 6, 0.08)' : 'rgba(5, 150, 105, 0.08)',
-                                paddingHorizontal: 8,
-                                paddingVertical: 2,
+                                backgroundColor: isUsta ? 'rgba(245, 158, 11, 0.06)' : 'rgba(16, 185, 129, 0.06)',
+                                borderWidth: 0.5,
+                                borderColor: isUsta ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+                                paddingHorizontal: 7,
+                                paddingVertical: 1.5,
                                 borderRadius: 6,
                                 gap: 3
                               }}>
                                 <Ionicons 
-                                  name={isUsta ? "build-outline" : "person-outline"} 
-                                  size={10} 
+                                  name={isUsta ? "build" : "person"} 
+                                  size={9.5} 
                                   color={isUsta ? '#D97706' : '#059669'} 
                                 />
                                 <Text style={{ 
@@ -2258,32 +2266,32 @@ export default function HomeScreen() {
                                   textTransform: 'uppercase',
                                   letterSpacing: 0.2 
                                 }}>
-                                  {isUsta ? 'Usta Satıcı' : 'Vatandaş'}
+                                  {isUsta ? 'Usta' : 'Vatandaş'}
                                 </Text>
                               </View>
-                              <Text style={{ color: '#94A3B8', fontSize: 10, fontFamily: fonts.bold }}>{prod.date}</Text>
+                              <Text style={{ color: '#94A3B8', fontSize: 9.5, fontFamily: fonts.bold }}>{prod.date}</Text>
                             </View>
 
                             {/* Product Title */}
                             <Text 
-                              style={{ color: '#0F172A', fontSize: 14.5, fontFamily: fonts.bold, marginTop: 4 }} 
+                              style={{ color: '#0F172A', fontSize: 14.5, fontFamily: fonts.bold, marginTop: 5 }} 
                               numberOfLines={1}
                             >
                               {prod.title}
                             </Text>
 
-                            {/* Product Description */}
+                            {/* Product Brief Description */}
                             <Text 
-                              style={{ color: '#64748B', fontSize: 11.5, fontFamily: fonts.medium, marginTop: 2, lineHeight: 15 }} 
+                              style={{ color: '#64748B', fontSize: 11.5, fontFamily: fonts.medium, marginTop: 1.5, lineHeight: 14.5 }} 
                               numberOfLines={1}
                             >
                               {prod.desc}
                             </Text>
                           </View>
                           
-                          {/* Price & Seller badge row */}
-                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
-                            <Text style={{ color: colors.primary, fontSize: 16, fontFamily: fonts.extraBold }}>
+                          {/* Price Tag & Profile Badge Row */}
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
+                            <Text style={{ color: colors.primary, fontSize: 16.5, fontFamily: fonts.extraBold, letterSpacing: -0.2 }}>
                               ₺{prod.price}
                             </Text>
                             
@@ -2291,16 +2299,16 @@ export default function HomeScreen() {
                               flexDirection: 'row', 
                               alignItems: 'center', 
                               backgroundColor: '#F8FAFC', 
-                              paddingHorizontal: 8, 
-                              paddingVertical: 3, 
-                              borderRadius: 8, 
+                              paddingHorizontal: 7, 
+                              paddingVertical: 2.5, 
+                              borderRadius: 7, 
                               borderWidth: 1, 
                               borderColor: '#E2E8F0', 
-                              gap: 4 
+                              gap: 3.5 
                             }}>
-                              <Ionicons name="person-circle-outline" size={12} color="#64748B" />
+                              <Ionicons name="person-circle-outline" size={11} color="#64748B" />
                               <Text 
-                                style={{ color: '#475569', fontSize: 10, fontFamily: fonts.bold, maxWidth: 90 }} 
+                                style={{ color: '#475569', fontSize: 9.5, fontFamily: fonts.bold, maxWidth: 90 }} 
                                 numberOfLines={1}
                               >
                                 {sellerDisplayName}
@@ -2314,6 +2322,44 @@ export default function HomeScreen() {
                 })()}
               </ScrollView>
             </View>
+
+            {/* Premium Brand-Gradient Add Product FAB (Floating Action Button) */}
+            <TouchableOpacity 
+              onPress={() => {
+                setIsAllProductsModalVisible(false);
+                setIsAddProductModalVisible(true);
+              }}
+              style={{
+                position: 'absolute',
+                bottom: 24,
+                right: 20,
+                borderRadius: 28,
+                overflow: 'hidden',
+                shadowColor: colors.primary,
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.3,
+                shadowRadius: 12,
+                elevation: 8,
+                zIndex: 10,
+              }}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={[colors.primary, colors.primaryDark || '#B91C1C']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingHorizontal: 16,
+                  height: 52,
+                  gap: 6,
+                }}
+              >
+                <Ionicons name="add" size={20} color="#FFFFFF" />
+                <Text style={{ color: '#FFFFFF', fontFamily: fonts.bold, fontSize: 13.5 }}>İlan Ekle</Text>
+              </LinearGradient>
+            </TouchableOpacity>
           </LinearGradient>
         </Modal>
 
