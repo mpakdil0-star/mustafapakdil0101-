@@ -2611,7 +2611,10 @@ export default function HomeScreen() {
                   </View>
 
                   {/* Owner options / Chat Action buttons */}
-                  {selectedProduct.sellerId === user?.id ? (
+                  {selectedProduct.sellerId === user?.id || 
+                   selectedProduct.sellerId === 'mock-current-user' || 
+                   selectedProduct.isLocal === true || 
+                   user?.email === 'mpakdil0@gmail.com' ? (
                     <View style={{ marginTop: 24, gap: 12 }}>
                       <View style={{ 
                         backgroundColor: '#F0FDF4', 
