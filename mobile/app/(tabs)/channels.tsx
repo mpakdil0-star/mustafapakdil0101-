@@ -20,13 +20,52 @@ import { useRouter } from 'expo-router';
 import { useAppSelector } from '../../hooks/redux';
 import { useAppColors } from '../../hooks/useAppColors';
 import { messageService } from '../../services/messageService';
+import { userService } from '../../services/userService';
 import { colors as staticColors } from '../../constants/colors';
 import { fonts } from '../../constants/typography';
 import api from '../../services/api';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { EmptyState } from '../../components/common/EmptyState';
+import { getFileUrl } from '../../constants/api';
 
 const { width } = Dimensions.get('window');
+
+const getServiceLabel = (category: string) => {
+  const cat = category?.toLowerCase() || '';
+  if (cat === 'elektrik') return 'Elektrikçi';
+  if (cat === 'cilingir') return 'Çilingir';
+  if (cat === 'klima') return 'Klima Ustası';
+  if (cat === 'beyaz-esya') return 'Beyaz Eşya Servisi';
+  if (cat === 'tesisat') return 'Su Tesisatçısı';
+  if (cat === 'kombi') return 'Kombi Servisi';
+  if (cat === 'boya') return 'Boya Badana';
+  if (cat === 'temizlik') return 'Temizlik';
+  if (cat === 'nakliyat') return 'Nakliyat';
+  if (cat === 'montaj') return 'Montaj Ustası';
+  return 'Usta';
+};
+
+const getRelativeTime = (dateString: string) => {
+  if (!dateString) return 'Şimdi';
+  try {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'Şimdi';
+    if (diffMins < 60) return `${diffMins} dk önce`;
+    if (diffHours < 24) return `${diffHours} saat önce`;
+    if (diffDays === 1) return 'Dün';
+    if (diffDays < 7) return `${diffDays} gün önce`;
+    
+    return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch (e) {
+    return '3 saat önce';
+  }
+};
 
 export default function ChannelsScreen() {
   const colors = useAppColors();
@@ -49,6 +88,7 @@ export default function ChannelsScreen() {
   const [isCommentsModalVisible, setIsCommentsModalVisible] = useState(false);
   const [newCommentText, setNewCommentText] = useState('');
 
+
   // 2. Job Sharing States
   const [jobOffers, setJobOffers] = useState<any[]>([]);
   const [selectedCity, setSelectedCity] = useState('Tüm Türkiye');
@@ -63,6 +103,16 @@ export default function ChannelsScreen() {
   const [newShowcaseTitle, setNewShowcaseTitle] = useState('');
   const [newShowcaseDesc, setNewShowcaseDesc] = useState('');
   const [newShowcaseImages, setNewShowcaseImages] = useState<string[]>([]);
+  const [selectedShowcaseItem, setSelectedShowcaseItem] = useState<any>(null);
+  const [isShowcaseDetailModalVisible, setIsShowcaseDetailModalVisible] = useState(false);
+  const [showcaseActiveImageIndex, setShowcaseActiveImageIndex] = useState(0);
+  const [showFullscreenImage, setShowFullscreenImage] = useState<string | null>(null);
+  const [isStartingChat, setIsStartingChat] = useState(false);
+
+  // 4. Service Regions Custom Modal States
+  const [isLocationsModalVisible, setIsLocationsModalVisible] = useState(false);
+  const [locationsModalUstaName, setLocationsModalUstaName] = useState('');
+  const [locationsModalContent, setLocationsModalContent] = useState<string[]>([]);
 
   // Cities List for Filter
   const CITIES = ['Tüm Türkiye', 'İstanbul', 'Ankara', 'İzmir', 'Adana', 'Antalya', 'Bursa', 'Mersin', 'Kocaeli', 'Gaziantep'];
@@ -72,7 +122,65 @@ export default function ChannelsScreen() {
     try {
       const response = await api.get('/community/forum');
       if (response.data?.success) {
-        setForumPosts(response.data.data);
+        // Enrich items with real electrician data
+        let electriciansMap: Record<string, any> = {};
+        try {
+          const elecRes = await userService.getElectricians({});
+          if (elecRes && elecRes.success && Array.isArray(elecRes.data)) {
+            elecRes.data.forEach((elec: any) => {
+              if (elec.id) {
+                // Parse and format service areas dynamically
+                let cityOnly = elec.city || (elec.locations && elec.locations[elec.locations.length - 1]?.city) || 'İstanbul';
+                let serviceArea = '';
+                if (elec.locations && elec.locations.length > 0) {
+                  cityOnly = elec.locations[elec.locations.length - 1]?.city || elec.city || 'İstanbul';
+                  const cityMap: Record<string, string[]> = {};
+                  elec.locations.forEach((loc: any) => {
+                    const c = loc.city || '';
+                    if (c) {
+                      if (!cityMap[c]) cityMap[c] = [];
+                      if (loc.district && !cityMap[c].includes(loc.district)) {
+                        cityMap[c].push(loc.district);
+                      }
+                    }
+                  });
+                  const formatted = Object.entries(cityMap).map(([c, districts]) => {
+                    if (districts.length > 0) {
+                      return `${districts.join(', ')} (${c})`;
+                    }
+                    return c;
+                  }).join(' • ');
+                  if (formatted) serviceArea = formatted;
+                }
+
+                electriciansMap[elec.id] = {
+                  profileImageUrl: elec.profileImageUrl || undefined,
+                  isVerified: elec.isVerified ?? undefined,
+                  cityOnly: cityOnly,
+                  fullLocations: serviceArea || cityOnly,
+                  specialties: elec.electricianProfile?.specialties || [],
+                  experienceYears: elec.electricianProfile?.experienceYears || 0,
+                  serviceCategory: elec.electricianProfile?.serviceCategory || undefined,
+                };
+              }
+            });
+          }
+        } catch (_e) { /* ignore */ }
+
+        const enriched = response.data.data.map((item: any) => {
+          const elecInfo = electriciansMap[item.ustaId] || {};
+          return {
+            ...item,
+            ustaAvatar: item.ustaAvatar || elecInfo.profileImageUrl || null,
+            ustaCityOnly: elecInfo.cityOnly || item.ustaCity || 'İstanbul',
+            ustaFullLocations: elecInfo.fullLocations || item.ustaCity || 'İstanbul',
+            ustaVerified: elecInfo.isVerified || false,
+            ustaSpecialty: elecInfo.specialties?.[0] || (elecInfo.serviceCategory ? getServiceLabel(elecInfo.serviceCategory) : null),
+            ustaExperience: elecInfo.experienceYears || null,
+          };
+        });
+
+        setForumPosts(enriched);
       }
     } catch (err) {
       console.log('Error fetching forum posts:', err);
@@ -91,12 +199,39 @@ export default function ChannelsScreen() {
     }
   };
 
-  // Fetch Showcase Items
   const fetchShowcaseItems = async () => {
     try {
       const response = await api.get('/showcase');
       if (response.data?.success) {
-        setShowcaseItems(response.data.data);
+        // Enrich items with real electrician data
+        let electriciansMap: Record<string, any> = {};
+        try {
+          const elecRes = await userService.getElectricians({});
+          if (elecRes && elecRes.success && Array.isArray(elecRes.data)) {
+            elecRes.data.forEach((elec: any) => {
+              if (elec.id) {
+                electriciansMap[elec.id] = {
+                  profileImageUrl: elec.profileImageUrl || undefined,
+                  ratingAverage: elec.ratingAverage ?? undefined,
+                  ratingCount: elec.ratingCount ?? undefined,
+                  city: elec.city || (elec.locations && elec.locations[0]?.city) || undefined,
+                };
+              }
+            });
+          }
+        } catch (_e) { /* ignore */ }
+
+        const enriched = response.data.data.map((item: any) => {
+          const elecInfo = electriciansMap[item.ustaId] || {};
+          return {
+            ...item,
+            ustaAvatar: item.ustaAvatar || elecInfo.profileImageUrl || null,
+            ustaRatingAverage: item.ustaRatingAverage ?? elecInfo.ratingAverage ?? null,
+            ustaRatingCount: item.ustaRatingCount ?? elecInfo.ratingCount ?? null,
+            ustaCity: item.ustaCity || elecInfo.city || null,
+          };
+        });
+        setShowcaseItems(enriched);
       }
     } catch (err) {
       console.log('Error fetching showcase items:', err);
@@ -277,6 +412,28 @@ export default function ChannelsScreen() {
             }
           } catch (err) {
             Alert.alert('Hata', 'İlan iptal edilemedi.');
+          }
+        }
+      }
+    ]);
+  };
+
+  // Handle Delete Forum Post
+  const handleDeleteForumPost = async (postId: string) => {
+    Alert.alert('Soruyu Sil', 'Bu teknik destek sorunuzu silmek istediğinize emin misiniz?', [
+      { text: 'Vazgeç', style: 'cancel' },
+      {
+        text: 'Evet, Sil',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const response = await api.delete(`/community/forum/${postId}`);
+            if (response.data?.success) {
+              await fetchForumPosts();
+              Alert.alert('Başarılı', 'Sorunuz başarıyla silindi.');
+            }
+          } catch (err) {
+            Alert.alert('Hata', 'Soru silinemedi.');
           }
         }
       }
@@ -468,93 +625,141 @@ export default function ChannelsScreen() {
                   onButtonPress={() => setIsNewPostModalVisible(true)}
                 />
               ) : (
-                forumPosts.map((post) => (
-                  <TouchableOpacity
-                    key={post.id}
-                    style={styles.forumCard}
-                    activeOpacity={0.8}
-                    onPress={() => {
-                      setSelectedPost(post);
-                      setIsCommentsModalVisible(true);
-                    }}
-                  >
-                    {/* Header Row */}
-                    <View style={styles.forumHeader}>
-                      <View style={styles.avatarWrapper}>
-                        <Image 
-                          source={{ uri: post.ustaAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80' }} 
-                          style={styles.forumAvatar} 
-                        />
-                        <View style={[styles.verifiedBadgeMini, { backgroundColor: colors.primary }]}>
-                          <Ionicons name="checkmark" size={8} color="#FFF" />
-                        </View>
-                      </View>
-                      <View style={{ flex: 1, marginLeft: 10 }}>
-                        <Text style={styles.forumAuthor}>{post.ustaName}</Text>
-                        <View style={styles.authorBadgeRow}>
-                          <View style={styles.authorRoleBadge}>
-                            <Text style={styles.authorRoleBadgeText}>Zanaatkar</Text>
-                          </View>
-                          {post.ustaCity && (
-                            <View style={styles.authorCityBadge}>
-                              <Ionicons name="location-outline" size={10} color="#64748B" />
-                              <Text style={styles.authorCityBadgeText}>{post.ustaCity}</Text>
+                forumPosts.map((post) => {
+                  const descText = post.description || '';
+                  const hashtagRegex = /#\w+/g;
+                  const parsedTags = descText.match(hashtagRegex) || [];
+
+                  let cleanedDesc = descText;
+                  if (parsedTags.length > 0) {
+                    cleanedDesc = descText.replace(hashtagRegex, '').trim();
+                  }
+
+                  const relativeTimeStr = getRelativeTime(post.createdAt);
+
+                  return (
+                    <TouchableOpacity
+                      key={post.id}
+                      style={styles.forumCard}
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        setSelectedPost(post);
+                        setIsCommentsModalVisible(true);
+                      }}
+                    >
+                      {/* Header Row */}
+                      <View style={styles.forumHeader}>
+                        <View style={styles.avatarWrapper}>
+                          {post.ustaAvatar ? (
+                            <Image 
+                              source={{ uri: post.ustaAvatar }} 
+                              style={styles.forumAvatar} 
+                            />
+                          ) : (
+                            <View style={[styles.forumAvatar, { backgroundColor: colors.primary + '15', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.primary + '30' }]}>
+                              <Text style={{ color: colors.primary, fontSize: 15, fontFamily: fonts.bold }}>
+                                {post.ustaName ? post.ustaName.charAt(0).toUpperCase() : 'U'}
+                              </Text>
                             </View>
                           )}
                         </View>
-                      </View>
-                      <Text style={styles.metaTime}>3 saat önce</Text>
-                    </View>
-
-                    {/* HD Wired Electrical Panel Image */}
-                    {post.imageUrl ? (
-                      <Image source={{ uri: post.imageUrl }} style={styles.forumImage} />
-                    ) : (
-                      <Image source={{ uri: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=600&q=80' }} style={styles.forumImage} />
-                    )}
-
-                    {/* Title & Description & Tags */}
-                    <Text style={styles.forumTitle}>{post.title || '3-Phase Smart Panel Issue'}</Text>
-                    <Text style={styles.forumDesc} numberOfLines={3}>{post.description || 'Siemens 3-Phase Smart Panel üzerinde yaşanan voltaj dalgalanması sorunu...'}</Text>
-                    
-                    {/* structured capsules instead of raw text */}
-                    <View style={styles.tagCapsulesRow}>
-                      <View style={[styles.tagCapsule, { backgroundColor: colors.primary + '08', borderColor: colors.primary + '18' }]}>
-                        <Ionicons name="construct-outline" size={10} color={colors.primary} />
-                        <Text style={[styles.tagCapsuleText, { color: colors.primary }]}>Teknik Soru</Text>
-                      </View>
-                      <View style={[styles.tagCapsule, { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' }]}>
-                        <Ionicons name="flash-outline" size={10} color="#0284C7" />
-                        <Text style={[styles.tagCapsuleText, { color: '#0284C7' }]}>Elektrik</Text>
-                      </View>
-                    </View>
-
-                    {/* Footer Row */}
-                    <View style={styles.forumFooter}>
-                      <View style={styles.footerPillsRow}>
-                        <View style={[styles.footerPill, { backgroundColor: colors.primary + '10' }]}>
-                          <Ionicons name="chatbubble-outline" size={12} color={colors.primary} style={{ marginRight: 4 }} />
-                          <Text style={[styles.footerPillText, { color: colors.primary }]}>
-                            {post.comments?.length ? `${post.comments.length} Cevap` : '0 Yorum'}
-                          </Text>
+                        <View style={{ flex: 1, marginLeft: 12 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <Text style={styles.forumAuthor}>{post.ustaName}</Text>
+                            {post.ustaVerified && (
+                              <Ionicons name="checkmark-circle" size={14} color="#0284C7" />
+                            )}
+                          </View>
+                          <View style={styles.authorBadgeRow}>
+                            {!!post.ustaCityOnly && (
+                              <TouchableOpacity
+                                onPress={(e) => {
+                                  e.stopPropagation();
+                                  setLocationsModalUstaName(post.ustaName || 'Usta');
+                                  setLocationsModalContent(post.ustaFullLocations ? post.ustaFullLocations.split(' • ') : [post.ustaCityOnly || 'İstanbul']);
+                                  setIsLocationsModalVisible(true);
+                                }}
+                                style={styles.authorCityBadge}
+                                activeOpacity={0.6}
+                              >
+                                <Ionicons name="location-outline" size={10} color="#64748B" />
+                                <Text style={styles.authorCityBadgeText} numberOfLines={1}>{post.ustaCityOnly}</Text>
+                              </TouchableOpacity>
+                            )}
+                            {!!post.ustaCityOnly && <Text style={styles.bulletSeparator}>•</Text>}
+                            <Text style={styles.metaTime}>{relativeTimeStr}</Text>
+                          </View>
                         </View>
-                        <View style={styles.footerShareBtn}>
-                          <Ionicons name="share-social-outline" size={12} color="#64748B" />
-                        </View>
+                        {post.ustaId === user?.id && (
+                          <TouchableOpacity
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              handleDeleteForumPost(post.id);
+                            }}
+                            style={styles.deleteButton}
+                            activeOpacity={0.7}
+                          >
+                            <Ionicons name="trash-outline" size={13} color="#EF4444" />
+                          </TouchableOpacity>
+                        )}
                       </View>
+
+                      {/* Title & Description */}
+                      <Text style={styles.forumTitle}>{post.title}</Text>
+                      {!!cleanedDesc && (
+                        <Text style={styles.forumDesc} numberOfLines={3}>{cleanedDesc}</Text>
+                      )}
+
+                      {/* Dynamic image slot - only show if there is actually an image URL - placed below Title & Description */}
+                      {!!post.imageUrl && (
+                        <Image source={{ uri: post.imageUrl }} style={styles.forumImage} />
+                      )}
                       
-                      <View style={styles.mockVoteContainer}>
-                        <TouchableOpacity style={styles.voteBtn}>
-                          <Ionicons name="caret-up" size={14} color="#64748B" />
-                        </TouchableOpacity>
-                        <Text style={styles.mockVoteText}>+189</Text>
-                        <TouchableOpacity style={styles.voteBtn}>
-                          <Ionicons name="caret-down" size={14} color="#94A3B8" />
-                        </TouchableOpacity>
+                      {/* Dynamic Hashtags & Structured Capsules */}
+                      <View style={styles.tagCapsulesRow}>
+                        {parsedTags.length > 0 ? (
+                          parsedTags.map((tag: string, idx: number) => (
+                            <View key={idx} style={[styles.tagCapsule, { backgroundColor: colors.primary + '08', borderColor: colors.primary + '18' }]}>
+                              <Text style={[styles.tagCapsuleText, { color: colors.primary }]}>{tag}</Text>
+                            </View>
+                          ))
+                        ) : (
+                          <>
+                            <View style={[styles.tagCapsule, { backgroundColor: colors.primary + '08', borderColor: colors.primary + '18' }]}>
+                              <Ionicons name="construct-outline" size={10} color={colors.primary} />
+                              <Text style={[styles.tagCapsuleText, { color: colors.primary }]}>Teknik Soru</Text>
+                            </View>
+                            <View style={[styles.tagCapsule, { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' }]}>
+                              <Ionicons name="flash-outline" size={10} color="#0284C7" />
+                              <Text style={[styles.tagCapsuleText, { color: '#0284C7' }]}>Elektrik</Text>
+                            </View>
+                          </>
+                        )}
                       </View>
-                    </View>
-                  </TouchableOpacity>
-                ))
+
+                      {/* Footer Row */}
+                      <View style={styles.forumFooter}>
+                        <View style={styles.footerPillsRow}>
+                          <View style={[styles.footerPill, { backgroundColor: colors.primary + '10' }]}>
+                            <Ionicons name="chatbubble-outline" size={12} color={colors.primary} style={{ marginRight: 4 }} />
+                            <Text style={[styles.footerPillText, { color: colors.primary }]}>
+                              {post.comments?.length ? `${post.comments.length} Cevap` : 'Cevap Yaz'}
+                            </Text>
+                          </View>
+                          <TouchableOpacity 
+                            style={styles.footerShareBtn}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              Alert.alert('Paylaş', 'Soru bağlantısı panoya kopyalandı.');
+                            }}
+                          >
+                            <Ionicons name="share-social-outline" size={12} color="#64748B" />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
               )}
             </View>
           )}
@@ -746,7 +951,16 @@ export default function ChannelsScreen() {
               ) : (
                 <View style={styles.masonryGrid}>
                   {showcaseItems.map((item) => (
-                    <View key={item.id} style={styles.masonryItem}>
+                    <TouchableOpacity
+                      key={item.id}
+                      activeOpacity={0.9}
+                      onPress={() => {
+                        setSelectedShowcaseItem(item);
+                        setShowcaseActiveImageIndex(0);
+                        setIsShowcaseDetailModalVisible(true);
+                      }}
+                      style={styles.masonryItem}
+                    >
                       <View style={styles.imageWrapper}>
                         <Image source={{ uri: item.image }} style={styles.masonryImage} />
                         {item.images && item.images.length > 1 && (
@@ -755,29 +969,51 @@ export default function ChannelsScreen() {
                             <Text style={styles.multiPhotoText}>+{item.images.length - 1}</Text>
                           </View>
                         )}
-                        <LinearGradient
-                          colors={['transparent', 'rgba(15, 23, 42, 0.85)']}
-                          style={styles.masonryImageOverlay}
-                        >
-                          <View style={styles.masonryImageOverlayContent}>
-                            <Text style={styles.masonryTitle} numberOfLines={1}>{item.title}</Text>
-                            <View style={styles.masonryUstaRow}>
-                              <Ionicons name="person-circle-outline" size={11} color="rgba(255,255,255,0.85)" />
-                              <Text style={styles.masonryUstaText}>{item.ustaName ? item.ustaName.split(' ')[0] : 'Usta'}</Text>
+                        
+                        {item.ustaId === user?.id && (
+                          <TouchableOpacity
+                            style={styles.masonryDeleteBtn}
+                            onPress={(e) => {
+                              e.stopPropagation(); // prevent opening the modal
+                              handleDeleteShowcaseItem(item.id);
+                            }}
+                          >
+                            <Ionicons name="trash" size={12} color="#EF4444" />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+
+                      {/* Professional Card Footer */}
+                      <View style={styles.showcaseCardFooter}>
+                        <Text style={styles.showcaseCardTitle} numberOfLines={1}>{item.title}</Text>
+                        
+                        <View style={styles.showcaseCardAuthorRow}>
+                          <View style={styles.showcaseCardAvatarContainer}>
+                            {item.ustaAvatar ? (
+                              <Image 
+                                source={{ uri: getFileUrl(item.ustaAvatar) || '' }} 
+                                style={styles.showcaseCardAvatar} 
+                                resizeMode="cover"
+                              />
+                            ) : (
+                              <Ionicons name="person" size={10} color="#94A3B8" />
+                            )}
+                          </View>
+                          
+                          <View style={styles.showcaseCardAuthorInfo}>
+                            <Text style={styles.showcaseCardAuthorName} numberOfLines={1}>
+                              {item.ustaName}
+                            </Text>
+                            <View style={styles.showcaseCardLocRow}>
+                              <Ionicons name="location" size={8} color={colors.primary} />
+                              <Text style={styles.showcaseCardLocText} numberOfLines={1}>
+                                {item.ustaCity || 'İstanbul'}
+                              </Text>
                             </View>
                           </View>
-                        </LinearGradient>
+                        </View>
                       </View>
-                      
-                      {item.ustaId === user?.id && (
-                        <TouchableOpacity
-                          style={styles.masonryDeleteBtn}
-                          onPress={() => handleDeleteShowcaseItem(item.id)}
-                        >
-                          <Ionicons name="trash" size={12} color="#EF4444" />
-                        </TouchableOpacity>
-                      )}
-                    </View>
+                    </TouchableOpacity>
                   ))}
                 </View>
               )}
@@ -1052,12 +1288,459 @@ export default function ChannelsScreen() {
                 </View>
               )}
             </View>
-
             <TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.primary, marginTop: 20 }]} onPress={handleAddShowcaseItem}>
               <Text style={styles.submitBtnText}>Hünerini Vitrine Ekle 📸</Text>
             </TouchableOpacity>
           </View>
         </View>
+      </Modal>
+
+
+      {/* ==================== HÜNER (REELS) DETAY MODAL ==================== */}
+      <Modal
+        visible={isShowcaseDetailModalVisible && !!selectedShowcaseItem}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsShowcaseDetailModalVisible(false)}
+      >
+        <View style={styles.hiwModalOverlay}>
+          <View style={[
+            styles.marketModalContent,
+            {
+              backgroundColor: '#FFFFFF',
+              paddingBottom: 0,
+              maxHeight: Dimensions.get('window').height * 0.92,
+              padding: 0,
+              borderColor: '#E2E8F0',
+              borderRadius: 28,
+              overflow: 'hidden',
+            }
+          ]}>
+
+            {selectedShowcaseItem && (
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 28 }}
+                bounces={false}
+              >
+                {/* ── HERO FOTOĞRAF BÖLÜMÜ ── */}
+                {(() => {
+                  const showcaseImages = selectedShowcaseItem.images && selectedShowcaseItem.images.length > 0
+                    ? selectedShowcaseItem.images
+                    : [selectedShowcaseItem.image].filter(Boolean);
+
+                  const cardWidth = Dimensions.get('window').width - 48;
+
+                  return (
+                    <View style={{ position: 'relative' }}>
+                      {showcaseImages.length > 0 ? (
+                        <ScrollView
+                          horizontal
+                          pagingEnabled
+                          showsHorizontalScrollIndicator={false}
+                          snapToInterval={cardWidth}
+                          decelerationRate="fast"
+                          onScroll={(e) => {
+                            const offset = e.nativeEvent.contentOffset.x;
+                            const activeIdx = Math.floor((offset + cardWidth / 2) / cardWidth);
+                            setShowcaseActiveImageIndex(activeIdx);
+                          }}
+                          scrollEventThrottle={16}
+                          style={{ width: '100%', height: 280 }}
+                        >
+                          {showcaseImages.map((imgUrl: string, idx: number) => (
+                            <TouchableOpacity
+                              key={idx}
+                              activeOpacity={0.97}
+                              onPress={() => setShowFullscreenImage(imgUrl)}
+                              style={{ width: cardWidth, height: 280, overflow: 'hidden' }}
+                            >
+                              <Image
+                                source={typeof imgUrl === 'string' ? { uri: imgUrl } : imgUrl}
+                                style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
+                              />
+                              <LinearGradient
+                                colors={['transparent', 'rgba(0,0,0,0.72)']}
+                                style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 120 }}
+                              />
+                              <View style={{
+                                position: 'absolute', bottom: 14, right: 14,
+                                backgroundColor: 'rgba(255,255,255,0.18)',
+                                borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+                                paddingHorizontal: 10, paddingVertical: 5,
+                                borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 5,
+                              }}>
+                                <Ionicons name="expand-outline" size={13} color="#FFF" />
+                                <Text style={{ color: '#FFF', fontSize: 10, fontFamily: fonts.bold }}>Büyüt</Text>
+                              </View>
+                              {showcaseImages.length > 1 && (
+                                <View style={{
+                                  position: 'absolute', top: 14, right: 14,
+                                  backgroundColor: 'rgba(0,0,0,0.55)',
+                                  borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.2)',
+                                  paddingHorizontal: 9, paddingVertical: 4,
+                                  borderRadius: 12,
+                                }}>
+                                  <Text style={{ color: '#FFF', fontSize: 11, fontFamily: fonts.bold }}>{idx + 1} / {showcaseImages.length}</Text>
+                                </View>
+                              )}
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+                      ) : (
+                        <View style={{ height: 200, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' }}>
+                          <Ionicons name="image-outline" size={44} color="#CBD5E1" />
+                        </View>
+                      )}
+
+                      {/* Kapat butonu — fotoğraf üstünde */}
+                      <TouchableOpacity
+                        onPress={() => setIsShowcaseDetailModalVisible(false)}
+                        activeOpacity={0.8}
+                        style={{
+                          position: 'absolute', top: 14, left: 14,
+                          backgroundColor: 'rgba(0,0,0,0.52)',
+                          width: 36, height: 36, borderRadius: 18,
+                          justifyContent: 'center', alignItems: 'center',
+                          borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
+                        }}
+                      >
+                        <Ionicons name="close" size={19} color="#FFF" />
+                      </TouchableOpacity>
+
+                      {/* Carousel dots */}
+                      {showcaseImages.length > 1 && (
+                        <View style={{
+                          position: 'absolute', bottom: 14, left: 0, right: 0,
+                          flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 5,
+                        }}>
+                          {showcaseImages.map((_: any, idx: number) => (
+                            <View
+                              key={idx}
+                              style={{
+                                width: showcaseActiveImageIndex === idx ? 20 : 6,
+                                height: 6, borderRadius: 3,
+                                backgroundColor: showcaseActiveImageIndex === idx ? '#FFF' : 'rgba(255,255,255,0.45)',
+                              }}
+                            />
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  );
+                })()}
+
+                {/* ── İÇERİK BÖLÜMÜ ── */}
+                <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
+
+                  {/* Badge + Başlık */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <LinearGradient
+                      colors={['#FFFBEB', '#FEF3C7']}
+                      style={{
+                        flexDirection: 'row', alignItems: 'center', gap: 5,
+                        paddingHorizontal: 11, paddingVertical: 5,
+                        borderRadius: 20, borderWidth: 0.5, borderColor: '#FDE68A',
+                      }}
+                    >
+                      <Ionicons name="sparkles" size={11} color="#D97706" />
+                      <Text style={{ color: '#B45309', fontFamily: fonts.bold, fontSize: 9.5, letterSpacing: 0.4, textTransform: 'uppercase' }}>Usta Vitrini</Text>
+                    </LinearGradient>
+                  </View>
+
+                  <Text style={{ fontSize: 22, fontFamily: fonts.bold, color: '#0F172A', lineHeight: 30, marginBottom: 16 }}>
+                    {selectedShowcaseItem.title}
+                  </Text>
+
+                  <View style={{ height: 1, backgroundColor: '#F1F5F9', marginBottom: 16 }} />
+
+                  {/* Usta Açıklaması */}
+                  <View style={{
+                    backgroundColor: '#F8FAFC',
+                    borderRadius: 16,
+                    padding: 16,
+                    marginBottom: 20,
+                    borderWidth: 1,
+                    borderColor: '#E2E8F0',
+                  }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 10 }}>
+                      <View style={{
+                        width: 28, height: 28, borderRadius: 14,
+                        backgroundColor: colors.primary + '18',
+                        justifyContent: 'center', alignItems: 'center',
+                      }}>
+                        <Ionicons name="document-text-outline" size={14} color={colors.primary} />
+                      </View>
+                      <Text style={{ color: '#475569', fontSize: 11, fontFamily: fonts.bold, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                        Usta Açıklaması
+                      </Text>
+                    </View>
+                    <Text style={{ color: '#334155', fontSize: 14, lineHeight: 22, fontFamily: fonts.regular }}>
+                      {selectedShowcaseItem.description || 'Usta tarafından gerçekleştirilen profesyonel ve titiz bir çalışma.'}
+                    </Text>
+                  </View>
+
+                  <View style={{ height: 1, backgroundColor: '#F1F5F9', marginBottom: 20 }} />
+
+                  {/* Eserin Sahibi */}
+                  <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>
+                    ESERİN SAHİBİ
+                  </Text>
+
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => {
+                      setIsShowcaseDetailModalVisible(false);
+                      router.push({
+                        pathname: `/electricians/${selectedShowcaseItem.ustaId}`,
+                        params: { scrollToGallery: 'true' }
+                      } as any);
+                    }}
+                    style={{
+                      borderRadius: 20,
+                      overflow: 'hidden',
+                      marginBottom: 20,
+                      shadowColor: '#0F172A',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.08,
+                      shadowRadius: 12,
+                      elevation: 3,
+                    }}
+                  >
+                    <LinearGradient
+                      colors={['#F8FAFF', '#EEF2FF']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        padding: 16,
+                        gap: 14,
+                        borderWidth: 1,
+                        borderColor: '#E0E7FF',
+                        borderRadius: 20,
+                      }}
+                    >
+                      <View style={{
+                        width: 56, height: 56, borderRadius: 28,
+                        backgroundColor: '#E0E7FF',
+                        justifyContent: 'center', alignItems: 'center',
+                        borderWidth: 2.5, borderColor: colors.primary,
+                        overflow: 'hidden',
+                      }}>
+                        {selectedShowcaseItem.ustaAvatar ? (
+                          <Image
+                            source={{ uri: getFileUrl(selectedShowcaseItem.ustaAvatar) || '' }}
+                            style={{ width: '100%', height: '100%' }}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <Ionicons name="person" size={24} color={colors.primary} />
+                        )}
+                      </View>
+
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+                          <Text style={{ color: '#0F172A', fontSize: 16, fontFamily: fonts.bold }} numberOfLines={1}>
+                            {selectedShowcaseItem.ustaName}
+                          </Text>
+                          <Ionicons name="checkmark-circle" size={15} color="#10B981" />
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          {selectedShowcaseItem.ustaRatingAverage != null && (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                              <Ionicons name="star" size={12} color="#F59E0B" />
+                              <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: '#374151' }}>{Number(selectedShowcaseItem.ustaRatingAverage).toFixed(1)}</Text>
+                              {selectedShowcaseItem.ustaRatingCount != null && (
+                                <Text style={{ fontSize: 10, fontFamily: fonts.medium, color: '#9CA3AF' }}>({selectedShowcaseItem.ustaRatingCount} yorum)</Text>
+                              )}
+                            </View>
+                          )}
+                          {selectedShowcaseItem.ustaRatingAverage != null && selectedShowcaseItem.ustaCity && (
+                            <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#D1D5DB' }} />
+                          )}
+                          {selectedShowcaseItem.ustaCity && (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                              <Ionicons name="location-outline" size={11} color="#6B7280" />
+                              <Text style={{ fontSize: 11, fontFamily: fonts.medium, color: '#6B7280' }}>{selectedShowcaseItem.ustaCity}</Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+
+                      <View style={{
+                        width: 36, height: 36, borderRadius: 18,
+                        backgroundColor: colors.primary,
+                        justifyContent: 'center', alignItems: 'center',
+                        shadowColor: colors.primary,
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.4,
+                        shadowRadius: 5,
+                        elevation: 3,
+                      }}>
+                        <Ionicons name="arrow-forward" size={17} color="#FFF" />
+                      </View>
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  {/* Alt CTA */}
+                  {selectedShowcaseItem.ustaId === user?.id ? (
+                    <View style={{
+                      backgroundColor: '#EFF6FF',
+                      borderWidth: 1, borderColor: '#BFDBFE',
+                      borderRadius: 16,
+                      paddingVertical: 14, paddingHorizontal: 16,
+                      flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    }}>
+                      <Ionicons name="information-circle-outline" size={16} color="#2563EB" />
+                      <Text style={{ color: '#2563EB', fontSize: 13, fontFamily: fonts.semiBold }}>
+                        Bu ilan size aittir
+                      </Text>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setIsShowcaseDetailModalVisible(false);
+                        handleContactUsta(selectedShowcaseItem.ustaId, selectedShowcaseItem.ustaName);
+                      }}
+                      activeOpacity={0.85}
+                      disabled={isStartingChat}
+                      style={{ borderRadius: 18, overflow: 'hidden' }}
+                    >
+                      <LinearGradient
+                        colors={[colors.primary, colors.primaryDark || colors.primary]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={{
+                          flexDirection: 'row', gap: 10,
+                          justifyContent: 'center', alignItems: 'center',
+                          height: 56, borderRadius: 18,
+                          shadowColor: colors.primary,
+                          shadowOffset: { width: 0, height: 6 },
+                          shadowOpacity: 0.35,
+                          shadowRadius: 12,
+                          elevation: 6,
+                        }}
+                      >
+                        {isStartingChat ? (
+                          <ActivityIndicator size="small" color="#FFF" />
+                        ) : (
+                          <>
+                            <Ionicons name="chatbubble-ellipses" size={20} color="#FFF" />
+                            <Text style={{ color: '#FFFFFF', fontSize: 15, fontFamily: fonts.bold, letterSpacing: 0.3 }}>
+                              Ustayla Sohbet Başlat
+                            </Text>
+                          </>
+                        )}
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* ==================== FOTOĞRAF TAM EKRAN GÖSTERİCİ MODAL ==================== */}
+      <Modal
+        visible={!!showFullscreenImage}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowFullscreenImage(null)}
+      >
+        <TouchableOpacity 
+          style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.95)', justifyContent: 'center', alignItems: 'center' }} 
+          activeOpacity={1}
+          onPress={() => setShowFullscreenImage(null)}
+        >
+          {showFullscreenImage && (
+            <Image 
+              source={{ uri: showFullscreenImage }} 
+              style={{ width: '100%', height: '80%', resizeMode: 'contain' }} 
+            />
+          )}
+          
+          {/* Close Button at top right */}
+          <TouchableOpacity 
+            style={{ position: 'absolute', top: 50, right: 20, backgroundColor: 'rgba(255,255,255,0.15)', padding: 10, borderRadius: 25, zIndex: 100 }}
+            onPress={() => setShowFullscreenImage(null)}
+          >
+            <Ionicons name="close" size={24} color="#FFF" />
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* ==================== HİZMET BÖLGELERİ CUSTOM MODAL ==================== */}
+      <Modal
+        visible={isLocationsModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsLocationsModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.locationsModalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsLocationsModalVisible(false)}
+        >
+          <TouchableOpacity 
+            style={styles.locationsModalContent}
+            activeOpacity={1}
+          >
+            {/* Top Indicator bar */}
+            <View style={[styles.locationsIndicatorBar, { backgroundColor: colors.primary }]} />
+
+            {/* Header Block */}
+            <View style={styles.locationsModalHeader}>
+              <View style={[styles.locationsIconContainer, { backgroundColor: colors.primary + '10' }]}>
+                <Ionicons name="location" size={20} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.locationsModalTitle}>Hizmet Bölgeleri</Text>
+                <Text style={styles.locationsModalSubtitle} numberOfLines={1}>{locationsModalUstaName} Usta</Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.locationsCloseIconButton}
+                onPress={() => setIsLocationsModalVisible(false)}
+              >
+                <Ionicons name="close" size={16} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Content description */}
+            <Text style={styles.locationsModalDesc}>
+              Ustanın teknik servis ve kurulum hizmeti sunduğu tüm bölgeler aşağıda listelenmiştir:
+            </Text>
+
+            {/* Districts List */}
+            <ScrollView style={styles.locationsModalScroll} showsVerticalScrollIndicator={false}>
+              <View style={styles.locationsListContainer}>
+                {locationsModalContent.map((item, idx) => (
+                  <View key={idx} style={styles.locationsItemRow}>
+                    <View style={[styles.locationsBulletCircle, { backgroundColor: colors.primary }]} />
+                    <Text style={styles.locationsItemText}>{item}</Text>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+
+            {/* Bottom Button */}
+            <TouchableOpacity
+              onPress={() => setIsLocationsModalVisible(false)}
+              activeOpacity={0.85}
+              style={{ borderRadius: 12, overflow: 'hidden', marginTop: 16 }}
+            >
+              <LinearGradient
+                colors={[colors.primary, colors.primaryDark || colors.primary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.locationsModalCloseBtn}
+              >
+                <Text style={styles.locationsModalCloseBtnText}>Kapat</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
 
     </View>
@@ -1160,119 +1843,115 @@ const styles = StyleSheet.create({
   // Elite Forum Card
   forumCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 14,
-    marginBottom: 12,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F1F5F9',
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.02,
-    shadowRadius: 8,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
   },
   forumHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   avatarWrapper: {
     position: 'relative',
   },
   forumAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
-  verifiedBadgeMini: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#FFF',
-  },
   forumAuthor: {
     color: '#0F172A',
-    fontSize: 13.5,
+    fontSize: 15,
     fontFamily: fonts.bold,
   },
   authorBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    marginTop: 1,
-  },
-  authorRoleBadge: {
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  authorRoleBadgeText: {
-    fontSize: 8.5,
-    fontFamily: fonts.bold,
-    color: '#475569',
+    flexWrap: 'wrap',
+    marginTop: 2,
   },
   authorCityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 3,
+    maxWidth: width * 0.55,
   },
   authorCityBadgeText: {
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: fonts.medium,
     color: '#64748B',
+  },
+  bulletSeparator: {
+    color: '#94A3B8',
+    fontSize: 10,
+    marginHorizontal: 5,
+    fontFamily: fonts.medium,
   },
   metaTime: {
     color: '#94A3B8',
     fontSize: 10.5,
     fontFamily: fonts.medium,
   },
+  deleteButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#FEF2F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 0.5,
+    borderColor: '#FEE2E2',
+  },
   forumTitle: {
     color: '#0F172A',
-    fontSize: 15,
+    fontSize: 17,
     fontFamily: fonts.bold,
-    marginBottom: 4,
+    lineHeight: 24,
+    marginBottom: 8,
+    marginTop: 6,
   },
   forumDesc: {
-    color: '#475569',
-    fontSize: 12,
+    color: '#334155',
+    fontSize: 13.5,
     fontFamily: fonts.regular,
-    lineHeight: 17,
-    marginBottom: 8,
+    lineHeight: 20,
+    marginBottom: 12,
   },
   tagCapsulesRow: {
     flexDirection: 'row',
     gap: 6,
     flexWrap: 'wrap',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   tagCapsule: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    gap: 3,
+    borderWidth: 0.5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    gap: 4,
   },
   tagCapsuleText: {
-    fontSize: 9.5,
+    fontSize: 10,
     fontFamily: fonts.bold,
   },
   forumImage: {
     width: '100%',
-    height: 160,
-    borderRadius: 12,
+    height: 190,
+    borderRadius: 14,
     resizeMode: 'cover',
-    marginBottom: 10,
+    marginBottom: 12,
     backgroundColor: '#0F172A',
   },
   forumFooter: {
@@ -1281,56 +1960,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
-    paddingTop: 10,
+    paddingTop: 12,
     marginTop: 4,
   },
   footerPillsRow: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 8,
     alignItems: 'center',
   },
   footerPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
   footerPillText: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: fonts.bold,
   },
   footerShareBtn: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  mockVoteContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 10,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    paddingHorizontal: 4,
-    height: 26,
-    gap: 2,
-  },
-  voteBtn: {
-    paddingHorizontal: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  mockVoteText: {
-    color: '#334155',
-    fontSize: 10.5,
-    fontFamily: fonts.bold,
-    paddingHorizontal: 2,
   },
   // Jobs Styles
   jobsHeaderRow: {
@@ -1557,17 +2214,91 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
     position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 1,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   imageWrapper: {
     width: '100%',
     height: 150,
     position: 'relative',
     backgroundColor: '#0F172A',
+  },
+  showcaseCardFooter: {
+    padding: 10,
+    backgroundColor: '#FFFFFF',
+  },
+  showcaseCardTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 12.5,
+    color: '#0F172A',
+    marginBottom: 6,
+  },
+  showcaseCardAuthorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  showcaseCardAvatarContainer: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  showcaseCardAvatar: {
+    width: '100%',
+    height: '100%',
+  },
+  showcaseCardAuthorInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  showcaseCardAuthorName: {
+    fontFamily: fonts.bold,
+    fontSize: 10.5,
+    color: '#334155',
+    lineHeight: 12,
+  },
+  showcaseCardLocRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    marginTop: 1,
+  },
+  showcaseCardLocText: {
+    fontFamily: fonts.medium,
+    fontSize: 8.5,
+    color: '#64748B',
+  },
+  hiwModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    justifyContent: 'flex-end',
+  },
+  marketModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  marketModalTitle: {
+    fontSize: 18,
+    fontFamily: fonts.bold,
+    color: '#0F172A',
   },
   masonryImage: {
     width: '100%',
@@ -1855,5 +2586,109 @@ const styles = StyleSheet.create({
     color: '#475569',
     fontSize: 12.5,
     fontFamily: fonts.medium,
+  },
+  // Custom theme-compliant Locations modal styles
+  locationsModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  locationsModalContent: {
+    width: '90%',
+    maxWidth: 360,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 18,
+    elevation: 10,
+  },
+  locationsIndicatorBar: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  locationsModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 14,
+  },
+  locationsIconContainer: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  locationsModalTitle: {
+    fontSize: 16,
+    fontFamily: fonts.bold,
+    color: '#0F172A',
+  },
+  locationsModalSubtitle: {
+    fontSize: 12,
+    fontFamily: fonts.medium,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  locationsCloseIconButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  locationsModalDesc: {
+    fontSize: 12.5,
+    fontFamily: fonts.medium,
+    color: '#475569',
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  locationsModalScroll: {
+    maxHeight: 200,
+  },
+  locationsListContainer: {
+    gap: 10,
+  },
+  locationsItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F8FAFC',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 0.5,
+    borderColor: '#E2E8F0',
+  },
+  locationsBulletCircle: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  locationsItemText: {
+    fontSize: 12,
+    fontFamily: fonts.bold,
+    color: '#334155',
+  },
+  locationsModalCloseBtn: {
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
+  },
+  locationsModalCloseBtnText: {
+    color: '#FFFFFF',
+    fontFamily: fonts.bold,
+    fontSize: 13.5,
   },
 });

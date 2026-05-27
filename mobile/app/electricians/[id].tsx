@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image, Modal, Dimensions } from 'react-native';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,8 +17,9 @@ import { AuthGuardModal } from '../../components/common/AuthGuardModal';
 import { MOCK_ELECTRICIANS } from '../../data/mockElectricians';
 import favoriteService from '../../services/favoriteService';
 import { ReportButton } from '../../components/common/ReportButton';
+import api from '../../services/api';
 
-
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Helper for badge color
 const getServiceBadgeColor = (service: string) => {
@@ -48,7 +49,7 @@ const getServiceLabel = (category: string) => {
 
 export default function ElectricianDetailScreen() {
     const router = useRouter();
-    const { id } = useLocalSearchParams<{ id: string }>();
+    const { id, scrollToGallery } = useLocalSearchParams<{ id: string; scrollToGallery?: string }>();
     const { user } = useAppSelector((state) => state.auth);
 
     const [electrician, setElectrician] = useState<any>(null);
@@ -62,6 +63,14 @@ export default function ElectricianDetailScreen() {
     const [favoriteModalType, setFavoriteModalType] = useState<'added' | 'removed'>('added');
     const [showAllReviews, setShowAllReviews] = useState(false);
 
+    // Showcase Gallery States
+    const [showcaseItems, setShowcaseItems] = useState<any[]>([]);
+    const [selectedShowcase, setSelectedShowcase] = useState<any>(null);
+    const [isShowcaseModalVisible, setIsShowcaseModalVisible] = useState(false);
+    const [showcaseImageIndex, setShowcaseImageIndex] = useState(0);
+    const [galleryY, setGalleryY] = useState(0);
+    const [showFullscreenImage, setShowFullscreenImage] = useState<string | null>(null);
+
     const [alertConfig, setAlertConfig] = useState<{
         visible: boolean;
         title: string;
@@ -71,6 +80,7 @@ export default function ElectricianDetailScreen() {
     }>({ visible: false, title: '', message: '' });
 
     const scrollRef = useRef<ScrollView>(null);
+    const mainScrollRef = useRef<ScrollView>(null);
 
     // Auto-scroll effect for specialties
     const contentWidthRef = useRef(0);
@@ -124,6 +134,38 @@ export default function ElectricianDetailScreen() {
             if (!id) return;
             try {
                 setIsLoading(true);
+
+                // Vitrin / Hüner verilerini çek
+                let loadedShowcases: any[] = [];
+                try {
+                    const scRes = await api.get('/showcase');
+                    if (scRes.data?.success && Array.isArray(scRes.data.data)) {
+                        loadedShowcases = scRes.data.data.filter((item: any) => {
+                            return item.ustaId === id ||
+                                   item.ustaId === `mock-electrician-${id}` ||
+                                   (id.startsWith('local-mock-') && item.ustaId === `mock-electrician-${id.replace('local-mock-', '')}`);
+                        });
+                    }
+                } catch (scErr) {
+                    console.log('Error fetching showcase in detail:', scErr);
+                }
+
+                if (loadedShowcases.length === 0) {
+                    const mockShowcases = [
+                        { id: 'sc-1', title: 'Pano Kablolama Tesisatı', description: 'Schneider şalt malzemesi ile özenle çekilmiş endüstriyel dağıtım panosu.', image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500', images: ['https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500', 'https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=500'], ustaId: 'mock-electrician-1' },
+                        { id: 'sc-2', title: 'Akıllı Ev LED Tasarımları', description: 'Modern mimariye uygun lüks asma tavan aydınlatma ve otomasyon kurulumu.', image: 'https://images.unsplash.com/photo-1565538810844-1e119d81a207?w=500', images: ['https://images.unsplash.com/photo-1565538810844-1e119d81a207?w=500', 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=500'], ustaId: 'mock-electrician-3' },
+                        { id: 'sc-3', title: 'Sigorta Kutusu Revizyonu', description: 'Eski tip panonun sıfır Siemens malzemeleri ile güvenli bir şekilde yenilenmesi.', image: 'https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=500', images: ['https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=500'], ustaId: 'mock-electrician-4' },
+                        { id: 'sc-4', title: 'Güvenlik Kamera Altyapısı', description: '4K UltraHD Dahua IP kamera kurulumu ve kablo kanallama işçiliği.', image: 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=500', images: ['https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=500'], ustaId: 'mock-electrician-1' },
+                        { id: 'sc-5', title: 'Klima Dezenfekte ve Bakımı', description: 'Antibakteriyel solüsyon ile detaylı klima iç ünite petek temizliği.', image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500', images: ['https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500'], ustaId: 'mock-electrician-2' },
+                        { id: 'sc-6', title: 'Sıfır Daire Kablo Çekimi', description: 'Tüm dairenin tadilat öncesi güvenli NYM kablolama ve borulama işlemi.', image: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=500', images: ['https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=500'], ustaId: 'mock-electrician-5' }
+                    ];
+                    loadedShowcases = mockShowcases.filter((item: any) => {
+                        return item.ustaId === id ||
+                               item.ustaId === `mock-electrician-${id}` ||
+                               (id.startsWith('local-mock-') && item.ustaId === `mock-electrician-${id.replace('local-mock-', '')}`);
+                    });
+                }
+                setShowcaseItems(loadedShowcases);
 
                 // MOCK VERI KONTROLÜ
                 // Önce ID'ye göre mock var mı kontrol et
@@ -202,6 +244,16 @@ export default function ElectricianDetailScreen() {
         };
         checkFavoriteStatus();
     }, [id, user]);
+
+    // Auto-scroll to showcase gallery if requested
+    useEffect(() => {
+        if (scrollToGallery === 'true' && !isLoading && galleryY > 0 && mainScrollRef.current) {
+            const timer = setTimeout(() => {
+                mainScrollRef.current?.scrollTo({ y: galleryY - 20, animated: true });
+            }, 400); // 400ms delay for screen render transition to be absolutely smooth
+            return () => clearTimeout(timer);
+        }
+    }, [scrollToGallery, isLoading, galleryY]);
 
     const handleToggleFavorite = async () => {
         if (!user) {
@@ -285,6 +337,7 @@ export default function ElectricianDetailScreen() {
 
     return (
         <ScrollView
+            ref={mainScrollRef}
             style={styles.container}
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
@@ -496,6 +549,74 @@ export default function ElectricianDetailScreen() {
                 </View>
             </Card>
 
+            {/* Hünerler & Portfolyo Galerisi */}
+            {showcaseItems.length > 0 && (
+                <View 
+                    onLayout={(event: any) => setGalleryY(event.nativeEvent.layout.y)}
+                >
+                    <Card style={styles.sectionCard}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                                <View style={styles.showcaseHeaderIcon}>
+                                    <Ionicons name="images" size={16} color={colors.primary} />
+                                </View>
+                                <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Hünerleri & Portfolyo</Text>
+                            </View>
+                            <Text style={styles.showcaseCountText}>{showcaseItems.length} Çalışma</Text>
+                        </View>
+
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={{ gap: 12, paddingRight: 12 }}
+                        >
+                            {showcaseItems.map((item, index) => {
+                                const scImages = item.images && item.images.length > 0
+                                    ? item.images
+                                    : [item.image].filter(Boolean);
+                                const imagesCount = scImages.length;
+
+                                return (
+                                    <TouchableOpacity
+                                        key={item.id || index}
+                                        style={styles.galleryCard}
+                                        onPress={() => {
+                                            setSelectedShowcase(item);
+                                            setShowcaseImageIndex(0);
+                                            setIsShowcaseModalVisible(true);
+                                        }}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Image
+                                            source={{ uri: getFileUrl(item.image) || '' }}
+                                            style={styles.galleryImage}
+                                            resizeMode="cover"
+                                        />
+                                        {imagesCount > 1 && (
+                                            <View style={styles.imageBadge}>
+                                                <Ionicons name="copy" size={10} color="#FFF" style={{ marginRight: 2 }} />
+                                                <Text style={styles.imageBadgeText}>{imagesCount}</Text>
+                                            </View>
+                                        )}
+                                        <LinearGradient
+                                            colors={['transparent', 'rgba(15, 23, 42, 0.85)']}
+                                            style={styles.galleryCardOverlay}
+                                        >
+                                            <Text style={styles.galleryCardTitle} numberOfLines={1}>
+                                                {item.title}
+                                            </Text>
+                                            <Text style={styles.galleryCardDesc} numberOfLines={1}>
+                                                {item.description || 'Usta Çalışması'}
+                                            </Text>
+                                        </LinearGradient>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    </Card>
+                </View>
+            )}
+
             {/* Recent Reviews */}
             <View style={styles.reviewsHeaderSection}>
                 <Text style={styles.sectionTitle}>Müşteri Yorumları ({electrician.reviewsReceived?.length || 0})</Text>
@@ -677,6 +798,345 @@ export default function ElectricianDetailScreen() {
                 buttons={alertConfig.buttons}
                 onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
             />
+
+            {/* Showcase Detail Modal (Unified design) */}
+            <Modal
+                visible={isShowcaseModalVisible && !!selectedShowcase}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setIsShowcaseModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[
+                    styles.showcaseDetailModal,
+                    {
+                        backgroundColor: '#FFFFFF',
+                        paddingBottom: 0,
+                        maxHeight: Dimensions.get('window').height * 0.92,
+                        padding: 0,
+                        borderColor: '#E2E8F0',
+                        borderRadius: 28,
+                        overflow: 'hidden',
+                        height: undefined,
+                    }
+                ]}>
+                        {selectedShowcase && (
+                            <ScrollView
+                                showsVerticalScrollIndicator={false}
+                                style={{ width: '100%' }}
+                                contentContainerStyle={{ paddingBottom: 28 }}
+                                bounces={false}
+                            >
+                                {/* ── HERO FOTOĞRAF BÖLÜMÜ ── */}
+                                {(() => {
+                                    const scImages = selectedShowcase.images && selectedShowcase.images.length > 0
+                                        ? selectedShowcase.images
+                                        : [selectedShowcase.image].filter(Boolean);
+
+                                    const cardWidth = Dimensions.get('window').width - 48;
+
+                                    return (
+                                        <View style={{ position: 'relative' }}>
+                                            {scImages.length > 0 ? (
+                                                <ScrollView
+                                                    horizontal
+                                                    pagingEnabled
+                                                    showsHorizontalScrollIndicator={false}
+                                                    snapToInterval={cardWidth}
+                                                    decelerationRate="fast"
+                                                    onScroll={(e) => {
+                                                        const offset = e.nativeEvent.contentOffset.x;
+                                                        const activeIdx = Math.floor((offset + cardWidth / 2) / cardWidth);
+                                                        setShowcaseImageIndex(activeIdx);
+                                                    }}
+                                                    scrollEventThrottle={16}
+                                                    style={{ width: '100%', height: 280 }}
+                                                >
+                                                    {scImages.map((imgUrl: string, idx: number) => (
+                                                        <TouchableOpacity
+                                                            key={idx}
+                                                            activeOpacity={0.97}
+                                                            onPress={() => setShowFullscreenImage(imgUrl)}
+                                                            style={{ width: cardWidth, height: 280, overflow: 'hidden' }}
+                                                        >
+                                                            <Image
+                                                                source={{ uri: getFileUrl(imgUrl) || '' }}
+                                                                style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
+                                                            />
+                                                            <LinearGradient
+                                                                colors={['transparent', 'rgba(0,0,0,0.72)']}
+                                                                style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 120 }}
+                                                            />
+                                                            <View style={{
+                                                                position: 'absolute', bottom: 14, right: 14,
+                                                                backgroundColor: 'rgba(255,255,255,0.18)',
+                                                                borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+                                                                paddingHorizontal: 10, paddingVertical: 5,
+                                                                borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 5,
+                                                            }}>
+                                                                <Ionicons name="expand-outline" size={13} color="#FFF" />
+                                                                <Text style={{ color: '#FFF', fontSize: 10, fontFamily: fonts.bold }}>Büyüt</Text>
+                                                            </View>
+                                                            {scImages.length > 1 && (
+                                                                <View style={{
+                                                                    position: 'absolute', top: 14, right: 14,
+                                                                    backgroundColor: 'rgba(0,0,0,0.55)',
+                                                                    borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.2)',
+                                                                    paddingHorizontal: 9, paddingVertical: 4,
+                                                                    borderRadius: 12,
+                                                                }}>
+                                                                    <Text style={{ color: '#FFF', fontSize: 11, fontFamily: fonts.bold }}>{idx + 1} / {scImages.length}</Text>
+                                                                </View>
+                                                            )}
+                                                        </TouchableOpacity>
+                                                    ))}
+                                                </ScrollView>
+                                            ) : (
+                                                <View style={{ height: 200, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' }}>
+                                                    <Ionicons name="image-outline" size={44} color="#CBD5E1" />
+                                                </View>
+                                            )}
+
+                                            {/* Kapat butonu üstte */}
+                                            <TouchableOpacity
+                                                onPress={() => setIsShowcaseModalVisible(false)}
+                                                activeOpacity={0.8}
+                                                style={{
+                                                    position: 'absolute', top: 14, left: 14,
+                                                    backgroundColor: 'rgba(0,0,0,0.52)',
+                                                    width: 36, height: 36, borderRadius: 18,
+                                                    justifyContent: 'center', alignItems: 'center',
+                                                    borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
+                                                }}
+                                            >
+                                                <Ionicons name="close" size={19} color="#FFF" />
+                                            </TouchableOpacity>
+
+                                            {/* Carousel dots */}
+                                            {scImages.length > 1 && (
+                                                <View style={{
+                                                    position: 'absolute', bottom: 14, left: 0, right: 0,
+                                                    flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 5,
+                                                }}>
+                                                    {scImages.map((_: any, idx: number) => (
+                                                        <View
+                                                            key={idx}
+                                                            style={{
+                                                                width: showcaseImageIndex === idx ? 20 : 6,
+                                                                height: 6, borderRadius: 3,
+                                                                backgroundColor: showcaseImageIndex === idx ? '#FFF' : 'rgba(255,255,255,0.45)',
+                                                            }}
+                                                        />
+                                                    ))}
+                                                </View>
+                                            )}
+                                        </View>
+                                    );
+                                })()}
+
+                                {/* ── İÇERİK BÖLÜMÜ ── */}
+                                <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
+
+                                    {/* Badge + Başlık */}
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                                        <LinearGradient
+                                            colors={['#FFFBEB', '#FEF3C7']}
+                                            style={{
+                                                flexDirection: 'row', alignItems: 'center', gap: 5,
+                                                paddingHorizontal: 11, paddingVertical: 5,
+                                                borderRadius: 20, borderWidth: 0.5, borderColor: '#FDE68A',
+                                            }}
+                                        >
+                                            <Ionicons name="sparkles" size={11} color="#D97706" />
+                                            <Text style={{ color: '#B45309', fontFamily: fonts.bold, fontSize: 9.5, letterSpacing: 0.4, textTransform: 'uppercase' }}>Usta Vitrini</Text>
+                                        </LinearGradient>
+                                    </View>
+
+                                    <Text style={{ fontSize: 22, fontFamily: fonts.bold, color: '#0F172A', lineHeight: 30, marginBottom: 16 }}>
+                                        {selectedShowcase.title}
+                                    </Text>
+
+                                    <View style={{ height: 1, backgroundColor: '#F1F5F9', marginBottom: 16 }} />
+
+                                    {/* Usta Açıklaması */}
+                                    <View style={{
+                                        backgroundColor: '#F8FAFC',
+                                        borderRadius: 16, padding: 16,
+                                        marginBottom: 20, borderWidth: 1, borderColor: '#E2E8F0',
+                                    }}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 10 }}>
+                                            <View style={{
+                                                width: 28, height: 28, borderRadius: 14,
+                                                backgroundColor: colors.primary + '18',
+                                                justifyContent: 'center', alignItems: 'center',
+                                            }}>
+                                                <Ionicons name="document-text-outline" size={14} color={colors.primary} />
+                                            </View>
+                                            <Text style={{ color: '#475569', fontSize: 11, fontFamily: fonts.bold, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                                                Usta Açıklaması
+                                            </Text>
+                                        </View>
+                                        <Text style={{ color: '#334155', fontSize: 14, lineHeight: 22, fontFamily: fonts.regular }}>
+                                            {selectedShowcase.description || 'Usta tarafından gerçekleştirilen profesyonel ve titiz bir çalışma.'}
+                                        </Text>
+                                    </View>
+
+                                    <View style={{ height: 1, backgroundColor: '#F1F5F9', marginBottom: 20 }} />
+
+                                    {/* Eserin Sahibi - Profil Kartı */}
+                                    <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>
+                                        ESERİN SAHİBİ
+                                    </Text>
+
+                                    <View style={{
+                                        borderRadius: 20, overflow: 'hidden', marginBottom: 20,
+                                        shadowColor: '#0F172A',
+                                        shadowOffset: { width: 0, height: 4 },
+                                        shadowOpacity: 0.08, shadowRadius: 12, elevation: 3,
+                                    }}>
+                                        <LinearGradient
+                                            colors={['#F8FAFF', '#EEF2FF']}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={{
+                                                flexDirection: 'row', alignItems: 'center',
+                                                padding: 16, gap: 14,
+                                                borderWidth: 1, borderColor: '#E0E7FF', borderRadius: 20,
+                                            }}
+                                        >
+                                            <View style={{
+                                                width: 56, height: 56, borderRadius: 28,
+                                                backgroundColor: '#E0E7FF',
+                                                justifyContent: 'center', alignItems: 'center',
+                                                borderWidth: 2.5, borderColor: colors.primary,
+                                                overflow: 'hidden',
+                                            }}>
+                                                {electrician.profileImageUrl ? (
+                                                    <Image
+                                                        source={{ uri: getFileUrl(electrician.profileImageUrl) || '' }}
+                                                        style={{ width: '100%', height: '100%' }}
+                                                        resizeMode="cover"
+                                                    />
+                                                ) : (
+                                                    <Ionicons name="person" size={24} color={colors.primary} />
+                                                )}
+                                            </View>
+
+                                            <View style={{ flex: 1 }}>
+                                                {(() => {
+                                                    const ustaCity = electrician.city || (electrician.locations && electrician.locations[0]?.city);
+                                                    return (
+                                                        <>
+                                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+                                                                <Text style={{ color: '#0F172A', fontSize: 16, fontFamily: fonts.bold }} numberOfLines={1}>
+                                                                    {electrician.fullName}
+                                                                </Text>
+                                                                {electrician.isVerified && <Ionicons name="checkmark-circle" size={15} color="#10B981" />}
+                                                            </View>
+                                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                                                {profile?.ratingAverage != null && (
+                                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                                                                        <Ionicons name="star" size={12} color="#F59E0B" />
+                                                                        <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: '#374151' }}>
+                                                                            {Number(profile.ratingAverage).toFixed(1)}
+                                                                        </Text>
+                                                                        {profile?.totalReviews != null && (
+                                                                            <Text style={{ fontSize: 10, fontFamily: fonts.medium, color: '#9CA3AF' }}>
+                                                                                ({profile.totalReviews} yorum)
+                                                                            </Text>
+                                                                        )}
+                                                                    </View>
+                                                                )}
+                                                                {profile?.ratingAverage != null && ustaCity && (
+                                                                    <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#D1D5DB' }} />
+                                                                )}
+                                                                {ustaCity && (
+                                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                                                                        <Ionicons name="location-outline" size={11} color="#6B7280" />
+                                                                        <Text style={{ fontSize: 11, fontFamily: fonts.medium, color: '#6B7280' }}>
+                                                                            {ustaCity}
+                                                                        </Text>
+                                                                    </View>
+                                                                )}
+                                                            </View>
+                                                        </>
+                                                    );
+                                                })()}
+                                            </View>
+
+                                            <View style={{
+                                                width: 36, height: 36, borderRadius: 18,
+                                                backgroundColor: colors.primary,
+                                                justifyContent: 'center', alignItems: 'center',
+                                                shadowColor: colors.primary,
+                                                shadowOffset: { width: 0, height: 2 },
+                                                shadowOpacity: 0.4, shadowRadius: 5, elevation: 3,
+                                            }}>
+                                                <Ionicons name="person-outline" size={17} color="#FFF" />
+                                            </View>
+                                        </LinearGradient>
+                                    </View>
+
+                                    {/* Alt CTA - Geri Dön */}
+                                    <TouchableOpacity
+                                        onPress={() => setIsShowcaseModalVisible(false)}
+                                        activeOpacity={0.85}
+                                        style={{ borderRadius: 18, overflow: 'hidden' }}
+                                    >
+                                        <LinearGradient
+                                            colors={[colors.primary, colors.primaryDark || colors.primary]}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 0 }}
+                                            style={{
+                                                flexDirection: 'row', gap: 10,
+                                                justifyContent: 'center', alignItems: 'center',
+                                                height: 56, borderRadius: 18,
+                                                shadowColor: colors.primary,
+                                                shadowOffset: { width: 0, height: 6 },
+                                                shadowOpacity: 0.35, shadowRadius: 12, elevation: 6,
+                                            }}
+                                        >
+                                            <Ionicons name="checkmark-circle-outline" size={20} color="#FFF" />
+                                            <Text style={{ color: '#FFFFFF', fontSize: 15, fontFamily: fonts.bold, letterSpacing: 0.3 }}>
+                                                Tamam
+                                            </Text>
+                                        </LinearGradient>
+                                    </TouchableOpacity>
+                                </View>
+                            </ScrollView>
+                        )}
+                    </View>
+                </View>
+            </Modal>
+
+            {/* ==================== FOTOĞRAF TAM EKRAN GÖSTERİCİ MODAL ==================== */}
+            <Modal
+                visible={!!showFullscreenImage}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowFullscreenImage(null)}
+            >
+                <TouchableOpacity 
+                    style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.95)', justifyContent: 'center', alignItems: 'center' }} 
+                    activeOpacity={1}
+                    onPress={() => setShowFullscreenImage(null)}
+                >
+                    {showFullscreenImage && (
+                        <Image 
+                            source={{ uri: getFileUrl(showFullscreenImage) || '' }} 
+                            style={{ width: '100%', height: '80%', resizeMode: 'contain' }} 
+                        />
+                    )}
+                    
+                    {/* Close Button at top right */}
+                    <TouchableOpacity 
+                        style={{ position: 'absolute', top: 50, right: 20, backgroundColor: 'rgba(255,255,255,0.15)', padding: 10, borderRadius: 25, zIndex: 100 }}
+                        onPress={() => setShowFullscreenImage(null)}
+                    >
+                        <Ionicons name="close" size={24} color="#FFF" />
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            </Modal>
         </ScrollView>
     );
 }
@@ -1189,5 +1649,172 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontFamily: fonts.bold,
         textTransform: 'uppercase',
+    },
+    // Showcase styles
+    showcaseHeaderIcon: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        backgroundColor: colors.primary + '12',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    showcaseCountText: {
+        fontFamily: fonts.bold,
+        fontSize: 12,
+        color: colors.primary,
+        backgroundColor: colors.primary + '08',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 6,
+    },
+    galleryCard: {
+        width: 140,
+        height: 180,
+        borderRadius: 16,
+        overflow: 'hidden',
+        position: 'relative',
+        backgroundColor: '#F1F5F9',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    galleryImage: {
+        width: '100%',
+        height: '100%',
+    },
+    imageBadge: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        backgroundColor: 'rgba(15, 23, 42, 0.75)',
+        paddingHorizontal: 6,
+        paddingVertical: 3,
+        borderRadius: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    imageBadgeText: {
+        fontFamily: fonts.bold,
+        fontSize: 10,
+        color: '#FFF',
+    },
+    galleryCardOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: 10,
+        height: 80,
+        justifyContent: 'flex-end',
+    },
+    galleryCardTitle: {
+        fontFamily: fonts.bold,
+        fontSize: 12,
+        color: '#FFF',
+        marginBottom: 2,
+    },
+    galleryCardDesc: {
+        fontFamily: fonts.regular,
+        fontSize: 9.5,
+        color: '#E2E8F0',
+    },
+    // Showcase Modal Styles
+    showcaseDetailModal: {
+        width: '100%',
+        height: 520,
+        borderRadius: 24,
+        padding: 24,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 20 },
+        shadowOpacity: 0.3,
+        shadowRadius: 30,
+        elevation: 24,
+    },
+    showcaseCloseBtn: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10,
+    },
+    modalCarouselContainer: {
+        width: '100%',
+        height: 260,
+        borderRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: '#0F172A',
+        position: 'relative',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.05)',
+    },
+    swipeBadge: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        backgroundColor: 'rgba(15, 23, 42, 0.65)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 0.5,
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+    },
+    carouselDotsContainer: {
+        position: 'absolute',
+        bottom: 12,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 6,
+    },
+    carouselDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    carouselDotActive: {
+        width: 14,
+        backgroundColor: colors.primary,
+    },
+    showcaseModalTitle: {
+        fontFamily: fonts.bold,
+        fontSize: 18,
+        color: '#FFF',
+        marginBottom: 8,
+    },
+    showcaseModalDesc: {
+        fontFamily: fonts.regular,
+        fontSize: 13,
+        color: '#94A3B8',
+        lineHeight: 19,
+    },
+    showcaseModalBtn: {
+        width: '100%',
+        height: 48,
+        borderRadius: 14,
+        overflow: 'hidden',
+        marginTop: 12,
+    },
+    showcaseModalBtnGradient: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    showcaseModalBtnText: {
+        fontFamily: fonts.bold,
+        fontSize: 14,
+        color: colors.white,
     },
 });

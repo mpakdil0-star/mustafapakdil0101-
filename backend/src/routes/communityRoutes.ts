@@ -159,6 +159,39 @@ router.post('/forum/:id/comment', async (req, res) => {
   }
 });
 
+// DELETE /api/v1/community/forum/:id - Delete forum post
+router.delete('/forum/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (isDatabaseAvailable) {
+      try {
+        await prisma.forumPost.delete({
+          where: { id }
+        });
+      } catch (err) {
+        console.warn(`Could not delete forum post ${id} from DB:`, err);
+      }
+      const posts = await prisma.forumPost.findMany({
+        include: {
+          comments: {
+            orderBy: { createdAt: 'asc' }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      return res.json({ success: true, data: posts });
+    }
+
+    let forum = loadForum();
+    forum = forum.filter(post => post.id !== id);
+    saveForum(forum);
+    res.json({ success: true, data: forum });
+  } catch (error: any) {
+    console.error('Error deleting forum post:', error);
+    res.status(500).json({ success: false, error: { message: error.message } });
+  }
+});
+
 // ==================== JOB SHARING ROUTES ====================
 router.get('/jobs', async (req, res) => {
   try {

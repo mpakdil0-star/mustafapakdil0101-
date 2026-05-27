@@ -304,13 +304,18 @@ export default function HomeScreen() {
       const response = await api.get('/showcase');
       if (response.data?.success && Array.isArray(response.data.data) && response.data.data.length > 0) {
         // Build a map of electrician avatars to backfill missing ones (e.g. for items uploaded before the avatar change)
-        let electriciansMap: Record<string, string> = {};
+        let electriciansMap: Record<string, { profileImageUrl?: string; ratingAverage?: number; ratingCount?: number; city?: string }> = {};
         try {
           const elecRes = await userService.getElectricians({});
           if (elecRes && elecRes.success && Array.isArray(elecRes.data)) {
             elecRes.data.forEach((elec: any) => {
-              if (elec.id && elec.profileImageUrl) {
-                electriciansMap[elec.id] = elec.profileImageUrl;
+              if (elec.id) {
+                electriciansMap[elec.id] = {
+                  profileImageUrl: elec.profileImageUrl || undefined,
+                  ratingAverage: elec.ratingAverage ?? undefined,
+                  ratingCount: elec.ratingCount ?? undefined,
+                  city: elec.city || (elec.locations && elec.locations[0]?.city) || undefined,
+                };
               }
             });
           }
@@ -322,10 +327,13 @@ export default function HomeScreen() {
         const grouped: Record<string, any> = {};
         response.data.data.forEach((item: any) => {
           if (!grouped[item.ustaId]) {
-            const avatar = item.ustaAvatar || electriciansMap[item.ustaId] || null;
+            const elecInfo = electriciansMap[item.ustaId] || {};
             grouped[item.ustaId] = {
               ...item,
-              ustaAvatar: avatar
+              ustaAvatar: item.ustaAvatar || elecInfo.profileImageUrl || null,
+              ustaRatingAverage: item.ustaRatingAverage ?? elecInfo.ratingAverage ?? null,
+              ustaRatingCount: item.ustaRatingCount ?? elecInfo.ratingCount ?? null,
+              ustaCity: item.ustaCity || elecInfo.city || null,
             };
           }
         });
@@ -2776,74 +2784,125 @@ export default function HomeScreen() {
           onRequestClose={() => setIsShowcaseDetailModalVisible(false)}
         >
           <View style={styles.hiwModalOverlay}>
-            <View style={[styles.marketModalContent, { paddingBottom: 24 }]}>
-              <View style={styles.hiwHeader}>
-                <Text style={styles.marketModalTitle}>Usta Hüneri Detayı</Text>
-                <TouchableOpacity onPress={() => setIsShowcaseDetailModalVisible(false)} style={styles.hiwCloseBtn}>
-                  <Ionicons name="close" size={24} color="#94A3B8" />
-                </TouchableOpacity>
-              </View>
+            <View style={[
+              styles.marketModalContent,
+              {
+                backgroundColor: '#FFFFFF',
+                paddingBottom: 0,
+                maxHeight: Dimensions.get('window').height * 0.92,
+                padding: 0,
+                borderColor: '#E2E8F0',
+                borderRadius: 28,
+                overflow: 'hidden',
+              }
+            ]}>
 
               {selectedShowcaseItem && (
-                <View style={{ marginTop: 20 }}>
-                  {/* Photo Section (Horizontal Swiper Carousel) */}
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingBottom: 28 }}
+                  bounces={false}
+                >
+                  {/* ── HERO FOTOĞRAF BÖLÜMÜ ── */}
                   {(() => {
                     const showcaseImages = selectedShowcaseItem.images && selectedShowcaseItem.images.length > 0
                       ? selectedShowcaseItem.images
                       : [selectedShowcaseItem.image].filter(Boolean);
-                    
-                    if (showcaseImages.length === 0) return null;
+
+                    const cardWidth = Dimensions.get('window').width - 48;
 
                     return (
-                      <View style={{ marginBottom: 16 }}>
-                        <ScrollView 
-                          horizontal 
-                          pagingEnabled
-                          showsHorizontalScrollIndicator={false} 
-                          onScroll={(e) => {
-                            const slideSize = e.nativeEvent.layoutMeasurement.width;
-                            const offset = e.nativeEvent.contentOffset.x;
-                            const activeIdx = Math.floor((offset + slideSize / 2) / slideSize);
-                            setShowcaseActiveImageIndex(activeIdx);
-                          }}
-                          scrollEventThrottle={16}
-                          style={{ width: '100%', height: 220, borderRadius: 16 }}
-                        >
-                          {showcaseImages.map((imgUrl: string, idx: number) => (
-                            <TouchableOpacity
-                              key={idx}
-                              activeOpacity={0.9}
-                              onPress={() => setShowFullscreenImage(imgUrl)}
-                              style={{ width: Dimensions.get('window').width - 48, height: 220, borderRadius: 16, overflow: 'hidden', position: 'relative' }}
-                            >
-                              <Image 
-                                source={typeof imgUrl === 'string' ? { uri: imgUrl } : imgUrl} 
-                                style={{ width: '100%', height: '100%', resizeMode: 'cover' }} 
-                              />
-                              <View style={{ position: 'absolute', bottom: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                <Ionicons name="expand" size={12} color="#FFF" />
-                                <Text style={{ color: '#FFF', fontSize: 10, fontFamily: fonts.bold }}>Büyütmek için Dokunun</Text>
-                              </View>
-                              {showcaseImages.length > 1 && (
-                                <View style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 }}>
-                                  <Text style={{ color: '#FFF', fontSize: 9.5, fontFamily: fonts.bold }}>{idx + 1}/{showcaseImages.length}</Text>
+                      <View style={{ position: 'relative' }}>
+                        {showcaseImages.length > 0 ? (
+                          <ScrollView
+                            horizontal
+                            pagingEnabled
+                            showsHorizontalScrollIndicator={false}
+                            snapToInterval={cardWidth}
+                            decelerationRate="fast"
+                            onScroll={(e) => {
+                              const offset = e.nativeEvent.contentOffset.x;
+                              const activeIdx = Math.floor((offset + cardWidth / 2) / cardWidth);
+                              setShowcaseActiveImageIndex(activeIdx);
+                            }}
+                            scrollEventThrottle={16}
+                            style={{ width: '100%', height: 280 }}
+                          >
+                            {showcaseImages.map((imgUrl: string, idx: number) => (
+                              <TouchableOpacity
+                                key={idx}
+                                activeOpacity={0.97}
+                                onPress={() => setShowFullscreenImage(imgUrl)}
+                                style={{ width: cardWidth, height: 280, overflow: 'hidden' }}
+                              >
+                                <Image
+                                  source={typeof imgUrl === 'string' ? { uri: imgUrl } : imgUrl}
+                                  style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
+                                />
+                                <LinearGradient
+                                  colors={['transparent', 'rgba(0,0,0,0.72)']}
+                                  style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 120 }}
+                                />
+                                {/* Büyüt hint */}
+                                <View style={{
+                                  position: 'absolute', bottom: 14, right: 14,
+                                  backgroundColor: 'rgba(255,255,255,0.18)',
+                                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+                                  paddingHorizontal: 10, paddingVertical: 5,
+                                  borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 5,
+                                }}>
+                                  <Ionicons name="expand-outline" size={13} color="#FFF" />
+                                  <Text style={{ color: '#FFF', fontSize: 10, fontFamily: fonts.bold }}>Büyüt</Text>
                                 </View>
-                              )}
-                            </TouchableOpacity>
-                          ))}
-                        </ScrollView>
+                                {/* Fotoğraf sayacı */}
+                                {showcaseImages.length > 1 && (
+                                  <View style={{
+                                    position: 'absolute', top: 14, right: 14,
+                                    backgroundColor: 'rgba(0,0,0,0.55)',
+                                    borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.2)',
+                                    paddingHorizontal: 9, paddingVertical: 4,
+                                    borderRadius: 12,
+                                  }}>
+                                    <Text style={{ color: '#FFF', fontSize: 11, fontFamily: fonts.bold }}>{idx + 1} / {showcaseImages.length}</Text>
+                                  </View>
+                                )}
+                              </TouchableOpacity>
+                            ))}
+                          </ScrollView>
+                        ) : (
+                          <View style={{ height: 200, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' }}>
+                            <Ionicons name="image-outline" size={44} color="#CBD5E1" />
+                          </View>
+                        )}
 
-                        {/* Carousel Dots Indicators */}
+                        {/* Kapat butonu — fotoğraf üstünde */}
+                        <TouchableOpacity
+                          onPress={() => setIsShowcaseDetailModalVisible(false)}
+                          activeOpacity={0.8}
+                          style={{
+                            position: 'absolute', top: 14, left: 14,
+                            backgroundColor: 'rgba(0,0,0,0.52)',
+                            width: 36, height: 36, borderRadius: 18,
+                            justifyContent: 'center', alignItems: 'center',
+                            borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
+                          }}
+                        >
+                          <Ionicons name="close" size={19} color="#FFF" />
+                        </TouchableOpacity>
+
+                        {/* Carousel dots */}
                         {showcaseImages.length > 1 && (
-                          <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 10, gap: 5 }}>
+                          <View style={{
+                            position: 'absolute', bottom: 14, left: 0, right: 0,
+                            flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 5,
+                          }}>
                             {showcaseImages.map((_: any, idx: number) => (
-                              <View 
-                                key={idx} 
+                              <View
+                                key={idx}
                                 style={{
-                                  width: showcaseActiveImageIndex === idx ? 16 : 6,
-                                  height: 6,
-                                  borderRadius: 3,
-                                  backgroundColor: showcaseActiveImageIndex === idx ? colors.primary : 'rgba(255, 255, 255, 0.2)',
+                                  width: showcaseActiveImageIndex === idx ? 20 : 6,
+                                  height: 6, borderRadius: 3,
+                                  backgroundColor: showcaseActiveImageIndex === idx ? '#FFF' : 'rgba(255,255,255,0.45)',
                                 }}
                               />
                             ))}
@@ -2853,96 +2912,222 @@ export default function HomeScreen() {
                     );
                   })()}
 
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <View style={[styles.marketCategoryBadge, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
-                      <Text style={[styles.marketCategoryText, { color: '#F59E0B' }]}>Zanaat / Hüner Galerisi</Text>
+                  {/* ── İÇERİK BÖLÜMÜ ── */}
+                  <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
+
+                    {/* Zanaat Vitrini badge + başlık */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                      <LinearGradient
+                        colors={['#FFFBEB', '#FEF3C7']}
+                        style={{
+                          flexDirection: 'row', alignItems: 'center', gap: 5,
+                          paddingHorizontal: 11, paddingVertical: 5,
+                          borderRadius: 20, borderWidth: 0.5, borderColor: '#FDE68A',
+                        }}
+                      >
+                        <Ionicons name="sparkles" size={11} color="#D97706" />
+                        <Text style={{ color: '#B45309', fontFamily: fonts.bold, fontSize: 9.5, letterSpacing: 0.4, textTransform: 'uppercase' }}>Usta Vitrini</Text>
+                      </LinearGradient>
                     </View>
-                  </View>
 
-                  <Text style={{ fontSize: 18, fontFamily: fonts.bold, color: '#FFF', marginTop: 12 }}>{selectedShowcaseItem.title}</Text>
+                    <Text style={{ fontSize: 22, fontFamily: fonts.bold, color: '#0F172A', lineHeight: 30, marginBottom: 16 }}>
+                      {selectedShowcaseItem.title}
+                    </Text>
 
-                  <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 12, marginTop: 16 }}>
-                    <Text style={{ color: '#E2E8F0', fontSize: 13, lineHeight: 20, fontFamily: fonts.regular }}>{selectedShowcaseItem.description || 'Bu zanaatkar tarafından yapılan özel işçilik.'}</Text>
-                  </View>
+                    {/* Divider */}
+                    <View style={{ height: 1, backgroundColor: '#F1F5F9', marginBottom: 16 }} />
 
-                  <TouchableOpacity
-                    style={{ 
-                      flexDirection: 'row', 
-                      alignItems: 'center', 
-                      marginTop: 20, 
-                      borderTopWidth: 1, 
-                      borderTopColor: 'rgba(255,255,255,0.06)', 
-                      paddingTop: 16,
-                      gap: 12
-                    }}
-                    activeOpacity={0.7}
-                    onPress={() => {
-                      setIsShowcaseDetailModalVisible(false);
-                      router.push(`/electricians/${selectedShowcaseItem.ustaId}` as any);
-                    }}
-                  >
-                    {/* Usta Avatar */}
+                    {/* Usta Açıklaması */}
                     <View style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 22,
-                      backgroundColor: 'rgba(255,255,255,0.08)',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      borderWidth: 1.5,
-                      borderColor: colors.primary + '40',
-                      overflow: 'hidden'
+                      backgroundColor: '#F8FAFC',
+                      borderRadius: 16,
+                      padding: 16,
+                      marginBottom: 20,
+                      borderWidth: 1,
+                      borderColor: '#E2E8F0',
                     }}>
-                      {selectedShowcaseItem.ustaAvatar ? (
-                        <Image 
-                          source={{ uri: getFileUrl(selectedShowcaseItem.ustaAvatar) || '' }} 
-                          style={{ width: '100%', height: '100%' }} 
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <Ionicons name="person" size={18} color="#FFF" />
-                      )}
-                    </View>
-
-                    {/* Usta Info */}
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#94A3B8', fontSize: 11, fontFamily: fonts.medium }}>Usta Profili</Text>
-                      <Text style={{ color: '#FFF', fontSize: 14, fontFamily: fonts.bold }}>{selectedShowcaseItem.ustaName}</Text>
-                    </View>
-
-                    {/* Chevron Forward */}
-                    <Ionicons name="chevron-forward" size={18} color={colors.primary} style={{ marginRight: 4 }} />
-                  </TouchableOpacity>
-
-                  {selectedShowcaseItem.ustaId === user?.id ? (
-                    <View style={{ marginTop: 24 }}>
-                      <View style={{ backgroundColor: 'rgba(59, 130, 246, 0.08)', borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.15)', borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ color: '#60A5FA', fontSize: 12.5, fontFamily: fonts.semiBold }}>
-                          Kendi yüklediğiniz vitrin çalışması
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 10 }}>
+                        <View style={{
+                          width: 28, height: 28, borderRadius: 14,
+                          backgroundColor: colors.primary + '18',
+                          justifyContent: 'center', alignItems: 'center',
+                        }}>
+                          <Ionicons name="document-text-outline" size={14} color={colors.primary} />
+                        </View>
+                        <Text style={{ color: '#475569', fontSize: 11, fontFamily: fonts.bold, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                          Usta Açıklaması
                         </Text>
                       </View>
+                      <Text style={{ color: '#334155', fontSize: 14, lineHeight: 22, fontFamily: fonts.regular }}>
+                        {selectedShowcaseItem.description || 'Usta tarafından gerçekleştirilen profesyonel ve titiz bir çalışma.'}
+                      </Text>
                     </View>
-                  ) : (
+
+                    {/* Divider */}
+                    <View style={{ height: 1, backgroundColor: '#F1F5F9', marginBottom: 20 }} />
+
+                    {/* ── USTA PROFİL KARTI ── */}
+                    <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>
+                      ESERİN SAHİBİ
+                    </Text>
+
                     <TouchableOpacity
-                      style={[styles.submitBtn, { backgroundColor: colors.primary, marginTop: 24, flexDirection: 'row', gap: 8, justifyContent: 'center' }]}
+                      activeOpacity={0.85}
                       onPress={() => {
                         setIsShowcaseDetailModalVisible(false);
-                        handleContactSeller(selectedShowcaseItem.ustaId, selectedShowcaseItem.ustaName);
+                        router.push({
+                          pathname: `/electricians/${selectedShowcaseItem.ustaId}`,
+                          params: { scrollToGallery: 'true' }
+                        } as any);
                       }}
-                      activeOpacity={0.8}
-                      disabled={isStartingChat}
+                      style={{
+                        borderRadius: 20,
+                        overflow: 'hidden',
+                        marginBottom: 20,
+                        shadowColor: '#0F172A',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.08,
+                        shadowRadius: 12,
+                        elevation: 3,
+                      }}
                     >
-                      {isStartingChat ? (
-                        <ActivityIndicator size="small" color="#FFF" />
-                      ) : (
-                        <>
-                          <Ionicons name="chatbubbles" size={18} color="#FFF" />
-                          <Text style={styles.submitBtnText}>Ustayla İletişime Geç (Sohbet Et)</Text>
-                        </>
-                      )}
+                      <LinearGradient
+                        colors={['#F8FAFF', '#EEF2FF']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          padding: 16,
+                          gap: 14,
+                          borderWidth: 1,
+                          borderColor: '#E0E7FF',
+                          borderRadius: 20,
+                        }}
+                      >
+                        {/* Avatar */}
+                        <View style={{
+                          width: 56, height: 56, borderRadius: 28,
+                          backgroundColor: '#E0E7FF',
+                          justifyContent: 'center', alignItems: 'center',
+                          borderWidth: 2.5, borderColor: colors.primary,
+                          overflow: 'hidden',
+                          shadowColor: colors.primary,
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.3,
+                          shadowRadius: 6,
+                        }}>
+                          {selectedShowcaseItem.ustaAvatar ? (
+                            <Image
+                              source={{ uri: getFileUrl(selectedShowcaseItem.ustaAvatar) || '' }}
+                              style={{ width: '100%', height: '100%' }}
+                              resizeMode="cover"
+                            />
+                          ) : (
+                            <Ionicons name="person" size={24} color={colors.primary} />
+                          )}
+                        </View>
+
+                        {/* Bilgiler */}
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+                            <Text style={{ color: '#0F172A', fontSize: 16, fontFamily: fonts.bold }} numberOfLines={1}>
+                              {selectedShowcaseItem.ustaName}
+                            </Text>
+                            <Ionicons name="checkmark-circle" size={15} color="#10B981" />
+                          </View>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            {selectedShowcaseItem.ustaRatingAverage != null && (
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                                <Ionicons name="star" size={12} color="#F59E0B" />
+                                <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: '#374151' }}>{Number(selectedShowcaseItem.ustaRatingAverage).toFixed(1)}</Text>
+                                {selectedShowcaseItem.ustaRatingCount != null && (
+                                  <Text style={{ fontSize: 10, fontFamily: fonts.medium, color: '#9CA3AF' }}>({selectedShowcaseItem.ustaRatingCount} yorum)</Text>
+                                )}
+                              </View>
+                            )}
+                            {selectedShowcaseItem.ustaRatingAverage != null && selectedShowcaseItem.ustaCity && (
+                              <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#D1D5DB' }} />
+                            )}
+                            {selectedShowcaseItem.ustaCity && (
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                                <Ionicons name="location-outline" size={11} color="#6B7280" />
+                                <Text style={{ fontSize: 11, fontFamily: fonts.medium, color: '#6B7280' }}>{selectedShowcaseItem.ustaCity}</Text>
+                              </View>
+                            )}
+                          </View>
+                        </View>
+
+                        {/* Ok */}
+                        <View style={{
+                          width: 36, height: 36, borderRadius: 18,
+                          backgroundColor: colors.primary,
+                          justifyContent: 'center', alignItems: 'center',
+                          shadowColor: colors.primary,
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.4,
+                          shadowRadius: 5,
+                          elevation: 3,
+                        }}>
+                          <Ionicons name="arrow-forward" size={17} color="#FFF" />
+                        </View>
+                      </LinearGradient>
                     </TouchableOpacity>
-                  )}
-                </View>
+
+                    {/* ── ALT CTA ── */}
+                    {selectedShowcaseItem.ustaId === user?.id ? (
+                      <View style={{
+                        backgroundColor: '#EFF6FF',
+                        borderWidth: 1, borderColor: '#BFDBFE',
+                        borderRadius: 16,
+                        paddingVertical: 14, paddingHorizontal: 16,
+                        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      }}>
+                        <Ionicons name="information-circle-outline" size={16} color="#2563EB" />
+                        <Text style={{ color: '#2563EB', fontSize: 13, fontFamily: fonts.semiBold }}>
+                          Bu ilan size aittir
+                        </Text>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setIsShowcaseDetailModalVisible(false);
+                          handleContactSeller(selectedShowcaseItem.ustaId, selectedShowcaseItem.ustaName);
+                        }}
+                        activeOpacity={0.85}
+                        disabled={isStartingChat}
+                        style={{ borderRadius: 18, overflow: 'hidden' }}
+                      >
+                        <LinearGradient
+                          colors={[colors.primary, colors.primaryDark || colors.primary]}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                          style={{
+                            flexDirection: 'row', gap: 10,
+                            justifyContent: 'center', alignItems: 'center',
+                            height: 56, borderRadius: 18,
+                            shadowColor: colors.primary,
+                            shadowOffset: { width: 0, height: 6 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 12,
+                            elevation: 6,
+                          }}
+                        >
+                          {isStartingChat ? (
+                            <ActivityIndicator size="small" color="#FFF" />
+                          ) : (
+                            <>
+                              <Ionicons name="chatbubble-ellipses" size={20} color="#FFF" />
+                              <Text style={{ color: '#FFFFFF', fontSize: 15, fontFamily: fonts.bold, letterSpacing: 0.3 }}>
+                                Ustayla Sohbet Başlat
+                              </Text>
+                            </>
+                          )}
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </ScrollView>
               )}
             </View>
           </View>
