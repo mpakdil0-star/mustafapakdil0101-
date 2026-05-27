@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 10,
-    paddingBottom: 80,
+    paddingBottom: 140,
   },
   profileCardContainer: {
     marginTop: -20,
@@ -696,6 +696,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     alignItems: 'center',
     flexGrow: 1,
+    paddingBottom: 120,
   },
   guestCard: {
     marginTop: spacing.lg,
