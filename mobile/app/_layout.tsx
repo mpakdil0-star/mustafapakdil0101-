@@ -66,6 +66,40 @@ function RootLayoutNav() {
     setAlertConfig({ visible: true, title, message, type, buttons });
   };
 
+  // NEW: App Version Migration & Cache Cleansing
+  useEffect(() => {
+    const runMigration = async () => {
+      try {
+        const CURRENT_APP_VERSION = '1.5.0';
+        const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+        const lastRunVersion = await AsyncStorage.getItem('last_run_app_version');
+
+        if (lastRunVersion !== CURRENT_APP_VERSION) {
+          console.log(`🧹 [Migration] Upgrading app version from ${lastRunVersion || 'none'} to ${CURRENT_APP_VERSION}...`);
+          
+          // 1. Clear secure store tokens to prevent stale/conflicting auth sessions
+          const { apiService } = await import('../services/api');
+          await apiService.clearTokens();
+          
+          // 2. Clear old marketplace cache key
+          await AsyncStorage.removeItem('marketplace_products_v1');
+          
+          // 3. Clear redux auth state
+          dispatch(logout());
+          
+          // 4. Save new run version
+          await AsyncStorage.setItem('last_run_app_version', CURRENT_APP_VERSION);
+          
+          console.log('✅ [Migration] Clean slate migration completed successfully.');
+        }
+      } catch (err) {
+        console.error('❌ [Migration] Error during version migration:', err);
+      }
+    };
+
+    runMigration();
+  }, [dispatch]);
+
   useEffect(() => {
     const interaction = InteractionManager.runAfterInteractions(() => {
       setIsNavigationReady(true);
