@@ -1879,7 +1879,7 @@ export default function HomeScreen() {
             <View style={{ position: 'absolute', top: -80, right: -80, width: 280, height: 280, borderRadius: 140, backgroundColor: colors.primary, opacity: 0.05 }} />
             <View style={{ position: 'absolute', bottom: -80, left: -80, width: 280, height: 280, borderRadius: 140, backgroundColor: '#0EA5E9', opacity: 0.04 }} />
 
-            <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 56 : 12, paddingBottom: 0 }}>
+            <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 56 : 48, paddingBottom: 0 }}>
               
               {/* Premium Header Row */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, paddingHorizontal: 2 }}>
@@ -2335,7 +2335,7 @@ export default function HomeScreen() {
               }}
               style={{
                 position: 'absolute',
-                bottom: 24,
+                bottom: 56,
                 right: 20,
                 borderRadius: 28,
                 overflow: 'hidden',
