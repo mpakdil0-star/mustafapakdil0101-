@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fonts } from '../../constants/typography';
 import { colors as staticColors } from '../../constants/colors';
+import HesKabloImage from '../../assets/images/mock_hes_kablo.png';
+import SiemensSigortaImage from '../../assets/images/mock_siemens_sigorta.png';
 
 interface CitizenMarketplaceProps {
   marketplaceProducts: any[];
@@ -38,7 +40,7 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
       sellerType: 'CITIZEN',
       location: 'Kadıköy, İstanbul',
       date: 'Bugün',
-      image: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=500',
+      image: HesKabloImage,
     },
     {
       id: 'mock-market-2',
@@ -51,7 +53,7 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
       sellerType: 'ELECTRICIAN',
       location: 'Üsküdar, İstanbul',
       date: 'Dün',
-      image: 'https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=500',
+      image: SiemensSigortaImage,
     }
   ];
 
@@ -140,7 +142,7 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
               {prod.image ? (
                 <View style={styles.marketImageContainer}>
                   <Image
-                    source={{ uri: prod.image }}
+                    source={typeof prod.image === 'string' ? { uri: prod.image } : prod.image}
                     style={{ width: '100%', height: '100%' }}
                     resizeMode="cover"
                   />

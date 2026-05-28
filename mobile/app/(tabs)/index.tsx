@@ -23,6 +23,8 @@ import { authService } from '../../services/authService';
 import { API_ENDPOINTS, getFileUrl } from '../../constants/api';
 import { jobService } from '../../services/jobService';
 import { userService } from '../../services/userService';
+import HesKabloImage from '../../assets/images/mock_hes_kablo.png';
+import SiemensSigortaImage from '../../assets/images/mock_siemens_sigorta.png';
 import { messageService } from '../../services/messageService';
 import { AuthGuardModal } from '../../components/common/AuthGuardModal';
 import { JOB_CATEGORIES } from '../../constants/jobCategories';
@@ -138,6 +140,34 @@ const getUstaCategory = (elec: any) => {
   return 'Elektrik';
 };
 
+const defaultProducts = [
+  {
+    id: 'mock-market-1',
+    title: '3x2.5 HES NYM Kablo (50 Metre)',
+    desc: 'İnşaat fazlası rulo, hiç açılmamış ve kullanılmamıştır. Orijinal rulo paketindedir.',
+    price: 1200,
+    category: 'Kablo',
+    sellerName: 'Ahmet Kaya (Vatandaş)',
+    sellerId: 'mock-citizen-1',
+    sellerType: 'CITIZEN',
+    location: 'Kadıköy, İstanbul',
+    date: 'Bugün',
+    image: HesKabloImage,
+  },
+  {
+    id: 'mock-market-2',
+    title: 'Siemens 3 Faz Sigorta Grubu (25A)',
+    desc: 'Sistem panosundan sökülen, çok temiz durumdaki 3 kutuplu Siemens sigortalar.',
+    price: 450,
+    category: 'Şalt Malzemesi',
+    sellerName: 'Mustafa Yılmaz (Usta)',
+    sellerId: 'mock-electrician-1',
+    sellerType: 'ELECTRICIAN',
+    location: 'Üsküdar, İstanbul',
+    date: 'Dün',
+    image: SiemensSigortaImage,
+  }
+];
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -195,6 +225,7 @@ export default function HomeScreen() {
   
   // Marketplace / Pazar Yeri States
   const [marketplaceProducts, setMarketplaceProducts] = useState<any[]>([]);
+  const displayProducts = marketplaceProducts.length > 0 ? marketplaceProducts : defaultProducts;
   const [isAddProductModalVisible, setIsAddProductModalVisible] = useState(false);
   const [isProductDetailModalVisible, setIsProductDetailModalVisible] = useState(false);
   const [isAllProductsModalVisible, setIsAllProductsModalVisible] = useState(false);
@@ -215,7 +246,7 @@ export default function HomeScreen() {
   const [newProdImages, setNewProdImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [showPhotoSourceModal, setShowPhotoSourceModal] = useState(false);
-  const [showFullscreenImage, setShowFullscreenImage] = useState<string | null>(null);
+  const [showFullscreenImage, setShowFullscreenImage] = useState<any>(null);
   const [isStartingChat, setIsStartingChat] = useState(false);
 
   useEffect(() => {
@@ -342,11 +373,11 @@ export default function HomeScreen() {
         // Fallback to beautiful mock showcase items if empty or error
         const mockItems = [
           { id: 'sc-1', title: 'Pano Kablolama Tesisatı', description: 'Schneider şalt malzemesi ile özenle çekilmiş endüstriyel dağıtım panosu.', image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500', ustaName: 'Ahmet Yılmaz (Usta)', ustaId: 'mock-electrician-1', ustaAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100' },
-          { id: 'sc-2', title: 'Akıllı Ev LED Tasarımları', description: 'Modern mimariye uygun lüks asma tavan aydınlatma ve otomasyon kurulumu.', image: 'https://images.unsplash.com/photo-1565538810844-1e119d81a207?w=500', ustaName: 'Mustafa Kaya (Usta)', ustaId: 'mock-electrician-3', ustaAvatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100' },
-          { id: 'sc-3', title: 'Sigorta Kutusu Revizyonu', description: 'Eski tip panonun sıfır Siemens malzemeleri ile güvenli bir şekilde yenilenmesi.', image: 'https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=500', ustaName: 'Bülent Tan (Usta)', ustaId: 'mock-electrician-4', ustaAvatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100' },
+          { id: 'sc-2', title: 'Akıllı Ev LED Tasarımları', description: 'Modern mimariye uygun lüks asma tavan aydınlatma ve otomasyon kurulumu.', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500', ustaName: 'Mustafa Kaya (Usta)', ustaId: 'mock-electrician-3', ustaAvatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100' },
+          { id: 'sc-3', title: 'Sigorta Kutusu Revizyonu', description: 'Eski tip panonun sıfır Siemens malzemeleri ile güvenli bir şekilde yenilenmesi.', image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=500', ustaName: 'Bülent Tan (Usta)', ustaId: 'mock-electrician-4', ustaAvatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100' },
           { id: 'sc-4', title: 'Güvenlik Kamera Altyapısı', description: '4K UltraHD Dahua IP kamera kurulumu ve kablo kanallama işçiliği.', image: 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=500', ustaName: 'Mustafa Yılmaz (Usta)', ustaId: 'mock-electrician-1', ustaAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100' },
           { id: 'sc-5', title: 'Klima Dezenfekte ve Bakımı', description: 'Antibakteriyel solüsyon ile detaylı klima iç ünite petek temizliği.', image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500', ustaName: 'Tuğçe Klimacı (Usta)', ustaId: 'mock-electrician-2', ustaAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100' },
-          { id: 'sc-6', title: 'Sıfır Daire Kablo Çekimi', description: 'Tüm dairenin tadilat öncesi güvenli NYM kablolama ve borulama işlemi.', image: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=500', ustaName: 'Ahmet Kaya (Usta)', ustaId: 'mock-electrician-5', ustaAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100' }
+          { id: 'sc-6', title: 'Sıfır Daire Kablo Çekimi', description: 'Tüm dairenin tadilat öncesi güvenli NYM kablolama ve borulama işlemi.', image: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=500', ustaName: 'Ahmet Kaya (Usta)', ustaId: 'mock-electrician-5', ustaAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100' }
         ];
         const grouped: Record<string, any> = {};
         mockItems.forEach((item: any) => {
@@ -1891,8 +1922,8 @@ export default function HomeScreen() {
                     <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' }} />
                     <Text style={{ fontSize: 12, fontFamily: fonts.bold, color: '#64748B' }}>
                       {(() => {
-                        const totalCount = marketplaceProducts.length;
-                        const filteredCount = marketplaceProducts.filter((p) => {
+                        const totalCount = displayProducts.length;
+                        const filteredCount = displayProducts.filter((p) => {
                           const matchesSearch = p.title.toLowerCase().includes(marketSearchQuery.toLowerCase()) ||
                             p.desc.toLowerCase().includes(marketSearchQuery.toLowerCase()) ||
                             p.sellerName.toLowerCase().includes(marketSearchQuery.toLowerCase());
@@ -1979,8 +2010,8 @@ export default function HomeScreen() {
                     
                     // Count items in this category dynamically
                     const categoryCount = (() => {
-                      if (cat === 'Tümü') return marketplaceProducts.length;
-                      return marketplaceProducts.filter(p => p.category.includes(cat) || cat.includes(p.category)).length;
+                      if (cat === 'Tümü') return displayProducts.length;
+                      return displayProducts.filter(p => p.category.includes(cat) || cat.includes(p.category)).length;
                     })();
 
                     // Map categories to modern outline icons
@@ -2052,7 +2083,7 @@ export default function HomeScreen() {
                 contentContainerStyle={{ paddingBottom: 88 }}
               >
                 {(() => {
-                  const filtered = marketplaceProducts.filter((p) => {
+                  const filtered = displayProducts.filter((p) => {
                     const matchesSearch = p.title.toLowerCase().includes(marketSearchQuery.toLowerCase()) ||
                       p.desc.toLowerCase().includes(marketSearchQuery.toLowerCase()) ||
                       p.sellerName.toLowerCase().includes(marketSearchQuery.toLowerCase());
@@ -2182,7 +2213,7 @@ export default function HomeScreen() {
                         <View style={{ position: 'relative', width: 96, height: 96, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F8FAFC' }}>
                           {prod.image ? (
                             <Image 
-                              source={{ uri: prod.image }} 
+                              source={typeof prod.image === 'string' ? { uri: prod.image } : prod.image} 
                               style={{ width: '100%', height: '100%', resizeMode: 'cover' }} 
                             />
                           ) : (
@@ -2474,7 +2505,7 @@ export default function HomeScreen() {
                         elevation: 2,
                       }}
                     >
-                      <Image source={{ uri: selectedProduct.image }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+                      <Image source={typeof selectedProduct.image === 'string' ? { uri: selectedProduct.image } : selectedProduct.image} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
                       <View style={{ position: 'absolute', bottom: 8, right: 8, backgroundColor: 'rgba(0, 0, 0, 0.65)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                         <Ionicons name="expand" size={12} color="#FFF" />
                         <Text style={{ color: '#FFF', fontSize: 10, fontFamily: fonts.bold }}>Büyütmek için Dokunun</Text>
@@ -2758,7 +2789,7 @@ export default function HomeScreen() {
           >
             {showFullscreenImage && (
               <Image 
-                source={{ uri: showFullscreenImage }} 
+                source={typeof showFullscreenImage === 'string' ? { uri: showFullscreenImage } : showFullscreenImage} 
                 style={{ width: '100%', height: '80%', resizeMode: 'contain' }} 
               />
             )}
