@@ -255,7 +255,7 @@ export default function HomeScreen() {
       // 2. Try backend sync silently (optional — won't error if 404)
       try {
         const response = await api.get(API_ENDPOINTS.MARKETPLACE);
-        if (response.data?.success && response.data.data && response.data.data.length > 0) {
+        if (response.data?.success && Array.isArray(response.data.data)) {
           const backendProducts = response.data.data;
 
           // SMART SYNC: Keep all locally created listings flagged with isLocal or matching user ID
