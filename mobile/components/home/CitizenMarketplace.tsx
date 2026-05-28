@@ -4,8 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fonts } from '../../constants/typography';
 import { colors as staticColors } from '../../constants/colors';
-import HesKabloImage from '../../assets/images/mock_hes_kablo.png';
-import SiemensSigortaImage from '../../assets/images/mock_siemens_sigorta.png';
+import HesKabloImage from '../../assets/images/mock_hes_kablo.jpg';
+import SiemensSigortaImage from '../../assets/images/mock_siemens_sigorta.jpg';
 
 interface CitizenMarketplaceProps {
   marketplaceProducts: any[];
