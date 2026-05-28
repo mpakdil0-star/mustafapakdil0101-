@@ -575,8 +575,10 @@ export default function HomeScreen() {
               setIsProductDetailModalVisible(false);
               setSelectedProduct(null);
 
-              // 2. Backend sync
-              await api.delete(`${API_ENDPOINTS.MARKETPLACE}/${productId}`);
+              // 2. Backend sync (skip if mock product)
+              if (!productId.startsWith('mock-')) {
+                await api.delete(`${API_ENDPOINTS.MARKETPLACE}/${productId}`);
+              }
               
               Alert.alert('Başarılı', 'İlan başarıyla silindi.');
             } catch (error) {
@@ -612,8 +614,10 @@ export default function HomeScreen() {
               setIsProductDetailModalVisible(false);
               setSelectedProduct(null);
 
-              // 2. Backend sync
-              await api.put(`${API_ENDPOINTS.MARKETPLACE}/${productId}`);
+              // 2. Backend sync (skip if mock product)
+              if (!productId.startsWith('mock-')) {
+                await api.put(`${API_ENDPOINTS.MARKETPLACE}/${productId}`);
+              }
 
               Alert.alert('Tebrikler 🎉', 'Ürününüz satıldı olarak işaretlendi!');
             } catch (error) {

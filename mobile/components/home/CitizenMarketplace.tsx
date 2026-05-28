@@ -26,6 +26,35 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
   isAuthenticated,
   onAuthRequired,
 }) => {
+  const displayProducts = marketplaceProducts.length > 0 ? marketplaceProducts : [
+    {
+      id: 'mock-market-1',
+      title: '3x2.5 HES NYM Kablo (50 Metre)',
+      desc: 'İnşaat fazlası rulo, hiç açılmamış ve kullanılmamıştır. Orijinal rulo paketindedir.',
+      price: 1200,
+      category: 'Kablo',
+      sellerName: 'Ahmet Kaya (Vatandaş)',
+      sellerId: 'mock-citizen-1',
+      sellerType: 'CITIZEN',
+      location: 'Kadıköy, İstanbul',
+      date: 'Bugün',
+      image: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=500',
+    },
+    {
+      id: 'mock-market-2',
+      title: 'Siemens 3 Faz Sigorta Grubu (25A)',
+      desc: 'Sistem panosundan sökülen, çok temiz durumdaki 3 kutuplu Siemens sigortalar.',
+      price: 450,
+      category: 'Şalt Malzemesi',
+      sellerName: 'Mustafa Yılmaz (Usta)',
+      sellerId: 'mock-electrician-1',
+      sellerType: 'ELECTRICIAN',
+      location: 'Üsküdar, İstanbul',
+      date: 'Dün',
+      image: 'https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=500',
+    }
+  ];
+
   return (
     <View style={styles.section}>
       {/* Header Container */}
@@ -49,7 +78,7 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
             <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: colors.primary }}>Tümünü Gör &gt;</Text>
           </TouchableOpacity>
         </View>
-
+ 
         {/* Row 2: Subtitle and İlan Ekle */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={[styles.sectionSubtitle, { flex: 1, marginRight: 12, marginBottom: 0 }]}>Ustalar ve vatandaşlar arası malzeme satışı</Text>
@@ -76,13 +105,13 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
           </TouchableOpacity>
         </View>
       </View>
-
+ 
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false} 
         contentContainerStyle={styles.marketScrollContainer}
       >
-        {marketplaceProducts.map((prod) => {
+        {displayProducts.map((prod) => {
           const isUsta = prod.sellerType === 'ELECTRICIAN';
           const sellerDisplayName = prod.sellerName ? prod.sellerName.split(' (')[0] : (isUsta ? 'Usta' : 'Vatandaş');
           return (
