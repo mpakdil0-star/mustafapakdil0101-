@@ -60,12 +60,20 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
   return (
     <View style={styles.section}>
       {/* Header Container */}
-      <View style={{ marginBottom: 16 }}>
-        {/* Row 1: Title and Tümünü Gör */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-          <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 17, marginBottom: 0 }]} numberOfLines={1}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        {/* Left Typography Column */}
+        <View style={{ flex: 1, paddingRight: 12 }}>
+          <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16.5, marginBottom: 3 }]} numberOfLines={1}>
             PAZAR YERİ & İKİNCİ EL
           </Text>
+          <Text style={styles.sectionSubtitle}>
+            Ustalar ve vatandaşlar arası malzeme satışı
+          </Text>
+        </View>
+
+        {/* Right Actions Column */}
+        <View style={{ alignItems: 'flex-end', justifyContent: 'center', gap: 6 }}>
+          {/* Tümünü Gör Button */}
           <TouchableOpacity 
             onPress={() => {
               if (!isAuthenticated) {
@@ -74,16 +82,16 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
               }
               setIsAllProductsModalVisible(true);
             }}
-            style={{ paddingVertical: 2, paddingLeft: 10 }}
+            style={{ paddingVertical: 2, paddingHorizontal: 4 }}
             activeOpacity={0.7}
           >
-            <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: colors.primary }}>Tümünü Gör &gt;</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+              <Text style={{ fontSize: 11.5, fontFamily: fonts.bold, color: colors.primary }}>Tümünü Gör</Text>
+              <Ionicons name="chevron-forward" size={11} color={colors.primary} />
+            </View>
           </TouchableOpacity>
-        </View>
- 
-        {/* Row 2: Subtitle and İlan Ekle */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={[styles.sectionSubtitle, { flex: 1, marginRight: 12, marginBottom: 0 }]}>Ustalar ve vatandaşlar arası malzeme satışı</Text>
+
+          {/* İlan Ekle Button */}
           <TouchableOpacity
             style={styles.addProductBtn}
             activeOpacity={0.8}
@@ -96,12 +104,12 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
             }}
           >
             <LinearGradient
-              colors={[colors.primary, colors.primaryDark || '#B91C1C']}
+              colors={colors.primaryGradient || ['#0D9488', '#2DD4BF']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.addProductBtnGradient}
             >
-              <Ionicons name="add-circle" size={14} color="#FFF" style={{ marginRight: 2 }} />
+              <Ionicons name="add" size={12} color="#FFF" style={{ marginRight: 1 }} />
               <Text style={styles.addProductBtnText}>İlan Ekle</Text>
             </LinearGradient>
           </TouchableOpacity>
