@@ -363,13 +363,13 @@ const styles = StyleSheet.create({
     },
     professionCard: {
         width: (width - 40 - 20) / 3, // dynamic calculate 3-column grid width
-        backgroundColor: 'transparent', // Transparent unselected background!
+        backgroundColor: 'rgba(15, 23, 42, 0.3)', // Beautiful dark glassmorphic card base background!
         borderRadius: 16,
         paddingHorizontal: 8,
         paddingVertical: 12,
         alignItems: 'center',
         borderWidth: 1.5,
-        borderColor: 'transparent', // Transparent unselected border!
+        borderColor: 'rgba(255, 255, 255, 0.06)', // Beautiful thin border for unselected card!
         position: 'relative',
     },
     professionIconBgSelected: {
@@ -379,6 +379,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 8,
+        overflow: 'hidden', // Crucial fix for Android LinearGradient black square overflow bug!
     },
     professionIconBgUnselected: {
         width: 44,
