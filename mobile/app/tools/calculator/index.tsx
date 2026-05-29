@@ -183,63 +183,73 @@ export default function CalculatorScreen() {
         }
     };
 
-    const renderInput = (label: string, value: string, setValue: (v: string) => void, unit: string, placeholder?: string) => (
+    const renderInput = (
+        label: string,
+        value: string,
+        setValue: (v: string) => void,
+        unit: string,
+        icon: string,
+        placeholder?: string
+    ) => (
         <View style={styles.inputRow}>
             <Text style={[styles.inputLabel, { color: colors.text }]}>{label}</Text>
-            <View style={styles.inputWrapper}>
+            <View style={[styles.inputWrapper, { borderColor: colors.primary + '30', backgroundColor: colors.backgroundLight }]}>
+                <Ionicons name={icon as any} size={20} color={colors.primary} style={styles.inputIcon} />
                 <TextInput
-                    style={[styles.input, { color: colors.text, borderColor: colors.primary + '40' }]}
+                    style={[styles.input, { color: colors.text }]}
                     value={value}
                     onChangeText={setValue}
                     keyboardType="decimal-pad"
                     placeholder={placeholder || '0'}
                     placeholderTextColor={staticColors.textLight}
                 />
-                <Text style={[styles.inputUnit, { color: staticColors.textSecondary }]}>{unit}</Text>
+                <View style={[styles.unitBadge, { backgroundColor: colors.primary + '10' }]}>
+                    <Text style={[styles.inputUnit, { color: colors.primary }]}>{unit}</Text>
+                </View>
             </View>
         </View>
     );
 
     const renderCableSection = () => (
         <View style={styles.inputsContainer}>
-            {renderInput('Akım', current, setCurrent, 'A')}
-            {renderInput('Mesafe', distance, setDistance, 'm')}
-            {renderInput('Max. Düşüm', maxDrop, setMaxDrop, '%')}
+            {renderInput('Akım', current, setCurrent, 'A', 'flash-outline')}
+            {renderInput('Mesafe', distance, setDistance, 'm', 'resize-outline')}
+            {renderInput('Maksimum İzin Verilen Düşüm', maxDrop, setMaxDrop, '%', 'trending-down-outline')}
         </View>
     );
 
     const renderVoltageDrop = () => (
         <View style={styles.inputsContainer}>
-            {renderInput('Akım', vdCurrent, setVdCurrent, 'A')}
-            {renderInput('Mesafe', vdDistance, setVdDistance, 'm')}
-            {renderInput('Kablo Kesiti', vdSection, setVdSection, 'mm²')}
+            {renderInput('Akım', vdCurrent, setVdCurrent, 'A', 'flash-outline')}
+            {renderInput('Mesafe', vdDistance, setVdDistance, 'm', 'resize-outline')}
+            {renderInput('Kablo Kesiti', vdSection, setVdSection, 'mm²', 'ellipse-outline')}
         </View>
     );
 
     const renderOhmLaw = () => (
         <View style={styles.inputsContainer}>
             <Text style={[styles.hintText, { color: staticColors.textSecondary }]}>
-                İki değer girin, üçüncüsü hesaplansın
+                Formülün çalışması için herhangi iki değeri girin, diğeri hesaplanacaktır
             </Text>
-            {renderInput('Gerilim (V)', ohmVoltage, setOhmVoltage, 'V')}
-            {renderInput('Akım (I)', ohmCurrent, setOhmCurrent, 'A')}
-            {renderInput('Direnç (R)', ohmResistance, setOhmResistance, 'Ω')}
+            {renderInput('Gerilim (V)', ohmVoltage, setOhmVoltage, 'V', 'pulse-outline')}
+            {renderInput('Akım (I)', ohmCurrent, setOhmCurrent, 'A', 'flash-outline')}
+            {renderInput('Direnç (R)', ohmResistance, setOhmResistance, 'Ω', 'analytics-outline')}
         </View>
     );
 
     const renderPower = () => (
         <View style={styles.inputsContainer}>
-            {renderInput('Gerilim', powerVoltage, setPowerVoltage, 'V')}
-            {renderInput('Akım', powerCurrent, setPowerCurrent, 'A')}
-            {renderInput('Güç Faktörü', powerFactor, setPowerFactor, 'cosφ')}
+            {renderInput('Gerilim', powerVoltage, setPowerVoltage, 'V', 'pulse-outline')}
+            {renderInput('Akım', powerCurrent, setPowerCurrent, 'A', 'flash-outline')}
+            {renderInput('Güç Faktörü (cosφ)', powerFactor, setPowerFactor, 'cosφ', 'speedometer-outline')}
         </View>
     );
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             <PremiumHeader title="Elektrik Hesaplayıcı" showBackButton />
 
-            <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+            <ScrollView style={styles.scrollView} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                 {/* Tab Selector */}
                 <ScrollView
                     horizontal
@@ -247,48 +257,54 @@ export default function CalculatorScreen() {
                     style={styles.tabScrollView}
                     contentContainerStyle={styles.tabContainer}
                 >
-                    {tabs.map((tab) => (
-                        <TouchableOpacity
-                            key={tab.id}
-                            style={[
-                                styles.tab,
-                                activeTab === tab.id && { backgroundColor: colors.primary },
-                            ]}
-                            onPress={() => {
-                                setActiveTab(tab.id as CalculatorTab);
-                                setResult(null);
-                            }}
-                        >
-                            <Ionicons
-                                name={tab.icon as any}
-                                size={18}
-                                color={activeTab === tab.id ? staticColors.white : colors.primary}
-                            />
-                            <Text
+                    {tabs.map((tab) => {
+                        const isActive = activeTab === tab.id;
+                        return (
+                            <TouchableOpacity
+                                key={tab.id}
+                                activeOpacity={0.8}
                                 style={[
-                                    styles.tabText,
-                                    { color: activeTab === tab.id ? staticColors.white : colors.primary },
+                                    styles.tab,
+                                    isActive 
+                                        ? { backgroundColor: colors.primary, borderColor: colors.primary } 
+                                        : { backgroundColor: colors.surface, borderColor: colors.border }
                                 ]}
+                                onPress={() => {
+                                    setActiveTab(tab.id as CalculatorTab);
+                                    setResult(null);
+                                }}
                             >
-                                {tab.label}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
+                                <Ionicons
+                                    name={tab.icon as any}
+                                    size={18}
+                                    color={isActive ? staticColors.white : colors.primary}
+                                />
+                                <Text
+                                    style={[
+                                        styles.tabText,
+                                        { color: isActive ? staticColors.white : colors.textSecondary }
+                                    ]}
+                                >
+                                    {tab.label}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
                 </ScrollView>
 
                 {/* Input Card */}
-                <Card style={styles.inputCard}>
+                <Card style={styles.inputCard} variant="default" elevated>
                     {activeTab === 'cable' && renderCableSection()}
                     {activeTab === 'voltage' && renderVoltageDrop()}
                     {activeTab === 'ohm' && renderOhmLaw()}
                     {activeTab === 'power' && renderPower()}
 
-                    <TouchableOpacity onPress={handleCalculate} activeOpacity={0.85}>
+                    <TouchableOpacity onPress={handleCalculate} activeOpacity={0.85} style={styles.calculateBtnContainer}>
                         <LinearGradient
-                            colors={[colors.primary, colors.primary + 'DD']}
+                            colors={colors.gradientPrimary}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
-                            style={styles.calculateButton}
+                            style={[styles.calculateButton, { shadowColor: colors.primary }]}
                         >
                             <Ionicons name="calculator" size={20} color={staticColors.white} />
                             <Text style={styles.calculateButtonText}>HESAPLA</Text>
@@ -298,20 +314,57 @@ export default function CalculatorScreen() {
 
                 {/* Result Card */}
                 {result && (
-                    <Card style={[styles.resultCard, { borderColor: colors.primary + '40' }]}>
+                    <Card 
+                        variant="glass" 
+                        style={[
+                            styles.resultCard, 
+                            { 
+                                borderColor: result.value === 'Hata' ? colors.error + '40' : colors.primary + '40',
+                                shadowColor: result.value === 'Hata' ? colors.error : colors.primary 
+                            }
+                        ]}
+                    >
                         <View style={styles.resultHeader}>
-                            <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
-                            <Text style={[styles.resultTitle, { color: colors.text }]}>SONUÇ</Text>
+                            <Ionicons 
+                                name={result.value === 'Hata' ? "alert-circle" : "checkmark-circle"} 
+                                size={24} 
+                                color={result.value === 'Hata' ? colors.error : colors.primary} 
+                            />
+                            <Text style={[styles.resultTitle, { color: colors.text }]}>HESAPLAMA SONUCU</Text>
                         </View>
                         <View style={styles.resultValueRow}>
-                            <Text style={[styles.resultValue, { color: colors.primary }]}>{result.value}</Text>
-                            <Text style={[styles.resultUnit, { color: colors.primary }]}>{result.unit}</Text>
+                            <Text style={[styles.resultValue, { color: result.value === 'Hata' ? colors.error : colors.primary }]}>{result.value}</Text>
+                            {result.unit ? (
+                                <Text style={[styles.resultUnit, { color: result.value === 'Hata' ? colors.error : colors.primary }]}>{result.unit}</Text>
+                            ) : null}
                         </View>
-                        <Text style={[styles.resultDescription, { color: staticColors.textSecondary }]}>
+                        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+                        <Text style={[styles.resultDescription, { color: colors.textSecondary }]}>
                             {result.description}
                         </Text>
                     </Card>
                 )}
+
+                {/* Reference Constants & Info Card */}
+                <Card variant="outlined" style={[styles.infoCard, { borderColor: colors.border }]}>
+                    <View style={styles.infoHeader}>
+                        <Ionicons name="information-circle-outline" size={20} color={colors.primary} />
+                        <Text style={[styles.infoTitle, { color: colors.text }]}>Mühendislik Referans Değerleri</Text>
+                    </View>
+                    <View style={styles.infoGrid}>
+                        <View style={styles.infoGridCol}>
+                            <Text style={[styles.infoGridLabel, { color: colors.textSecondary }]}>Bakır İletkenliği (κ)</Text>
+                            <Text style={[styles.infoGridValue, { color: colors.primary }]}>56 m/Ω·mm²</Text>
+                        </View>
+                        <View style={styles.infoGridCol}>
+                            <Text style={[styles.infoGridLabel, { color: colors.textSecondary }]}>Standart Kesitler</Text>
+                            <Text style={[styles.infoGridValue, { color: colors.primary }]}>1.5 - 120 mm²</Text>
+                        </View>
+                    </View>
+                    <Text style={[styles.infoText, { color: colors.textSecondary }]}>
+                        Hesaplamalar TS EN 60228 standartlarına uygun 230V tek fazlı alternatif akım (AC) şebekeleri ve bakır iletkenler referans alınarak hesaplanmaktadır.
+                    </Text>
+                </Card>
             </ScrollView>
         </View>
     );
@@ -320,14 +373,13 @@ export default function CalculatorScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
     },
     scrollView: {
         flex: 1,
     },
     content: {
         padding: spacing.md,
-        paddingBottom: 100,
+        paddingBottom: 120,
     },
     tabScrollView: {
         marginBottom: spacing.md,
@@ -336,15 +388,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 8,
         paddingHorizontal: 4,
+        paddingVertical: 4,
     },
     tab: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        gap: 8,
         paddingHorizontal: 16,
         paddingVertical: 10,
-        borderRadius: 12,
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderRadius: 20,
+        borderWidth: 1.5,
     },
     tabText: {
         fontFamily: fonts.bold,
@@ -355,60 +408,82 @@ const styles = StyleSheet.create({
         marginBottom: spacing.md,
     },
     inputsContainer: {
-        marginBottom: spacing.lg,
+        marginBottom: spacing.md,
     },
     inputRow: {
         marginBottom: spacing.md,
     },
     inputLabel: {
-        fontFamily: fonts.medium,
-        fontSize: 14,
+        fontFamily: fonts.semiBold,
+        fontSize: 13,
         marginBottom: 8,
     },
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
+        borderWidth: 1.5,
+        borderRadius: 14,
+        paddingLeft: 12,
+        height: 52,
+        overflow: 'hidden',
+    },
+    inputIcon: {
+        marginRight: 8,
     },
     input: {
         flex: 1,
-        height: 50,
-        borderWidth: 1.5,
-        borderRadius: 12,
-        paddingHorizontal: 16,
+        height: '100%',
         fontFamily: fonts.semiBold,
-        fontSize: 16,
-        backgroundColor: staticColors.white,
+        fontSize: 15,
+        paddingHorizontal: 4,
+    },
+    unitBadge: {
+        paddingHorizontal: 12,
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderLeftWidth: 1,
+        borderLeftColor: 'rgba(0, 0, 0, 0.05)',
     },
     inputUnit: {
         fontFamily: fonts.bold,
-        fontSize: 14,
-        marginLeft: 12,
-        minWidth: 40,
+        fontSize: 13,
     },
     hintText: {
-        fontFamily: fonts.regular,
-        fontSize: 13,
-        fontStyle: 'italic',
+        fontFamily: fonts.medium,
+        fontSize: 12,
+        lineHeight: 18,
         marginBottom: spacing.md,
+        opacity: 0.8,
+    },
+    calculateBtnContainer: {
+        marginTop: spacing.sm,
     },
     calculateButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 10,
-        height: 56,
+        height: 54,
         borderRadius: 16,
+        elevation: 4,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
     },
     calculateButtonText: {
         fontFamily: fonts.extraBold,
-        fontSize: 16,
+        fontSize: 15,
         color: staticColors.white,
         letterSpacing: 1,
     },
     resultCard: {
         padding: spacing.lg,
-        borderWidth: 2,
-        backgroundColor: 'rgba(59, 130, 246, 0.03)',
+        marginBottom: spacing.md,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.1,
+        shadowRadius: 16,
+        elevation: 6,
     },
     resultHeader: {
         flexDirection: 'row',
@@ -418,26 +493,69 @@ const styles = StyleSheet.create({
     },
     resultTitle: {
         fontFamily: fonts.bold,
-        fontSize: 14,
+        fontSize: 12,
         letterSpacing: 1,
     },
     resultValueRow: {
         flexDirection: 'row',
         alignItems: 'baseline',
-        gap: 8,
+        gap: 6,
         marginBottom: spacing.sm,
     },
     resultValue: {
         fontFamily: fonts.extraBold,
-        fontSize: 48,
+        fontSize: 40,
     },
     resultUnit: {
         fontFamily: fonts.bold,
-        fontSize: 24,
+        fontSize: 20,
+    },
+    divider: {
+        height: 1,
+        marginVertical: spacing.sm,
+        opacity: 0.5,
     },
     resultDescription: {
+        fontFamily: fonts.semiBold,
+        fontSize: 13,
+        lineHeight: 20,
+    },
+    infoCard: {
+        padding: spacing.md,
+        backgroundColor: 'transparent',
+    },
+    infoHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: spacing.sm,
+    },
+    infoTitle: {
+        fontFamily: fonts.bold,
+        fontSize: 13,
+    },
+    infoGrid: {
+        flexDirection: 'row',
+        gap: 16,
+        marginBottom: spacing.sm,
+        marginTop: 4,
+    },
+    infoGridCol: {
+        flex: 1,
+    },
+    infoGridLabel: {
         fontFamily: fonts.medium,
+        fontSize: 11,
+        marginBottom: 2,
+    },
+    infoGridValue: {
+        fontFamily: fonts.bold,
         fontSize: 14,
-        lineHeight: 22,
+    },
+    infoText: {
+        fontFamily: fonts.regular,
+        fontSize: 11,
+        lineHeight: 16,
+        opacity: 0.8,
     },
 });

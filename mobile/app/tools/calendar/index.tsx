@@ -226,20 +226,24 @@ export default function CalendarScreen() {
     : dayEvents;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <PremiumHeader title="İş Takvimim" showBackButton />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Month Navigation */}
-        <Card style={styles.calendarCard}>
+        <Card style={styles.calendarCard} variant="default" elevated>
           <View style={styles.monthNav}>
-            <TouchableOpacity onPress={prevMonth} style={styles.navBtn}><Ionicons name="chevron-back" size={24} color={colors.text} /></TouchableOpacity>
+            <TouchableOpacity onPress={prevMonth} style={styles.navBtn}>
+              <Ionicons name="chevron-back" size={20} color={colors.primary} />
+            </TouchableOpacity>
             <Text style={[styles.monthTitle, { color: colors.text }]}>{MONTHS[currentMonth]} {currentYear}</Text>
-            <TouchableOpacity onPress={nextMonth} style={styles.navBtn}><Ionicons name="chevron-forward" size={24} color={colors.text} /></TouchableOpacity>
+            <TouchableOpacity onPress={nextMonth} style={styles.navBtn}>
+              <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+            </TouchableOpacity>
           </View>
 
           {/* Day Headers */}
           <View style={styles.dayHeaderRow}>
-            {DAYS.map(d => <Text key={d} style={styles.dayHeaderText}>{d}</Text>)}
+            {DAYS.map(d => <Text key={d} style={[styles.dayHeaderText, { color: colors.textSecondary }]}>{d}</Text>)}
           </View>
 
           {/* Calendar Grid */}
@@ -247,31 +251,44 @@ export default function CalendarScreen() {
             <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 40 }} />
           ) : (
             <View style={styles.calendarGrid}>
-              {calendarDays.map((day, i) => (
-                <TouchableOpacity
-                  key={i}
-                  style={[
-                    styles.dayCell,
-                    day === selectedDay && styles.dayCellSelected,
-                    isToday(day || 0) && day !== selectedDay && styles.dayCellToday,
-                  ]}
-                  onPress={() => day && selectDay(day)}
-                  disabled={!day}
-                  activeOpacity={0.7}
-                >
-                  {day ? (
-                    <>
-                      <Text style={[
-                        styles.dayText,
-                        { color: colors.text },
-                        day === selectedDay && styles.dayTextSelected,
-                        isToday(day) && day !== selectedDay && styles.dayTextToday,
-                      ]}>{day}</Text>
-                      {hasEventOnDay(day) && <View style={[styles.eventDot, day === selectedDay && { backgroundColor: '#FFF' }]} />}
-                    </>
-                  ) : null}
-                </TouchableOpacity>
-              ))}
+              {calendarDays.map((day, i) => {
+                const isSel = day === selectedDay;
+                const isTod = day ? isToday(day) : false;
+                const hasEv = day ? hasEventOnDay(day) : false;
+                return (
+                  <TouchableOpacity
+                    key={i}
+                    style={[
+                      styles.dayCell,
+                      isSel && { backgroundColor: colors.primary },
+                      isTod && !isSel && { backgroundColor: colors.primary + '12' },
+                    ]}
+                    onPress={() => day && selectDay(day)}
+                    disabled={!day}
+                    activeOpacity={0.7}
+                  >
+                    {day ? (
+                      <>
+                        <Text style={[
+                          styles.dayText,
+                          { color: colors.text },
+                          isSel && { color: staticColors.white, fontFamily: fonts.bold },
+                          isTod && !isSel && { color: colors.primary, fontFamily: fonts.bold },
+                          !isSel && !isTod && { color: colors.text },
+                        ]}>{day}</Text>
+                        {hasEv && (
+                          <View 
+                            style={[
+                              styles.eventDot, 
+                              isSel ? { backgroundColor: staticColors.white } : { backgroundColor: colors.accentGold || '#F59E0B' }
+                            ]} 
+                          />
+                        )}
+                      </>
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           )}
         </Card>
@@ -282,18 +299,24 @@ export default function CalendarScreen() {
             <Text style={[styles.eventsSectionTitle, { color: colors.text, flex: 1 }]}>
               {showAllEvents ? `${MONTHS[currentMonth]} Ayı Tüm İşler` : (selectedDay ? `${selectedDay} ${MONTHS[currentMonth]} Etkinlikleri` : 'Etkinlikler')}
             </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <TouchableOpacity 
                 onPress={() => setShowAllEvents(!showAllEvents)} 
-                style={{ backgroundColor: showAllEvents ? '#EDE9FE' : '#F1F5F9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                activeOpacity={0.8}
+                style={[
+                  styles.toggleBtn, 
+                  showAllEvents 
+                    ? { backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' } 
+                    : { backgroundColor: colors.surface, borderColor: colors.border }
+                ]}
               >
-                <Ionicons name={showAllEvents ? "calendar" : "list"} size={16} color={showAllEvents ? "#8B5CF6" : staticColors.textSecondary} />
-                <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: showAllEvents ? "#8B5CF6" : staticColors.textSecondary }}>
+                <Ionicons name={showAllEvents ? "calendar" : "list-outline"} size={16} color={showAllEvents ? colors.primary : colors.textSecondary} />
+                <Text style={[styles.toggleBtnText, { color: showAllEvents ? colors.primary : colors.textSecondary }]}>
                   {showAllEvents ? 'Takvim' : 'Tümü'}
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={openAddModal} style={styles.addBtn}>
-                <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.addBtnGrad}>
+              <TouchableOpacity onPress={openAddModal} activeOpacity={0.85} style={styles.addBtnContainer}>
+                <LinearGradient colors={colors.gradientPrimary} style={styles.addBtnGrad}>
                   <Ionicons name="add" size={20} color="#FFF" />
                 </LinearGradient>
               </TouchableOpacity>
@@ -301,51 +324,73 @@ export default function CalendarScreen() {
           </View>
 
           {displayedEvents.length === 0 ? (
-              <Card style={styles.emptyCard}>
-                <Ionicons name="calendar-outline" size={32} color={staticColors.textLight} />
-                <Text style={styles.emptyText}>Bu gün için kayıt yok</Text>
-                <Text style={styles.emptySubtext}>Yukarıdaki + butonuna dokunarak ekle</Text>
+              <Card style={styles.emptyCard} variant="outlined">
+                <View style={[styles.emptyIconContainer, { backgroundColor: colors.primary + '08' }]}>
+                  <Ionicons name="calendar-outline" size={32} color={colors.primary} />
+                </View>
+                <Text style={[styles.emptyText, { color: colors.text }]}>Bu tarih için kayıt yok</Text>
+                <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Sağ üstteki + butonuna dokunarak yeni bir iş planlayabilirsiniz</Text>
               </Card>
             ) : (
-              displayedEvents.map(event => (
-                <Card key={event.id} style={styles.eventCard}>
-                  <View style={styles.eventCardHeader}>
-                    <View style={[styles.statusDot, { backgroundColor: event.status === 'completed' ? '#10B981' : '#8B5CF6' }]} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.eventTitle, { color: colors.text }]}>{event.title}</Text>
-                      {event.eventTime && (
-                        <View style={styles.timeRow}>
-                          <Ionicons name="time-outline" size={14} color={staticColors.textSecondary} />
-                          <Text style={styles.timeText}>{event.eventTime}</Text>
-                          {event.hasReminder && <Ionicons name="notifications" size={14} color="#F59E0B" style={{ marginLeft: 6 }} />}
+              displayedEvents.map(event => {
+                const isCompleted = event.status === 'completed';
+                return (
+                  <Card 
+                    key={event.id} 
+                    style={styles.eventCard} 
+                    variant="accent" 
+                    accentColor={isCompleted ? colors.success : colors.primary}
+                    elevated
+                  >
+                    <View style={styles.eventCardHeader}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.eventTitle, { color: colors.text }]}>{event.title}</Text>
+                        {event.eventTime && (
+                          <View style={styles.timeRow}>
+                            <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+                            <Text style={[styles.timeText, { color: colors.textSecondary }]}>{event.eventTime}</Text>
+                            {event.hasReminder && (
+                              <View style={[styles.reminderBadge, { backgroundColor: '#FEF3C7' }]}>
+                                <Ionicons name="notifications" size={12} color="#D97706" />
+                                <Text style={styles.reminderBadgeText}>Hatırlatıcı</Text>
+                              </View>
+                            )}
+                          </View>
+                        )}
+                      </View>
+                      {event.amount ? (
+                        <View style={[styles.amountBadge, isCompleted && styles.amountBadgePaid]}>
+                          <Text style={[styles.amountText, isCompleted && { color: '#10B981' }]}>
+                            ₺{Number(event.amount).toLocaleString('tr-TR')}
+                          </Text>
                         </View>
-                      )}
+                      ) : null}
                     </View>
-                    {event.amount && (
-                      <View style={[styles.amountBadge, event.isPaid && styles.amountBadgePaid]}>
-                        <Text style={[styles.amountText, event.isPaid && { color: '#10B981' }]}>₺{Number(event.amount).toLocaleString('tr-TR')}</Text>
+                    {event.note && (
+                      <View style={[styles.noteContainer, { backgroundColor: colors.backgroundLight, borderColor: colors.border }]}>
+                        <Text style={[styles.eventNote, { color: colors.textSecondary }]}>{event.note}</Text>
                       </View>
                     )}
-                  </View>
-                  {event.note && <Text style={styles.eventNote}>{event.note}</Text>}
-                  <View style={styles.eventActions}>
-                    {event.status !== 'completed' && (
-                      <TouchableOpacity onPress={() => handleComplete(event)} style={styles.actionBtn}>
-                        <Ionicons name="checkmark-circle-outline" size={18} color="#10B981" />
-                        <Text style={[styles.actionText, { color: '#10B981' }]}>Tamamla</Text>
+                    <View style={[styles.divider, { backgroundColor: colors.border }]} />
+                    <View style={styles.eventActions}>
+                      {!isCompleted && (
+                        <TouchableOpacity onPress={() => handleComplete(event)} style={styles.actionBtn} activeOpacity={0.7}>
+                          <Ionicons name="checkmark-circle-outline" size={18} color="#10B981" />
+                          <Text style={[styles.actionText, { color: '#10B981' }]}>Tamamla</Text>
+                        </TouchableOpacity>
+                      )}
+                      <TouchableOpacity onPress={() => openEditModal(event)} style={styles.actionBtn} activeOpacity={0.7}>
+                        <Ionicons name="create-outline" size={18} color="#3B82F6" />
+                        <Text style={[styles.actionText, { color: '#3B82F6' }]}>Düzenle</Text>
                       </TouchableOpacity>
-                    )}
-                    <TouchableOpacity onPress={() => openEditModal(event)} style={styles.actionBtn}>
-                      <Ionicons name="create-outline" size={18} color="#3B82F6" />
-                      <Text style={[styles.actionText, { color: '#3B82F6' }]}>Düzenle</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => handleDelete(event)} style={styles.actionBtn}>
-                      <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                      <Text style={[styles.actionText, { color: '#EF4444' }]}>Sil</Text>
-                    </TouchableOpacity>
-                  </View>
-                </Card>
-              ))
+                      <TouchableOpacity onPress={() => handleDelete(event)} style={styles.actionBtn} activeOpacity={0.7}>
+                        <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                        <Text style={[styles.actionText, { color: '#EF4444' }]}>Sil</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </Card>
+                );
+              })
             )}
           </View>
         </ScrollView>
@@ -358,34 +403,55 @@ export default function CalendarScreen() {
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{editingEvent ? 'Etkinliği Düzenle' : 'Yeni Kayıt'}</Text>
-              <TouchableOpacity onPress={() => setShowModal(false)}><Ionicons name="close" size={24} color={staticColors.textSecondary} /></TouchableOpacity>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{editingEvent ? 'Etkinliği Düzenle' : 'Yeni Kayıt'}</Text>
+              <TouchableOpacity onPress={() => setShowModal(false)}>
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.label}>Başlık *</Text>
-              <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="Örn: Ahmet Bey - Pano Değişimi" placeholderTextColor={staticColors.textLight} />
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Başlık *</Text>
+              <View style={[styles.modalInputWrapper, { borderColor: colors.primary + '25', backgroundColor: colors.backgroundLight }]}>
+                <Ionicons name="bookmark-outline" size={18} color={colors.primary} style={styles.modalInputIcon} />
+                <TextInput 
+                  style={[styles.modalInput, { color: colors.text }]} 
+                  value={title} 
+                  onChangeText={setTitle} 
+                  placeholder="Örn: Ahmet Bey - Pano Değişimi" 
+                  placeholderTextColor={staticColors.textLight} 
+                />
+              </View>
 
-              <Text style={styles.label}>Not (İsteğe Bağlı)</Text>
-              <TextInput style={[styles.input, { height: 80, textAlignVertical: 'top' }]} value={note} onChangeText={setNote} placeholder="Detay ekle..." placeholderTextColor={staticColors.textLight} multiline />
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Not (İsteğe Bağlı)</Text>
+              <View style={[styles.modalInputWrapper, { borderColor: colors.primary + '25', height: 80, alignItems: 'flex-start', paddingTop: 12, backgroundColor: colors.backgroundLight }]}>
+                <Ionicons name="document-text-outline" size={18} color={colors.primary} style={[styles.modalInputIcon, { marginTop: 2 }]} />
+                <TextInput 
+                  style={[styles.modalInput, { color: colors.text, height: '100%', textAlignVertical: 'top' }]} 
+                  value={note} 
+                  onChangeText={setNote} 
+                  placeholder="İş detaylarını girin..." 
+                  placeholderTextColor={staticColors.textLight} 
+                  multiline 
+                />
+              </View>
 
-              {/* FIX #2: Native Time Picker */}
-              <Text style={styles.label}>Saat (İsteğe Bağlı)</Text>
+              {/* Native Time Picker */}
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Saat (İsteğe Bağlı)</Text>
               <TouchableOpacity
-                style={[styles.input, styles.timePickerButton]}
+                style={[styles.modalInputWrapper, styles.timePickerButton, { borderColor: colors.primary + '25', backgroundColor: colors.backgroundLight }]}
                 onPress={() => setShowTimePicker(true)}
                 activeOpacity={0.7}
               >
-                <Ionicons name="time-outline" size={20} color={eventTime ? '#8B5CF6' : staticColors.textLight} />
-                <Text style={[styles.timePickerText, eventTime ? { color: '#1E293B' } : { color: staticColors.textLight }]}>
+                <Ionicons name="time-outline" size={20} color={eventTime ? colors.primary : staticColors.textLight} style={styles.modalInputIcon} />
+                <Text style={[styles.timePickerText, eventTime ? { color: colors.text } : { color: staticColors.textLight }]}>
                   {eventTime || 'Saat seçmek için dokun'}
                 </Text>
                 {eventTime ? (
                   <TouchableOpacity onPress={() => { setEventTime(''); setHasReminder(false); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                    <Ionicons name="close-circle" size={20} color={staticColors.textLight} />
+                    <Ionicons name="close-circle" size={18} color={staticColors.textLight} />
                   </TouchableOpacity>
                 ) : (
-                  <Ionicons name="chevron-down" size={18} color={staticColors.textLight} />
+                  <Ionicons name="chevron-down" size={16} color={staticColors.textLight} />
                 )}
               </TouchableOpacity>
 
@@ -408,27 +474,47 @@ export default function CalendarScreen() {
               )}
 
               {eventTime.length > 0 && (
-                <View style={styles.switchRow}>
+                <View style={[styles.switchRow, { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.switchLabel}>Hatırlatıcı Kur</Text>
-                    <Text style={styles.switchDesc}>Belirlenen saatte bildirim gönder</Text>
+                    <Text style={[styles.switchLabel, { color: colors.text }]}>Hatırlatıcı Kur</Text>
+                    <Text style={[styles.switchDesc, { color: colors.textSecondary }]}>Belirlenen saatte bildirim gönder</Text>
                   </View>
-                  <Switch value={hasReminder} onValueChange={setHasReminder} trackColor={{ true: '#8B5CF6' }} thumbColor={hasReminder ? '#FFF' : '#F1F5F9'} />
+                  <Switch 
+                    value={hasReminder} 
+                    onValueChange={setHasReminder} 
+                    trackColor={{ true: colors.primary }} 
+                    thumbColor={hasReminder ? '#FFF' : '#F1F5F9'} 
+                  />
                 </View>
               )}
 
               {!editingEvent && (
                 <>
-                  <Text style={styles.label}>Ücret (İsteğe Bağlı)</Text>
-                  <TextInput style={styles.input} value={amount} onChangeText={setAmount} placeholder="₺" placeholderTextColor={staticColors.textLight} keyboardType="decimal-pad" />
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Ücret (İsteğe Bağlı)</Text>
+                  <View style={[styles.modalInputWrapper, { borderColor: colors.primary + '25', backgroundColor: colors.backgroundLight }]}>
+                    <Ionicons name="cash-outline" size={18} color={colors.primary} style={styles.modalInputIcon} />
+                    <TextInput 
+                      style={[styles.modalInput, { color: colors.text }]} 
+                      value={amount} 
+                      onChangeText={setAmount} 
+                      placeholder="Teklif ücretini girin ₺" 
+                      placeholderTextColor={staticColors.textLight} 
+                      keyboardType="decimal-pad" 
+                    />
+                  </View>
 
                   {amount.length > 0 && (
                     <View style={styles.switchRow}>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.switchLabel}>Hesap Defterine Ekle</Text>
-                        <Text style={styles.switchDesc}>Alacak olarak kaydet</Text>
+                        <Text style={[styles.switchLabel, { color: colors.text }]}>Hesap Defterine Ekle</Text>
+                        <Text style={[styles.switchDesc, { color: colors.textSecondary }]}>Alacak olarak deftere kaydet</Text>
                       </View>
-                      <Switch value={addToLedger} onValueChange={setAddToLedger} trackColor={{ true: '#F59E0B' }} thumbColor={addToLedger ? '#FFF' : '#F1F5F9'} />
+                      <Switch 
+                        value={addToLedger} 
+                        onValueChange={setAddToLedger} 
+                        trackColor={{ true: colors.primary }} 
+                        thumbColor={addToLedger ? '#FFF' : '#F1F5F9'} 
+                      />
                     </View>
                   )}
                 </>
@@ -436,7 +522,7 @@ export default function CalendarScreen() {
             </ScrollView>
 
             <TouchableOpacity onPress={handleSave} disabled={saving} activeOpacity={0.85}>
-              <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.saveBtn}>
+              <LinearGradient colors={colors.gradientPrimary} style={styles.saveBtn}>
                 {saving ? <ActivityIndicator color="#FFF" /> : (
                   <>
                     <Ionicons name="checkmark" size={20} color="#FFF" />
@@ -453,59 +539,115 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  content: { padding: spacing.md, paddingBottom: 100 },
+  container: { flex: 1 },
+  content: { padding: spacing.md, paddingBottom: 120 },
   calendarCard: { padding: spacing.md, marginBottom: spacing.md },
   monthNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   navBtn: { padding: 8 },
-  monthTitle: { fontFamily: fonts.bold, fontSize: 18 },
+  monthTitle: { fontFamily: fonts.bold, fontSize: 16, letterSpacing: -0.5 },
   dayHeaderRow: { flexDirection: 'row', marginBottom: 8 },
-  dayHeaderText: { flex: 1, textAlign: 'center', fontFamily: fonts.semiBold, fontSize: 12, color: staticColors.textSecondary },
+  dayHeaderText: { flex: 1, textAlign: 'center', fontFamily: fonts.semiBold, fontSize: 12 },
   calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  dayCell: { width: '14.28%', aspectRatio: 1, justifyContent: 'center', alignItems: 'center', borderRadius: 12 },
-  dayCellSelected: { backgroundColor: '#8B5CF6' },
-  dayCellToday: { backgroundColor: '#EDE9FE' },
-  dayText: { fontFamily: fonts.medium, fontSize: 14 },
-  dayTextSelected: { color: '#FFF', fontFamily: fonts.bold },
-  dayTextToday: { color: '#8B5CF6', fontFamily: fonts.bold },
-  eventDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#8B5CF6', marginTop: 2 },
+  dayCell: { width: '14.28%', aspectRatio: 1, justifyContent: 'center', alignItems: 'center', borderRadius: 18 },
+  dayText: { fontFamily: fonts.medium, fontSize: 13 },
+  eventDot: { width: 5, height: 5, borderRadius: 2.5, marginTop: 2, position: 'absolute', bottom: 4 },
   eventsSection: { marginTop: 8 },
   eventsSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  eventsSectionTitle: { fontFamily: fonts.bold, fontSize: 16 },
-  addBtn: { borderRadius: 20, overflow: 'hidden' },
-  addBtnGrad: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
-  emptyCard: { padding: 32, alignItems: 'center' },
-  emptyText: { fontFamily: fonts.medium, fontSize: 14, color: staticColors.textSecondary, marginTop: 8 },
-  emptySubtext: { fontFamily: fonts.regular, fontSize: 12, color: staticColors.textLight, marginTop: 4 },
+  eventsSectionTitle: { fontFamily: fonts.bold, fontSize: 15 },
+  toggleBtn: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 4,
+    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  toggleBtnText: {
+    fontFamily: fonts.bold,
+    fontSize: 12,
+  },
+  addBtnContainer: { borderRadius: 18, overflow: 'hidden' },
+  addBtnGrad: { width: 34, height: 34, borderRadius: 17, justifyContent: 'center', alignItems: 'center' },
+  emptyCard: { padding: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
+  emptyIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  emptyText: { fontFamily: fonts.bold, fontSize: 14, marginTop: 4 },
+  emptySubtext: { fontFamily: fonts.medium, fontSize: 11, textAlign: 'center', opacity: 0.8, marginTop: 6, lineHeight: 16 },
   eventCard: { padding: spacing.md, marginBottom: 10 },
   eventCardHeader: { flexDirection: 'row', alignItems: 'center' },
-  statusDot: { width: 10, height: 10, borderRadius: 5, marginRight: 10 },
-  eventTitle: { fontFamily: fonts.bold, fontSize: 15 },
-  timeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 },
-  timeText: { fontFamily: fonts.medium, fontSize: 13, color: staticColors.textSecondary },
+  eventTitle: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20 },
+  timeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 4 },
+  timeText: { fontFamily: fonts.medium, fontSize: 12 },
+  reminderBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginLeft: 6,
+  },
+  reminderBadgeText: {
+    fontFamily: fonts.bold,
+    fontSize: 10,
+    color: '#D97706',
+  },
   amountBadge: { backgroundColor: '#FEF3C7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   amountBadgePaid: { backgroundColor: '#D1FAE5' },
   amountText: { fontFamily: fonts.bold, fontSize: 13, color: '#D97706' },
-  eventNote: { fontFamily: fonts.regular, fontSize: 13, color: staticColors.textSecondary, marginTop: 8, marginLeft: 20 },
-  eventActions: { flexDirection: 'row', gap: 16, marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  actionText: { fontFamily: fonts.medium, fontSize: 13 },
+  noteContainer: {
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: spacing.md,
+  },
+  eventNote: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 18 },
+  divider: {
+    height: 1.5,
+    marginTop: spacing.md,
+    opacity: 0.1,
+  },
+  eventActions: { flexDirection: 'row', gap: 16, marginTop: 10, justifyContent: 'flex-end' },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 8 },
+  actionText: { fontFamily: fonts.bold, fontSize: 12 },
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: Platform.OS === 'android' ? 60 : 40, maxHeight: '85%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontFamily: fonts.bold, fontSize: 20, color: staticColors.text },
-  label: { fontFamily: fonts.semiBold, fontSize: 13, color: staticColors.textSecondary, marginBottom: 6, marginTop: 12 },
-  input: { height: 50, borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 16, fontFamily: fonts.medium, fontSize: 15, backgroundColor: '#F8FAFC' },
-  // FIX #2: Time picker button styles
-  timePickerButton: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  timePickerText: { flex: 1, fontFamily: fonts.medium, fontSize: 15 },
-  timePickerContainer: { backgroundColor: '#F1F5F9', borderRadius: 12, marginTop: 8, padding: 8, alignItems: 'center' },
+  modalTitle: { fontFamily: fonts.bold, fontSize: 18, letterSpacing: -0.5 },
+  label: { fontFamily: fonts.semiBold, fontSize: 12, marginBottom: 6, marginTop: 12 },
+  modalInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingLeft: 12,
+    height: 48,
+  },
+  modalInputIcon: {
+    marginRight: 8,
+  },
+  modalInput: {
+    flex: 1,
+    height: '100%',
+    fontFamily: fonts.medium,
+    fontSize: 14,
+  },
+  timePickerButton: { flexDirection: 'row', alignItems: 'center' },
+  timePickerText: { flex: 1, fontFamily: fonts.medium, fontSize: 14 },
+  timePickerContainer: { backgroundColor: '#F1F5F9', borderRadius: 14, marginTop: 8, padding: 8, alignItems: 'center', width: '100%' },
   timePickerDoneBtn: { paddingVertical: 8, paddingHorizontal: 24, backgroundColor: '#8B5CF6', borderRadius: 10, marginTop: 4 },
   timePickerDoneText: { fontFamily: fonts.bold, fontSize: 14, color: '#FFF' },
   switchRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12, paddingVertical: 8 },
-  switchLabel: { fontFamily: fonts.semiBold, fontSize: 14, color: staticColors.text },
-  switchDesc: { fontFamily: fonts.regular, fontSize: 12, color: staticColors.textSecondary, marginTop: 2 },
-  saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52, borderRadius: 16, marginTop: 20 },
-  saveBtnText: { fontFamily: fonts.bold, fontSize: 16, color: '#FFF' },
+  switchLabel: { fontFamily: fonts.semiBold, fontSize: 13 },
+  switchDesc: { fontFamily: fonts.medium, fontSize: 11, marginTop: 2, opacity: 0.8 },
+  saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 50, borderRadius: 16, marginTop: 20 },
+  saveBtnText: { fontFamily: fonts.bold, fontSize: 15, color: '#FFF' },
 });
