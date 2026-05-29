@@ -70,7 +70,7 @@ function RootLayoutNav() {
   useEffect(() => {
     const runMigration = async () => {
       try {
-        const CURRENT_APP_VERSION = '1.5.4';
+        const CURRENT_APP_VERSION = '1.5.5';
         const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
         const lastRunVersion = await AsyncStorage.getItem('last_run_app_version');
 
