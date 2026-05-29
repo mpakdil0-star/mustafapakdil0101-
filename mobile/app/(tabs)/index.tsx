@@ -3251,11 +3251,11 @@ export default function HomeScreen() {
           showCompletionModal && (
             <View style={styles.modalOverlay}>
               <LinearGradient
-                colors={['rgba(255,255,255,0.95)', 'rgba(255,255,255,0.85)']}
+                colors={['rgba(255,255,255,0.98)', 'rgba(255,255,255,0.93)']}
                 style={styles.completionModal}
               >
                 <View style={styles.modalHeader}>
-                  <View>
+                  <View style={{ flex: 1, marginRight: 8 }}>
                     <Text style={styles.modalTitle}>
                       {isElectrician ? 'Profilini Güçlendir' : 'Hemen Başla'}
                     </Text>
@@ -3272,11 +3272,11 @@ export default function HomeScreen() {
 
                 <View style={styles.modalProgressSection}>
                   <View style={styles.modalProgressHeader}>
-                    <Text style={styles.modalProgressPercent}>%{completionPercent}</Text>
+                    <Text style={[styles.modalProgressPercent, { color: colors.primary }]}>%{completionPercent}</Text>
                     <Text style={styles.modalProgressLabel}>Tamamlandı</Text>
                   </View>
                   <View style={styles.modalProgressBg}>
-                    <View style={[styles.modalProgressFill, { width: `${completionPercent}%` }]} />
+                    <View style={[styles.modalProgressFill, { width: `${completionPercent}%`, backgroundColor: colors.primary }]} />
                   </View>
                 </View>
 
@@ -3291,7 +3291,11 @@ export default function HomeScreen() {
                         router.push(item.route as any);
                       }}
                     >
-                      <View style={[styles.checklistIconBox, item.isPending && { backgroundColor: staticColors.warning + '10' }]}>
+                      <View style={[
+                        styles.checklistIconBox, 
+                        { backgroundColor: colors.primary + '12' }, 
+                        item.isPending && { backgroundColor: staticColors.warning + '10' }
+                      ]}>
                         <Ionicons name={item.icon as any} size={20} color={item.isPending ? staticColors.warning : colors.primary} />
                       </View>
                       <View style={{ flex: 1 }}>
@@ -3309,7 +3313,7 @@ export default function HomeScreen() {
                 </ScrollView>
 
                 <TouchableOpacity
-                  style={styles.modalMainBtn}
+                  style={[styles.modalMainBtn, { shadowColor: colors.primary }]}
                   onPress={() => {
                     setShowCompletionModal(false);
                     router.push('/profile/edit');
@@ -4676,18 +4680,25 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: 'flex-start',
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
     zIndex: 1000,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingHorizontal: 20,
   },
   completionModal: {
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderRadius: 28,
     padding: 24,
-    paddingBottom: 40,
     backgroundColor: staticColors.white,
-    maxHeight: '85%',
+    maxHeight: '80%',
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -4755,7 +4766,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
