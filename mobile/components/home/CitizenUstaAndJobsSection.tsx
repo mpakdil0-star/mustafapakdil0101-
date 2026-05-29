@@ -338,10 +338,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderStyle: 'dashed',
     backgroundColor: 'rgba(255, 255, 255, 0.65)',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-    elevation: 3,
   },
   seeAllUstaIconCircle: {
     width: 48,
