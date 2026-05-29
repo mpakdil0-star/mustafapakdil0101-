@@ -150,18 +150,26 @@ export default function RoleSelectScreen() {
                                             onPress={() => setServiceCategory(cat.id)}
                                             activeOpacity={0.85}
                                         >
-                                            <LinearGradient
-                                                colors={isSelected 
-                                                    ? [`${cat.colors[0]}35`, `${cat.colors[1]}50`] 
-                                                    : ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.01)']}
-                                                style={styles.professionIconBg}
-                                            >
-                                                <Ionicons 
-                                                    name={cat.icon as any} 
-                                                    size={22} 
-                                                    color={isSelected ? '#FFFFFF' : cat.colors[0]} 
-                                                />
-                                            </LinearGradient>
+                                            {isSelected ? (
+                                                <LinearGradient
+                                                    colors={[`${cat.colors[0]}40`, `${cat.colors[1]}60`]}
+                                                    style={styles.professionIconBgSelected}
+                                                >
+                                                    <Ionicons 
+                                                        name={cat.icon as any} 
+                                                        size={26} 
+                                                        color="#FFFFFF" 
+                                                    />
+                                                </LinearGradient>
+                                            ) : (
+                                                <View style={styles.professionIconBgUnselected}>
+                                                    <Ionicons 
+                                                        name={cat.icon as any} 
+                                                        size={26} 
+                                                        color={cat.colors[0]} 
+                                                    />
+                                                </View>
+                                            )}
 
                                             <Text style={[
                                                 styles.professionName,
@@ -364,10 +372,10 @@ const styles = StyleSheet.create({
         shadowRadius: 10,
         elevation: 1,
     },
-    professionIconBg: {
-        width: 46,
-        height: 46,
-        borderRadius: 14,
+    professionIconBgSelected: {
+        width: 44,
+        height: 44,
+        borderRadius: 22, // Perfect circle!
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 8,
@@ -375,6 +383,15 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
+    },
+    professionIconBgUnselected: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 8,
+        backgroundColor: 'transparent', // Transparent unselected background!
     },
     professionName: {
         fontFamily: fonts.semiBold,
