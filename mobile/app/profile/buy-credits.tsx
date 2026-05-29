@@ -563,12 +563,12 @@ export default function BuyCreditsScreen() {
                 {/* Current Balance Mini Card */}
                 <Animated.View style={[styles.balanceMini, { opacity: fadeAnim, backgroundColor: colors.surface || '#FFF' }]}>
                     <View style={styles.balanceMiniLeft}>
-                        <View style={styles.balanceMiniIcon}>
-                            <Ionicons name="wallet" size={18} color="#7C3AED" />
+                        <View style={[styles.balanceMiniIcon, { backgroundColor: colors.primary + '10' }]}>
+                            <Ionicons name="wallet" size={18} color={colors.primary} />
                         </View>
                         <View>
                             <Text style={[styles.balanceMiniLabel, { color: colors.textSecondary }]}>Mevcut Bakiye</Text>
-                            <Text style={[styles.balanceMiniValue, { color: colors.text }]}>{currentBalance} <Text style={styles.balanceMiniUnit}>Kredi</Text></Text>
+                            <Text style={[styles.balanceMiniValue, { color: colors.text }]}>{currentBalance} <Text style={[styles.balanceMiniUnit, { color: colors.primary }]}>Kredi</Text></Text>
                         </View>
                     </View>
                     <View style={styles.balanceMiniDivider} />
@@ -722,13 +722,13 @@ export default function BuyCreditsScreen() {
                     </View>
                 )}
                 <TouchableOpacity
-                    style={[styles.payButton, processing && { opacity: 0.7 }]}
+                    style={[styles.payButton, { shadowColor: colors.primary }, processing && { opacity: 0.7 }]}
                     onPress={handlePurchase}
                     disabled={processing || !selectedPkg}
                     activeOpacity={0.85}
                 >
                     <LinearGradient
-                        colors={selectedPkg ? ['#7C3AED', '#6D28D9'] : ['#94A3B8', '#94A3B8']}
+                        colors={selectedPkg ? (colors.primaryGradient || ['#0D9488', '#2DD4BF']) : ['#94A3B8', '#94A3B8']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.payGradient}

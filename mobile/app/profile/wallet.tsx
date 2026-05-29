@@ -195,15 +195,15 @@ export default function WalletScreen() {
                 showsVerticalScrollIndicator={false}
             >
                 {/* Premium Balance Card */}
-                <Animated.View style={[styles.cardContainer, { transform: [{ scale: cardScale }] }]}>
+                <Animated.View style={[styles.cardContainer, { transform: [{ scale: cardScale }], shadowColor: colors.primary }]}>
                     <LinearGradient
-                        colors={['#1A1A2E', '#16213E', '#0F3460']}
+                        colors={['#0A1128', '#101F42', '#1B3564']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.creditCard}
                     >
                         {/* Decorative Orbs */}
-                        <View style={styles.cardOrb1} />
+                        <View style={[styles.cardOrb1, { backgroundColor: colors.primary }]} />
                         <View style={styles.cardOrb3} />
 
                         <View style={styles.cardInternal}>
@@ -211,7 +211,7 @@ export default function WalletScreen() {
                             <View style={styles.cardHeader}>
                                 <View style={styles.cardBrand}>
                                     <LinearGradient
-                                        colors={['#F59E0B', '#EF4444']}
+                                        colors={colors.primaryGradient || ['#F59E0B', '#EF4444']}
                                         start={{ x: 0, y: 0 }}
                                         end={{ x: 1, y: 1 }}
                                         style={styles.brandIcon}
@@ -255,7 +255,7 @@ export default function WalletScreen() {
                 {/* Quick Stats Row */}
                 <Animated.View style={[styles.statsRow, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
                     <View style={[styles.statCard, { backgroundColor: colors.surface || '#FFF' }]}>
-                        <View style={[styles.statIconCircle, { backgroundColor: '#ECFDF5' }]}>
+                        <View style={[styles.statIconCircle, { backgroundColor: 'rgba(16, 185, 129, 0.08)' }]}>
                             <Ionicons name="arrow-up-circle" size={20} color="#10B981" />
                         </View>
                         <Text style={[styles.statValue, { color: '#10B981' }]}>{totalLoaded}</Text>
@@ -263,7 +263,7 @@ export default function WalletScreen() {
                     </View>
 
                     <View style={[styles.statCard, { backgroundColor: colors.surface || '#FFF' }]}>
-                        <View style={[styles.statIconCircle, { backgroundColor: '#EFF6FF' }]}>
+                        <View style={[styles.statIconCircle, { backgroundColor: 'rgba(59, 130, 246, 0.08)' }]}>
                             <Ionicons name="arrow-down-circle" size={20} color="#3B82F6" />
                         </View>
                         <Text style={[styles.statValue, { color: '#3B82F6' }]}>{totalSpent}</Text>
@@ -271,7 +271,7 @@ export default function WalletScreen() {
                     </View>
 
                     <View style={[styles.statCard, { backgroundColor: colors.surface || '#FFF' }]}>
-                        <View style={[styles.statIconCircle, { backgroundColor: '#F5F3FF' }]}>
+                        <View style={[styles.statIconCircle, { backgroundColor: 'rgba(139, 92, 246, 0.08)' }]}>
                             <Ionicons name="receipt" size={20} color="#8B5CF6" />
                         </View>
                         <Text style={[styles.statValue, { color: '#8B5CF6' }]}>{totalTransactions}</Text>
@@ -281,18 +281,18 @@ export default function WalletScreen() {
 
                 {/* Buy Credits CTA */}
                 <TouchableOpacity
-                    style={styles.buyBtn}
+                    style={[styles.buyBtn, { shadowColor: colors.primary }]}
                     onPress={() => router.push('/profile/buy-credits')}
                     activeOpacity={0.85}
                 >
                     <LinearGradient
-                        colors={['#7C3AED', '#6D28D9']}
+                        colors={colors.primaryGradient || ['#0D9488', '#2DD4BF']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.buyBtnGradient}
                     >
                         <View style={styles.buyBtnIconCircle}>
-                            <Ionicons name="add" size={22} color="#7C3AED" />
+                            <Ionicons name="add" size={22} color={colors.primary} />
                         </View>
                         <View style={styles.buyBtnContent}>
                             <Text style={styles.buyBtnText}>Kredi Yükle</Text>
@@ -306,7 +306,7 @@ export default function WalletScreen() {
                 <View style={styles.historyContainer}>
                     <View style={styles.historyHeaderRow}>
                         <View style={styles.historyTitleGroup}>
-                            <View style={styles.historyIndicator} />
+                            <View style={[styles.historyIndicator, { backgroundColor: colors.primary }]} />
                             <Text style={[styles.historyHeader, { color: colors.text }]}>İşlem Geçmişi</Text>
                         </View>
                         {history.length > 0 && (
@@ -322,29 +322,29 @@ export default function WalletScreen() {
                     ) : history.length === 0 ? (
                         <View style={[styles.emptyContainer, { backgroundColor: colors.surface || '#FFF' }]}>
                             <LinearGradient
-                                colors={['#F8FAFC', '#EEF2FF']}
+                                colors={['#F8FAFC', 'rgba(13, 148, 136, 0.05)']}
                                 style={styles.emptyIconCircle}
                             >
-                                <Ionicons name="receipt-outline" size={36} color="#94A3B8" />
+                                <Ionicons name="receipt-outline" size={36} color={colors.primary || '#94A3B8'} />
                             </LinearGradient>
                             <Text style={[styles.emptyHeader, { color: colors.text }]}>Henüz İşlem Yok</Text>
                             <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
                                 İlk kredinizi yükleyerek iş teklifi vermeye başlayın.
                             </Text>
                             <TouchableOpacity
-                                style={styles.emptyBtn}
+                                style={[styles.emptyBtn, { borderColor: colors.primary }]}
                                 onPress={() => router.push('/profile/buy-credits')}
                                 activeOpacity={0.8}
                             >
-                                <Text style={styles.emptyBtnText}>İlk Kredini Yükle</Text>
-                                <Ionicons name="arrow-forward" size={16} color="#7C3AED" />
+                                <Text style={[styles.emptyBtnText, { color: colors.primary }]}>İlk Kredini Yükle</Text>
+                                <Ionicons name="arrow-forward" size={16} color={colors.primary} />
                             </TouchableOpacity>
                         </View>
                     ) : (
                         Object.keys(groupedHistory).map((date) => (
                             <View key={date} style={styles.dateGroup}>
                                 <View style={styles.dateLabelRow}>
-                                    <View style={styles.dateDot} />
+                                    <View style={[styles.dateDot, { backgroundColor: colors.primary }]} />
                                     <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>{date}</Text>
                                 </View>
                                 {groupedHistory[date].map((t, idx) => renderTransaction(t, idx))}
