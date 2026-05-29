@@ -480,12 +480,32 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
         // const totalRevenue = await prisma.transaction.aggregate({ _sum: { amount: true } });
         const totalRevenue = 0; // Placeholder until real transaction table matches
 
+        // Also count mock-only users for consistent stats with getAllUsers merge
+        const allMockUsers = mockStorage.getAllUsers();
+        // We need DB emails to deduplicate — fetch them efficiently
+        let mockOnlyCount = 0;
+        let mockOnlyElectricians = 0;
+        let mockOnlyCitizens = 0;
+        try {
+            const dbEmailRows = await prisma.user.findMany({ where: { deletedAt: null }, select: { email: true } });
+            const dbEmailSet = new Set(dbEmailRows.map((r: any) => r.email?.toLowerCase()));
+            allMockUsers.forEach((mu: any) => {
+                if (!mu.email || mu.isActive === false) return;
+                if (dbEmailSet.has(mu.email.toLowerCase())) return;
+                mockOnlyCount++;
+                if (mu.userType === 'ELECTRICIAN') mockOnlyElectricians++;
+                else if (mu.userType === 'CITIZEN' || !mu.userType) mockOnlyCitizens++;
+            });
+        } catch (e) {
+            // If email fetch fails, just use DB-only counts
+        }
+
         res.json({
             success: true,
             data: {
-                totalUsers,
-                totalElectricians,
-                totalCitizens,
+                totalUsers: totalUsers + mockOnlyCount,
+                totalElectricians: totalElectricians + mockOnlyElectricians,
+                totalCitizens: totalCitizens + mockOnlyCitizens,
                 activeJobs,
                 pendingVerifications,
                 totalRevenue
@@ -614,14 +634,16 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
                 ];
             }
 
-            // Advanced filtering
+            // Advanced filtering — city uses AND with nested OR to avoid clashing with search OR
             if (city) {
                 const cityStr = String(city);
-                whereClause.OR = whereClause.OR || [];
-                whereClause.OR.push(
-                    { city: { equals: cityStr, mode: 'insensitive' } },
-                    { locations: { some: { city: { equals: cityStr, mode: 'insensitive' } } } }
-                );
+                whereClause.AND = whereClause.AND || [];
+                (whereClause.AND as any[]).push({
+                    OR: [
+                        { city: { equals: cityStr, mode: 'insensitive' } },
+                        { locations: { some: { city: { equals: cityStr, mode: 'insensitive' } } } }
+                    ]
+                });
             }
 
             if (district) {
@@ -687,15 +709,94 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
                 };
             });
 
+            // ── Merge mock storage users that are missing from DB ──
+            // Users registered during DB outages live only in mock storage.
+            // We merge them so admins can always see every registered user.
+            const allMockUsers = mockStorage.getAllUsers();
+            const dbEmails = new Set(transformedUsers.map((u: any) => u.email?.toLowerCase()));
+            const dbPhones = new Set(transformedUsers.map((u: any) => u.phone).filter(Boolean));
+
+            let missingMockUsers = allMockUsers
+                .filter((mu: any) => {
+                    if (!mu.email) return false;
+                    if (mu.isActive === false) return false;
+                    // Skip if already in DB results
+                    if (dbEmails.has(mu.email.toLowerCase())) return false;
+                    if (mu.phone && dbPhones.has(mu.phone)) return false;
+                    return true;
+                })
+                .map((mu: any) => {
+                    let derivedUserType = mu.userType;
+                    if (!derivedUserType) {
+                        if (mu.id?.endsWith?.('-ELECTRICIAN')) derivedUserType = 'ELECTRICIAN';
+                        else if (mu.id?.endsWith?.('-ADMIN')) derivedUserType = 'ADMIN';
+                        else derivedUserType = 'CITIZEN';
+                    }
+                    if (mu.email === 'mpakdil0@gmail.com') derivedUserType = 'ADMIN';
+
+                    return {
+                        id: mu.id,
+                        fullName: mu.fullName || 'İsimsiz Kullanıcı',
+                        email: mu.email || '',
+                        phone: mu.phone || '',
+                        userType: derivedUserType,
+                        profileImageUrl: mu.profileImageUrl || null,
+                        creditBalance: Number(mu.creditBalance || 0),
+                        isVerified: mu.isVerified || false,
+                        isActive: mu.isActive !== false,
+                        pushStatus: mu.pushToken ? 'ACTIVE' : 'PENDING',
+                        verificationStatus: mu.verificationStatus || null,
+                        createdAt: mu.createdAt || new Date(),
+                        experienceYears: mu.experienceYears || 0,
+                        serviceCategory: mu.serviceCategory || null,
+                        completedJobsCount: Number(mu.completedJobsCount || 0),
+                        isAuthorizedEngineer: mu.isAuthorizedEngineer || false,
+                        locations: mu.locations || [],
+                        _source: 'mock' // Debug marker
+                    };
+                });
+
+            // Apply the same filters to mock users
+            if (filterType === 'ENGINEER') {
+                missingMockUsers = missingMockUsers.filter((u: any) => u.isAuthorizedEngineer === true);
+            } else if (filterType && filterType !== 'ALL') {
+                missingMockUsers = missingMockUsers.filter((u: any) => u.userType === filterType);
+            }
+
+            if (search) {
+                const searchLower = (search as string).toLowerCase();
+                missingMockUsers = missingMockUsers.filter((u: any) =>
+                    u.fullName.toLowerCase().includes(searchLower) ||
+                    u.phone.includes(searchLower) ||
+                    u.email.toLowerCase().includes(searchLower)
+                );
+            }
+
+            if (city) {
+                const cityLower = String(city).toLowerCase();
+                missingMockUsers = missingMockUsers.filter((u: any) =>
+                    (u.city && u.city.toLowerCase() === cityLower) ||
+                    (u.locations as any[])?.some((l: any) => l.city?.toLowerCase() === cityLower)
+                );
+            }
+
+            // Combine DB + mock users
+            const mergedUsers = [...transformedUsers, ...missingMockUsers];
+            const mergedTotal = totalUsers + missingMockUsers.length;
+
+            if (missingMockUsers.length > 0) {
+                console.log(`📎 Admin getAllUsers: Merged ${missingMockUsers.length} mock user(s) not found in DB`);
+            }
+
             return res.json({
                 success: true,
                 data: {
-                    users: transformedUsers,
+                    users: mergedUsers,
                     pagination: {
-                        total: totalUsers,
+                        total: mergedTotal,
                         page: pageNum,
                         limit: limitNum,
-                        totalPages: Math.ceil(totalUsers / limitNum)
+                        totalPages: Math.ceil(mergedTotal / limitNum)
                     }
                 }
             });
