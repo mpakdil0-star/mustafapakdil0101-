@@ -98,6 +98,15 @@ export const CitizenExploreCategories: React.FC<CitizenExploreCategoriesProps> =
   colors,
   handleActionWithAuth,
 }) => {
+  const isUstaTheme = colors.primary === '#4682B4';
+
+  const gradientColors = isUstaTheme
+    ? ['#0F2137', '#1E3E64'] as [string, string]
+    : ['#042F2E', '#0D9488'] as [string, string];
+
+  const shadowGlow = isUstaTheme ? '#E5C158' : '#2DD4BF'; // Gold glow for Usta, Mint/Teal glow for Citizen
+  const borderGlow = isUstaTheme ? 'rgba(229, 193, 88, 0.45)' : 'rgba(45, 212, 191, 0.45)';
+
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeaderRow}>
@@ -106,20 +115,32 @@ export const CitizenExploreCategories: React.FC<CitizenExploreCategoriesProps> =
         </View>
         <TouchableOpacity
           activeOpacity={0.8}
-          style={styles.headerProjectAction}
+          style={[
+            styles.headerProjectAction,
+            {
+              shadowColor: shadowGlow,
+              borderColor: borderGlow,
+            }
+          ]}
           onPress={() => handleActionWithAuth('/jobs/create', { category: 'Elektrik Proje Çizimi', serviceCategory: 'elektrik' })}
         >
           <LinearGradient
-            colors={[colors.secondary, colors.accent || '#06B6D4']}
+            colors={gradientColors}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.headerProjectGradient}
           >
-            <View style={styles.headerProjectIconWrapper}>
-              <Ionicons name="flash" size={10} color="#FBBF24" />
+            <View style={[
+              styles.headerProjectIconWrapper,
+              {
+                backgroundColor: isUstaTheme ? 'rgba(229, 193, 88, 0.15)' : 'rgba(45, 212, 191, 0.15)',
+                borderColor: isUstaTheme ? 'rgba(229, 193, 88, 0.3)' : 'rgba(45, 212, 191, 0.3)',
+              }
+            ]}>
+              <Ionicons name="document-text" size={11} color={isUstaTheme ? '#E5C158' : '#2DD4BF'} />
             </View>
             <Text style={styles.headerProjectText}>Elektrik Proje Çizimi</Text>
-            <Ionicons name="chevron-forward" size={12} color="rgba(255,255,255,0.7)" />
+            <Ionicons name="chevron-forward" size={12} color={isUstaTheme ? '#E5C158' : '#2DD4BF'} />
           </LinearGradient>
         </TouchableOpacity>
       </View>
