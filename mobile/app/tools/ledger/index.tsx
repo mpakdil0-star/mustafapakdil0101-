@@ -34,6 +34,10 @@ export default function LedgerScreen() {
   const [hasReminder, setHasReminder] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedTime, setSelectedTime] = useState<Date>(new Date());
+  
+  // Date picker states
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const onTimePickerChange = (event: any, date?: Date) => {
     setShowTimePicker(Platform.OS === 'ios');
@@ -79,6 +83,7 @@ export default function LedgerScreen() {
   const openAddModal = () => {
     setPersonName(''); setAmount(''); setEntryType(activeTab); setEntryNote('');
     setEventTime(''); setHasReminder(false);
+    setSelectedDate(new Date());
     setShowModal(true);
   };
 
@@ -91,7 +96,7 @@ export default function LedgerScreen() {
       let reminderAt: string | undefined;
       if (hasReminder && eventTime) {
         const [h, m] = eventTime.split(':').map(Number);
-        const rd = new Date();
+        const rd = new Date(selectedDate);
         rd.setHours(h, m, 0, 0);
         reminderAt = rd.toISOString();
       }
@@ -102,6 +107,7 @@ export default function LedgerScreen() {
         type: entryType,
         note: entryNote.trim() || undefined,
         eventTime: eventTime || undefined,
+        dueDate: selectedDate.toISOString(),
         hasReminder: hasReminder,
       });
 
@@ -219,7 +225,7 @@ export default function LedgerScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.entryName, { color: colors.text }]}>{entry.personName}</Text>
                     <Text style={[styles.entryDate, { color: colors.textSecondary }]}>
-                      {new Date(entry.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      {new Date(entry.dueDate || entry.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
                       {entry.eventTime ? ` • ${entry.eventTime}` : ''}
                     </Text>
                   </View>
@@ -337,7 +343,42 @@ export default function LedgerScreen() {
                 />
               </View>
 
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Saat (İsteğe Bağlı)</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Tarih *</Text>
+              <TouchableOpacity
+                style={[styles.modalInputWrapper, styles.timePickerButton, { borderColor: colors.primary + '25', backgroundColor: colors.backgroundLight }]}
+                onPress={() => setShowDatePicker(true)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="calendar-outline" size={20} color={colors.primary} style={styles.modalInputIcon} />
+                <Text style={[styles.timePickerText, { color: colors.text }]}>
+                  {selectedDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </Text>
+                <Ionicons name="chevron-down" size={16} color={staticColors.textLight} />
+              </TouchableOpacity>
+
+              {showDatePicker && (
+                <View style={[styles.timePickerContainer, { marginBottom: 12 }]}>
+                  <DateTimePicker
+                    value={selectedDate}
+                    mode="date"
+                    display="spinner"
+                    onChange={(event: any, date?: Date) => {
+                      setShowDatePicker(Platform.OS === 'ios');
+                      if (date) {
+                        setSelectedDate(date);
+                      }
+                    }}
+                    locale="tr-TR"
+                  />
+                  {Platform.OS === 'ios' && (
+                    <TouchableOpacity onPress={() => setShowDatePicker(false)} style={styles.timePickerDoneBtn}>
+                      <Text style={styles.timePickerDoneText}>Tamam</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+
+              <Text style={[styles.label, { color: colors.textSecondary, marginTop: 12 }]}>Saat (İsteğe Bağlı)</Text>
               <TouchableOpacity
                 style={[styles.modalInputWrapper, styles.timePickerButton, { borderColor: colors.primary + '25', backgroundColor: colors.backgroundLight }]}
                 onPress={() => setShowTimePicker(true)}
