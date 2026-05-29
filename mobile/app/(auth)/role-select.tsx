@@ -74,20 +74,20 @@ export default function RoleSelectScreen() {
                             style={[
                                 styles.roleCard,
                                 userType === 'CITIZEN' && styles.roleCardSelected,
-                                userType === 'CITIZEN' && { borderColor: '#0D9488', shadowColor: '#0D9488' },
+                                userType === 'CITIZEN' && { borderColor: '#0D9488' },
                             ]}
                             onPress={() => {
                                 setUserType('CITIZEN');
                                 setServiceCategory(null);
                             }}
-                            activeOpacity={0.85}
+                            activeOpacity={0.95}
                         >
                             <View
                                 style={[
                                     styles.roleIconBg,
                                     userType === 'CITIZEN' 
                                         ? { backgroundColor: '#0D9488' } 
-                                        : { backgroundColor: 'rgba(255,255,255,0.06)' }
+                                        : { backgroundColor: '#132435' }
                                 ]}
                             >
                                 <Ionicons name="person-outline" size={26} color={userType === 'CITIZEN' ? '#FFFFFF' : 'rgba(255,255,255,0.4)'} />
@@ -110,14 +110,14 @@ export default function RoleSelectScreen() {
                                 userType === 'ELECTRICIAN' && { borderColor: '#3B82F6' },
                             ]}
                             onPress={() => setUserType('ELECTRICIAN')}
-                            activeOpacity={0.85}
+                            activeOpacity={0.95}
                         >
                             <View
                                 style={[
                                     styles.roleIconBg,
                                     userType === 'ELECTRICIAN' 
                                         ? { backgroundColor: '#3B82F6' } 
-                                        : { backgroundColor: 'rgba(255,255,255,0.06)' }
+                                        : { backgroundColor: '#132435' }
                                 ]}
                             >
                                 <Ionicons name="construct-outline" size={26} color={userType === 'ELECTRICIAN' ? '#FFFFFF' : 'rgba(255,255,255,0.4)'} />
@@ -151,11 +151,11 @@ export default function RoleSelectScreen() {
                                                 styles.professionCard,
                                                 isSelected && { 
                                                     borderColor: cat.colors[0], 
-                                                    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+                                                    backgroundColor: '#0F253B',
                                                 },
                                             ]}
                                             onPress={() => setServiceCategory(cat.id)}
-                                            activeOpacity={0.85}
+                                            activeOpacity={0.95}
                                         >
                                             {isSelected ? (
                                                 <View
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     },
     roleCard: {
         flex: 1,
-        backgroundColor: 'rgba(15, 23, 42, 0.4)',
+        backgroundColor: '#0A1726',
         borderRadius: 20,
         paddingHorizontal: 12,
         paddingVertical: 16,
@@ -293,9 +293,10 @@ const styles = StyleSheet.create({
         borderWidth: 1.5,
         borderColor: 'rgba(255,255,255,0.07)',
         position: 'relative',
+        overflow: 'hidden',
     },
     roleCardSelected: {
-        backgroundColor: 'rgba(15, 23, 42, 0.8)',
+        backgroundColor: '#0F263D',
         borderWidth: 2,
     },
     roleIconBg: {
@@ -305,6 +306,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 10,
+        overflow: 'hidden',
     },
     roleTitle: {
         fontFamily: fonts.bold,
@@ -329,11 +331,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#0F172A',
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 3,
     },
     professionSection: {
         marginBottom: 20,
@@ -357,7 +354,7 @@ const styles = StyleSheet.create({
     },
     professionCard: {
         width: (width - 40 - 20) / 3, // dynamic calculate 3-column grid width
-        backgroundColor: 'rgba(15, 23, 42, 0.3)', // Beautiful dark glassmorphic card base background!
+        backgroundColor: '#091522', // Opaque dark navy base background
         borderRadius: 16,
         paddingHorizontal: 8,
         paddingVertical: 12,
@@ -365,6 +362,7 @@ const styles = StyleSheet.create({
         borderWidth: 1.5,
         borderColor: 'rgba(255, 255, 255, 0.06)', // Beautiful thin border for unselected card!
         position: 'relative',
+        overflow: 'hidden',
     },
     professionIconBgSelected: {
         width: 44,
@@ -382,7 +380,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 8,
-        backgroundColor: 'transparent', // Transparent unselected background!
+        backgroundColor: '#122333', // Solid premium dark blue circle instead of transparent!
+        overflow: 'hidden',
     },
     professionName: {
         fontFamily: fonts.semiBold,
