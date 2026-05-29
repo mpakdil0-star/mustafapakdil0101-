@@ -724,10 +724,12 @@ export default function HomeScreen() {
     if (isElectrician) loadHidePreference();
   }, [isElectrician]);
 
-  // Interpolate border color through RGB spectrum
+  // Interpolate border color through theme-adaptive spectrum (Slate/Gold for Usta, Teal/Mint for Citizen)
   const animatedBorderColor = borderColorAnim.interpolate({
     inputRange: [0, 0.25, 0.5, 0.75, 1],
-    outputRange: ['#3B82F6', '#8B5CF6', '#EC4899', '#F97316', '#3B82F6'] // Blue -> Purple -> Pink -> Orange -> Blue
+    outputRange: isElectrician
+      ? ['#1E3E64', '#F59E0B', '#D97706', '#0F2137', '#1E3E64']
+      : ['#0D9488', '#2DD4BF', '#0F766E', '#14B8A6', '#0D9488']
   });
 
   const getMissingItems = () => {
@@ -1297,8 +1299,8 @@ export default function HomeScreen() {
         {
           isInitialized && isAuthenticated && completionPercent < 100 && (
             <View style={styles.bannerWrapper}>
-              {/* RGB Animated Border Wrapper */}
-              <Animated.View style={[styles.rgbBorderWrapper, { borderColor: animatedBorderColor }]}>
+              {/* Theme-Adaptive Glowing Border Wrapper */}
+              <Animated.View style={[styles.rgbBorderWrapper, { borderColor: animatedBorderColor, shadowColor: isElectrician ? '#FBBF24' : '#2DD4BF' }]}>
                 <TouchableOpacity
                   style={[styles.profileHealthCard, { shadowColor: colors.primary, shadowOpacity: 0.35, shadowRadius: 18 }]}
                   activeOpacity={0.9}
@@ -1314,13 +1316,13 @@ export default function HomeScreen() {
                       <View 
                         style={[
                           styles.healthIconContainer, 
-                          { backgroundColor: isElectrician ? 'rgba(229, 193, 88, 0.15)' : 'rgba(45, 212, 191, 0.15)' }
+                          { backgroundColor: isElectrician ? 'rgba(251, 191, 36, 0.18)' : 'rgba(45, 212, 191, 0.15)' }
                         ]}
                       >
                         <Ionicons 
                           name={isElectrician ? "rocket" : "location"} 
                           size={24} 
-                          color={isElectrician ? "#E5C158" : "#2DD4BF"} 
+                          color={isElectrician ? "#FBBF24" : "#2DD4BF"} 
                         />
                       </View>
 
@@ -1345,7 +1347,7 @@ export default function HomeScreen() {
                               styles.healthProgressBarFill, 
                               { 
                                 width: `${completionPercent}%`, 
-                                backgroundColor: isElectrician ? '#E5C158' : '#2DD4BF' 
+                                backgroundColor: isElectrician ? '#FBBF24' : '#2DD4BF' 
                               }
                             ]} 
                           />
@@ -1353,7 +1355,7 @@ export default function HomeScreen() {
                         <Text 
                           style={[
                             styles.healthProgressPercent, 
-                            { color: isElectrician ? '#E5C158' : '#2DD4BF', fontFamily: fonts.bold }
+                            { color: isElectrician ? '#FBBF24' : '#2DD4BF', fontFamily: fonts.bold }
                           ]}
                         >
                           %{completionPercent}
@@ -1363,7 +1365,7 @@ export default function HomeScreen() {
                       <Animated.View
                         style={[
                           styles.healthActionButton,
-                          { backgroundColor: isElectrician ? '#E5C158' : '#FFFFFF' },
+                          { backgroundColor: isElectrician ? '#FBBF24' : '#FFFFFF' },
                           { transform: [{ scale: healthPulseAnim }] }
                         ]}
                       >
