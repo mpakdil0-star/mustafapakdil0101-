@@ -1376,7 +1376,7 @@ export default function HomeScreen() {
                           {isElectrician ? 'GİT' : 'BAŞLA'}
                         </Text>
                         <Ionicons 
-                          name="flash" 
+                          name="arrow-forward" 
                           size={14} 
                           color={isElectrician ? '#0F172A' : '#0D9488'} 
                         />
