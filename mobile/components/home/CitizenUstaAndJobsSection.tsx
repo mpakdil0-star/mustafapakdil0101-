@@ -80,19 +80,6 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
         </TouchableOpacity>
       </View>
 
-      {activeHomeTab === 'ustalar' && (
-        <View style={styles.seeAllUstaRow}>
-          <TouchableOpacity 
-            style={[styles.seeAllUstaChip, { borderColor: colors.primary + '25', backgroundColor: colors.primary + '08' }]}
-            onPress={() => router.push('/electricians')}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.seeAllUstaText, { color: colors.primary }]}>Tüm Ustaları Gör</Text>
-            <Ionicons name="arrow-forward" size={12} color={colors.primary} />
-          </TouchableOpacity>
-        </View>
-      )}
-
       {activeHomeTab === 'ilanlar' ? (
         isLoadingRecentJobs ? (
           <View style={{ padding: 40, alignItems: 'center' }}>
@@ -163,6 +150,28 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
                 </View>
               </TouchableOpacity>
             ))}
+
+            {/* "Tüm İlanları Gör" End Card */}
+            <TouchableOpacity
+              style={[
+                styles.seeAllUstaEndCard,
+                {
+                  borderColor: colors.primary + '30',
+                }
+              ]}
+              onPress={() => router.push('/(tabs)/jobs')}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.seeAllUstaIconCircle, { backgroundColor: colors.primary + '12' }]}>
+                <Ionicons name="arrow-forward" size={24} color={colors.primary} />
+              </View>
+              <Text style={[styles.seeAllUstaEndCardText, { color: colors.primary }]}>
+                Tüm İlanları Gör
+              </Text>
+              <Text style={styles.seeAllUstaEndCardSubtext}>
+                Tüm fırsatları incele
+              </Text>
+            </TouchableOpacity>
           </ScrollView>
         ) : (
           <View style={{ padding: 40, alignItems: 'center' }}>
@@ -252,6 +261,28 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
                 </TouchableOpacity>
               </View>
             ))}
+
+            {/* "Tüm Ustaları Gör" End Card */}
+            <TouchableOpacity
+              style={[
+                styles.seeAllUstaEndCard,
+                {
+                  borderColor: colors.primary + '30',
+                }
+              ]}
+              onPress={() => router.push('/electricians')}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.seeAllUstaIconCircle, { backgroundColor: colors.primary + '12' }]}>
+                <Ionicons name="arrow-forward" size={24} color={colors.primary} />
+              </View>
+              <Text style={[styles.seeAllUstaEndCardText, { color: colors.primary }]}>
+                Tüm Ustaları Gör
+              </Text>
+              <Text style={styles.seeAllUstaEndCardSubtext}>
+                Uzman ustaları incele
+              </Text>
+            </TouchableOpacity>
           </ScrollView>
         ) : (
           <View style={{ padding: 40, alignItems: 'center' }}>
@@ -298,23 +329,39 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
-  seeAllUstaRow: {
-    alignSelf: 'flex-end',
-    marginBottom: 10,
-    paddingHorizontal: 2,
-  },
-  seeAllUstaChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  seeAllUstaEndCard: {
+    width: 155,
     borderRadius: 20,
-    borderWidth: 1,
-    gap: 4,
+    padding: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    backgroundColor: 'rgba(255, 255, 255, 0.65)',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 3,
   },
-  seeAllUstaText: {
+  seeAllUstaIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  seeAllUstaEndCardText: {
     fontFamily: fonts.bold,
-    fontSize: 10.5,
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  seeAllUstaEndCardSubtext: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    color: '#94A3B8',
+    textAlign: 'center',
   },
   recentJobsHorizontalScroller: {
     paddingRight: 16,
