@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
     },
     brandText: {
         color: '#FFF',
-        fontSize: 11,
+        fontSize: 12,
         fontFamily: fonts.bold,
         letterSpacing: 2,
     },
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     },
     cardTypeText: {
         color: '#F59E0B',
-        fontSize: 10,
+        fontSize: 10.5,
         fontFamily: fonts.bold,
         letterSpacing: 1,
     },
@@ -456,9 +456,9 @@ const styles = StyleSheet.create({
     },
     balanceLabel: {
         color: 'rgba(255,255,255,0.45)',
-        fontSize: 9,
+        fontSize: 10.5,
         fontFamily: fonts.bold,
-        letterSpacing: 2,
+        letterSpacing: 1.5,
         marginBottom: 4,
     },
     balanceRow: {
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
     },
     balanceText: {
         color: '#FFF',
-        fontSize: 34,
+        fontSize: 36,
         fontFamily: fonts.black,
         letterSpacing: -1,
     },
@@ -494,14 +494,14 @@ const styles = StyleSheet.create({
     },
     cardHolderLabel: {
         color: 'rgba(255,255,255,0.35)',
-        fontSize: 8,
+        fontSize: 9.5,
         fontFamily: fonts.bold,
         letterSpacing: 1,
         marginBottom: 3,
     },
     cardHolderName: {
         color: 'rgba(255,255,255,0.85)',
-        fontSize: 13,
+        fontSize: 13.5,
         fontFamily: fonts.semiBold,
         letterSpacing: 1.5,
     },
@@ -537,12 +537,12 @@ const styles = StyleSheet.create({
         marginBottom: 6,
     },
     statValue: {
-        fontSize: 17,
+        fontSize: 18,
         fontFamily: fonts.black,
         marginBottom: 1,
     },
     statLabel: {
-        fontSize: 10,
+        fontSize: 11,
         fontFamily: fonts.medium,
     },
 
@@ -677,8 +677,8 @@ const styles = StyleSheet.create({
         marginLeft: 12,
     },
     transactionTitle: {
-        fontSize: 13,
-        fontFamily: fonts.semiBold,
+        fontSize: 14,
+        fontFamily: fonts.bold,
         marginBottom: 3,
     },
     transactionMetaRow: {
@@ -687,7 +687,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     transactionSubtitle: {
-        fontSize: 12,
+        fontSize: 11.5,
         fontFamily: fonts.medium,
     },
     transactionTypeBadge: {
@@ -696,18 +696,18 @@ const styles = StyleSheet.create({
         borderRadius: 6,
     },
     transactionTypeText: {
-        fontSize: 10,
+        fontSize: 10.5,
         fontFamily: fonts.bold,
     },
     transactionValue: {
         alignItems: 'flex-end',
     },
     transactionAmount: {
-        fontSize: 16,
+        fontSize: 18,
         fontFamily: fonts.black,
     },
     transactionUnit: {
-        fontSize: 9,
+        fontSize: 10,
         fontFamily: fonts.bold,
         marginTop: 1,
     },

@@ -775,8 +775,8 @@ const styles = StyleSheet.create({
         width: 34, height: 34, borderRadius: 10,
         backgroundColor: '#F5F3FF', justifyContent: 'center', alignItems: 'center',
     },
-    balanceMiniLabel: { fontSize: 10, fontFamily: fonts.medium },
-    balanceMiniValue: { fontSize: 16, fontFamily: fonts.black },
+    balanceMiniLabel: { fontSize: 11, fontFamily: fonts.medium },
+    balanceMiniValue: { fontSize: 18, fontFamily: fonts.black },
     balanceMiniUnit: { fontSize: 12, fontFamily: fonts.bold, color: '#7C3AED' },
     balanceMiniDivider: { width: 1, height: 32, backgroundColor: '#E2E8F0', marginHorizontal: 10 },
     balanceMiniRight: { alignItems: 'flex-end' },
@@ -801,14 +801,14 @@ const styles = StyleSheet.create({
     cardContent: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
     cardIconBox: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
     cardInfo: { flex: 1 },
-    packageName: { fontFamily: fonts.semiBold, fontSize: 13, marginBottom: 1 },
+    packageName: { fontFamily: fonts.semiBold, fontSize: 14.5, marginBottom: 1 },
     creditsRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
-    creditValue: { fontFamily: fonts.black, fontSize: 20 },
-    creditLabel: { fontFamily: fonts.bold, fontSize: 10, letterSpacing: 1 },
-    cardDesc: { fontFamily: fonts.medium, fontSize: 10, marginTop: 1 },
+    creditValue: { fontFamily: fonts.black, fontSize: 22 },
+    creditLabel: { fontFamily: fonts.bold, fontSize: 11, letterSpacing: 1 },
+    cardDesc: { fontFamily: fonts.medium, fontSize: 11.5, marginTop: 1 },
     cardRight: { alignItems: 'center', minWidth: 55 },
-    priceValue: { fontFamily: fonts.black, fontSize: 14 },
-    perCredit: { fontFamily: fonts.medium, fontSize: 9, marginTop: 2 },
+    priceValue: { fontFamily: fonts.black, fontSize: 17 },
+    perCredit: { fontFamily: fonts.medium, fontSize: 10.5, marginTop: 2 },
     selector: {
         width: 24, height: 24, borderRadius: 12, borderWidth: 2,
         borderColor: '#D1D5DB', justifyContent: 'center', alignItems: 'center', marginTop: 6,
@@ -823,7 +823,7 @@ const styles = StyleSheet.create({
         width: 26, height: 26, borderRadius: 8,
         backgroundColor: '#ECFDF5', justifyContent: 'center', alignItems: 'center',
     },
-    securityText: { fontFamily: fonts.medium, fontSize: 11, flex: 1, lineHeight: 16 },
+    securityText: { fontFamily: fonts.medium, fontSize: 12, flex: 1, lineHeight: 16 },
 
     // Footer
     footer: {
@@ -831,7 +831,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F1F5F9',
     },
     footerSummary: { alignItems: 'center', marginBottom: 8 },
-    footerSummaryText: { fontSize: 12, fontFamily: fonts.medium },
+    footerSummaryText: { fontSize: 14, fontFamily: fonts.medium },
     footerSummaryBold: { fontFamily: fonts.bold },
     payButton: {
         borderRadius: 14, overflow: 'hidden', elevation: 8,
@@ -839,5 +839,5 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25, shadowRadius: 12,
     },
     payGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 13, gap: 8 },
-    payText: { fontFamily: fonts.bold, fontSize: 16, color: '#FFF' },
+    payText: { fontFamily: fonts.bold, fontSize: 17, color: '#FFF' },
 });
