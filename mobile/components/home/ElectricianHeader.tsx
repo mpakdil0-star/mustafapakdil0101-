@@ -55,8 +55,7 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
 
       {/* Başlık Düzeni (Centered Header) */}
       <View style={styles.centeredHeader}>
-        <Text style={styles.headerTitleMain}>İŞBİTİR USTA</Text>
-        <Text style={styles.headerSubtitleSub}>
+        <Text style={styles.headerTitleMain}>
           {isAuthenticated ? `${firstName} ${lastName}` : 'Misafir Usta'}
         </Text>
       </View>
@@ -161,10 +160,9 @@ const styles = StyleSheet.create({
   },
   headerTitleMain: {
     fontFamily: fonts.extraBold,
-    fontSize: 18,
+    fontSize: 19,
     color: '#FFFFFF', // Pure White
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   headerSubtitleSub: {
     fontFamily: fonts.regular,
