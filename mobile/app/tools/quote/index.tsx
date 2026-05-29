@@ -30,26 +30,6 @@ interface QuoteItem {
     type: 'material' | 'labor';
 }
 
-const QUICK_SUGGESTIONS = {
-    material: [
-        { name: '3x2.5 NYM Kablo (m)', price: '45' },
-        { name: '3x1.5 NYM Kablo (m)', price: '32' },
-        { name: '16A Sigorta', price: '120' },
-        { name: '32A Sigorta', price: '140' },
-        { name: '40A Kaçak Akım Rölesi', price: '450' },
-        { name: 'Sıva Altı Priz', price: '60' },
-        { name: 'Sıva Altı Anahtar', price: '55' },
-        { name: '24W Panel LED', price: '180' }
-    ],
-    labor: [
-        { name: 'Priz / Anahtar Montajı', price: '40' },
-        { name: 'Sigorta Kutusu Montajı', price: '500' },
-        { name: 'Avize / LED Montajı', price: '150' },
-        { name: 'Kablo Çekim İşçiliği (m)', price: '20' },
-        { name: 'Pano Kurulumu', price: '1500' },
-        { name: 'Arıza Tespit ve Onarım', price: '400' }
-    ]
-};
 
 export default function QuoteScreen() {
     const colors = useAppColors();
@@ -352,36 +332,9 @@ export default function QuoteScreen() {
                             </View>
                             <View style={styles.cardHeaderTitleContainer}>
                                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Malzemeler</Text>
-                                <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>Kullanılacak elektrik malzemeleri</Text>
+                                <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>Kullanılacak malzemeler</Text>
                             </View>
                         </View>
-
-                        {/* Quick-Add Suggestions */}
-                        <Text style={[styles.suggestionHeader, { color: colors.textSecondary }]}>✨ Hızlı Malzeme Ekle</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.suggestionScroll} contentContainerStyle={styles.suggestionContent}>
-                            {QUICK_SUGGESTIONS.material.map((item, idx) => (
-                                <TouchableOpacity 
-                                    key={idx} 
-                                    activeOpacity={0.8}
-                                    style={[styles.suggestionTag, { backgroundColor: '#F59E0B12', borderColor: '#F59E0B30' }]}
-                                    onPress={() => {
-                                        setItems([
-                                            ...items,
-                                            {
-                                                id: Date.now().toString() + idx,
-                                                name: item.name,
-                                                quantity: '1',
-                                                price: item.price,
-                                                type: 'material'
-                                            }
-                                        ]);
-                                    }}
-                                >
-                                    <Text style={[styles.suggestionTagText, { color: '#D97706' }]}>{item.name}</Text>
-                                    <Ionicons name="add" size={14} color="#D97706" style={{ marginLeft: 2 }} />
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
 
                         <View style={styles.itemsListContainer}>
                             {items.filter(i => i.type === 'material').map(renderItem)}
@@ -410,36 +363,9 @@ export default function QuoteScreen() {
                             </View>
                             <View style={styles.cardHeaderTitleContainer}>
                                 <Text style={[styles.sectionTitle, { color: colors.text }]}>İşçilik</Text>
-                                <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>Yapılacak elektrik işçilikleri</Text>
+                                <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>Yapılacak işçilikler</Text>
                             </View>
                         </View>
-
-                        {/* Quick-Add Suggestions */}
-                        <Text style={[styles.suggestionHeader, { color: colors.textSecondary }]}>✨ Hızlı İşçilik Ekle</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.suggestionScroll} contentContainerStyle={styles.suggestionContent}>
-                            {QUICK_SUGGESTIONS.labor.map((item, idx) => (
-                                <TouchableOpacity 
-                                    key={idx} 
-                                    activeOpacity={0.8}
-                                    style={[styles.suggestionTag, { backgroundColor: '#10B98112', borderColor: '#10B98130' }]}
-                                    onPress={() => {
-                                        setItems([
-                                            ...items,
-                                            {
-                                                id: Date.now().toString() + idx,
-                                                name: item.name,
-                                                quantity: '1',
-                                                price: item.price,
-                                                type: 'labor'
-                                            }
-                                        ]);
-                                    }}
-                                >
-                                    <Text style={[styles.suggestionTagText, { color: '#059669' }]}>{item.name}</Text>
-                                    <Ionicons name="add" size={14} color="#059669" style={{ marginLeft: 2 }} />
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
 
                         <View style={styles.itemsListContainer}>
                             {items.filter(i => i.type === 'labor').map(renderItem)}
