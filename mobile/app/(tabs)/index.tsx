@@ -1328,10 +1328,35 @@ export default function HomeScreen() {
                         <Text style={[styles.healthTitle, { color: '#FFFFFF' }]}>
                           {isElectrician ? 'Hesabını Tamamla' : 'Profil Sağlığı'}
                         </Text>
-                        <Text style={[styles.healthSubtitle, { color: 'rgba(255,255,255,0.7)' }]}>
+                        <Text style={[styles.healthSubtitle, { color: 'rgba(255,255,255,0.7)', paddingRight: 4 }]}>
                           {isElectrician
                             ? 'Profilini tamamla, iş alma şansını %50 artır.'
                             : 'Adres ve fotoğraf ekle, usta bulman kolaylaşsın.'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Dynamic Progress Bar & Action Button Bottom Row */}
+                    <View style={styles.healthBottomActionRow}>
+                      <View style={styles.healthProgressGroup}>
+                        <View style={[styles.healthProgressBarBg, { backgroundColor: 'rgba(255,255,255,0.12)' }]}>
+                          <View 
+                            style={[
+                              styles.healthProgressBarFill, 
+                              { 
+                                width: `${completionPercent}%`, 
+                                backgroundColor: isElectrician ? '#E5C158' : '#2DD4BF' 
+                              }
+                            ]} 
+                          />
+                        </View>
+                        <Text 
+                          style={[
+                            styles.healthProgressPercent, 
+                            { color: isElectrician ? '#E5C158' : '#2DD4BF', fontFamily: fonts.bold }
+                          ]}
+                        >
+                          %{completionPercent}
                         </Text>
                       </View>
 
@@ -1356,29 +1381,6 @@ export default function HomeScreen() {
                           color={isElectrician ? '#0F172A' : '#0D9488'} 
                         />
                       </Animated.View>
-                    </View>
-
-                    {/* Dynamic Progress Bar */}
-                    <View style={styles.healthProgressRow}>
-                      <View style={[styles.healthProgressBarBg, { backgroundColor: 'rgba(255,255,255,0.12)' }]}>
-                        <View 
-                          style={[
-                            styles.healthProgressBarFill, 
-                            { 
-                              width: `${completionPercent}%`, 
-                              backgroundColor: isElectrician ? '#E5C158' : '#2DD4BF' 
-                            }
-                          ]} 
-                        />
-                      </View>
-                      <Text 
-                        style={[
-                          styles.healthProgressPercent, 
-                          { color: isElectrician ? '#E5C158' : '#2DD4BF', fontFamily: fonts.bold }
-                        ]}
-                      >
-                        %{completionPercent}
-                      </Text>
                     </View>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -3707,7 +3709,19 @@ const styles = StyleSheet.create({
   healthCardContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
+  },
+  healthBottomActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 14,
+  },
+  healthProgressGroup: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   healthIconContainer: {
     width: 54,
