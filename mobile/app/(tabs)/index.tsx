@@ -1300,12 +1300,12 @@ export default function HomeScreen() {
               {/* RGB Animated Border Wrapper */}
               <Animated.View style={[styles.rgbBorderWrapper, { borderColor: animatedBorderColor }]}>
                 <TouchableOpacity
-                  style={styles.profileHealthCard}
+                  style={[styles.profileHealthCard, { shadowColor: colors.primary, shadowOpacity: 0.35, shadowRadius: 18 }]}
                   activeOpacity={0.9}
                   onPress={() => setShowCompletionModal(true)}
                 >
                   <LinearGradient
-                    colors={isElectrician ? ['#0A1D33', '#163152'] : ['#052E2B', '#0A4D46']}
+                    colors={isElectrician ? ['#0F2137', '#1E3E64'] : ['#052E2B', '#0A4D46']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.healthCardGradient}
