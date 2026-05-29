@@ -1305,7 +1305,7 @@ export default function HomeScreen() {
                   onPress={() => setShowCompletionModal(true)}
                 >
                   <View style={styles.healthCardContent}>
-                    <View style={[styles.healthIconContainer, isElectrician && { backgroundColor: '#3B82F6' }]}>
+                    <View style={[styles.healthIconContainer, { backgroundColor: colors.primary }]}>
                       <Ionicons name={isElectrician ? "rocket" : "location"} size={24} color={staticColors.white} />
                     </View>
 
@@ -1321,7 +1321,7 @@ export default function HomeScreen() {
                     <Animated.View
                       style={[
                         styles.healthActionButton,
-                        isElectrician && { backgroundColor: '#2563EB' },
+                        { backgroundColor: colors.primary },
                         { transform: [{ scale: healthPulseAnim }] }
                       ]}
                     >
@@ -1330,12 +1330,12 @@ export default function HomeScreen() {
                     </Animated.View>
                   </View>
 
-                  {/* Orange/Blue Progress Bar */}
+                  {/* Dynamic Progress Bar */}
                   <View style={styles.healthProgressRow}>
                     <View style={styles.healthProgressBarBg}>
-                      <View style={[styles.healthProgressBarFill, { width: `${completionPercent}%` }, isElectrician && { backgroundColor: '#3B82F6' }]} />
+                      <View style={[styles.healthProgressBarFill, { width: `${completionPercent}%`, backgroundColor: colors.primary }]} />
                     </View>
-                    <Text style={styles.healthProgressPercent}>%{completionPercent}</Text>
+                    <Text style={[styles.healthProgressPercent, { color: colors.primary, fontFamily: fonts.bold }]}>%{completionPercent}</Text>
                   </View>
                 </TouchableOpacity>
               </Animated.View>
@@ -3664,7 +3664,6 @@ const styles = StyleSheet.create({
     width: 54,
     height: 54,
     borderRadius: 16,
-    backgroundColor: '#F59E0B', // Orange
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -3685,7 +3684,6 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   healthActionButton: {
-    backgroundColor: '#7C3AED', // Purple
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
@@ -3712,7 +3710,6 @@ const styles = StyleSheet.create({
   },
   healthProgressBarFill: {
     height: '100%',
-    backgroundColor: '#F59E0B', // Orange
     borderRadius: 4,
   },
   sectionBlock: {
