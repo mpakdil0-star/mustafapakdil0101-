@@ -42,134 +42,148 @@ export default function RoleSelectScreen() {
 
     return (
         <LinearGradient
-            colors={['#07111E', '#09252A', '#07111E']}
+            colors={['#091321', '#061D24', '#040B14']}
             style={styles.container}
         >
-            {/* Glow Blobs */}
-            <View style={[styles.glowBlob, { top: -80, left: -80, backgroundColor: '#0D9488' }]} />
-            <View style={[styles.glowBlob, { bottom: -100, right: -100, backgroundColor: '#4682B4', opacity: 0.15 }]} />
+            {/* Soft Ambient Light Blobs */}
+            <View style={[styles.glowBlob, { top: -60, left: -60, backgroundColor: '#0D9488', opacity: 0.12 }]} />
+            <View style={[styles.glowBlob, { bottom: -80, right: -80, backgroundColor: '#3B82F6', opacity: 0.1 }]} />
 
             <View style={styles.content}>
-                {/* Upper Area */}
+                {/* Upper Section */}
                 <View style={{ flex: 1 }}>
                     {/* Back Button */}
                     <TouchableOpacity
                         onPress={() => router.back()}
                         style={styles.backButton}
+                        activeOpacity={0.8}
                     >
-                        <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                        <Ionicons name="arrow-back" size={20} color="#E2E8F0" />
                     </TouchableOpacity>
 
                     {/* Header */}
                     <View style={styles.header}>
                         <Text style={styles.title}>Nasıl Kayıt Olacaksınız?</Text>
-                        <Text style={styles.subtitle}>Rolünüzü seçerek başlayın</Text>
+                        <Text style={styles.subtitle}>Devam etmek için bir rol belirleyin</Text>
                     </View>
 
-                    {/* Role Selection */}
+                    {/* Role Cards Container */}
                     <View style={styles.roleContainer}>
-                        {/* Vatandaş Card */}
+                        {/* Vatandaş (Citizen) Card */}
                         <TouchableOpacity
                             style={[
                                 styles.roleCard,
                                 userType === 'CITIZEN' && styles.roleCardSelected,
-                                userType === 'CITIZEN' && { borderColor: '#0D9488' },
+                                userType === 'CITIZEN' && { borderColor: '#0D9488', shadowColor: '#0D9488' },
                             ]}
                             onPress={() => {
                                 setUserType('CITIZEN');
                                 setServiceCategory(null);
                             }}
-                            activeOpacity={0.8}
+                            activeOpacity={0.85}
                         >
                             <LinearGradient
-                                colors={userType === 'CITIZEN' ? ['#0D9488', '#0EA5E9'] : ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)']}
+                                colors={userType === 'CITIZEN' ? ['#0D9488', '#0F766E'] : ['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.02)']}
                                 style={styles.roleIconBg}
                             >
-                                <Ionicons name="person" size={28} color={userType === 'CITIZEN' ? '#FFFFFF' : 'rgba(255,255,255,0.5)'} />
+                                <Ionicons name="person-outline" size={26} color={userType === 'CITIZEN' ? '#FFFFFF' : 'rgba(255,255,255,0.4)'} />
                             </LinearGradient>
-                            <Text style={[styles.roleTitle, userType === 'CITIZEN' && { color: '#FFFFFF' }]}>Vatandaş</Text>
+                            <Text style={[styles.roleTitle, userType === 'CITIZEN' && { color: '#FFF' }]}>Vatandaş</Text>
                             <Text style={styles.roleDesc}>Hizmet almak istiyorum</Text>
+                            
                             {userType === 'CITIZEN' && (
                                 <View style={[styles.checkBadge, { backgroundColor: '#0D9488' }]}>
-                                    <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                                    <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
                                 </View>
                             )}
                         </TouchableOpacity>
 
-                        {/* Usta Card */}
+                        {/* Usta (Professional) Card */}
                         <TouchableOpacity
                             style={[
                                 styles.roleCard,
                                 userType === 'ELECTRICIAN' && styles.roleCardSelected,
-                                userType === 'ELECTRICIAN' && { borderColor: '#4682B4' },
+                                userType === 'ELECTRICIAN' && { borderColor: '#3B82F6', shadowColor: '#3B82F6' },
                             ]}
                             onPress={() => setUserType('ELECTRICIAN')}
-                            activeOpacity={0.8}
+                            activeOpacity={0.85}
                         >
                             <LinearGradient
-                                colors={userType === 'ELECTRICIAN' ? ['#4682B4', '#2E5C8A'] : ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)']}
+                                colors={userType === 'ELECTRICIAN' ? ['#3B82F6', '#1D4ED8'] : ['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.02)']}
                                 style={styles.roleIconBg}
                             >
-                                <Ionicons name="construct" size={28} color={userType === 'ELECTRICIAN' ? '#FFFFFF' : 'rgba(255,255,255,0.5)'} />
+                                <Ionicons name="construct-outline" size={26} color={userType === 'ELECTRICIAN' ? '#FFFFFF' : 'rgba(255,255,255,0.4)'} />
                             </LinearGradient>
-                            <Text style={[styles.roleTitle, userType === 'ELECTRICIAN' && { color: '#FFFFFF' }]}>Usta</Text>
+                            <Text style={[styles.roleTitle, userType === 'ELECTRICIAN' && { color: '#FFF' }]}>Usta</Text>
                             <Text style={styles.roleDesc}>Hizmet vermek istiyorum</Text>
+                            
                             {userType === 'ELECTRICIAN' && (
-                                <View style={[styles.checkBadge, { backgroundColor: '#4682B4' }]}>
-                                    <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                                <View style={[styles.checkBadge, { backgroundColor: '#3B82F6' }]}>
+                                    <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
                                 </View>
                             )}
                         </TouchableOpacity>
                     </View>
 
-                    {/* Profession Selection (only for Usta) */}
+                    {/* Profession Selection (Visible when Usta is selected) */}
                     {userType === 'ELECTRICIAN' && (
                         <View style={styles.professionSection}>
-                            <Text style={styles.sectionLabel}>Mesleğinizi Seçin</Text>
+                            <View style={styles.sectionHeaderRow}>
+                                <Ionicons name="sparkles" size={14} color="#3B82F6" style={{ marginRight: 6 }} />
+                                <Text style={styles.sectionLabel}>Uzmanlık Alanınızı Seçin</Text>
+                            </View>
+                            
                             <View style={styles.professionGrid}>
-                                {SERVICE_CATEGORIES.map((cat: ServiceCategory) => (
-                                    <TouchableOpacity
-                                        key={cat.id}
-                                        style={[
-                                            styles.professionCard,
-                                            serviceCategory === cat.id && { borderColor: cat.colors[0], backgroundColor: cat.colors[0] + '15' },
-                                        ]}
-                                        onPress={() => setServiceCategory(cat.id)}
-                                        activeOpacity={0.8}
-                                    >
-                                        <LinearGradient
-                                            colors={serviceCategory === cat.id 
-                                                ? [`${cat.colors[0]}25`, `${cat.colors[1]}35`] 
-                                                : ['rgba(255,255,255,0.04)', 'rgba(255,255,255,0.01)']}
-                                            style={styles.professionIconBg}
+                                {SERVICE_CATEGORIES.map((cat: ServiceCategory) => {
+                                    const isSelected = serviceCategory === cat.id;
+                                    return (
+                                        <TouchableOpacity
+                                            key={cat.id}
+                                            style={[
+                                                styles.professionCard,
+                                                isSelected && { 
+                                                    borderColor: cat.colors[0], 
+                                                    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+                                                    shadowColor: cat.colors[0],
+                                                },
+                                            ]}
+                                            onPress={() => setServiceCategory(cat.id)}
+                                            activeOpacity={0.85}
                                         >
-                                            <Ionicons 
-                                                name={cat.icon as any} 
-                                                size={22} 
-                                                color={serviceCategory === cat.id ? '#FFFFFF' : cat.colors[0]} 
-                                            />
-                                        </LinearGradient>
+                                            <LinearGradient
+                                                colors={isSelected 
+                                                    ? [`${cat.colors[0]}35`, `${cat.colors[1]}50`] 
+                                                    : ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.01)']}
+                                                style={styles.professionIconBg}
+                                            >
+                                                <Ionicons 
+                                                    name={cat.icon as any} 
+                                                    size={22} 
+                                                    color={isSelected ? '#FFFFFF' : cat.colors[0]} 
+                                                />
+                                            </LinearGradient>
 
-                                        <Text style={[
-                                            styles.professionName,
-                                            serviceCategory === cat.id && { color: '#FFFFFF', fontFamily: fonts.bold }
-                                        ]}>
-                                            {cat.name}
-                                        </Text>
-                                        {serviceCategory === cat.id && (
-                                            <View style={[styles.professionCheck, { backgroundColor: cat.colors[0] }]}>
-                                                <Ionicons name="checkmark" size={8} color="#FFFFFF" />
-                                            </View>
-                                        )}
-                                    </TouchableOpacity>
-                                ))}
+                                            <Text style={[
+                                                styles.professionName,
+                                                isSelected && { color: '#FFFFFF', fontFamily: fonts.bold }
+                                            ]}>
+                                                {cat.name}
+                                            </Text>
+                                            {isSelected && (
+                                                <View style={[styles.professionCheck, { backgroundColor: cat.colors[0] }]}>
+                                                    <Ionicons name="checkmark" size={9} color="#FFFFFF" />
+                                                </View>
+                                            )}
+                                        </TouchableOpacity>
+                                    );
+                                })}
                             </View>
                         </View>
                     )}
                 </View>
 
                 {/* Bottom Action Area */}
-                <View style={{ gap: 8 }}>
+                <View style={styles.bottomArea}>
                     {/* Continue Button */}
                     <TouchableOpacity
                         style={[
@@ -178,10 +192,10 @@ export default function RoleSelectScreen() {
                         ]}
                         onPress={handleContinue}
                         disabled={!canProceed}
-                        activeOpacity={0.8}
+                        activeOpacity={0.85}
                     >
                         <LinearGradient
-                            colors={canProceed ? (userType === 'CITIZEN' ? ['#0D9488', '#0EA5E9'] : ['#4682B4', '#2E5C8A']) : ['#374151', '#374151']}
+                            colors={canProceed ? (userType === 'CITIZEN' ? ['#0D9488', '#0D9488'] : ['#3B82F6', '#1D4ED8']) : ['#334155', '#1E293B']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
                             style={styles.continueBtnGradient}
@@ -191,10 +205,10 @@ export default function RoleSelectScreen() {
                         </LinearGradient>
                     </TouchableOpacity>
 
-                    {/* Login Link */}
+                    {/* Login Navigation Link */}
                     <View style={styles.loginLinkContainer}>
-                        <Text style={styles.loginText}>Zaten hesabınız var mı? </Text>
-                        <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+                        <Text style={styles.loginText}>Zaten bir hesabınız var mı? </Text>
+                        <TouchableOpacity onPress={() => router.push('/(auth)/login')} activeOpacity={0.7}>
                             <Text style={styles.loginLink}>Giriş Yap</Text>
                         </TouchableOpacity>
                     </View>
@@ -210,174 +224,216 @@ const styles = StyleSheet.create({
     },
     glowBlob: {
         position: 'absolute',
-        width: 200,
-        height: 200,
-        borderRadius: 100,
-        opacity: 0.15,
+        width: 250,
+        height: 250,
+        borderRadius: 125,
     },
     content: {
         flex: 1,
         paddingHorizontal: 20,
-        paddingTop: Platform.OS === 'ios' ? 50 : 35,
-        paddingBottom: Platform.OS === 'ios' ? 24 : 16,
+        paddingTop: Platform.OS === 'ios' ? 52 : 36,
+        paddingBottom: Platform.OS === 'ios' ? 28 : 20,
         justifyContent: 'space-between',
     },
     backButton: {
-        width: 38,
-        height: 38,
-        borderRadius: 10,
-        backgroundColor: 'rgba(255,255,255,0.08)',
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 14,
+        marginBottom: 16,
     },
     header: {
-        marginBottom: 16,
+        marginBottom: 20,
     },
     title: {
         fontFamily: fonts.extraBold,
-        fontSize: 24,
+        fontSize: 26,
         color: '#FFFFFF',
+        letterSpacing: -0.5,
         marginBottom: 4,
     },
     subtitle: {
         fontFamily: fonts.medium,
         fontSize: 14,
-        color: 'rgba(255,255,255,0.6)',
+        color: 'rgba(255,255,255,0.5)',
     },
     roleContainer: {
         flexDirection: 'row',
-        gap: 12,
-        marginBottom: 12,
+        gap: 14,
+        marginBottom: 20,
     },
     roleCard: {
         flex: 1,
-        backgroundColor: 'rgba(255,255,255,0.02)',
-        borderRadius: 16,
+        backgroundColor: 'rgba(15, 23, 42, 0.4)',
+        borderRadius: 20,
         paddingHorizontal: 12,
-        paddingVertical: 12,
+        paddingVertical: 16,
         alignItems: 'center',
         borderWidth: 1.5,
-        borderColor: 'rgba(255,255,255,0.08)',
+        borderColor: 'rgba(255,255,255,0.07)',
         position: 'relative',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.1,
+        shadowRadius: 16,
+        elevation: 4,
     },
     roleCardSelected: {
-        backgroundColor: 'rgba(255,255,255,0.06)',
+        backgroundColor: 'rgba(15, 23, 42, 0.8)',
+        borderWidth: 2,
+        shadowOpacity: 0.2,
+        shadowRadius: 20,
     },
     roleIconBg: {
-        width: 52,
-        height: 52,
-        borderRadius: 14,
+        width: 56,
+        height: 56,
+        borderRadius: 18,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+        elevation: 2,
     },
     roleTitle: {
         fontFamily: fonts.bold,
-        fontSize: 15,
-        color: 'rgba(255,255,255,0.7)',
+        fontSize: 16,
+        color: 'rgba(255,255,255,0.6)',
         marginBottom: 2,
     },
     roleDesc: {
         fontFamily: fonts.medium,
         fontSize: 10,
-        color: 'rgba(255,255,255,0.4)',
+        color: 'rgba(255,255,255,0.35)',
         textAlign: 'center',
+        lineHeight: 14,
     },
     checkBadge: {
         position: 'absolute',
-        top: 8,
-        right: 8,
-        width: 18,
-        height: 18,
-        borderRadius: 9,
+        top: -6,
+        right: -6,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        backgroundColor: '#0F172A',
         justifyContent: 'center',
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
     },
     professionSection: {
-        marginBottom: 12,
+        marginBottom: 20,
+    },
+    sectionHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
     },
     sectionLabel: {
         fontFamily: fonts.bold,
-        fontSize: 12,
-        color: 'rgba(255,255,255,0.4)',
+        fontSize: 12.5,
+        color: 'rgba(255,255,255,0.5)',
         textTransform: 'uppercase',
-        letterSpacing: 0.8,
-        marginBottom: 8,
+        letterSpacing: 0.6,
     },
     professionGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 8,
+        gap: 10,
     },
     professionCard: {
-        width: (width - 40 - 16) / 3, // Subtract horizontal padding (40) and gap (16)
-        backgroundColor: 'rgba(255,255,255,0.02)',
-        borderRadius: 12,
-        paddingHorizontal: 6,
-        paddingVertical: 8,
+        width: (width - 40 - 20) / 3, // dynamic calculate 3-column grid width
+        backgroundColor: 'rgba(15, 23, 42, 0.3)',
+        borderRadius: 16,
+        paddingHorizontal: 8,
+        paddingVertical: 12,
         alignItems: 'center',
         borderWidth: 1.5,
-        borderColor: 'rgba(255,255,255,0.06)',
+        borderColor: 'rgba(255,255,255,0.05)',
         position: 'relative',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 1,
     },
     professionIconBg: {
-        width: 42,
-        height: 42,
-        borderRadius: 12,
+        width: 46,
+        height: 46,
+        borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 6,
+        marginBottom: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
     },
     professionName: {
         fontFamily: fonts.semiBold,
-        fontSize: 10,
-        color: 'rgba(255,255,255,0.6)',
+        fontSize: 10.5,
+        color: 'rgba(255,255,255,0.5)',
         textAlign: 'center',
     },
     professionCheck: {
         position: 'absolute',
-        top: 4,
-        right: 4,
+        top: 6,
+        right: 6,
         width: 14,
         height: 14,
         borderRadius: 7,
         justifyContent: 'center',
         alignItems: 'center',
     },
+    bottomArea: {
+        gap: 12,
+    },
     continueBtn: {
-        marginBottom: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 4,
     },
     continueBtnDisabled: {
-        opacity: 0.4,
+        opacity: 0.35,
     },
     continueBtnGradient: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
-        height: 48,
-        borderRadius: 14,
+        height: 52,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.08)',
     },
     continueBtnText: {
         fontFamily: fonts.bold,
-        fontSize: 15,
+        fontSize: 16,
         color: '#FFFFFF',
     },
     loginLinkContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: 4,
+        marginTop: 2,
     },
     loginText: {
         fontFamily: fonts.medium,
-        fontSize: 13,
-        color: 'rgba(255,255,255,0.5)',
+        fontSize: 13.5,
+        color: 'rgba(255,255,255,0.4)',
     },
     loginLink: {
         fontFamily: fonts.bold,
-        fontSize: 13,
+        fontSize: 13.5,
         color: '#0D9488',
+        textDecorationLine: 'underline',
     },
 });
-
