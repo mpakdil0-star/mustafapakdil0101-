@@ -359,13 +359,13 @@ const styles = StyleSheet.create({
     },
     professionCard: {
         width: (width - 40 - 20) / 3, // dynamic calculate 3-column grid width
-        backgroundColor: 'rgba(15, 23, 42, 0.3)',
+        backgroundColor: 'transparent', // Transparent unselected background!
         borderRadius: 16,
         paddingHorizontal: 8,
         paddingVertical: 12,
         alignItems: 'center',
         borderWidth: 1.5,
-        borderColor: 'rgba(255,255,255,0.05)',
+        borderColor: 'transparent', // Transparent unselected border!
         position: 'relative',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.05,
