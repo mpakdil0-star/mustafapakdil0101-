@@ -85,7 +85,7 @@ export default function RoleSelectScreen() {
                                 colors={userType === 'CITIZEN' ? ['#0D9488', '#0EA5E9'] : ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)']}
                                 style={styles.roleIconBg}
                             >
-                                <Ionicons name="person" size={24} color={userType === 'CITIZEN' ? '#FFFFFF' : 'rgba(255,255,255,0.5)'} />
+                                <Ionicons name="person" size={28} color={userType === 'CITIZEN' ? '#FFFFFF' : 'rgba(255,255,255,0.5)'} />
                             </LinearGradient>
                             <Text style={[styles.roleTitle, userType === 'CITIZEN' && { color: '#FFFFFF' }]}>Vatandaş</Text>
                             <Text style={styles.roleDesc}>Hizmet almak istiyorum</Text>
@@ -110,7 +110,7 @@ export default function RoleSelectScreen() {
                                 colors={userType === 'ELECTRICIAN' ? ['#4682B4', '#2E5C8A'] : ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)']}
                                 style={styles.roleIconBg}
                             >
-                                <Ionicons name="construct" size={24} color={userType === 'ELECTRICIAN' ? '#FFFFFF' : 'rgba(255,255,255,0.5)'} />
+                                <Ionicons name="construct" size={28} color={userType === 'ELECTRICIAN' ? '#FFFFFF' : 'rgba(255,255,255,0.5)'} />
                             </LinearGradient>
                             <Text style={[styles.roleTitle, userType === 'ELECTRICIAN' && { color: '#FFFFFF' }]}>Usta</Text>
                             <Text style={styles.roleDesc}>Hizmet vermek istiyorum</Text>
@@ -145,7 +145,7 @@ export default function RoleSelectScreen() {
                                         >
                                             <Ionicons 
                                                 name={cat.icon as any} 
-                                                size={18} 
+                                                size={22} 
                                                 color={serviceCategory === cat.id ? '#FFFFFF' : cat.colors[0]} 
                                             />
                                         </LinearGradient>
@@ -248,14 +248,14 @@ const styles = StyleSheet.create({
     roleContainer: {
         flexDirection: 'row',
         gap: 12,
-        marginBottom: 16,
+        marginBottom: 12,
     },
     roleCard: {
         flex: 1,
         backgroundColor: 'rgba(255,255,255,0.02)',
         borderRadius: 16,
         paddingHorizontal: 12,
-        paddingVertical: 14,
+        paddingVertical: 12,
         alignItems: 'center',
         borderWidth: 1.5,
         borderColor: 'rgba(255,255,255,0.08)',
@@ -265,8 +265,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.06)',
     },
     roleIconBg: {
-        width: 48,
-        height: 48,
+        width: 52,
+        height: 52,
         borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     professionSection: {
-        marginBottom: 16,
+        marginBottom: 12,
     },
     sectionLabel: {
         fontFamily: fonts.bold,
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
         color: 'rgba(255,255,255,0.4)',
         textTransform: 'uppercase',
         letterSpacing: 0.8,
-        marginBottom: 10,
+        marginBottom: 8,
     },
     professionGrid: {
         flexDirection: 'row',
@@ -315,16 +315,16 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.02)',
         borderRadius: 12,
         paddingHorizontal: 6,
-        paddingVertical: 10,
+        paddingVertical: 8,
         alignItems: 'center',
         borderWidth: 1.5,
         borderColor: 'rgba(255,255,255,0.06)',
         position: 'relative',
     },
     professionIconBg: {
-        width: 38,
-        height: 38,
-        borderRadius: 10,
+        width: 42,
+        height: 42,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 6,
