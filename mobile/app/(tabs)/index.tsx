@@ -4680,11 +4680,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     backgroundColor: 'rgba(15, 23, 42, 0.65)',
     zIndex: 1000,
     paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 100 : 80,
   },
   completionModal: {
     borderRadius: 28,
