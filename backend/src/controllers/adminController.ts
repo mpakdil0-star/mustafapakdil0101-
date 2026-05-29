@@ -616,8 +616,9 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
         const limitNum = parseInt(limit as string, 10);
         const skip = (pageNum - 1) * limitNum;
 
-        // DB Implementation
+        // DB Implementation — wrapped in try/catch so DB failures fall through to mock
         if (isDatabaseAvailable) {
+            try {
             const whereClause: any = { deletedAt: null };
 
             if (filterType === 'ENGINEER') {
@@ -800,6 +801,10 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
                     }
                 }
             });
+            } catch (dbError: any) {
+                console.warn('⚠️ getAllUsers DB query failed, falling back to mock storage:', dbError.message);
+                // Fall through to mock implementation below
+            }
         }
 
         // Mock Implementation (Moved from routes)

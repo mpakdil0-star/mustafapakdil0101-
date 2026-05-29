@@ -194,6 +194,24 @@ export const googleLoginController = async (
 
                     user = await prisma.user.findUnique({ where: { id: dbUser.id }, include: { electricianProfile: true } });
                     if (user) userId = user.id;
+
+                    // 🔒 Safety: Mirror to mock storage for DB-down resilience
+                    try {
+                        mockStorage.updateProfile(dbUser.id, {
+                            fullName: name || 'Google User',
+                            email: email,
+                            phone: '',
+                            isVerified: true,
+                            isActive: true,
+                            userType: requestedUserType,
+                            profileImageUrl: picture,
+                            passwordHash: 'GOOGLE_AUTH_NO_PASSWORD',
+                            serviceCategory: requestedUserType === 'ELECTRICIAN' ? (serviceCategory || 'elektrik') : undefined,
+                        });
+                        console.log(`🔒 Google user mirrored to mock storage: ${email}`);
+                    } catch (mirrorErr) {
+                        console.warn('⚠️ Failed to mirror Google user to mock:', mirrorErr);
+                    }
                 } catch (error) {
                     console.error('Error creating Google user in Prisma:', error);
                 }

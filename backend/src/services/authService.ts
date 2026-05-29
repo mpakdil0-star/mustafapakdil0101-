@@ -272,6 +272,27 @@ export const register = async (data: RegisterData) => {
       userType: user.userType,
     });
 
+    // 🔒 Safety: Mirror user to mock storage so they're visible even if DB goes down later
+    try {
+      mockStorage.updateProfile(user.id, {
+        fullName: fullName || 'İsimsiz Kullanıcı',
+        phone: phone || '',
+        email: email,
+        isVerified: false,
+        passwordHash: passwordHash,
+        experienceYears: 0,
+        creditBalance: userType === UserType.ELECTRICIAN ? 5 : 0,
+        isActive: true,
+        userType: userType,
+        serviceCategory: userType === UserType.ELECTRICIAN ? (data.serviceCategory || 'elektrik') : undefined,
+        acceptedLegalVersion: data.acceptedLegalVersion,
+        marketingAllowed: data.marketingAllowed,
+      });
+      console.log(`🔒 DB user also mirrored to mock storage: ${email}`);
+    } catch (mirrorErr) {
+      console.warn('⚠️ Failed to mirror DB user to mock storage:', mirrorErr);
+    }
+
     return {
       user: savedUser || user,
       ...tokens,
