@@ -127,7 +127,14 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
           return (
             <TouchableOpacity
               key={prod.id}
-              style={[styles.marketCard, { backgroundColor: colors.surface }]}
+              style={[
+                styles.marketCard,
+                {
+                  backgroundColor: colors.surface,
+                  shadowColor: colors.primary,
+                  borderColor: 'rgba(0, 0, 0, 0.04)',
+                }
+              ]}
               activeOpacity={0.9}
               onPress={() => {
                 if (!isAuthenticated) {
@@ -190,6 +197,9 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
                 </View>
               )}
 
+              {/* Thin Elegant Divider Line */}
+              <View style={{ height: 1, backgroundColor: 'rgba(0, 0, 0, 0.05)' }} />
+
               {/* Lower Part: Descriptions & Info */}
               <View style={styles.marketDetailsContainer}>
                 <View>
@@ -202,9 +212,8 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
                 </View>
 
                 <View style={styles.marketCardFooter}>
-                  <View style={styles.marketPriceWrapper}>
-                    <Text style={styles.marketPriceLabel}>Fiyat</Text>
-                    <Text style={[styles.marketPriceValue, { color: colors.primary }]}>₺{prod.price}</Text>
+                  <View style={[styles.marketPricePill, { backgroundColor: 'rgba(16, 185, 129, 0.08)', borderColor: 'rgba(16, 185, 129, 0.18)' }]}>
+                    <Text style={[styles.marketPriceValue, { color: '#059669' }]}>₺{prod.price}</Text>
                   </View>
                   
                   <View style={{ alignItems: 'flex-end', flex: 1, marginLeft: 8 }}>
@@ -354,18 +363,17 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     marginTop: 6,
   },
-  marketPriceWrapper: {
-    flexDirection: 'column',
-  },
-  marketPriceLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 8.5,
-    color: '#94A3B8',
-    textTransform: 'uppercase',
+  marketPricePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4.5,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   marketPriceValue: {
     fontFamily: fonts.extraBold,
-    fontSize: 14,
+    fontSize: 13,
   },
   marketDateText: {
     fontFamily: fonts.bold,
