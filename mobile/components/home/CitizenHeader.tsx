@@ -98,10 +98,11 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
       >
         <View style={styles.headerFullSearchInner}>
           <Ionicons name="search-outline" size={18} color="rgba(255, 255, 255, 0.75)" />
-          <Text style={styles.headerFullSearchPlaceholder}>Güvenilir Usta veya Hizmet Arayın...</Text>
+          <Text style={styles.headerFullSearchPlaceholder}>Usta veya Hizmet Arayın...</Text>
         </View>
-        <View style={styles.headerSearchActionCircleGlass}>
-          <Ionicons name="funnel-outline" size={13} color="rgba(255, 255, 255, 0.85)" />
+        <View style={[styles.seeAllPillInsideSearch, { backgroundColor: 'rgba(255, 255, 255, 0.16)', borderColor: 'rgba(255, 255, 255, 0.22)' }]}>
+          <Text style={styles.seeAllPillText}>Tümünü Gör</Text>
+          <Ionicons name="arrow-forward" size={11} color="#FFFFFF" style={{ marginLeft: 3 }} />
         </View>
       </TouchableOpacity>
 
@@ -264,15 +265,19 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     color: 'rgba(255, 255, 255, 0.85)',
   },
-  headerSearchActionCircleGlass: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    justifyContent: 'center',
+  seeAllPillInsideSearch: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 18,
+    borderWidth: 1.2,
+  },
+  seeAllPillText: {
+    fontFamily: fonts.bold,
+    fontSize: 10.5,
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
   quickPillsContainer: {
     paddingVertical: 2,
