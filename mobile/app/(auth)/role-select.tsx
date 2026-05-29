@@ -10,6 +10,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fonts } from '../../constants/typography';
 import { SERVICE_CATEGORIES, ServiceCategory } from '../../constants/serviceCategories';
 
@@ -17,6 +18,7 @@ const { width } = Dimensions.get('window');
 
 export default function RoleSelectScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const { initialRole, redirectTo } = useLocalSearchParams<{ 
         initialRole?: 'CITIZEN' | 'ELECTRICIAN',
         redirectTo?: string 
@@ -49,7 +51,13 @@ export default function RoleSelectScreen() {
             <View style={[styles.glowBlob, { top: -60, left: -60, backgroundColor: '#0D9488', opacity: 0.12 }]} />
             <View style={[styles.glowBlob, { bottom: -80, right: -80, backgroundColor: '#3B82F6', opacity: 0.1 }]} />
 
-            <View style={styles.content}>
+            <View style={[
+                styles.content,
+                {
+                    paddingTop: Platform.OS === 'ios' ? Math.max(insets.top, 52) : Math.max(insets.top, 36),
+                    paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 28) : Math.max(insets.bottom, 36),
+                }
+            ]}>
                 {/* Upper Section */}
                 <View style={{ flex: 1 }}>
                     {/* Back Button */}
@@ -248,8 +256,6 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingHorizontal: 20,
-        paddingTop: Platform.OS === 'ios' ? 52 : 36,
-        paddingBottom: Platform.OS === 'ios' ? 28 : 20,
         justifyContent: 'space-between',
     },
     backButton: {
