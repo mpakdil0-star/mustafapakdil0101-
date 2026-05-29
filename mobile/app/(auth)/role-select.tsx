@@ -82,12 +82,16 @@ export default function RoleSelectScreen() {
                             }}
                             activeOpacity={0.85}
                         >
-                            <LinearGradient
-                                colors={userType === 'CITIZEN' ? ['#0D9488', '#0F766E'] : ['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.02)']}
-                                style={styles.roleIconBg}
+                            <View
+                                style={[
+                                    styles.roleIconBg,
+                                    userType === 'CITIZEN' 
+                                        ? { backgroundColor: '#0D9488' } 
+                                        : { backgroundColor: 'rgba(255,255,255,0.06)' }
+                                ]}
                             >
                                 <Ionicons name="person-outline" size={26} color={userType === 'CITIZEN' ? '#FFFFFF' : 'rgba(255,255,255,0.4)'} />
-                            </LinearGradient>
+                            </View>
                             <Text style={[styles.roleTitle, userType === 'CITIZEN' && { color: '#FFF' }]}>Vatandaş</Text>
                             <Text style={styles.roleDesc}>Hizmet almak istiyorum</Text>
                             
@@ -103,17 +107,21 @@ export default function RoleSelectScreen() {
                             style={[
                                 styles.roleCard,
                                 userType === 'ELECTRICIAN' && styles.roleCardSelected,
-                                userType === 'ELECTRICIAN' && { borderColor: '#3B82F6', shadowColor: '#3B82F6' },
+                                userType === 'ELECTRICIAN' && { borderColor: '#3B82F6' },
                             ]}
                             onPress={() => setUserType('ELECTRICIAN')}
                             activeOpacity={0.85}
                         >
-                            <LinearGradient
-                                colors={userType === 'ELECTRICIAN' ? ['#3B82F6', '#1D4ED8'] : ['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.02)']}
-                                style={styles.roleIconBg}
+                            <View
+                                style={[
+                                    styles.roleIconBg,
+                                    userType === 'ELECTRICIAN' 
+                                        ? { backgroundColor: '#3B82F6' } 
+                                        : { backgroundColor: 'rgba(255,255,255,0.06)' }
+                                ]}
                             >
                                 <Ionicons name="construct-outline" size={26} color={userType === 'ELECTRICIAN' ? '#FFFFFF' : 'rgba(255,255,255,0.4)'} />
-                            </LinearGradient>
+                            </View>
                             <Text style={[styles.roleTitle, userType === 'ELECTRICIAN' && { color: '#FFF' }]}>Usta</Text>
                             <Text style={styles.roleDesc}>Hizmet vermek istiyorum</Text>
                             
@@ -144,27 +152,24 @@ export default function RoleSelectScreen() {
                                                 isSelected && { 
                                                     borderColor: cat.colors[0], 
                                                     backgroundColor: 'rgba(15, 23, 42, 0.7)',
-                                                    shadowColor: cat.colors[0],
-                                                    shadowOffset: { width: 0, height: 4 },
-                                                    shadowOpacity: 0.15,
-                                                    shadowRadius: 10,
-                                                    elevation: 2,
                                                 },
                                             ]}
                                             onPress={() => setServiceCategory(cat.id)}
                                             activeOpacity={0.85}
                                         >
                                             {isSelected ? (
-                                                <LinearGradient
-                                                    colors={[`${cat.colors[0]}40`, `${cat.colors[1]}60`]}
-                                                    style={styles.professionIconBgSelected}
+                                                <View
+                                                    style={[
+                                                        styles.professionIconBgSelected,
+                                                        { backgroundColor: cat.colors[0] }
+                                                    ]}
                                                 >
                                                     <Ionicons 
                                                         name={cat.icon as any} 
                                                         size={26} 
                                                         color="#FFFFFF" 
                                                     />
-                                                </LinearGradient>
+                                                </View>
                                             ) : (
                                                 <View style={styles.professionIconBgUnselected}>
                                                     <Ionicons 
@@ -288,16 +293,10 @@ const styles = StyleSheet.create({
         borderWidth: 1.5,
         borderColor: 'rgba(255,255,255,0.07)',
         position: 'relative',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.1,
-        shadowRadius: 16,
-        elevation: 4,
     },
     roleCardSelected: {
         backgroundColor: 'rgba(15, 23, 42, 0.8)',
         borderWidth: 2,
-        shadowOpacity: 0.2,
-        shadowRadius: 20,
     },
     roleIconBg: {
         width: 56,
@@ -306,11 +305,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
-        elevation: 2,
     },
     roleTitle: {
         fontFamily: fonts.bold,
