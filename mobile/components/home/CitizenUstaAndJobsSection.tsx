@@ -51,7 +51,7 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
   };
 
   return (
-    <View style={[styles.section, { paddingBottom: 10, marginTop: -4 }]}>
+    <View style={[styles.section, { paddingBottom: 2, marginTop: -4, marginBottom: 0 }]}>
       {/* Premium Capsule Tab Switcher */}
       <View style={styles.modernTabSwitcherContainer}>
         <TouchableOpacity
