@@ -145,6 +145,10 @@ export default function RoleSelectScreen() {
                                                     borderColor: cat.colors[0], 
                                                     backgroundColor: 'rgba(15, 23, 42, 0.7)',
                                                     shadowColor: cat.colors[0],
+                                                    shadowOffset: { width: 0, height: 4 },
+                                                    shadowOpacity: 0.15,
+                                                    shadowRadius: 10,
+                                                    elevation: 2,
                                                 },
                                             ]}
                                             onPress={() => setServiceCategory(cat.id)}
@@ -367,10 +371,6 @@ const styles = StyleSheet.create({
         borderWidth: 1.5,
         borderColor: 'transparent', // Transparent unselected border!
         position: 'relative',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 1,
     },
     professionIconBgSelected: {
         width: 44,
@@ -379,10 +379,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
     },
     professionIconBgUnselected: {
         width: 44,
