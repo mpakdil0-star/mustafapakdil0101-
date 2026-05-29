@@ -51,11 +51,14 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
   };
 
   return (
-    <View style={[styles.section, { paddingBottom: 10, marginTop: -6 }]}>
+    <View style={[styles.section, { paddingBottom: 10, marginTop: -4 }]}>
       {/* Premium Capsule Tab Switcher */}
       <View style={styles.modernTabSwitcherContainer}>
         <TouchableOpacity
-          style={[styles.modernTabButton, activeHomeTab === 'ustalar' && styles.modernTabButtonActive]}
+          style={[
+            styles.modernTabButton,
+            activeHomeTab === 'ustalar' && [styles.modernTabButtonActive, { backgroundColor: colors.primary, shadowColor: colors.primary }]
+          ]}
           onPress={() => setActiveHomeTab('ustalar')}
           activeOpacity={0.7}
         >
@@ -64,7 +67,10 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.modernTabButton, activeHomeTab === 'ilanlar' && styles.modernTabButtonActive]}
+          style={[
+            styles.modernTabButton,
+            activeHomeTab === 'ilanlar' && [styles.modernTabButtonActive, { backgroundColor: colors.primary, shadowColor: colors.primary }]
+          ]}
           onPress={() => setActiveHomeTab('ilanlar')}
           activeOpacity={0.7}
         >
@@ -75,12 +81,16 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
       </View>
 
       {activeHomeTab === 'ustalar' && (
-        <TouchableOpacity 
-          style={{ alignSelf: 'flex-end', marginBottom: 8, paddingHorizontal: 4 }}
-          onPress={() => router.push('/electricians')}
-        >
-          <Text style={{ color: '#0D9488', fontFamily: fonts.bold, fontSize: 11 }}>Tüm Ustalar &gt;</Text>
-        </TouchableOpacity>
+        <View style={styles.seeAllUstaRow}>
+          <TouchableOpacity 
+            style={[styles.seeAllUstaChip, { borderColor: colors.primary + '25', backgroundColor: colors.primary + '08' }]}
+            onPress={() => router.push('/electricians')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.seeAllUstaText, { color: colors.primary }]}>Tüm Ustaları Gör</Text>
+            <Ionicons name="arrow-forward" size={12} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
       )}
 
       {activeHomeTab === 'ilanlar' ? (
@@ -171,10 +181,19 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
         ) : featuredElectricians.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentJobsHorizontalScroller}>
             {featuredElectricians.map((elec) => (
-              <View key={elec.id} style={styles.featuredUstaCard}>
+              <View 
+                key={elec.id} 
+                style={[
+                  styles.featuredUstaCard,
+                  {
+                    shadowColor: colors.primary,
+                    borderColor: 'rgba(0,0,0,0.06)'
+                  }
+                ]}
+              >
                 {/* Top Row: Avatar + Info + Rating */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                  <View style={styles.featuredUstaAvatarBorder}>
+                  <View style={[styles.featuredUstaAvatarBorder, { borderColor: colors.primary }]}>
                     <View style={styles.featuredUstaAvatarInner}>
                       {elec.profileImageUrl ? (
                         <Image source={{ uri: getFileUrl(elec.profileImageUrl) || '' }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
@@ -190,22 +209,22 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
                         <Ionicons name="shield-checkmark" size={14} color="#10B981" />
                       )}
                     </View>
-                    <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: '#64748B', marginTop: 2 }} numberOfLines={1}>{getUstaCategory(elec)}</Text>
-                    <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: '#94A3B8', marginTop: 1 }} numberOfLines={1}>{elec.locations?.[0] ? `${elec.locations[0].district || ''}, ${elec.locations[0].city || ''}`.replace(/^, /, '').replace(/, $/, '') || 'Türkiye' : 'Türkiye'}</Text>
+                    <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: colors.textSecondary || '#64748B', marginTop: 2 }} numberOfLines={1}>{getUstaCategory(elec)}</Text>
+                    <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: colors.textLight || '#94A3B8', marginTop: 1 }} numberOfLines={1}>{elec.locations?.[0] ? `${elec.locations[0].district || ''}, ${elec.locations[0].city || ''}`.replace(/^, /, '').replace(/, $/, '') || 'Türkiye' : 'Türkiye'}</Text>
                   </View>
                   <View style={styles.featuredUstaRatingBadge}>
-                    <Ionicons name="star" size={12} color="#FBBF24" />
+                    <Ionicons name="star" size={11} color="#D97706" />
                     <Text style={styles.featuredUstaRatingText}>{Number(elec.electricianProfile?.ratingAverage || 0).toFixed(1)}</Text>
                   </View>
                 </View>
                 
                 {/* Skill Chips */}
                 <View style={{ flexDirection: 'row', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
-                  <View style={styles.featuredUstaSkillChip}>
-                    <Text style={styles.featuredUstaSkillText}>{getUstaCategory(elec)}</Text>
+                  <View style={[styles.featuredUstaSkillChip, { backgroundColor: colors.primary + '10' }]}>
+                    <Text style={[styles.featuredUstaSkillText, { color: colors.primary }]}>{getUstaCategory(elec)}</Text>
                   </View>
-                  <View style={styles.featuredUstaSkillChip}>
-                    <Text style={styles.featuredUstaSkillText}>{elec.electricianProfile?.totalReviews || 0} Değerlendirme</Text>
+                  <View style={[styles.featuredUstaSkillChip, { backgroundColor: colors.primary + '08' }]}>
+                    <Text style={[styles.featuredUstaSkillText, { color: colors.primary }]}>{elec.electricianProfile?.totalReviews || 0} Değerlendirme</Text>
                   </View>
                 </View>
 
@@ -222,10 +241,10 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
                   }}
                 >
                   <LinearGradient
-                    colors={['#FBBF24', '#F59E0B']}
+                    colors={colors.primaryGradient || ['#0D9488', '#2DD4BF']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
-                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 12, gap: 6 }}
+                    style={styles.profileBtnGradient}
                   >
                     <Text style={styles.featuredUstaProfileBtnText}>Profili Gör</Text>
                     <Ionicons name="arrow-forward" size={14} color="#FFF" />
@@ -268,47 +287,65 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modernTabButtonActive: {
-    backgroundColor: '#0D9488',
-    shadowColor: '#0D9488',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   modernTabText: {
     fontFamily: fonts.bold,
-    fontSize: 13,
+    fontSize: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.3,
+  },
+  seeAllUstaRow: {
+    alignSelf: 'flex-end',
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+  seeAllUstaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 4,
+  },
+  seeAllUstaText: {
+    fontFamily: fonts.bold,
+    fontSize: 10.5,
   },
   recentJobsHorizontalScroller: {
     paddingRight: 16,
     gap: 12,
-    paddingVertical: 4,
+    paddingVertical: 6,
   },
   recentJobCardHorizontal: {
-    width: 320,
+    width: 325,
     flexDirection: 'row',
     backgroundColor: staticColors.white,
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 3,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.04)',
     alignItems: 'flex-start',
   },
   recentJobUserAvatar: {
-    width: 70,
-    height: 70,
-    borderRadius: 16,
+    width: 64,
+    height: 64,
+    borderRadius: 14,
     backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   recentJobInfoHorizontal: {
     flex: 1,
@@ -321,7 +358,7 @@ const styles = StyleSheet.create({
   },
   recentJobTitleHorizontal: {
     fontFamily: fonts.bold,
-    fontSize: 15,
+    fontSize: 14.5,
     color: staticColors.text,
     marginBottom: 2,
   },
@@ -362,8 +399,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F0FDF4',
     paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingVertical: 3.5,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#D1FAE5',
   },
@@ -379,30 +416,22 @@ const styles = StyleSheet.create({
     color: '#047857',
   },
   featuredUstaCard: {
-    width: 265,
+    width: 280,
     backgroundColor: staticColors.white,
     borderRadius: 20,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
     shadowRadius: 16,
-    elevation: 6,
+    elevation: 4,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
   },
   featuredUstaAvatarBorder: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    borderWidth: 2.5,
-    borderColor: '#FBBF24',
+    borderWidth: 2,
     padding: 2,
-    shadowColor: '#FBBF24',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
   },
   featuredUstaAvatarInner: {
     width: '100%',
@@ -416,31 +445,40 @@ const styles = StyleSheet.create({
   featuredUstaRatingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(251, 191, 36, 0.12)',
+    backgroundColor: '#FFFBEB',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 10,
+    borderRadius: 8,
     gap: 3,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
   },
   featuredUstaRatingText: {
     fontFamily: fonts.extraBold,
-    fontSize: 13,
-    color: '#D97706',
+    fontSize: 12.5,
+    color: '#B45309',
   },
   featuredUstaSkillChip: {
-    backgroundColor: '#F1F5F9',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
   featuredUstaSkillText: {
-    fontFamily: fonts.medium,
+    fontFamily: fonts.bold,
     fontSize: 10.5,
-    color: '#64748B',
   },
   featuredUstaProfileBtn: {
     borderRadius: 12,
     overflow: 'hidden',
+  },
+  profileBtnGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 6,
   },
   featuredUstaProfileBtnText: {
     fontFamily: fonts.bold,
