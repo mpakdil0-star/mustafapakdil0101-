@@ -1304,39 +1304,83 @@ export default function HomeScreen() {
                   activeOpacity={0.9}
                   onPress={() => setShowCompletionModal(true)}
                 >
-                  <View style={styles.healthCardContent}>
-                    <View style={[styles.healthIconContainer, { backgroundColor: colors.primary }]}>
-                      <Ionicons name={isElectrician ? "rocket" : "location"} size={24} color={staticColors.white} />
+                  <LinearGradient
+                    colors={isElectrician ? ['#0A1D33', '#163152'] : ['#052E2B', '#0A4D46']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.healthCardGradient}
+                  >
+                    <View style={styles.healthCardContent}>
+                      <View 
+                        style={[
+                          styles.healthIconContainer, 
+                          { backgroundColor: isElectrician ? 'rgba(229, 193, 88, 0.15)' : 'rgba(45, 212, 191, 0.15)' }
+                        ]}
+                      >
+                        <Ionicons 
+                          name={isElectrician ? "rocket" : "location"} 
+                          size={24} 
+                          color={isElectrician ? "#E5C158" : "#2DD4BF"} 
+                        />
+                      </View>
+
+                      <View style={styles.healthTextContainer}>
+                        <Text style={[styles.healthTitle, { color: '#FFFFFF' }]}>
+                          {isElectrician ? 'Hesabını Tamamla' : 'Profil Sağlığı'}
+                        </Text>
+                        <Text style={[styles.healthSubtitle, { color: 'rgba(255,255,255,0.7)' }]}>
+                          {isElectrician
+                            ? 'Profilini tamamla, iş alma şansını %50 artır.'
+                            : 'Adres ve fotoğraf ekle, usta bulman kolaylaşsın.'}
+                        </Text>
+                      </View>
+
+                      <Animated.View
+                        style={[
+                          styles.healthActionButton,
+                          { backgroundColor: isElectrician ? '#E5C158' : '#FFFFFF' },
+                          { transform: [{ scale: healthPulseAnim }] }
+                        ]}
+                      >
+                        <Text 
+                          style={[
+                            styles.healthActionText, 
+                            { color: isElectrician ? '#0F172A' : '#0D9488' }
+                          ]}
+                        >
+                          {isElectrician ? 'GİT' : 'BAŞLA'}
+                        </Text>
+                        <Ionicons 
+                          name="flash" 
+                          size={14} 
+                          color={isElectrician ? '#0F172A' : '#0D9488'} 
+                        />
+                      </Animated.View>
                     </View>
 
-                    <View style={styles.healthTextContainer}>
-                      <Text style={styles.healthTitle}>{isElectrician ? 'Hesabını Tamamla' : 'Profil Sağlığı'}</Text>
-                      <Text style={styles.healthSubtitle}>
-                        {isElectrician
-                          ? 'Profilini tamamla, iş alma şansını %50 artır.'
-                          : 'Adres ve fotoğraf ekle, usta bulman kolaylaşsın.'}
+                    {/* Dynamic Progress Bar */}
+                    <View style={styles.healthProgressRow}>
+                      <View style={[styles.healthProgressBarBg, { backgroundColor: 'rgba(255,255,255,0.12)' }]}>
+                        <View 
+                          style={[
+                            styles.healthProgressBarFill, 
+                            { 
+                              width: `${completionPercent}%`, 
+                              backgroundColor: isElectrician ? '#E5C158' : '#2DD4BF' 
+                            }
+                          ]} 
+                        />
+                      </View>
+                      <Text 
+                        style={[
+                          styles.healthProgressPercent, 
+                          { color: isElectrician ? '#E5C158' : '#2DD4BF', fontFamily: fonts.bold }
+                        ]}
+                      >
+                        %{completionPercent}
                       </Text>
                     </View>
-
-                    <Animated.View
-                      style={[
-                        styles.healthActionButton,
-                        { backgroundColor: colors.primary },
-                        { transform: [{ scale: healthPulseAnim }] }
-                      ]}
-                    >
-                      <Text style={styles.healthActionText}>{isElectrician ? 'GİT' : 'BAŞLA'}</Text>
-                      <Ionicons name="flash" size={14} color={staticColors.white} />
-                    </Animated.View>
-                  </View>
-
-                  {/* Dynamic Progress Bar */}
-                  <View style={styles.healthProgressRow}>
-                    <View style={styles.healthProgressBarBg}>
-                      <View style={[styles.healthProgressBarFill, { width: `${completionPercent}%`, backgroundColor: colors.primary }]} />
-                    </View>
-                    <Text style={[styles.healthProgressPercent, { color: colors.primary, fontFamily: fonts.bold }]}>%{completionPercent}</Text>
-                  </View>
+                  </LinearGradient>
                 </TouchableOpacity>
               </Animated.View>
             </View>
@@ -3648,16 +3692,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
   },
   profileHealthCard: {
-    backgroundColor: staticColors.white,
     borderRadius: 20,
-    padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.1)',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+    overflow: 'hidden',
+  },
+  healthCardGradient: {
+    padding: 16,
+    borderRadius: 20,
   },
   healthCardContent: {
     flexDirection: 'row',
