@@ -555,54 +555,53 @@ export default function BuyCreditsScreen() {
                 />
             </View>
 
-            <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 + insets.bottom }]}
-                showsVerticalScrollIndicator={false}
-            >
+            {/* Main Content Area (Full Flex) */}
+            <View style={{ flex: 1, paddingHorizontal: 14, paddingTop: 6 }}>
                 {/* Current Balance Mini Card */}
-                <Animated.View style={[styles.balanceMini, { opacity: fadeAnim, backgroundColor: colors.surface || '#FFF' }]}>
+                <Animated.View style={[styles.balanceMini, { opacity: fadeAnim, backgroundColor: colors.surface || '#FFF', paddingVertical: 10, marginBottom: 10 }]}>
                     <View style={styles.balanceMiniLeft}>
-                        <View style={[styles.balanceMiniIcon, { backgroundColor: colors.primary + '10' }]}>
-                            <Ionicons name="wallet" size={18} color={colors.primary} />
+                        <View style={[styles.balanceMiniIcon, { width: 32, height: 32, borderRadius: 8, backgroundColor: colors.primary + '10' }]}>
+                            <Ionicons name="wallet" size={16} color={colors.primary} />
                         </View>
                         <View>
                             <Text style={[styles.balanceMiniLabel, { color: colors.textSecondary }]}>Mevcut Bakiye</Text>
-                            <Text style={[styles.balanceMiniValue, { color: colors.text }]}>{currentBalance} <Text style={[styles.balanceMiniUnit, { color: colors.primary }]}>Kredi</Text></Text>
+                            <Text style={[styles.balanceMiniValue, { color: colors.text, fontSize: 16 }]}>{currentBalance} <Text style={[styles.balanceMiniUnit, { color: colors.primary, fontSize: 11 }]}>Kredi</Text></Text>
                         </View>
                     </View>
                     <View style={styles.balanceMiniDivider} />
                     <View style={styles.balanceMiniRight}>
                         <Text style={[styles.balanceMiniLabel, { color: colors.textSecondary }]}>Yüklenecek</Text>
-                        <Text style={[styles.balanceMiniValue, { color: '#10B981' }]}>
-                            +{selectedPackage?.credits || 0} <Text style={[styles.balanceMiniUnit, { color: '#10B981' }]}>Kredi</Text>
+                        <Text style={[styles.balanceMiniValue, { color: '#10B981', fontSize: 16 }]}>
+                            +{selectedPackage?.credits || 0} <Text style={[styles.balanceMiniUnit, { color: '#10B981', fontSize: 11 }]}>Kredi</Text>
                         </Text>
                     </View>
                 </Animated.View>
 
                 {/* Header Text */}
-                <View style={styles.headerBox}>
-                    <Text style={[styles.title, { color: colors.text }]}>Paket Seçin</Text>
-                    <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                <View style={[styles.headerBox, { marginBottom: 10 }]}>
+                    <Text style={[styles.title, { color: colors.text, fontSize: 18 }]}>Paket Seçin</Text>
+                    <Text style={[styles.subtitle, { color: colors.textSecondary, fontSize: 12, lineHeight: 16 }]}>
                         Size uygun paketi seçerek iş tekliflerinizi artırın.
                     </Text>
                 </View>
 
                 {loading && (
-                    <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                        <ActivityIndicator size="large" color={colors.primary} />
+                    </View>
                 )}
 
                 {!loading && packages.length === 0 && (
-                    <View style={{ padding: 20, alignItems: 'center' }}>
-                        <Text style={{ color: colors.textSecondary }}>Paketler yüklenemedi. Lütfen internet bağlantınızı kontrol edin.</Text>
-                        <TouchableOpacity onPress={setupIAP} style={{ marginTop: 10, padding: 10, backgroundColor: colors.primary + '20', borderRadius: 10 }}>
+                    <View style={{ flex: 1, padding: 20, alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ color: colors.textSecondary }}>Paketler yüklenemedi. Lütfen tekrar deneyin.</Text>
+                        <TouchableOpacity onPress={setupIAP} style={{ marginTop: 10, padding: 8, backgroundColor: colors.primary + '20', borderRadius: 8 }}>
                             <Text style={{ color: colors.primary }}>Tekrar Dene</Text>
                         </TouchableOpacity>
                     </View>
                 )}
 
                 {!loading && (
-                    <View style={styles.packagesContainer}>
+                    <View style={[styles.packagesContainer, { gap: 10 }]}>
                         {packages.map((pkg, index) => {
                             const isSelected = selectedPkg === pkg.id;
                             const iconName = PACKAGE_ICONS[pkg.id] || 'flash-outline';
@@ -616,7 +615,7 @@ export default function BuyCreditsScreen() {
                                         transform: [{ 
                                             translateY: slideAnim.interpolate({
                                                 inputRange: [0, 100],
-                                                outputRange: [0, (index + 1) * 10]
+                                                outputRange: [0, (index + 1) * 5]
                                             }) 
                                         }],
                                     }}
@@ -640,48 +639,49 @@ export default function BuyCreditsScreen() {
                                             )}
                                         </View>
 
-                                        <View style={[styles.cardContent, pkg.isPopular && { paddingTop: 20 }]}>
+                                        <View style={[styles.cardContent, { paddingVertical: 10, paddingHorizontal: 12, gap: 10 }, pkg.isPopular && { paddingTop: 14, paddingBottom: 8 }]}>
                                             {/* Left: Icon + Info */}
-                                            <View style={[styles.cardIconBox, { backgroundColor: pkg.color + '12' }]}>
-                                                <Ionicons name={iconName as any} size={26} color={pkg.color} />
+                                            <View style={[styles.cardIconBox, { width: 38, height: 38, borderRadius: 10, backgroundColor: pkg.color + '12' }]}>
+                                                <Ionicons name={iconName as any} size={20} color={pkg.color} />
                                             </View>
 
                                             <View style={styles.cardInfo}>
-                                                <Text style={[styles.packageName, { color: colors.text }]}>{pkg.name}</Text>
+                                                <Text style={[styles.packageName, { color: colors.text, fontSize: 13.5 }]}>{pkg.name}</Text>
                                                 <View style={styles.creditsRow}>
-                                                    <Text style={[styles.creditValue, { color: pkg.color }]}>{pkg.credits}</Text>
-                                                    <Text style={[styles.creditLabel, { color: pkg.color }]}>KREDİ</Text>
+                                                    <Text style={[styles.creditValue, { color: pkg.color, fontSize: 19 }]}>{pkg.credits}</Text>
+                                                    <Text style={[styles.creditLabel, { color: pkg.color, fontSize: 10 }]}>KREDİ</Text>
                                                 </View>
-                                                <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>{desc}</Text>
+                                                <Text style={[styles.cardDesc, { color: colors.textSecondary, fontSize: 10.5 }]}>{desc}</Text>
                                             </View>
 
                                             {/* Right: Price + Selector */}
                                             <View style={styles.cardRight}>
-                                                <Text style={[styles.priceValue, { color: colors.text }]}>{pkg.displayPrice}</Text>
-                                                <Text style={[styles.perCredit, { color: colors.textSecondary }]}>
+                                                <Text style={[styles.priceValue, { color: colors.text, fontSize: 15 }]}>{pkg.displayPrice}</Text>
+                                                <Text style={[styles.perCredit, { color: colors.textSecondary, fontSize: 10 }]}>
                                                     {getPerCredit(pkg)} ₺/kr
                                                 </Text>
 
                                                 <View style={[
                                                     styles.selector,
+                                                    { marginTop: 4, width: 20, height: 20, borderRadius: 10 },
                                                     isSelected && { backgroundColor: pkg.color, borderColor: pkg.color }
                                                 ]}>
-                                                    {isSelected && <Ionicons name="checkmark" size={14} color="#FFF" />}
+                                                    {isSelected && <Ionicons name="checkmark" size={12} color="#FFF" />}
                                                 </View>
                                             </View>
                                         </View>
 
                                         {/* Popular Tag */}
                                         {pkg.isPopular && (
-                                            <View style={[styles.popularTagContainer, { zIndex: 100 }]}>
+                                            <View style={[styles.popularTagContainer, { top: -10 }]}>
                                                 <LinearGradient
                                                     colors={[pkg.color, pkg.color + 'DD']}
                                                     start={{ x: 0, y: 0 }}
                                                     end={{ x: 1, y: 0 }}
-                                                    style={styles.popularTag}
+                                                    style={[styles.popularTag, { paddingVertical: 2, paddingHorizontal: 8 }]}
                                                 >
-                                                    <Ionicons name="star" size={10} color="#FFF" />
-                                                    <Text style={styles.popularText}>EN POPÜLER</Text>
+                                                    <Ionicons name="star" size={8} color="#FFF" />
+                                                    <Text style={[styles.popularText, { fontSize: 8 }]}>EN POPÜLER</Text>
                                                 </LinearGradient>
                                             </View>
                                         )}
@@ -693,30 +693,30 @@ export default function BuyCreditsScreen() {
                 )}
 
                 {/* Security Note */}
-                <View style={styles.securityNote}>
-                    <View style={styles.securityIconBox}>
-                        <Ionicons name="shield-checkmark" size={18} color="#10B981" />
+                <View style={[styles.securityNote, { marginTop: 12 }]}>
+                    <View style={[styles.securityIconBox, { width: 22, height: 22, borderRadius: 6 }]}>
+                        <Ionicons name="shield-checkmark" size={14} color="#10B981" />
                     </View>
-                    <Text style={[styles.securityText, { color: colors.textSecondary }]}>
-                        Ödeme işlemi Google Play üzerinden güvenli şekilde gerçekleştirilir. Kart bilgileriniz bizimle paylaşılmaz.
+                    <Text style={[styles.securityText, { color: colors.textSecondary, fontSize: 11.5 }]}>
+                        Ödeme Google Play üzerinden güvenli şekilde gerçekleştirilir. Kart bilgileriniz paylaşılmaz.
                     </Text>
                 </View>
+            </View>
 
-                <View style={{ height: 80 }} />
-            </ScrollView>
-
-            {/* Fixed Bottom Button */}
+            {/* Bottom Footer Button */}
             <View style={[
                 styles.footer,
                 {
                     backgroundColor: colors.backgroundDark,
-                    paddingBottom: Math.max(insets.bottom, 16),
-                    height: 100 + insets.bottom
+                    borderTopWidth: 1,
+                    borderTopColor: colors.border || 'rgba(0,0,0,0.06)',
+                    paddingBottom: Math.max(insets.bottom, 12),
+                    height: 85 + insets.bottom
                 }
             ]}>
                 {selectedPackage && (
-                    <View style={styles.footerSummary}>
-                        <Text style={[styles.footerSummaryText, { color: colors.textSecondary }]}>
+                    <View style={[styles.footerSummary, { marginBottom: 6 }]}>
+                        <Text style={[styles.footerSummaryText, { color: colors.textSecondary, fontSize: 13.5 }]}>
                             Toplam: <Text style={[styles.footerSummaryBold, { color: colors.text }]}>{selectedPackage.displayPrice}</Text> → <Text style={{ color: '#10B981', fontFamily: fonts.bold }}>{selectedPackage.credits} Kredi</Text>
                         </Text>
                     </View>
@@ -731,15 +731,15 @@ export default function BuyCreditsScreen() {
                         colors={selectedPkg ? (colors.primaryGradient || ['#0D9488', '#2DD4BF']) : ['#94A3B8', '#94A3B8']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
-                        style={styles.payGradient}
+                        style={[styles.payGradient, { paddingVertical: 12 }]}
                     >
                         {processing ? (
                             <ActivityIndicator color="#FFF" />
                         ) : (
                             <>
-                                <Ionicons name="lock-closed" size={18} color="rgba(255,255,255,0.8)" />
-                                <Text style={styles.payText}>Güvenli Ödeme Yap</Text>
-                                <Ionicons name="arrow-forward" size={20} color="#FFF" />
+                                <Ionicons name="lock-closed" size={16} color="rgba(255,255,255,0.8)" />
+                                <Text style={[styles.payText, { fontSize: 16 }]}>Güvenli Ödeme Yap</Text>
+                                <Ionicons name="arrow-forward" size={18} color="#FFF" />
                             </>
                         )}
                     </LinearGradient>
@@ -827,7 +827,6 @@ const styles = StyleSheet.create({
 
     // Footer
     footer: {
-        position: 'absolute', bottom: 0, left: 0, right: 0,
         paddingHorizontal: 14, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F1F5F9',
     },
     footerSummary: { alignItems: 'center', marginBottom: 8 },
