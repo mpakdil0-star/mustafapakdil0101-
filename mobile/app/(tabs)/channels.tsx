@@ -635,7 +635,7 @@ export default function ChannelsScreen() {
     <View style={[styles.container, { backgroundColor: '#F8FAFC' }]}>
       <PremiumHeader
         title="Usta Kanalları"
-        subtitle={user?.fullName ? `Hoş geldin, ${user.fullName} Usta 👋` : "Meslektaşlarınla yardımlaş, iş paylaş"}
+        subtitle={user?.fullName ? `Hoşgeldin, ${user.fullName} Usta 👋` : "Meslektaşlarınla yardımlaş, iş paylaş"}
         layout="tab"
         backgroundImage={require('../../assets/images/header_bg.png')}
         rightElement={
