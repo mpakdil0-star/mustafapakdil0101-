@@ -1150,6 +1150,7 @@ export default function ChannelsScreen() {
       <Modal visible={isNewPostModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
+            <View style={styles.modalDragHandle} />
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Teknik Soru Sor</Text>
               <TouchableOpacity onPress={() => setIsNewPostModalVisible(false)}>
@@ -1171,9 +1172,9 @@ export default function ChannelsScreen() {
 
             <Text style={styles.label}>Sorunun Açıklaması *</Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="document-text-outline" size={18} color="#64748B" style={[styles.inputIcon, { top: 12 }]} />
+              <Ionicons name="document-text-outline" size={18} color="#64748B" style={[styles.inputIcon, { top: 14 }]} />
               <TextInput
-                style={[styles.inputWithIcon, { height: 100, textAlignVertical: 'top', paddingTop: 10 }]}
+                style={[styles.inputWithIcon, { height: 100, textAlignVertical: 'top', paddingTop: 12 }]}
                 placeholder="Sorununuzu, hata kodunu veya detayları yazın..."
                 placeholderTextColor="#94A3B8"
                 multiline
@@ -1192,14 +1193,28 @@ export default function ChannelsScreen() {
                 </TouchableOpacity>
               </View>
             ) : (
-              <TouchableOpacity style={styles.imageSelector} onPress={() => handlePickImage('forum')}>
+              <TouchableOpacity 
+                style={[styles.imageSelector, { borderColor: colors.primary + '30', backgroundColor: colors.primary + '03' }]} 
+                onPress={() => handlePickImage('forum')}
+                activeOpacity={0.7}
+              >
                 <Ionicons name="camera-outline" size={24} color={colors.primary} />
                 <Text style={{ color: colors.primary, fontFamily: fonts.bold, fontSize: 13, marginTop: 4 }}>Galeri veya Kameradan Seç</Text>
               </TouchableOpacity>
             )}
 
-            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.primary }]} onPress={handleAddForumPost}>
-              <Text style={styles.submitBtnText}>Soruyu Yayınla 🚀</Text>
+            <TouchableOpacity 
+              style={styles.submitBtn} 
+              onPress={handleAddForumPost}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={colors.gradientPrimary}
+                style={styles.submitBtnGradient}
+              >
+                <Ionicons name="rocket-outline" size={16} color="#FFF" />
+                <Text style={styles.submitBtnText}>Soruyu Yayınla 🚀</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
@@ -1209,6 +1224,7 @@ export default function ChannelsScreen() {
       <Modal visible={isCommentsModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { height: '85%', width: '100%' }]}>
+            <View style={styles.modalDragHandle} />
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle} numberOfLines={1}>{selectedPost?.title}</Text>
               <TouchableOpacity onPress={() => setIsCommentsModalVisible(false)}>
@@ -1217,10 +1233,10 @@ export default function ChannelsScreen() {
             </View>
 
             {selectedPost && (
-              <ScrollView style={{ flex: 1, marginTop: 12 }}>
+              <ScrollView style={{ flex: 1, marginTop: 4 }}>
                 <Text style={styles.postBody}>{selectedPost.description}</Text>
                 {selectedPost.imageUrl && (
-                  <Image source={{ uri: selectedPost.imageUrl }} style={[styles.forumImage, { height: 200 }]} />
+                  <Image source={{ uri: selectedPost.imageUrl }} style={[styles.forumImage, { height: 200, borderRadius: 12, marginTop: 10 }]} />
                 )}
 
                 <View style={styles.divider} />
@@ -1232,9 +1248,18 @@ export default function ChannelsScreen() {
                 ) : (
                   selectedPost.comments?.map((comment: any) => (
                     <View key={comment.id} style={styles.commentBox}>
-                      <Text style={styles.commentAuthor}>{comment.ustaName}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <LinearGradient
+                          colors={colors.gradientPrimary}
+                          style={{ width: 22, height: 22, borderRadius: 11, justifyContent: 'center', alignItems: 'center' }}
+                        >
+                          <Text style={{ color: '#FFF', fontSize: 10, fontFamily: fonts.bold }}>
+                            {comment.ustaName ? comment.ustaName.charAt(0).toUpperCase() : 'U'}
+                          </Text>
+                        </LinearGradient>
+                        <Text style={styles.commentAuthor}>{comment.ustaName}</Text>
+                      </View>
                       <Text style={styles.commentText}>{comment.text}</Text>
-                      <Text style={styles.commentTime}>1 dk önce</Text>
                     </View>
                   ))
                 )}
@@ -1249,8 +1274,17 @@ export default function ChannelsScreen() {
                 value={newCommentText}
                 onChangeText={setNewCommentText}
               />
-              <TouchableOpacity style={[styles.sendCommentBtn, { backgroundColor: colors.primary }]} onPress={handleAddComment}>
-                <Ionicons name="send" size={16} color="#FFF" />
+              <TouchableOpacity 
+                style={styles.sendCommentBtn} 
+                onPress={handleAddComment}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={colors.gradientPrimary}
+                  style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}
+                >
+                  <Ionicons name="send" size={16} color="#FFF" />
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           </View>
@@ -1261,6 +1295,7 @@ export default function ChannelsScreen() {
       <Modal visible={isNewJobModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
+            <View style={styles.modalDragHandle} />
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>İş Pasla / Eleman Bul</Text>
               <TouchableOpacity onPress={() => setIsNewJobModalVisible(false)}>
@@ -1282,9 +1317,9 @@ export default function ChannelsScreen() {
 
             <Text style={styles.label}>İşin ve Şartların Detayı *</Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="document-text-outline" size={18} color="#64748B" style={[styles.inputIcon, { top: 12 }]} />
+              <Ionicons name="document-text-outline" size={18} color="#64748B" style={[styles.inputIcon, { top: 14 }]} />
               <TextInput
-                style={[styles.inputWithIcon, { height: 100, textAlignVertical: 'top', paddingTop: 10 }]}
+                style={[styles.inputWithIcon, { height: 100, textAlignVertical: 'top', paddingTop: 12 }]}
                 placeholder="Aradığınız şartları, işin niteliğini ve ödeme bilgisini yazın..."
                 placeholderTextColor="#94A3B8"
                 multiline
@@ -1294,15 +1329,31 @@ export default function ChannelsScreen() {
               />
             </View>
 
-            <View style={{ backgroundColor: 'rgba(245, 158, 11, 0.06)', borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.18)', borderRadius: 12, padding: 12, marginVertical: 12 }}>
-              <Text style={{ color: '#D97706', fontSize: 12.5, fontFamily: fonts.bold }}>Önemli Not</Text>
-              <Text style={{ color: '#78350F', fontSize: 11, fontFamily: fonts.medium, marginTop: 3 }}>
+            <View style={{ 
+              backgroundColor: colors.warningLight || 'rgba(245, 158, 11, 0.06)', 
+              borderWidth: 1, 
+              borderColor: colors.warning + '20' || 'rgba(245, 158, 11, 0.18)', 
+              borderRadius: 12, 
+              padding: 12, 
+              marginVertical: 12 
+            }}>
+              <Text style={{ color: colors.warningDark || '#D97706', fontSize: 12.5, fontFamily: fonts.bold }}>Önemli Not</Text>
+              <Text style={{ color: colors.textSecondary || '#78350F', fontSize: 11, fontFamily: fonts.medium, marginTop: 3 }}>
                 Bu iş paslama teklifi sadece sizin kayıtlı olduğunuz şehirdeki ({user?.city || 'İstanbul'}) ustalar tarafından görülecektir.
               </Text>
             </View>
 
-            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.primary }]} onPress={handleAddJobOffer}>
-              <Text style={styles.submitBtnText}>Teklifi Yayınla 🤝</Text>
+            <TouchableOpacity 
+              style={styles.submitBtn} 
+              onPress={handleAddJobOffer}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={colors.gradientPrimary}
+                style={styles.submitBtnGradient}
+              >
+                <Text style={styles.submitBtnText}>Teklifi Yayınla 🤝</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
@@ -1390,6 +1441,7 @@ export default function ChannelsScreen() {
       <Modal visible={isNewShowcaseModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
+            <View style={styles.modalDragHandle} />
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Hüner Fotoğrafı Yükle</Text>
               <TouchableOpacity onPress={() => setIsNewShowcaseModalVisible(false)}>
@@ -1399,7 +1451,7 @@ export default function ChannelsScreen() {
 
             <Text style={styles.label}>Çalışmanın Başlığı *</Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="image-outline" size={18} color="#64748B" style={styles.inputIcon} />
+              <Ionicons name="image-outline" size={18} color="#64748B" style={[styles.inputIcon, { top: 12 }]} />
               <TextInput
                 style={styles.inputWithIcon}
                 placeholder="Örn: 24'lü Dağıtım Panosu Kablolama"
@@ -1411,7 +1463,7 @@ export default function ChannelsScreen() {
 
             <Text style={styles.label}>Açıklama (Opsiyonel)</Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="document-text-outline" size={18} color="#64748B" style={styles.inputIcon} />
+              <Ionicons name="document-text-outline" size={18} color="#64748B" style={[styles.inputIcon, { top: 12 }]} />
               <TextInput
                 style={styles.inputWithIcon}
                 placeholder="Kullandığınız marka, şantiye bilgisi vb."
@@ -1444,16 +1496,18 @@ export default function ChannelsScreen() {
               {newShowcaseImages.length < 5 && (
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   <TouchableOpacity 
-                    style={{ flex: 1, height: 44, borderRadius: 12, borderWidth: 1.5, borderColor: colors.primary, borderStyle: 'dashed', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                    style={{ flex: 1, height: 44, borderRadius: 12, borderWidth: 1.5, borderColor: colors.primary + '40', borderStyle: 'dashed', backgroundColor: colors.primary + '03', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                     onPress={() => handlePickShowcaseImage('gallery')}
+                    activeOpacity={0.7}
                   >
                     <Ionicons name="images-outline" size={20} color={colors.primary} />
                     <Text style={{ color: colors.primary, fontFamily: fonts.bold, fontSize: 12.5 }}>Galeriden Seç</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity 
-                    style={{ flex: 1, height: 44, borderRadius: 12, borderWidth: 1.5, borderColor: colors.primary, borderStyle: 'dashed', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                    style={{ flex: 1, height: 44, borderRadius: 12, borderWidth: 1.5, borderColor: colors.primary + '40', borderStyle: 'dashed', backgroundColor: colors.primary + '03', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                     onPress={() => handlePickShowcaseImage('camera')}
+                    activeOpacity={0.7}
                   >
                     <Ionicons name="camera-outline" size={20} color={colors.primary} />
                     <Text style={{ color: colors.primary, fontFamily: fonts.bold, fontSize: 12.5 }}>Kamera ile Çek</Text>
@@ -1461,8 +1515,17 @@ export default function ChannelsScreen() {
                 </View>
               )}
             </View>
-            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.primary, marginTop: 20 }]} onPress={handleAddShowcaseItem}>
-              <Text style={styles.submitBtnText}>Hünerini Vitrine Ekle 📸</Text>
+            <TouchableOpacity 
+              style={[styles.submitBtn, { marginTop: 20 }]} 
+              onPress={handleAddShowcaseItem}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={colors.gradientPrimary}
+                style={styles.submitBtnGradient}
+              >
+                <Text style={styles.submitBtnText}>Hünerini Vitrine Ekle 📸</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
@@ -2534,92 +2597,105 @@ const styles = StyleSheet.create({
   // Modals Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
     justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 16,
-    paddingBottom: Platform.OS === 'android' ? 44 : 16,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    paddingBottom: Platform.OS === 'android' ? 36 : 24,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F1F5F9',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: -10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  modalDragHandle: {
+    width: 38,
+    height: 4.5,
+    backgroundColor: '#CBD5E1',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginBottom: 16,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-    paddingBottom: 10,
-    marginBottom: 12,
+    borderBottomColor: '#F8FAFC',
+    marginBottom: 16,
   },
   modalTitle: {
     color: '#0F172A',
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: fonts.bold,
   },
   label: {
     color: '#475569',
     fontSize: 11.5,
     fontFamily: fonts.bold,
-    marginBottom: 4,
-    marginTop: 6,
+    marginBottom: 5,
+    marginTop: 8,
   },
   inputWrapper: {
     position: 'relative',
     width: '100%',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   inputIcon: {
     position: 'absolute',
     left: 12,
-    top: 11,
+    top: 13,
     zIndex: 2,
   },
   inputWithIcon: {
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 10,
+    borderRadius: 12,
     color: '#0F172A',
     paddingLeft: 38,
     paddingRight: 12,
-    height: 40,
+    height: 44,
     fontFamily: fonts.medium,
-    fontSize: 12.5,
+    fontSize: 13,
   },
   input: {
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 10,
+    borderRadius: 12,
     color: '#0F172A',
-    paddingHorizontal: 12,
-    height: 40,
+    paddingHorizontal: 14,
+    height: 44,
     fontFamily: fonts.medium,
-    fontSize: 12.5,
-    marginBottom: 8,
+    fontSize: 13,
+    marginBottom: 10,
   },
   imageSelector: {
-    height: 70,
-    borderRadius: 10,
+    height: 80,
+    borderRadius: 12,
     borderStyle: 'dashed',
     borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderColor: '#CBD5E1',
     backgroundColor: '#F8FAFC',
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 8,
+    marginVertical: 10,
   },
   previewContainer: {
     position: 'relative',
-    width: 80,
-    height: 80,
-    borderRadius: 10,
+    width: 84,
+    height: 84,
+    borderRadius: 12,
     overflow: 'hidden',
-    marginVertical: 8,
+    marginVertical: 10,
   },
   previewImage: {
     width: '100%',
@@ -2634,16 +2710,21 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   submitBtn: {
-    height: 42,
-    borderRadius: 10,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginTop: 16,
+  },
+  submitBtnGradient: {
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 12,
+    flexDirection: 'row',
+    gap: 6,
   },
   submitBtnText: {
     color: '#FFF',
     fontFamily: fonts.bold,
-    fontSize: 13.5,
+    fontSize: 14,
   },
   postBody: {
     color: '#334155',
@@ -2671,11 +2752,16 @@ const styles = StyleSheet.create({
   },
   commentBox: {
     backgroundColor: '#F8FAFC',
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 8,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F1F5F9',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
   },
   commentAuthor: {
     color: '#0F172A',
@@ -2697,31 +2783,30 @@ const styles = StyleSheet.create({
   },
   commentInputRow: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 8,
     alignItems: 'center',
     marginTop: 8,
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
-    paddingTop: 8,
+    paddingTop: 12,
   },
   commentInput: {
     flex: 1,
     backgroundColor: '#F8FAFC',
-    borderRadius: 10,
+    borderRadius: 12,
     color: '#0F172A',
-    paddingHorizontal: 12,
-    height: 36,
+    paddingHorizontal: 14,
+    height: 40,
     fontFamily: fonts.medium,
-    fontSize: 12,
+    fontSize: 12.5,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
   sendCommentBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   // City Filter Modal Styles
   centerModalOverlay: {

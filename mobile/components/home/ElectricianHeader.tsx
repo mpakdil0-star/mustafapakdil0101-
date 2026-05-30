@@ -45,11 +45,11 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
         </TouchableOpacity>
       )}
 
-      {/* Sağ Üst Köşede Simetrik Rating Rozeti (4.9 ★ Elektrik Ustası) */}
+      {/* Sağ Üst Köşede Simetrik Rating Rozeti */}
       <View style={styles.ratingBadgeAbsolute}>
         <Ionicons name="star" size={11} color="#E5C158" style={{ marginRight: 2 }} />
         <Text style={styles.ratingBadgeText}>
-          {((user as any)?.averageRating || 4.9).toFixed(1)} ★ {ustaCategoryTitle} Ustası
+          {Number(user?.electricianProfile?.ratingAverage || (user as any)?.averageRating || 5.0).toFixed(1)} ★ {ustaCategoryTitle} Ustası
         </Text>
       </View>
 
