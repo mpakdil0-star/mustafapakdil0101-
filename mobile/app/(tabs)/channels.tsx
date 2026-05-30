@@ -2051,7 +2051,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 12,
-    paddingBottom: 80,
+    paddingBottom: 120,
   },
   actionBtn: {
     height: 44,
