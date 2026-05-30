@@ -460,7 +460,15 @@ export default function ChannelsScreen() {
     try {
       const response = await api.post('/community/jobs', newJob);
       if (response.data?.success) {
+        // İlanı hemen göstermek için şehir filtresini kullanıcının şehrine ayarla
+        const userCity = user?.city || 'İstanbul';
+        if (selectedCity !== 'Tüm Türkiye' && selectedCity !== userCity) {
+          setSelectedCity(userCity);
+        }
+        // State'i API yanıtından güncelle
         setJobOffers(response.data.data);
+        // Ek güvenlik: Backend'den taze veri çek
+        await fetchJobOffers();
         setIsNewJobModalVisible(false);
         setNewJobTitle('');
         setNewJobDesc('');
