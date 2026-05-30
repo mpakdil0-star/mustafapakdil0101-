@@ -32,6 +32,7 @@ interface User {
     isAuthorizedEngineer?: boolean;
     locations?: { city: string; district?: string }[];
     pushStatus?: 'ACTIVE' | 'PENDING' | 'DISABLED' | 'UNINSTALLED';
+    createdAt?: string;
 }
 
 type FilterType = 'ALL' | 'CITIZEN' | 'ELECTRICIAN' | 'ENGINEER';
@@ -432,6 +433,11 @@ export default function AdminUsersScreen() {
                         )}
                     </View>
                     <Text style={styles.userPhone}>{item.phone || 'Telefon yok'}</Text>
+                    {item.createdAt && (
+                        <Text style={styles.userRegisterDate}>
+                            Kayıt: {new Date(item.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        </Text>
+                    )}
                 </View>
                 <View style={styles.userTypeContainer}>
                     <View style={[
@@ -907,6 +913,12 @@ const styles = StyleSheet.create({
         fontFamily: fonts.medium,
         fontSize: 13,
         color: staticColors.textSecondary,
+        marginTop: 2,
+    },
+    userRegisterDate: {
+        fontFamily: fonts.medium,
+        fontSize: 11,
+        color: '#94A3B8',
         marginTop: 2,
     },
     userTypeContainer: {

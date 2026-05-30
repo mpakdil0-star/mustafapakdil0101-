@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { fonts } from '../../constants/typography';
 import { getFileUrl } from '../../constants/api';
@@ -18,6 +18,47 @@ interface ElectricianHeaderProps {
   isAuthenticated: boolean;
 }
 
+// Mini Sparkline component (pure View-based, no SVG needed)
+const MiniSparkline: React.FC<{ color: string }> = ({ color }) => {
+  // Decorative sparkline bars representing activity trend
+  const bars = [3, 5, 4, 7, 6, 9, 8, 10, 7, 11, 9, 13];
+  const maxBar = Math.max(...bars);
+
+  return (
+    <View style={sparkStyles.container}>
+      {bars.map((val, i) => (
+        <View
+          key={i}
+          style={[
+            sparkStyles.bar,
+            {
+              height: (val / maxBar) * 22,
+              backgroundColor: color,
+              opacity: 0.3 + (val / maxBar) * 0.7,
+            },
+          ]}
+        />
+      ))}
+    </View>
+  );
+};
+
+const sparkStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    height: 24,
+    gap: 2,
+    marginTop: 6,
+    opacity: 0.85,
+  },
+  bar: {
+    width: 3,
+    borderRadius: 1.5,
+    minHeight: 2,
+  },
+});
+
 export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
   user,
   firstName,
@@ -31,6 +72,30 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
   isAuthenticated,
 }) => {
   const router = useRouter();
+
+  // Gold halo pulse animation
+  const haloPulse = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(haloPulse, {
+          toValue: 1.15,
+          duration: 2000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(haloPulse, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [haloPulse]);
 
   return (
     <View style={styles.headerContainer}>
@@ -58,19 +123,23 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
         </Text>
       </View>
 
+      {/* ÖNERİ 4: Tipografik Ayrım - İki satırlı başlık */}
       <View style={styles.centeredHeader}>
+        <Text style={styles.headerSubLabel}>
+          {isAuthenticated ? 'HOŞGELDİN' : 'HOŞGELDİNİZ'}
+        </Text>
         <Text 
           style={styles.headerTitleMain}
           numberOfLines={1}
           adjustsFontSizeToFit
         >
-          {isAuthenticated ? `HOŞGELDİN ${firstName} ${lastName}`.toUpperCase() : 'MİSAFİR USTA'}
+          {isAuthenticated ? `${firstName} ${lastName}`.toUpperCase() : 'MİSAFİR USTA'}
         </Text>
       </View>
 
       {/* Profil Avatarı & Bildirim İkonu Alanı */}
       <View style={styles.profileRow}>
-        {/* Sol Sütun Boşluk / Sürgülü Ayar (Simetri) */}
+        {/* Sol Sütun - Ayarlar Butonu (Simetri) */}
         <View style={styles.symmetricalLeftCol}>
           <TouchableOpacity
             style={styles.settingsButton}
@@ -81,10 +150,25 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* Ortalanmış dairesel bir avatar (Etrafında lüks altın sarısı halka) */}
-        <View style={{ position: 'relative' }}>
+        {/* ÖNERİ 2: Altın Halo Pulse Efekti + Avatar */}
+        <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+          {/* Animated Gold Halo Ring (behind avatar) */}
+          <Animated.View
+            style={[
+              styles.avatarHaloRing,
+              {
+                borderColor: colors.accentGold || '#E5C158',
+                transform: [{ scale: haloPulse }],
+                opacity: haloPulse.interpolate({
+                  inputRange: [1, 1.15],
+                  outputRange: [0.25, 0],
+                }),
+              },
+            ]}
+          />
+
           <TouchableOpacity
-            style={[styles.centeredAvatarContainer, { borderColor: colors.accentGold || '#E5C158', borderWidth: 2 }]}
+            style={[styles.centeredAvatarContainer, { borderColor: colors.accentGold || '#E5C158', borderWidth: 2.5 }]}
             activeOpacity={0.8}
             onPress={() => handleActionWithAuth('/profile')}
           >
@@ -104,25 +188,25 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
               bottom: 0,
               right: 0,
               backgroundColor: '#10B981',
-              width: 20,
-              height: 20,
-              borderRadius: 10,
+              width: 22,
+              height: 22,
+              borderRadius: 11,
               justifyContent: 'center',
               alignItems: 'center',
-              borderWidth: 2,
+              borderWidth: 2.5,
               borderColor: colors.secondary || '#1E293B',
-              shadowColor: '#000',
+              shadowColor: '#10B981',
               shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.15,
-              shadowRadius: 3,
-              elevation: 2,
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 3,
             }}>
-              <Ionicons name="checkmark" size={10} color="#FFFFFF" />
+              <Ionicons name="checkmark" size={11} color="#FFFFFF" />
             </View>
           )}
         </View>
 
-        {/* Bildirim zili (notifications-outline) avatarın sağ tarafında simetrik duracak */}
+        {/* Bildirim zili */}
         <View style={styles.symmetricalRightCol}>
           <TouchableOpacity
             style={styles.notificationButton}
@@ -139,42 +223,52 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
         </View>
       </View>
 
-      {/* Birleşik Finansal Özet Kartı (Unified balanced Card) */}
-      <View style={styles.unifiedCard}>
-        {/* Sol Bölüm (Toplam Kazanç - Beyaz) */}
-        <TouchableOpacity
-          style={styles.unifiedCardHalf}
-          onPress={() => handleActionWithAuth('/electrician/stats')}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.unifiedCardLabel}>Toplam Kazanç</Text>
-          <View style={styles.valueRow}>
-            <Ionicons name="wallet-outline" size={18} color="#10B981" style={{ marginRight: 6 }} />
-            <Text style={[styles.unifiedCardValue, { color: '#10B981' }]}>
-              {stats ? `₺${stats.totalEarnings.toLocaleString('tr-TR')}` : '₺0'}
-            </Text>
-          </View>
-          <Text style={styles.unifiedCardSub}>Tüm Zamanlar</Text>
-        </TouchableOpacity>
+      {/* ÖNERİ 5: Parlak ince glow ayırıcı çizgi */}
+      <View style={styles.glowLineContainer}>
+        <View style={styles.glowLineFade} />
+        <View style={styles.glowLineCenter} />
+        <View style={styles.glowLineFade} />
+      </View>
 
-        {/* Dikey ayırıcı dikey hat (rgba(148, 163, 184, 0.2)) */}
-        <View style={styles.verticalDivider} />
+      {/* ÖNERİ 1: Yüzer (Floating) Finansal Kart + ÖNERİ 3: Sparkline */}
+      <View style={styles.floatingCardWrapper}>
+        <View style={styles.unifiedCard}>
+          {/* Sol Bölüm (Toplam Kazanç) */}
+          <TouchableOpacity
+            style={styles.unifiedCardHalf}
+            onPress={() => handleActionWithAuth('/electrician/stats')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.unifiedCardLabel}>Toplam Kazanç</Text>
+            <View style={styles.valueRow}>
+              <Ionicons name="wallet-outline" size={18} color="#10B981" style={{ marginRight: 6 }} />
+              <Text style={[styles.unifiedCardValue, { color: '#10B981' }]}>
+                {stats ? `₺${stats.totalEarnings.toLocaleString('tr-TR')}` : '₺0'}
+              </Text>
+            </View>
+            {/* ÖNERİ 3: Sparkline */}
+            <MiniSparkline color="#10B981" />
+          </TouchableOpacity>
 
-        {/* Sağ Bölüm (Aktif Teklifler - Beyaz) */}
-        <TouchableOpacity
-          style={styles.unifiedCardHalf}
-          onPress={() => handleActionWithAuth('/(tabs)/jobs', { tab: 'bids' })}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.unifiedCardLabel}>Aktif Teklifler</Text>
-          <View style={styles.valueRow}>
-            <Ionicons name="briefcase-outline" size={17} color="#2E5C8A" style={{ marginRight: 6 }} />
-            <Text style={styles.unifiedCardValueDark}>
-              {stats ? stats.activeBids : '0'}
-            </Text>
-          </View>
-          <Text style={styles.unifiedCardSub}>Bekleyen</Text>
-        </TouchableOpacity>
+          {/* Dikey ayırıcı */}
+          <View style={styles.verticalDivider} />
+
+          {/* Sağ Bölüm (Aktif Teklifler) */}
+          <TouchableOpacity
+            style={styles.unifiedCardHalf}
+            onPress={() => handleActionWithAuth('/(tabs)/jobs', { tab: 'bids' })}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.unifiedCardLabel}>Aktif Teklifler</Text>
+            <View style={styles.valueRow}>
+              <Ionicons name="briefcase-outline" size={17} color="#2E5C8A" style={{ marginRight: 6 }} />
+              <Text style={styles.unifiedCardValueDark}>
+                {stats ? stats.activeBids : '0'}
+              </Text>
+            </View>
+            <Text style={[styles.unifiedCardSub, { marginTop: 6 }]}>Bekleyen</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -183,7 +277,7 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
 const styles = StyleSheet.create({
   headerContainer: {
     width: '100%',
-    paddingBottom: 4,
+    paddingBottom: 30, // Extra padding for floating card overhang
     backgroundColor: 'transparent',
   },
   headerDecorativeCircle1: {
@@ -227,29 +321,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
   },
+
+  // ÖNERİ 4: İki satırlı tipografi
   centeredHeader: {
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 38,
-    marginBottom: 12,
+    marginBottom: 14,
+  },
+  headerSubLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.55)',
+    letterSpacing: 4,
+    textTransform: 'uppercase',
+    marginBottom: 4,
   },
   headerTitleMain: {
     fontFamily: fonts.extraBold,
-    fontSize: 19,
-    color: '#FFFFFF', // Pure White
-    letterSpacing: 0.5,
+    fontSize: 22,
+    color: '#FFFFFF',
+    letterSpacing: 1,
   },
   headerSubtitleSub: {
     fontFamily: fonts.regular,
     fontSize: 13,
-    color: '#CBD5E1', // Light Gray/Slate
+    color: '#CBD5E1',
     marginTop: 1,
   },
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 18,
   },
   symmetricalLeftCol: {
     flex: 1,
@@ -263,21 +367,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingLeft: 22,
   },
+
+  // ÖNERİ 2: Altın Halo Ring (avatar arkasında)
+  avatarHaloRing: {
+    position: 'absolute',
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    borderWidth: 2.5,
+    borderColor: '#E5C158',
+  },
+
   centeredAvatarContainer: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.35)', // Clean White border like Citizen
+    borderWidth: 2.5,
+    borderColor: '#E5C158',
     overflow: 'hidden',
-    backgroundColor: 'rgba(255, 255, 255, 0.12)', // Translucent white like Citizen
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#FFFFFF', // White Glow like Citizen
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: '#E5C158',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
   centeredAvatarImage: {
     width: '100%',
@@ -323,16 +438,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  valueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 2,
-  },
   ratingBadgeText: {
     fontFamily: fonts.bold,
     fontSize: 9,
-    color: '#E5C158', // Premium Gold
+    color: '#E5C158',
   },
   notificationBadge: {
     position: 'absolute',
@@ -346,26 +455,59 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#4682B4', // Matches the blue background!
+    borderColor: '#1E293B',
   },
   notificationBadgeText: {
     color: '#FFFFFF',
     fontSize: 8,
     fontFamily: fonts.bold,
   },
+
+  // ÖNERİ 5: Glow Line (parlak ince çizgi)
+  glowLineContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginBottom: 6,
+    height: 1,
+  },
+  glowLineFade: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(229, 193, 88, 0.06)',
+  },
+  glowLineCenter: {
+    width: 120,
+    height: 1,
+    backgroundColor: 'rgba(229, 193, 88, 0.25)',
+    borderRadius: 1,
+    shadowColor: '#E5C158',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+
+  // ÖNERİ 1: Floating card
+  floatingCardWrapper: {
+    marginHorizontal: 4,
+    marginTop: 4,
+    marginBottom: -26, // Overflows bottom of header into content below
+    zIndex: 10,
+  },
   unifiedCard: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF', // Pure White Card
-    borderRadius: 16,
-    paddingVertical: 16,
-    marginHorizontal: 4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 18,
+    paddingHorizontal: 4,
     borderWidth: 1,
-    borderColor: 'rgba(70, 130, 180, 0.12)',
-    shadowColor: '#4682B4',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.03, // Opacity between 0.02 and 0.04
-    shadowRadius: 10,
-    elevation: 2,
+    borderColor: 'rgba(30, 41, 59, 0.06)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 6,
   },
   unifiedCardHalf: {
     flex: 1,
@@ -374,28 +516,33 @@ const styles = StyleSheet.create({
   },
   verticalDivider: {
     width: 1,
-    height: '70%',
-    borderLeftWidth: 1,
-    borderLeftColor: 'rgba(70, 130, 180, 0.15)',
+    height: '80%',
+    backgroundColor: 'rgba(148, 163, 184, 0.15)',
     alignSelf: 'center',
+    borderRadius: 1,
+  },
+  valueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 0,
   },
   unifiedCardLabel: {
     fontFamily: fonts.semiBold,
     fontSize: 11,
-    color: '#64748B', // Slate Gray
-    marginBottom: 4,
+    color: '#94A3B8',
+    marginBottom: 6,
+    letterSpacing: 0.5,
   },
   unifiedCardValue: {
     fontFamily: fonts.extraBold,
-    fontSize: 20,
-    color: '#2E5C8A', // Deep Steel Blue
-    marginBottom: 2,
+    fontSize: 22,
+    color: '#2E5C8A',
   },
   unifiedCardValueDark: {
     fontFamily: fonts.extraBold,
-    fontSize: 20,
-    color: '#2E5C8A', // Deep Steel Blue
-    marginBottom: 2,
+    fontSize: 22,
+    color: '#2E5C8A',
   },
   unifiedCardSub: {
     fontFamily: fonts.medium,
