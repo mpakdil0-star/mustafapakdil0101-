@@ -71,8 +71,12 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
         }}>
           {isAuthenticated ? '🛠️ Hayırlı İşler Usta!' : '🛠️ Hoşgeldiniz!'}
         </Text>
-        <Text style={styles.headerTitleMain}>
-          {isAuthenticated ? `${firstName} ${lastName}` : 'Misafir Usta'}
+        <Text 
+          style={styles.headerTitleMain}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
+          {isAuthenticated ? `Hoşgeldin ${firstName} ${lastName}` : 'Misafir Usta'}
         </Text>
       </View>
 
