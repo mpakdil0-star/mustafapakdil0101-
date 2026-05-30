@@ -633,12 +633,61 @@ export default function ChannelsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: '#F8FAFC' }]}>
-      {/* Header */}
       <PremiumHeader
         title="Usta Kanalları"
-        subtitle="Meslektaşlarınla yardımlaş, iş paylaş ve zanaatini sergile"
+        subtitle={user?.fullName ? `Hoş geldin, ${user.fullName} Usta 👋` : "Meslektaşlarınla yardımlaş, iş paylaş"}
         layout="tab"
         backgroundImage={require('../../assets/images/header_bg.png')}
+        rightElement={
+          user?.profileImageUrl ? (
+            <TouchableOpacity 
+              activeOpacity={0.8}
+              onPress={() => router.push('/(tabs)/profile')}
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 21,
+                borderWidth: 2,
+                borderColor: '#FFFFFF',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 4,
+                elevation: 3,
+                overflow: 'hidden',
+              }}
+            >
+              <Image 
+                source={{ uri: user.profileImageUrl }} 
+                style={{ width: '100%', height: '100%' }} 
+              />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity 
+              activeOpacity={0.8}
+              onPress={() => router.push('/(tabs)/profile')}
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 21,
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                borderWidth: 2,
+                borderColor: '#FFFFFF',
+                justifyContent: 'center',
+                alignItems: 'center',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 4,
+                elevation: 3,
+              }}
+            >
+              <Text style={{ color: '#FFF', fontSize: 15, fontFamily: fonts.bold }}>
+                {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+              </Text>
+            </TouchableOpacity>
+          )
+        }
       />
 
       {/* Tabs */}
