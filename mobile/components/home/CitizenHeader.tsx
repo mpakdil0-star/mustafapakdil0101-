@@ -24,10 +24,7 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
 }) => {
   const router = useRouter();
 
-  const fullName = isAuthenticated ? (user?.fullName || 'VATANDAŞ') : 'MİSAFİR';
-  const nameParts = fullName.toUpperCase().split(' ');
-  const firstName = nameParts[0] || 'MİSAFİR';
-  const lastName = nameParts.slice(1).join(' ') || 'VATANDAŞ';
+  const displayFullName = isAuthenticated ? (user?.fullName || 'Vatandaş') : 'Misafir';
 
   return (
     <View style={styles.container}>
@@ -44,9 +41,9 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
 
       {/* Başlık Düzeni (Centered Header) */}
       <View style={styles.centeredHeader}>
-        <Text style={styles.headerTitleMain}>İŞBİTİR</Text>
+        <Text style={styles.headerTitleMain}>HOŞ GELDİN</Text>
         <Text style={styles.headerSubtitleSub}>
-          {isAuthenticated ? `${firstName} ${lastName}` : 'Misafir Vatandaş'}
+          {displayFullName}
         </Text>
       </View>
 
