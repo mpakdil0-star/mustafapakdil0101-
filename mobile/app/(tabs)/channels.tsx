@@ -117,6 +117,12 @@ export default function ChannelsScreen() {
 
   const [citySearchQuery, setCitySearchQuery] = useState('');
 
+  // Custom Confirmation Modal States
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+  const [confirmModalTitle, setConfirmModalTitle] = useState('');
+  const [confirmModalDesc, setConfirmModalDesc] = useState('');
+  const [confirmModalAction, setConfirmModalAction] = useState<() => void>(() => () => {});
+
   // Cities List for Filter
   const CITIES = ['Tüm Türkiye', ...CITY_NAMES];
 
@@ -467,47 +473,41 @@ export default function ChannelsScreen() {
   };
 
   // Handle Delete Job Offer
-  const handleDeleteJobOffer = async (itemId: string) => {
-    Alert.alert('İlanı İptal Et', 'Bu iş paslama ilanınızı silmek ve yayından kaldırmak istediğinize emin misiniz?', [
-      { text: 'Vazgeç', style: 'cancel' },
-      {
-        text: 'Evet, İptal Et',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            const response = await api.delete(`/community/jobs/${itemId}`);
-            if (response.data?.success) {
-              setJobOffers(response.data.data);
-              Alert.alert('Başarılı', 'İş paslama ilanınız başarıyla iptal edildi.');
-            }
-          } catch (err) {
-            Alert.alert('Hata', 'İlan iptal edilemedi.');
-          }
+  const handleDeleteJobOffer = (itemId: string) => {
+    setConfirmModalTitle('İlanı İptal Et');
+    setConfirmModalDesc('Bu iş paslama ilanınızı silmek ve yayından kaldırmak istediğinize emin misiniz?');
+    setConfirmModalAction(() => async () => {
+      try {
+        const response = await api.delete(`/community/jobs/${itemId}`);
+        if (response.data?.success) {
+          setJobOffers(response.data.data);
+          Alert.alert('Başarılı', 'İş paslama ilanınız başarıyla iptal edildi.');
         }
+      } catch (err) {
+        Alert.alert('Hata', 'İlan iptal edilemedi.');
       }
-    ]);
+      setConfirmModalVisible(false);
+    });
+    setConfirmModalVisible(true);
   };
 
   // Handle Delete Forum Post
-  const handleDeleteForumPost = async (postId: string) => {
-    Alert.alert('Soruyu Sil', 'Bu teknik destek sorunuzu silmek istediğinize emin misiniz?', [
-      { text: 'Vazgeç', style: 'cancel' },
-      {
-        text: 'Evet, Sil',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            const response = await api.delete(`/community/forum/${postId}`);
-            if (response.data?.success) {
-              await fetchForumPosts();
-              Alert.alert('Başarılı', 'Sorunuz başarıyla silindi.');
-            }
-          } catch (err) {
-            Alert.alert('Hata', 'Soru silinemedi.');
-          }
+  const handleDeleteForumPost = (postId: string) => {
+    setConfirmModalTitle('Soruyu Sil');
+    setConfirmModalDesc('Bu teknik destek sorunuzu silmek istediğinize emin misiniz?');
+    setConfirmModalAction(() => async () => {
+      try {
+        const response = await api.delete(`/community/forum/${postId}`);
+        if (response.data?.success) {
+          await fetchForumPosts();
+          Alert.alert('Başarılı', 'Sorunuz başarıyla silindi.');
         }
+      } catch (err) {
+        Alert.alert('Hata', 'Soru silinemedi.');
       }
-    ]);
+      setConfirmModalVisible(false);
+    });
+    setConfirmModalVisible(true);
   };
 
   // Handle Add Job Offer
@@ -583,25 +583,22 @@ export default function ChannelsScreen() {
   };
 
   // Handle Delete Showcase Item
-  const handleDeleteShowcaseItem = async (itemId: string) => {
-    Alert.alert('Fotoğrafı Sil', 'Bu çalışmanızı galerinizden kaldırmak istediğinize emin misiniz?', [
-      { text: 'Vazgeç', style: 'cancel' },
-      {
-        text: 'Evet, Sil',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            const response = await api.delete(`/showcase/${itemId}`);
-            if (response.data?.success) {
-              setShowcaseItems(response.data.data);
-              Alert.alert('Başarılı', 'Çalışmanız galeriden silindi.');
-            }
-          } catch (err) {
-            Alert.alert('Hata', 'Çalışma silinemedi.');
-          }
+  const handleDeleteShowcaseItem = (itemId: string) => {
+    setConfirmModalTitle('Fotoğrafı Sil');
+    setConfirmModalDesc('Bu çalışmanızı galerinizden kaldırmak istediğinize emin misiniz?');
+    setConfirmModalAction(() => async () => {
+      try {
+        const response = await api.delete(`/showcase/${itemId}`);
+        if (response.data?.success) {
+          setShowcaseItems(response.data.data);
+          Alert.alert('Başarılı', 'Çalışmanız galeriden silindi.');
         }
+      } catch (err) {
+        Alert.alert('Hata', 'Çalışma silinemedi.');
       }
-    ]);
+      setConfirmModalVisible(false);
+    });
+    setConfirmModalVisible(true);
   };
 
   const filteredJobOffers = jobOffers.filter((job) => {
@@ -1977,6 +1974,105 @@ export default function ChannelsScreen() {
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
+      </Modal>
+
+      {/* ==================== CUSTOM CONFIRMATION MODAL ==================== */}
+      <Modal
+        visible={confirmModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setConfirmModalVisible(false)}
+      >
+        <View style={styles.centerModalOverlay}>
+          <View style={[styles.cityModalContent, { width: '80%', padding: 20, alignItems: 'center' }]}>
+            {/* Destructive Trash Icon Container */}
+            <View style={{
+              width: 56,
+              height: 56,
+              borderRadius: 28,
+              backgroundColor: '#FFE4E6',
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: 16,
+              borderWidth: 1,
+              borderColor: '#FFE4E6',
+            }}>
+              <Ionicons name="trash" size={26} color="#F43F5E" />
+            </View>
+
+            {/* Modal Title */}
+            <Text style={{
+              fontSize: 16,
+              fontFamily: fonts.bold,
+              color: '#0F172A',
+              textAlign: 'center',
+              marginBottom: 8,
+            }}>
+              {confirmModalTitle}
+            </Text>
+
+            {/* Modal Description */}
+            <Text style={{
+              fontSize: 13,
+              fontFamily: fonts.medium,
+              color: '#64748B',
+              textAlign: 'center',
+              lineHeight: 18,
+              marginBottom: 24,
+            }}>
+              {confirmModalDesc}
+            </Text>
+
+            {/* Action Buttons Row */}
+            <View style={{ flexDirection: 'row', gap: 10, width: '100%' }}>
+              {/* Cancel Button */}
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  height: 44,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: '#E2E8F0',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: '#FFFFFF',
+                }}
+                activeOpacity={0.7}
+                onPress={() => setConfirmModalVisible(false)}
+              >
+                <Text style={{ color: '#64748B', fontFamily: fonts.bold, fontSize: 13.5 }}>
+                  Vazgeç
+                </Text>
+              </TouchableOpacity>
+
+              {/* Confirm Button */}
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  height: 44,
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                }}
+                activeOpacity={0.85}
+                onPress={confirmModalAction}
+              >
+                <LinearGradient
+                  colors={colors.gradientError || ['#F43F5E', '#E11D48']}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{ color: '#FFFFFF', fontFamily: fonts.bold, fontSize: 13.5 }}>
+                    Evet, Sil
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
 
     </View>
