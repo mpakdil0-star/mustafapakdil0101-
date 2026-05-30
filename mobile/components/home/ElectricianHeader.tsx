@@ -58,25 +58,13 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
         </Text>
       </View>
 
-      {/* Başlık Düzeni (Centered Header with Warm Tradesman Greeting) */}
       <View style={styles.centeredHeader}>
-        <Text style={{
-          fontFamily: fonts.bold,
-          fontSize: 11,
-          color: colors.accentGold || '#E5C158',
-          letterSpacing: 1.5,
-          textTransform: 'uppercase',
-          marginBottom: 4,
-          opacity: 0.95,
-        }}>
-          {isAuthenticated ? '🛠️ Hayırlı İşler Usta!' : '🛠️ Hoşgeldiniz!'}
-        </Text>
         <Text 
           style={styles.headerTitleMain}
           numberOfLines={1}
           adjustsFontSizeToFit
         >
-          {isAuthenticated ? `Hoşgeldin ${firstName} ${lastName}` : 'Misafir Usta'}
+          {isAuthenticated ? `HOŞGELDİN ${firstName} ${lastName}`.toUpperCase() : 'MİSAFİR USTA'}
         </Text>
       </View>
 
