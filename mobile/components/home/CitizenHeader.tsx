@@ -41,7 +41,7 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
 
       {/* Başlık Düzeni (Centered Header) */}
       <View style={styles.centeredHeader}>
-        <Text style={styles.headerTitleMain}>HOŞ GELDİN</Text>
+        <Text style={styles.headerTitleMain}>HOŞGELDİN</Text>
         <Text style={styles.headerSubtitleSub}>
           {displayFullName}
         </Text>
