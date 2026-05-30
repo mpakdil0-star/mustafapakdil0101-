@@ -1209,16 +1209,16 @@ export default function HomeScreen() {
           {isElectrician ? (
             <ImageBackground
               source={require('../../assets/images/header_bg.png')}
-              style={[styles.premiumHeader, { backgroundColor: colors.headerDeepSlate || '#4682B4', borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.15)' }]}
-              imageStyle={[styles.headerImage, { opacity: 0.05 }]}
+              style={[styles.premiumHeader, { backgroundColor: colors.secondary || '#1E293B', borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.12)' }]}
+              imageStyle={[styles.headerImage, { opacity: 0.08 }]}
             >
               <LinearGradient
-                colors={[colors.headerDeepSlate || '#4682B4', '#2E5C8A']}
+                colors={[colors.secondary || '#1E293B', colors.primaryDark || '#2E5C8A']}
                 style={StyleSheet.absoluteFill}
               />
               <StatusBar 
                 barStyle="light-content" 
-                backgroundColor={colors.headerDeepSlate || '#4682B4'} 
+                backgroundColor={colors.secondary || '#1E293B'} 
                 translucent={false}
               />
               <ElectricianHeader
