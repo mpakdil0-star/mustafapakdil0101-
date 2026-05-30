@@ -473,7 +473,10 @@ export const mockStorage = {
             processedTokens.push(token);
             saveTokensToDisk();
         }
-    }
+    },
+
+    mockStore,
+    saveToDisk
 };
 
 // ============== MOCK REVIEWS STORAGE ==============
