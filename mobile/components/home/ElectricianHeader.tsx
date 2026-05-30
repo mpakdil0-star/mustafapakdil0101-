@@ -71,7 +71,15 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
       {/* Profil Avatarı & Bildirim İkonu Alanı */}
       <View style={styles.profileRow}>
         {/* Sol Sütun Boşluk / Sürgülü Ayar (Simetri) */}
-        <View style={styles.symmetricalLeftCol} />
+        <View style={styles.symmetricalLeftCol}>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            activeOpacity={0.7}
+            onPress={() => handleActionWithAuth('/profile')}
+          >
+            <Ionicons name="settings-outline" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
 
         {/* Ortalanmış dairesel bir avatar (Etrafında lüks altın sarısı halka) */}
         <View style={{ position: 'relative' }}>
@@ -102,7 +110,7 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
               justifyContent: 'center',
               alignItems: 'center',
               borderWidth: 2,
-              borderColor: colors.headerDeepSlate || '#4682B4',
+              borderColor: colors.secondary || '#1E293B',
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.15,
@@ -140,9 +148,12 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
           activeOpacity={0.85}
         >
           <Text style={styles.unifiedCardLabel}>Toplam Kazanç</Text>
-          <Text style={styles.unifiedCardValue}>
-            {stats ? `₺${stats.totalEarnings.toLocaleString('tr-TR')}` : '₺0'}
-          </Text>
+          <View style={styles.valueRow}>
+            <Ionicons name="wallet-outline" size={18} color="#10B981" style={{ marginRight: 6 }} />
+            <Text style={[styles.unifiedCardValue, { color: '#10B981' }]}>
+              {stats ? `₺${stats.totalEarnings.toLocaleString('tr-TR')}` : '₺0'}
+            </Text>
+          </View>
           <Text style={styles.unifiedCardSub}>Tüm Zamanlar</Text>
         </TouchableOpacity>
 
@@ -156,9 +167,12 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
           activeOpacity={0.85}
         >
           <Text style={styles.unifiedCardLabel}>Aktif Teklifler</Text>
-          <Text style={styles.unifiedCardValueDark}>
-            {stats ? stats.activeBids : '0'}
-          </Text>
+          <View style={styles.valueRow}>
+            <Ionicons name="briefcase-outline" size={17} color="#2E5C8A" style={{ marginRight: 6 }} />
+            <Text style={styles.unifiedCardValueDark}>
+              {stats ? stats.activeBids : '0'}
+            </Text>
+          </View>
           <Text style={styles.unifiedCardSub}>Bekleyen</Text>
         </TouchableOpacity>
       </View>
@@ -241,6 +255,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'flex-end',
     justifyContent: 'center',
+    paddingRight: 22,
   },
   symmetricalRightCol: {
     flex: 1,
@@ -285,18 +300,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  settingsButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   ratingBadgeAbsolute: {
     position: 'absolute',
     right: 0,
     top: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(229, 193, 88, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: 'rgba(229, 193, 88, 0.3)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  valueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
   },
   ratingBadgeText: {
     fontFamily: fonts.bold,

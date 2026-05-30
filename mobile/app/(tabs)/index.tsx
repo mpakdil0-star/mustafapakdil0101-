@@ -1194,14 +1194,14 @@ export default function HomeScreen() {
         <View style={[
           styles.premiumHeaderContainer, 
           isElectrician ? { 
-            backgroundColor: colors.headerDeepSlate || '#4682B4', 
-            shadowColor: '#4682B4', 
-            shadowOffset: { width: 0, height: 4 }, 
-            shadowOpacity: 0.04,
-            shadowRadius: 8, 
-            elevation: 2,
-            borderBottomLeftRadius: 0,
-            borderBottomRightRadius: 0,
+            backgroundColor: colors.secondary || '#1E293B', 
+            shadowColor: colors.secondary || '#1E293B', 
+            shadowOffset: { width: 0, height: 6 }, 
+            shadowOpacity: 0.06,
+            shadowRadius: 10, 
+            elevation: 4,
+            borderBottomLeftRadius: 32,
+            borderBottomRightRadius: 32,
           } : {
             shadowColor: colors.primary,
           }
