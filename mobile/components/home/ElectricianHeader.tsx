@@ -34,6 +34,11 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
 
   return (
     <View style={styles.headerContainer}>
+      {/* Decorative Glowing Circles for premium mesh visual depth */}
+      <View style={[styles.headerDecorativeCircle1, { backgroundColor: 'rgba(255, 255, 255, 0.04)' }]} />
+      <View style={[styles.headerDecorativeCircle2, { backgroundColor: 'rgba(255, 255, 255, 0.02)' }]} />
+      <View style={[styles.headerDecorativeCircle3, { backgroundColor: 'rgba(255, 255, 255, 0.03)' }]} />
+
       {/* Mutlak Konumlanmış Geri Butonu (Misafir için) */}
       {!isAuthenticated && (
         <TouchableOpacity
@@ -53,8 +58,19 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
         </Text>
       </View>
 
-      {/* Başlık Düzeni (Centered Header) */}
+      {/* Başlık Düzeni (Centered Header with Warm Tradesman Greeting) */}
       <View style={styles.centeredHeader}>
+        <Text style={{
+          fontFamily: fonts.bold,
+          fontSize: 11,
+          color: colors.accentGold || '#E5C158',
+          letterSpacing: 1.5,
+          textTransform: 'uppercase',
+          marginBottom: 4,
+          opacity: 0.95,
+        }}>
+          {isAuthenticated ? '🛠️ Hayırlı İşler Usta!' : '🛠️ Hoşgeldiniz!'}
+        </Text>
         <Text style={styles.headerTitleMain}>
           {isAuthenticated ? `${firstName} ${lastName}` : 'Misafir Usta'}
         </Text>
@@ -65,20 +81,46 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
         {/* Sol Sütun Boşluk / Sürgülü Ayar (Simetri) */}
         <View style={styles.symmetricalLeftCol} />
 
-        {/* Ortalanmış dairesel bir avatar (Etrafında beyaz border) */}
-        <TouchableOpacity
-          style={[styles.centeredAvatarContainer, { borderColor: 'rgba(255, 255, 255, 0.35)' }]}
-          activeOpacity={0.8}
-          onPress={() => handleActionWithAuth('/profile')}
-        >
-          {isAuthenticated && user?.profileImageUrl ? (
-            <Image source={{ uri: getFileUrl(user.profileImageUrl) || '' }} style={styles.centeredAvatarImage} />
-          ) : (
-            <View style={styles.centeredAvatarPlaceholder}>
-              <Ionicons name="person" size={32} color="rgba(255, 255, 255, 0.85)" />
+        {/* Ortalanmış dairesel bir avatar (Etrafında lüks altın sarısı halka) */}
+        <View style={{ position: 'relative' }}>
+          <TouchableOpacity
+            style={[styles.centeredAvatarContainer, { borderColor: colors.accentGold || '#E5C158', borderWidth: 2 }]}
+            activeOpacity={0.8}
+            onPress={() => handleActionWithAuth('/profile')}
+          >
+            {isAuthenticated && user?.profileImageUrl ? (
+              <Image source={{ uri: getFileUrl(user.profileImageUrl) || '' }} style={styles.centeredAvatarImage} />
+            ) : (
+              <View style={styles.centeredAvatarPlaceholder}>
+                <Ionicons name="person" size={32} color="rgba(255, 255, 255, 0.85)" />
+              </View>
+            )}
+          </TouchableOpacity>
+          
+          {/* Green Verified Badge on Avatar Corner */}
+          {isAuthenticated && user?.isVerified && (
+            <View style={{
+              position: 'absolute',
+              bottom: 0,
+              right: 0,
+              backgroundColor: '#10B981',
+              width: 20,
+              height: 20,
+              borderRadius: 10,
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderWidth: 2,
+              borderColor: colors.headerDeepSlate || '#4682B4',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.15,
+              shadowRadius: 3,
+              elevation: 2,
+            }}>
+              <Ionicons name="checkmark" size={10} color="#FFFFFF" />
             </View>
           )}
-        </TouchableOpacity>
+        </View>
 
         {/* Bildirim zili (notifications-outline) avatarın sağ tarafında simetrik duracak */}
         <View style={styles.symmetricalRightCol}>
@@ -107,7 +149,7 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
         >
           <Text style={styles.unifiedCardLabel}>Toplam Kazanç</Text>
           <Text style={styles.unifiedCardValue}>
-            {stats ? `₺${stats.totalEarnings.toLocaleString('tr-TR')}` : '₺0.00'}
+            {stats ? `₺${stats.totalEarnings.toLocaleString('tr-TR')}` : '₺0'}
           </Text>
           <Text style={styles.unifiedCardSub}>Tüm Zamanlar</Text>
         </TouchableOpacity>
@@ -137,6 +179,33 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingBottom: 4,
     backgroundColor: 'transparent',
+  },
+  headerDecorativeCircle1: {
+    position: 'absolute',
+    top: -50,
+    right: -50,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    zIndex: 0,
+  },
+  headerDecorativeCircle2: {
+    position: 'absolute',
+    bottom: -30,
+    left: -40,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    zIndex: 0,
+  },
+  headerDecorativeCircle3: {
+    position: 'absolute',
+    top: 40,
+    left: '30%',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    zIndex: 0,
   },
   backButtonAbsolute: {
     position: 'absolute',
