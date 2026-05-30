@@ -27,6 +27,7 @@ import api from '../../services/api';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { EmptyState } from '../../components/common/EmptyState';
 import { getFileUrl } from '../../constants/api';
+import { CITY_NAMES } from '../../constants/locations';
 
 const { width } = Dimensions.get('window');
 
@@ -114,8 +115,10 @@ export default function ChannelsScreen() {
   const [locationsModalUstaName, setLocationsModalUstaName] = useState('');
   const [locationsModalContent, setLocationsModalContent] = useState<string[]>([]);
 
+  const [citySearchQuery, setCitySearchQuery] = useState('');
+
   // Cities List for Filter
-  const CITIES = ['Tüm Türkiye', 'İstanbul', 'Ankara', 'İzmir', 'Adana', 'Antalya', 'Bursa', 'Mersin', 'Kocaeli', 'Gaziantep'];
+  const CITIES = ['Tüm Türkiye', ...CITY_NAMES];
 
   // Fetch Forum Posts
   const fetchForumPosts = async () => {
@@ -192,7 +195,74 @@ export default function ChannelsScreen() {
     try {
       const response = await api.get('/community/jobs');
       if (response.data?.success) {
-        setJobOffers(response.data.data);
+        // Enrich items with real electrician data
+        let electriciansMap: Record<string, any> = {};
+        try {
+          const elecRes = await userService.getElectricians({});
+          if (elecRes && elecRes.success && Array.isArray(elecRes.data)) {
+            elecRes.data.forEach((elec: any) => {
+              if (elec.id) {
+                // Parse and format service areas dynamically
+                let cityOnly = elec.city || (elec.locations && elec.locations[elec.locations.length - 1]?.city) || 'İstanbul';
+                let serviceArea = '';
+                let serviceCities: string[] = [];
+                if (elec.locations && elec.locations.length > 0) {
+                  cityOnly = elec.locations[elec.locations.length - 1]?.city || elec.city || 'İstanbul';
+                  const cityMap: Record<string, string[]> = {};
+                  elec.locations.forEach((loc: any) => {
+                    const c = loc.city || '';
+                    if (c) {
+                      if (!cityMap[c]) cityMap[c] = [];
+                      if (loc.district && !cityMap[c].includes(loc.district)) {
+                        cityMap[c].push(loc.district);
+                      }
+                      if (!serviceCities.includes(c)) {
+                        serviceCities.push(c);
+                      }
+                    }
+                  });
+                  const formatted = Object.entries(cityMap).map(([c, districts]) => {
+                    if (districts.length > 0) {
+                      return `${districts.join(', ')} (${c})`;
+                    }
+                    return c;
+                  }).join(' • ');
+                  if (formatted) serviceArea = formatted;
+                }
+                if (serviceCities.length === 0 && cityOnly) {
+                  serviceCities.push(cityOnly);
+                }
+
+                electriciansMap[elec.id] = {
+                  profileImageUrl: elec.profileImageUrl || undefined,
+                  isVerified: elec.isVerified ?? undefined,
+                  cityOnly: cityOnly,
+                  fullLocations: serviceArea || cityOnly,
+                  specialties: elec.electricianProfile?.specialties || [],
+                  experienceYears: elec.electricianProfile?.experienceYears || 0,
+                  serviceCategory: elec.electricianProfile?.serviceCategory || undefined,
+                  serviceCities: serviceCities,
+                };
+              }
+            });
+          }
+        } catch (_e) { /* ignore */ }
+
+        const enriched = response.data.data.map((item: any) => {
+          const elecInfo = electriciansMap[item.ustaId] || {};
+          return {
+            ...item,
+            ustaAvatar: item.ustaAvatar || elecInfo.profileImageUrl || null,
+            ustaCityOnly: elecInfo.cityOnly || item.ustaCity || 'İstanbul',
+            ustaFullLocations: elecInfo.fullLocations || item.ustaCity || 'İstanbul',
+            ustaVerified: elecInfo.isVerified || false,
+            ustaSpecialty: elecInfo.specialties?.[0] || (elecInfo.serviceCategory ? getServiceLabel(elecInfo.serviceCategory) : null),
+            ustaExperience: elecInfo.experienceYears || null,
+            ustaServiceCities: elecInfo.serviceCities || [item.ustaCity || 'İstanbul'],
+          };
+        });
+
+        setJobOffers(enriched);
       }
     } catch (err) {
       console.log('Error fetching job offers:', err);
@@ -534,9 +604,35 @@ export default function ChannelsScreen() {
     ]);
   };
 
-  const filteredJobOffers = jobOffers.filter(
-    (job) => selectedCity === 'Tüm Türkiye' || (job.ustaCity || job.city || 'İstanbul') === selectedCity
-  );
+  const filteredJobOffers = jobOffers.filter((job) => {
+    if (selectedCity === 'Tüm Türkiye') return true;
+    const serviceCities = job.ustaServiceCities || [job.ustaCity || job.city || 'İstanbul'];
+    return serviceCities.includes(selectedCity);
+  });
+
+  const searchNormalized = citySearchQuery
+    .toLocaleLowerCase('tr-TR')
+    .replace(/i/g, 'i')
+    .replace(/ı/g, 'ı')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c');
+
+  const filteredCities = CITIES.filter((city) => {
+    if (city === 'Tüm Türkiye') return true;
+    const cityNormalized = city
+      .toLocaleLowerCase('tr-TR')
+      .replace(/i/g, 'i')
+      .replace(/ı/g, 'ı')
+      .replace(/ğ/g, 'g')
+      .replace(/ü/g, 'u')
+      .replace(/ş/g, 's')
+      .replace(/ö/g, 'o')
+      .replace(/ç/g, 'c');
+    return cityNormalized.includes(searchNormalized);
+  });
 
   return (
     <View style={[styles.container, { backgroundColor: '#F8FAFC' }]}>
@@ -778,7 +874,10 @@ export default function ChannelsScreen() {
               <View style={styles.jobsHeaderRow}>
                 <TouchableOpacity
                   style={[styles.cityFilterBtn, { borderColor: 'rgba(8, 145, 178, 0.2)' }]}
-                  onPress={() => setIsCityFilterModalVisible(true)}
+                  onPress={() => {
+                    setCitySearchQuery('');
+                    setIsCityFilterModalVisible(true);
+                  }}
                 >
                   <Ionicons name="location-outline" size={14} color="#0891B2" />
                   <Text style={[styles.cityFilterText, { color: '#0891B2' }]}>{selectedCity}</Text>
@@ -834,10 +933,25 @@ export default function ChannelsScreen() {
                       }}
                     >
                       <View style={styles.jobCardHeader}>
-                        <View style={[styles.cityBadge, { backgroundColor: colors.primary + '08', borderColor: colors.primary + '20' }]}>
+                        <TouchableOpacity
+                          style={[styles.cityBadge, { backgroundColor: colors.primary + '08', borderColor: colors.primary + '20', maxWidth: '70%' }]}
+                          activeOpacity={0.6}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            setLocationsModalUstaName(offer.ustaName || 'Usta');
+                            setLocationsModalContent(offer.ustaFullLocations ? offer.ustaFullLocations.split(' • ') : [offer.ustaCityOnly || offer.ustaCity || 'İstanbul']);
+                            setIsLocationsModalVisible(true);
+                          }}
+                        >
                           <Ionicons name="location" size={10} color={colors.primary} style={{ marginRight: 4 }} />
-                          <Text style={[styles.cityBadgeText, { color: colors.primary }]}>{offer.ustaCity || offer.city || 'İstanbul'}</Text>
-                        </View>
+                          <Text 
+                            style={[styles.cityBadgeText, { color: colors.primary, flexShrink: 1 }]} 
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                          >
+                            {offer.ustaFullLocations || offer.ustaCity || 'İstanbul'}
+                          </Text>
+                        </TouchableOpacity>
                         <View style={styles.jobCardUrgencyBadge}>
                           <Ionicons name="flash" size={10} color="#F59E0B" style={{ marginRight: 2 }} />
                           <Text style={styles.jobCardUrgencyText}>Aktif Fırsat</Text>
@@ -1195,12 +1309,56 @@ export default function ChannelsScreen() {
       </Modal>
 
       {/* 4. City Filter Modal */}
-      <Modal visible={isCityFilterModalVisible} transparent animationType="fade">
+      <Modal 
+        visible={isCityFilterModalVisible} 
+        transparent 
+        animationType="fade"
+        onRequestClose={() => setIsCityFilterModalVisible(false)}
+      >
         <View style={styles.centerModalOverlay}>
           <View style={styles.cityModalContent}>
-            <Text style={styles.cityModalTitle}>Şehir Seçin</Text>
-            <ScrollView style={{ maxHeight: 300 }}>
-              {CITIES.map((city) => (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <Text style={[styles.cityModalTitle, { borderBottomWidth: 0, paddingBottom: 0, marginBottom: 0 }]}>Şehir Seçin</Text>
+              <TouchableOpacity onPress={() => setIsCityFilterModalVisible(false)}>
+                <Ionicons name="close" size={20} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#F1F5F9',
+              borderRadius: 10,
+              paddingHorizontal: 10,
+              paddingVertical: 8,
+              marginBottom: 12,
+              borderWidth: 1,
+              borderColor: '#E2E8F0',
+            }}>
+              <Ionicons name="search" size={16} color="#64748B" style={{ marginRight: 6 }} />
+              <TextInput
+                style={{
+                  flex: 1,
+                  fontSize: 13,
+                  fontFamily: fonts.medium,
+                  color: '#0F172A',
+                  padding: 0,
+                }}
+                placeholder="Şehir ara..."
+                placeholderTextColor="#94A3B8"
+                value={citySearchQuery}
+                onChangeText={setCitySearchQuery}
+                autoCorrect={false}
+              />
+              {citySearchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setCitySearchQuery('')}>
+                  <Ionicons name="close-circle" size={16} color="#94A3B8" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <ScrollView style={{ maxHeight: 300 }} keyboardShouldPersistTaps="handled">
+              {filteredCities.map((city) => (
                 <TouchableOpacity
                   key={city}
                   style={[
@@ -1210,12 +1368,19 @@ export default function ChannelsScreen() {
                   onPress={() => {
                     setSelectedCity(city);
                     setIsCityFilterModalVisible(false);
+                    setCitySearchQuery('');
                   }}
                 >
                   <Text style={[styles.cityListItemText, selectedCity === city && { color: colors.primary, fontFamily: fonts.bold }]}>{city}</Text>
                   {selectedCity === city && <Ionicons name="checkmark" size={16} color={colors.primary} />}
                 </TouchableOpacity>
               ))}
+              {filteredCities.length === 0 && (
+                <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+                  <Ionicons name="search-outline" size={24} color="#94A3B8" style={{ marginBottom: 6 }} />
+                  <Text style={{ fontSize: 12, fontFamily: fonts.medium, color: '#64748B' }}>Şehir bulunamadı</Text>
+                </View>
+              )}
             </ScrollView>
           </View>
         </View>
