@@ -49,10 +49,13 @@ export const impersonateUser = async (req: Request, res: Response, next: NextFun
                 }
             });
         } else {
-            // Mock storage'dan bul
-            const mockUser = mockStorage.get(userId);
-            if (mockUser) {
-                targetUser = { ...mockUser };
+            // Mock storage'dan bul — getFullUser ile electricianProfile nesnesi de oluşturulur
+            const storedUser = mockStorage.get(userId);
+            if (storedUser) {
+                const userType = storedUser.userType ||
+                    (userId.endsWith('-ELECTRICIAN') ? 'ELECTRICIAN' :
+                     userId.endsWith('-ADMIN') ? 'ADMIN' : 'CITIZEN');
+                targetUser = { ...mockStorage.getFullUser(userId, userType) };
             }
         }
 

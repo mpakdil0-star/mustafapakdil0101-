@@ -204,6 +204,7 @@ export const googleLoginController = async (
                             isVerified: true,
                             isActive: true,
                             userType: requestedUserType,
+                            creditBalance: requestedUserType === 'ELECTRICIAN' ? 5 : 0,
                             profileImageUrl: picture,
                             passwordHash: 'GOOGLE_AUTH_NO_PASSWORD',
                             serviceCategory: requestedUserType === 'ELECTRICIAN' ? (serviceCategory || 'elektrik') : undefined,
@@ -227,6 +228,7 @@ export const googleLoginController = async (
                     phone: '',
                     isVerified: true,
                     userType: requestedUserType,
+                    creditBalance: requestedUserType === 'ELECTRICIAN' ? 5 : 0,
                     profileImageUrl: picture,
                     serviceCategory: requestedUserType === 'ELECTRICIAN' ? (serviceCategory || 'elektrik') : undefined
                 });

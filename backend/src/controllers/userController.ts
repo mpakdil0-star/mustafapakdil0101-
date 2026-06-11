@@ -1135,43 +1135,93 @@ export const getElectricians = async (req: Request, res: Response, next: NextFun
             results.sort((a: any, b: any) => (a.distance || 999) - (b.distance || 999));
         }
 
-        // Veritabanı boşsa veya hiç usta yoksa, kullanıcıya boş bir ekran göstermemek için 
-        // mock verilerle destekle (Geliştirme/Test aşaması için)
-        if (results.length === 0 && !query && !city && !specialty) {
-            results = [
-                {
-                    id: 'mock-elec-1',
-                    fullName: 'Ahmet Yılmaz (Onaylı)',
-                    profileImageUrl: null,
-                    isVerified: true,
-                    electricianProfile: {
-                        specialties: ['Tesisat', 'Arıza'],
-                        ratingAverage: 4.8,
-                        totalReviews: 124,
-                        experienceYears: 12,
-                        bio: '12 yıllık deneyimli usta.',
-                        verificationStatus: 'VERIFIED',
-                        isAvailable: true
-                    },
-                    locations: [{ city: 'İstanbul', district: 'Kadıköy', latitude: 40.9901, longitude: 29.0234, isDefault: true }]
-                },
-                {
-                    id: 'mock-elec-2',
-                    fullName: 'Mehmet Demir (Onaylı)',
-                    profileImageUrl: null,
-                    isVerified: true,
-                    electricianProfile: {
-                        specialties: ['Aydınlatma', 'Avize'],
-                        ratingAverage: 4.9,
-                        totalReviews: 89,
-                        experienceYears: 8,
-                        bio: 'Aydınlatma uzmanı.',
-                        verificationStatus: 'VERIFIED',
-                        isAvailable: true
-                    },
-                    locations: [{ city: 'İstanbul', district: 'Beşiktaş', latitude: 41.0422, longitude: 29.0083, isDefault: true }]
+        // ── Merge mock storage electricians that are missing from DB ──
+        // Users registered during DB outages live only in mock storage.
+        // We merge them so they appear in the public electrician listing too.
+        try {
+            const allMockUsers = mockStorage.getAllUsers();
+            const dbEmails = new Set((results as any[]).map((u: any) => u.email?.toLowerCase()).filter(Boolean));
+            const dbIds = new Set((results as any[]).map((u: any) => u.id));
+
+            const mockElectricians = allMockUsers
+                .filter((mu: any) => {
+                    if (!mu.email) return false;
+                    if (mu.isActive === false) return false;
+                    if (mu.userType !== 'ELECTRICIAN') return false;
+                    // Skip placeholder/test mock IDs
+                    if (mu.id?.startsWith('mock-elec-') || mu.id === 'electricians' || mu.id === 'verification') return false;
+                    // Skip if already in DB results
+                    if (dbEmails.has(mu.email.toLowerCase())) return false;
+                    if (dbIds.has(mu.id)) return false;
+                    return true;
+                })
+                .filter((mu: any) => {
+                    // Apply same filters that DB query uses
+                    if (query && !mu.fullName?.toLowerCase().includes(String(query).toLowerCase())) return false;
+                    if (specialty && !(mu.specialties || []).includes(String(specialty))) return false;
+                    if (city) {
+                        const cityStr = String(city).toLowerCase();
+                        const hasCity = (mu.locations || []).some((l: any) => l.city?.toLowerCase() === cityStr);
+                        if (!hasCity) return false;
+                    }
+                    if (latNum && lngNum) {
+                        const loc = (mu.locations || []).find((l: any) => l.isDefault) || (mu.locations || [])[0];
+                        if (!loc || !loc.latitude || !loc.longitude) return false;
+                        const dist = calculateDistance(latNum, lngNum, Number(loc.latitude), Number(loc.longitude));
+                        if (dist > radiusNum) return false;
+                    }
+                    return true;
+                })
+                .map((mu: any) => {
+                    const loc = (mu.locations || []).find((l: any) => l.isDefault) || (mu.locations || [])[0];
+                    let distance = null;
+                    if (latNum && lngNum && loc) {
+                        distance = parseFloat(calculateDistance(latNum, lngNum, Number(loc.latitude), Number(loc.longitude)).toFixed(2));
+                    }
+                    return {
+                        id: mu.id,
+                        fullName: mu.fullName || 'İsimsiz Usta',
+                        profileImageUrl: mu.profileImageUrl || null,
+                        phone: mu.phone || '',
+                        isVerified: mu.isVerified || false,
+                        electricianProfile: {
+                            specialties: mu.specialties || [],
+                            serviceCategory: mu.serviceCategory || 'elektrik',
+                            ratingAverage: mu.ratingAverage || 0,
+                            totalReviews: mu.totalReviews || 0,
+                            experienceYears: mu.experienceYears || 0,
+                            bio: mu.bio || '',
+                            verificationStatus: mu.verificationStatus || null,
+                            isAvailable: true,
+                            isAuthorizedEngineer: mu.isAuthorizedEngineer || false,
+                            emoNumber: mu.emoNumber || null,
+                            smmNumber: mu.smmNumber || null
+                        },
+                        locations: (mu.locations || []).map((l: any) => ({
+                            id: l.id,
+                            city: l.city,
+                            district: l.district,
+                            latitude: l.latitude,
+                            longitude: l.longitude,
+                            isDefault: l.isDefault || false
+                        })),
+                        reviewsReceived: [],
+                        distance,
+                        _source: 'mock' // Debug marker
+                    };
+                });
+
+            if (mockElectricians.length > 0) {
+                console.log(`📎 getElectricians: Merged ${mockElectricians.length} mock electrician(s) not found in DB`);
+                results = [...(results as any[]), ...mockElectricians];
+
+                // Re-sort by distance if coordinates were provided
+                if (latNum && lngNum) {
+                    (results as any[]).sort((a: any, b: any) => (a.distance || 999) - (b.distance || 999));
                 }
-            ] as any;
+            }
+        } catch (mergeErr) {
+            console.warn('⚠️ Failed to merge mock electricians:', mergeErr);
         }
 
         res.status(200).json({

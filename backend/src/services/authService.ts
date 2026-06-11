@@ -356,12 +356,154 @@ export const login = async (data: LoginData) => {
     }
 
     // Find user
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { email },
     });
 
     if (!user) {
-      throw new UnauthorizedError('Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı.');
+      // 🔄 Mock-to-DB Migration Logic:
+      // If DB is available but user exists only in mock storage (registered when DB was down),
+      // verify their password and migrate them to the database.
+      const allMockUsers = mockStorage.getAllUsers();
+      const mockUserSearch = allMockUsers.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+
+      if (mockUserSearch) {
+        // Retrieve the raw stored user with all detail properties (like locations, creditBalance, experienceYears)
+        const mockUser = mockStorage.get(mockUserSearch.id);
+        console.log(`🔄 [Migration] Found mock user during login: ${mockUser.email}. DB is available. Verifying and migrating...`);
+        
+        let isPasswordValid = false;
+        if (mockUser.passwordHash) {
+          isPasswordValid = mockUser.passwordHash === password;
+          if (!isPasswordValid) {
+            try {
+              isPasswordValid = await comparePassword(password, mockUser.passwordHash);
+            } catch (ignore) {}
+          }
+        }
+
+        if (!isPasswordValid) {
+          throw new UnauthorizedError('Girdiğiniz şifre hatalı. Lütfen kontrol edip tekrar deneyin.');
+        }
+
+        // Migrate mock user to PostgreSQL DB
+        try {
+          const dbUser = await prisma.user.create({
+            data: {
+              email: mockUser.email || email,
+              fullName: mockUser.fullName || 'Yeni Kullanıcı',
+              phone: mockUser.phone || '',
+              isVerified: mockUser.isVerified || false,
+              userType: (mockUser.userType as any) || 'CITIZEN',
+              profileImageUrl: mockUser.profileImageUrl || null,
+              passwordHash: mockUser.passwordHash || 'MIGRATED',
+              acceptedLegalVersion: mockUser.acceptedLegalVersion || 'v1.0',
+              marketingAllowed: mockUser.marketingAllowed || false,
+              isActive: mockUser.isActive !== false,
+              pushToken: mockUser.pushToken || null
+            }
+          });
+
+          if (mockUser.userType === 'ELECTRICIAN') {
+            await prisma.electricianProfile.create({
+              data: {
+                userId: dbUser.id,
+                creditBalance: mockUser.creditBalance !== undefined ? mockUser.creditBalance : 5,
+                isAvailable: true,
+                experienceYears: mockUser.experienceYears || 0,
+                totalReviews: mockUser.completedJobsCount || 0,
+                ratingAverage: 0,
+                completedJobsCount: mockUser.completedJobsCount || 0,
+                serviceCategory: mockUser.serviceCategory || 'elektrik',
+                licenseNumber: mockUser.licenseNumber || '',
+                emoNumber: mockUser.emoNumber || '',
+                smmNumber: mockUser.smmNumber || '',
+                isAuthorizedEngineer: mockUser.isAuthorizedEngineer || false,
+                verificationStatus: mockUser.verificationStatus === 'VERIFIED' ? 'VERIFIED' : (mockUser.verificationStatus === 'REJECTED' ? 'REJECTED' : 'PENDING'),
+                bio: mockUser.bio || ''
+              }
+            });
+          }
+
+          await prisma.userConsent.createMany({
+            data: [
+              { userId: dbUser.id, documentType: 'KVKK', documentVersion: mockUser.acceptedLegalVersion || 'v1.0', action: 'ACCEPTED', ipAddress: 'migration' },
+              { userId: dbUser.id, documentType: 'TERMS', documentVersion: mockUser.acceptedLegalVersion || 'v1.0', action: 'ACCEPTED', ipAddress: 'migration' }
+            ]
+          });
+
+          // Migrate locations
+          if (Array.isArray(mockUser.locations) && mockUser.locations.length > 0) {
+            for (const loc of mockUser.locations) {
+              await prisma.location.create({
+                data: {
+                  userId: dbUser.id,
+                  address: loc.address || loc.details || '',
+                  city: loc.city || '',
+                  district: loc.district || '',
+                  neighborhood: loc.neighborhood || '',
+                  postalCode: loc.postalCode || '',
+                  latitude: loc.latitude !== undefined ? Number(loc.latitude) : 41.0082,
+                  longitude: loc.longitude !== undefined ? Number(loc.longitude) : 28.9784,
+                  isDefault: loc.isDefault || false,
+                  isActive: loc.isActive !== false
+                }
+              });
+            }
+          }
+
+          console.log(`✅ [Migration] User ${email} migrated successfully from mock to PostgreSQL!`);
+
+          // Clean up old mock storage entry and replace with new DB user mirror
+          try {
+            delete (mockStorage as any).mockStore[mockUser.id];
+            (mockStorage as any).saveToDisk();
+            
+            // Re-fetch dbUser with electrician profile to mirror
+            const fullDbUser = await prisma.user.findUnique({
+              where: { id: dbUser.id },
+              include: { electricianProfile: true }
+            });
+            
+            if (fullDbUser) {
+              mockStorage.updateProfile(fullDbUser.id, {
+                fullName: fullDbUser.fullName,
+                phone: fullDbUser.phone || '',
+                email: fullDbUser.email,
+                isVerified: fullDbUser.isVerified,
+                passwordHash: fullDbUser.passwordHash,
+                isActive: fullDbUser.isActive,
+                userType: fullDbUser.userType,
+                creditBalance: fullDbUser.electricianProfile?.creditBalance !== undefined 
+                  ? Number(fullDbUser.electricianProfile.creditBalance) 
+                  : (mockUser.creditBalance || 5),
+                experienceYears: mockUser.experienceYears || 0,
+                specialties: mockUser.specialties || [],
+                licenseNumber: mockUser.licenseNumber || '',
+                emoNumber: mockUser.emoNumber || '',
+                smmNumber: mockUser.smmNumber || '',
+                isAuthorizedEngineer: mockUser.isAuthorizedEngineer || false,
+                verificationStatus: mockUser.verificationStatus,
+                locations: mockUser.locations || []
+              });
+            }
+          } catch (storageErr) {
+            console.error('⚠️ [Migration] Error cleaning up and mirroring mock storage:', storageErr);
+          }
+
+          // Assign to user so normal login flow continues
+          user = await prisma.user.findUnique({
+            where: { id: dbUser.id }
+          });
+        } catch (migrationError) {
+          console.error('❌ [Migration] Failed to migrate mock user to PostgreSQL during login:', migrationError);
+          throw new UnauthorizedError('Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı.');
+        }
+      }
+
+      if (!user) {
+        throw new UnauthorizedError('Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı.');
+      }
     }
 
     // 🛟 Master Admin Can Simidi: Kendini askıya alırsa otomatik geri aç (Render/Gerçek Veritabanı için)

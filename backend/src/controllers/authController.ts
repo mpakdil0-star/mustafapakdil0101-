@@ -181,6 +181,7 @@ export const registerController = async (
           fullName, email,
           phone: phone || '',
           passwordHash: password, // Store password in mock mode
+          creditBalance: userType === 'ELECTRICIAN' ? 5 : 0,
           isVerified: userType === 'ELECTRICIAN' && !!phone,
           serviceCategory: userType === 'ELECTRICIAN' ? (serviceCategory || 'elektrik') : undefined, // Save profession
           userType: userType, // Explicitly save userType
