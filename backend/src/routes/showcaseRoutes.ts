@@ -66,6 +66,51 @@ const loadShowcase = (): any[] => {
   return [];
 };
 
+// Helper to enrich showcase items with latest user profile details (city, name, avatar)
+const enrichShowcaseItems = async (items: any[]): Promise<any[]> => {
+  if (items.length === 0) return items;
+  
+  try {
+    const ustaIds = [...new Set(items.map(item => item.ustaId).filter(Boolean))];
+    if (ustaIds.length === 0) return items;
+
+    const users = await prisma.user.findMany({
+      where: { id: { in: ustaIds } },
+      select: {
+        id: true,
+        city: true,
+        fullName: true,
+        profileImageUrl: true,
+        locations: {
+          select: {
+            city: true
+          },
+          take: 1
+        }
+      }
+    });
+
+    const userMap = new Map(users.map(u => {
+      const userCity = u.city || u.locations?.[0]?.city || null;
+      return [u.id, { ...u, city: userCity }];
+    }));
+
+    return items.map(item => {
+      const usta = userMap.get(item.ustaId);
+      if (!usta) return item;
+      return {
+        ...item,
+        ustaName: usta.fullName || item.ustaName,
+        ustaCity: usta.city || item.ustaCity,
+        ustaAvatar: usta.profileImageUrl || item.ustaAvatar
+      };
+    });
+  } catch (error) {
+    console.error('Error enriching showcase items:', error);
+    return items;
+  }
+};
+
 // GET /api/v1/showcase - Get all showcase items
 router.get('/', async (req, res) => {
   try {
@@ -73,7 +118,8 @@ router.get('/', async (req, res) => {
       const items = await prisma.showcaseItem.findMany({
         orderBy: { createdAt: 'desc' }
       });
-      return res.json({ success: true, data: items });
+      const enrichedItems = await enrichShowcaseItems(items);
+      return res.json({ success: true, data: enrichedItems });
     }
     
     const items = loadShowcase();
@@ -113,7 +159,8 @@ router.post('/', async (req, res) => {
       const items = await prisma.showcaseItem.findMany({
         orderBy: { createdAt: 'desc' }
       });
-      return res.status(201).json({ success: true, data: items });
+      const enrichedItems = await enrichShowcaseItems(items);
+      return res.status(201).json({ success: true, data: enrichedItems });
     }
 
     const items = loadShowcase();
@@ -153,7 +200,8 @@ router.delete('/:id', async (req, res) => {
       const items = await prisma.showcaseItem.findMany({
         orderBy: { createdAt: 'desc' }
       });
-      return res.json({ success: true, data: items });
+      const enrichedItems = await enrichShowcaseItems(items);
+      return res.json({ success: true, data: enrichedItems });
     }
 
     let items = loadShowcase();

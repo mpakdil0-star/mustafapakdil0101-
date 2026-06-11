@@ -364,7 +364,7 @@ export default function HomeScreen() {
               ustaAvatar: item.ustaAvatar || elecInfo.profileImageUrl || null,
               ustaRatingAverage: item.ustaRatingAverage ?? elecInfo.ratingAverage ?? null,
               ustaRatingCount: item.ustaRatingCount ?? elecInfo.ratingCount ?? null,
-              ustaCity: item.ustaCity || elecInfo.city || null,
+              ustaCity: elecInfo.city || item.ustaCity || null,
             };
           }
         });
