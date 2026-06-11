@@ -392,7 +392,7 @@ export const login = async (data: LoginData) => {
             data: {
               email: mockUser.email || email,
               fullName: mockUser.fullName || 'Yeni Kullanıcı',
-              phone: mockUser.phone || '',
+              phone: mockUser.phone ? mockUser.phone : null,
               isVerified: mockUser.isVerified || false,
               userType: (mockUser.userType as any) || 'CITIZEN',
               profileImageUrl: mockUser.profileImageUrl || null,

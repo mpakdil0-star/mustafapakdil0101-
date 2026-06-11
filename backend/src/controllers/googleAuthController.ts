@@ -86,7 +86,7 @@ export const googleLoginController = async (
                             data: {
                                 email: mockUserFound.email,
                                 fullName: mockUserFound.fullName || name || 'Google User',
-                                phone: mockUserFound.phone || '',
+                                phone: mockUserFound.phone ? mockUserFound.phone : null,
                                 isVerified: mockUserFound.isVerified || true,
                                 userType: mockUserFound.userType || requestedUserType,
                                 profileImageUrl: mockUserFound.profileImageUrl || picture,
@@ -159,7 +159,7 @@ export const googleLoginController = async (
                         data: {
                             email,
                             fullName: name || 'Google User',
-                            phone: '',
+                            phone: null,
                             isVerified: true,
                             userType: requestedUserType,
                             profileImageUrl: picture,
