@@ -219,6 +219,15 @@ export const googleLoginController = async (
             }
 
             if (!userId) {
+                if (process.env.NODE_ENV === 'production') {
+                    return res.status(500).json({
+                        success: false,
+                        error: {
+                            message: 'Sistem şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyiniz.',
+                            code: 'DATABASE_ERROR'
+                        }
+                    });
+                }
                 const sanitizedEmail = email.replace(/[^a-zA-Z0-9]/g, '-');
                 userId = `mock-user-${sanitizedEmail}-${requestedUserType}-google`;
 

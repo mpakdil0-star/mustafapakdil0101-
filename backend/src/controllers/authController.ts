@@ -146,7 +146,7 @@ export const registerController = async (
         dbError.name === 'PrismaClientInitializationError' ||
         dbError.constructor.name === 'PrismaClientInitializationError';
 
-      if (isConnectionError) {
+      if (isConnectionError && process.env.NODE_ENV !== 'production') {
         console.warn('⚠️ Database connection failed, saving to persistent mock storage');
         // Make ID deterministic based on email AND userType
         const sanitizedEmail = email.replace(/[^a-zA-Z0-9]/g, '-');
@@ -240,7 +240,7 @@ export const loginController = async (
         dbError.name === 'PrismaClientInitializationError' ||
         dbError.constructor.name === 'PrismaClientInitializationError';
 
-      if (isConnectionError) {
+      if (isConnectionError && process.env.NODE_ENV !== 'production') {
         console.warn('⚠️ Database connection failed, checking mock storage for login');
 
         // Check if user exists in mockStorage

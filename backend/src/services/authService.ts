@@ -594,7 +594,7 @@ export const login = async (data: LoginData) => {
       dbError.name === 'PrismaClientInitializationError' ||
       dbError.constructor?.name === 'PrismaClientInitializationError';
 
-    if (isConnectionError) {
+    if (isConnectionError && process.env.NODE_ENV !== 'production') {
       console.warn('⚠️ Database login failed, checking mock storage');
 
       // Email'den mock ID bul
@@ -709,7 +709,7 @@ export const refreshToken = async (refreshToken: string) => {
         dbError.constructor.name === 'PrismaClientInitializationError';
 
       // Database bağlantı hatası varsa, token'dan user bilgisini kullan (mock mode)
-      if (isConnectionError || decoded.id.startsWith('mock-')) {
+      if ((isConnectionError && process.env.NODE_ENV !== 'production') || decoded.id.startsWith('mock-')) {
         console.warn('⚠️ Database connection failed, using token user info for refresh');
         const tokens = generateTokens({
           id: decoded.id,
@@ -737,7 +737,7 @@ export const refreshToken = async (refreshToken: string) => {
 export const forgotPassword = async (email: string) => {
   let userFullName = 'Değerli Kullanıcımız';
 
-  if (!isDatabaseAvailable) {
+  if (!isDatabaseAvailable && process.env.NODE_ENV !== 'production') {
     const allUsers = mockStorage.getAllUsers();
     const user = allUsers.find((u: { email: string, fullName?: string }) => u.email === email);
     if (!user) {
@@ -771,7 +771,7 @@ export const resetPassword = async (data: any) => {
 
   const passwordHash = await hashPassword(newPassword);
 
-  if (!isDatabaseAvailable) {
+  if (!isDatabaseAvailable && process.env.NODE_ENV !== 'production') {
     const allUsers = mockStorage.getAllUsers();
     const user = allUsers.find((u: { id: string, email: string }) => u.email === email);
     if (!user) throw new ValidationError('Kullanıcı bulunamadı.');
