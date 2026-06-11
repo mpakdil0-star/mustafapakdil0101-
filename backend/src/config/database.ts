@@ -7,8 +7,8 @@ let finalUrl = databaseUrl;
 
 if (databaseUrl && (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'))) {
   finalUrl = databaseUrl.includes('?')
-    ? `${databaseUrl}&connect_timeout=2`
-    : `${databaseUrl}?connect_timeout=2`;
+    ? `${databaseUrl}&connect_timeout=10`
+    : `${databaseUrl}?connect_timeout=10`;
 }
 
 const prisma = new PrismaClient({
@@ -23,8 +23,8 @@ const prisma = new PrismaClient({
 });
 
 // Global flag to track database availability
-// Starts as false, becomes true only after successful connection
-export let isDatabaseAvailable = false;
+// In production, always assume true to let Prisma handle auto-reconnection and queries
+export let isDatabaseAvailable = process.env.NODE_ENV === 'production' ? true : false;
 
 // Test database connection at startup (async, non-blocking)
 // Server başlatılmasını engellemez
@@ -41,10 +41,14 @@ const initDatabase = async () => {
       logger.error('Failed to import database migration:', err);
     });
   } catch (error: any) {
-    isDatabaseAvailable = false;
-    logger.info('⚠️  Database URL not found or connection failed.');
-    logger.info('✅ Switching to MOCK STORAGE MODE (In-Memory). This is normal for local dev.');
-    // logger.warn('   Please configure DATABASE_URL in .env file');
+    if (process.env.NODE_ENV !== 'production') {
+      isDatabaseAvailable = false;
+      logger.info('⚠️  Database URL not found or connection failed.');
+      logger.info('✅ Switching to MOCK STORAGE MODE (In-Memory). This is normal for local dev.');
+    } else {
+      isDatabaseAvailable = true;
+      logger.error('❌ Database connection failed at startup: ' + error.message);
+    }
   }
 };
 
