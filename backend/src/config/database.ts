@@ -34,6 +34,19 @@ const initDatabase = async () => {
     isDatabaseAvailable = true;
     logger.info('✅ Database connected successfully');
 
+    // Data Cleanup: Clean up empty phone strings to null to prevent P2002 unique constraint conflicts
+    try {
+      const updateResult = await prisma.user.updateMany({
+        where: { phone: '' },
+        data: { phone: null }
+      });
+      if (updateResult.count > 0) {
+        logger.info(`🧹 Cleaned up ${updateResult.count} user(s) with empty phone strings to NULL`);
+      }
+    } catch (cleanupErr: any) {
+      logger.error('Failed to clean up empty phone strings: ' + cleanupErr.message);
+    }
+
     // Run Base64 to physical files migration asynchronously
     import('../utils/dbMigration').then((m) => {
       m.runBase64ToFilesMigration();
