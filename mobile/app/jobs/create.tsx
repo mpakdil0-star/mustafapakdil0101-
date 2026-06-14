@@ -1005,11 +1005,10 @@ export default function CreateJobScreen() {
                         <TouchableOpacity
                           key={svc.id}
                           style={[
-                            styles.pill,
-                            { paddingVertical: 8, borderColor: colors.border, backgroundColor: colors.surfaceElevated },
+                            styles.categoryCard,
+                            { borderColor: colors.border, backgroundColor: colors.surfaceElevated },
                             selected && {
                               backgroundColor: svc.colors[0] + '14',
-                              borderColor: svc.colors[0],
                             },
                           ]}
                           onPress={() => {
@@ -1018,25 +1017,31 @@ export default function CreateJobScreen() {
                             if (errors.category) setErrors({ ...errors, category: '' });
                           }}
                         >
-                          {getCategoryImage(svc.id) ? (
-                            <Image
-                              source={getCategoryImage(svc.id)}
-                              style={styles.pillImage}
-                              resizeMode="contain"
-                            />
-                          ) : (
-                            <Ionicons
-                              name={svc.icon as any}
-                              size={16}
-                              color={selected ? svc.colors[0] : colors.textSecondary}
-                            />
-                          )}
+                          <View style={[
+                            styles.categoryIconWrapper,
+                            { backgroundColor: selected ? svc.colors[0] + '1C' : colors.border + '40' }
+                          ]}>
+                            {getCategoryImage(svc.id) ? (
+                              <Image
+                                source={getCategoryImage(svc.id)}
+                                style={styles.categoryImage}
+                                resizeMode="contain"
+                              />
+                            ) : (
+                              <Ionicons
+                                name={svc.icon as any}
+                                size={18}
+                                color={selected ? svc.colors[0] : colors.textSecondary}
+                              />
+                            )}
+                          </View>
                           <Text
                             style={[
-                              styles.pillText,
-                              { fontSize: 13, color: colors.textSecondary },
-                              selected && { color: svc.colors[0], fontFamily: fonts.bold },
+                              styles.categoryText,
+                              { color: colors.textSecondary },
+                              selected && { color: colors.text, fontFamily: fonts.bold },
                             ]}
+                            numberOfLines={2}
                           >
                             {svc.name}
                           </Text>
@@ -1965,6 +1970,37 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     zIndex: 2,
+  },
+  categoryCard: {
+    width: '48.2%',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    minHeight: 90,
+  },
+  categoryIconWrapper: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  categoryImage: {
+    width: 24,
+    height: 24,
+  },
+  categoryText: {
+    fontSize: 12,
+    fontFamily: fonts.medium,
+    textAlign: 'center',
+    lineHeight: 15,
+    width: '100%',
+    paddingHorizontal: 2,
   },
   urgencyGrid: {
     flexDirection: 'row',
