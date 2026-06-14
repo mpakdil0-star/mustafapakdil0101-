@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     Dimensions,
     Platform,
+    ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -59,7 +60,11 @@ export default function RoleSelectScreen() {
                 }
             ]}>
                 {/* Upper Section */}
-                <View style={{ flex: 1 }}>
+                <ScrollView 
+                    style={{ flex: 1 }} 
+                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
+                    showsVerticalScrollIndicator={false}
+                >
                     {/* Back Button */}
                     <TouchableOpacity
                         onPress={() => router.back()}
@@ -205,7 +210,7 @@ export default function RoleSelectScreen() {
                             </View>
                         </View>
                     )}
-                </View>
+                </ScrollView>
 
                 {/* Bottom Action Area */}
                 <View style={styles.bottomArea}>
