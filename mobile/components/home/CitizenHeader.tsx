@@ -89,21 +89,26 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
         </View>
       </View>
 
-      {/* Full-Width Glassmorphic Search Bar */}
-      <TouchableOpacity
-        style={styles.headerFullSearchBar}
-        activeOpacity={0.85}
-        onPress={onSearchPress || (() => handleActionWithAuth('/electricians'))}
-      >
-        <View style={styles.headerFullSearchInner}>
+      {/* Full-Width Glassmorphic Search Bar with Split Touch Targets */}
+      <View style={styles.headerFullSearchBarContainer}>
+        <TouchableOpacity
+          style={styles.headerFullSearchInputArea}
+          activeOpacity={0.7}
+          onPress={onSearchPress}
+        >
           <Ionicons name="search-outline" size={18} color="rgba(255, 255, 255, 0.75)" />
-          <Text style={styles.headerFullSearchPlaceholder}>Usta veya Hizmet Arayın...</Text>
-        </View>
-        <View style={[styles.seeAllPillInsideSearch, { backgroundColor: 'rgba(255, 255, 255, 0.16)', borderColor: 'rgba(255, 255, 255, 0.22)' }]}>
-          <Text style={styles.seeAllPillText}>Tümünü Gör</Text>
+          <Text style={styles.headerFullSearchPlaceholder}>Hizmet veya Kategori Ara...</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.seeAllPillInsideSearch, { backgroundColor: 'rgba(255, 255, 255, 0.16)', borderColor: 'rgba(255, 255, 255, 0.22)' }]}
+          activeOpacity={0.7}
+          onPress={() => handleActionWithAuth('/electricians')}
+        >
+          <Text style={styles.seeAllPillText}>Tüm Ustalar</Text>
           <Ionicons name="arrow-forward" size={11} color="#FFFFFF" style={{ marginLeft: 3 }} />
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </View>
 
       {/* Neon-Glass Quick Search Pills / Category Capsules */}
       <ScrollView
@@ -251,7 +256,7 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontFamily: fonts.bold,
   },
-  headerFullSearchBar: {
+  headerFullSearchBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -264,10 +269,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     width: '100%',
   },
-  headerFullSearchInner: {
+  headerFullSearchInputArea: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    height: '100%',
   },
   headerFullSearchPlaceholder: {
     fontFamily: fonts.medium,
