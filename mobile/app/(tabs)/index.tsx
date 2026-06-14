@@ -3405,9 +3405,7 @@ export default function HomeScreen() {
                               key={cat.id}
                               style={[
                                 styles.mainCategoryCard,
-                                isExpanded 
-                                  ? { borderColor: colors.primary + '30', backgroundColor: 'rgba(255, 255, 255, 0.05)', shadowColor: colors.primary, shadowOpacity: 0.08, shadowRadius: 10, elevation: 4 }
-                                  : { borderColor: 'rgba(255, 255, 255, 0.06)' }
+                                isExpanded && { backgroundColor: 'rgba(255, 255, 255, 0.06)' }
                               ]}
                             >
                               {/* Card Header */}
@@ -3435,15 +3433,15 @@ export default function HomeScreen() {
                                 
                                 {/* Branch Count Badge */}
                                 {!isExpanded && (
-                                  <View style={[styles.subCountBadge, { backgroundColor: primaryColor + '15' }]}>
-                                    <Text style={[styles.subCountText, { color: primaryColor }]}>{subCats.length} Dal</Text>
+                                  <View style={[styles.subCountBadge, { backgroundColor: 'rgba(255, 255, 255, 0.06)' }]}>
+                                    <Text style={[styles.subCountText, { color: 'rgba(255, 255, 255, 0.5)' }]}>{subCats.length} Dal</Text>
                                   </View>
                                 )}
                                 
                                 <Ionicons 
                                   name={isExpanded ? "chevron-down" : "chevron-forward"} 
                                   size={18} 
-                                  color={isExpanded ? primaryColor : "rgba(255, 255, 255, 0.3)"} 
+                                  color={isExpanded ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.3)"} 
                                   style={{ marginLeft: 8 }}
                                 />
                               </TouchableOpacity>
@@ -3453,7 +3451,7 @@ export default function HomeScreen() {
                                 <View style={styles.subCategoriesWrapper}>
                                   {/* Main Category Direct Application Pill */}
                                   <TouchableOpacity
-                                    style={[styles.subCategoryPill, styles.mainCategoryDirectPill, { borderColor: primaryColor + '30', backgroundColor: primaryColor + '15' }]}
+                                    style={[styles.subCategoryPill, styles.mainCategoryDirectPill, { borderColor: 'rgba(255, 255, 255, 0.15)', backgroundColor: 'rgba(255, 255, 255, 0.08)' }]}
                                     activeOpacity={0.7}
                                     onPress={() => {
                                       setIsSearchOverlayVisible(false);
@@ -3461,16 +3459,16 @@ export default function HomeScreen() {
                                       handleActionWithAuth('/jobs/create', { serviceCategory: cat.id });
                                     }}
                                   >
-                                    <Text style={[styles.subCategoryPillText, { color: primaryColor, fontFamily: fonts.bold }]}>
+                                    <Text style={[styles.subCategoryPillText, { color: '#FFFFFF', fontFamily: fonts.bold }]}>
                                       Hepsini Gör / Genel Başvuru
                                     </Text>
-                                    <Ionicons name="arrow-forward" size={11} color={primaryColor} style={{ marginLeft: 3 }} />
+                                    <Ionicons name="arrow-forward" size={11} color="#FFFFFF" style={{ marginLeft: 3 }} />
                                   </TouchableOpacity>
 
                                   {subCats.map((sub) => (
                                     <TouchableOpacity
                                       key={sub.id}
-                                      style={[styles.subCategoryPill, { borderColor: primaryColor + '15' }]}
+                                      style={[styles.subCategoryPill, { borderColor: 'rgba(255, 255, 255, 0.08)' }]}
                                       activeOpacity={0.7}
                                       onPress={() => {
                                         setIsSearchOverlayVisible(false);
@@ -6166,6 +6164,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderRadius: 20,
     borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
     padding: 14,
     marginBottom: 12,
   },
