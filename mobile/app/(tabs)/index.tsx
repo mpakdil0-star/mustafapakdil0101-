@@ -13,6 +13,7 @@ import { CitizenHeader } from '../../components/home/CitizenHeader';
 import { CitizenExploreCategories } from '../../components/home/CitizenExploreCategories';
 import { CitizenUstaAndJobsSection } from '../../components/home/CitizenUstaAndJobsSection';
 import { CitizenMarketplace } from '../../components/home/CitizenMarketplace';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CitizenReelsShowcase } from '../../components/home/CitizenReelsShowcase';
 import { ElectricianHeader } from '../../components/home/ElectricianHeader';
 import { ElectricianTools } from '../../components/home/ElectricianTools';
@@ -3306,6 +3307,9 @@ export default function HomeScreen() {
             setSearchQuery('');
           }}
         >
+          {isSearchOverlayVisible && (
+            <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
+          )}
           <View style={styles.searchOverlayBackdrop}>
             <LinearGradient
               colors={['#021D1A', '#052A26', '#010E0D']}
@@ -3315,7 +3319,7 @@ export default function HomeScreen() {
             <View style={[styles.searchGlowBlob, { top: -60, left: -60, backgroundColor: '#0D9488', opacity: 0.15 }]} />
             <View style={[styles.searchGlowBlob, { bottom: -100, right: -60, backgroundColor: '#0D9488', opacity: 0.08 }]} />
 
-            <View style={[styles.searchOverlayContainer, { paddingTop: Platform.OS === 'ios' ? 50 : 20 }]}>
+            <SafeAreaView style={styles.searchOverlayContainer} edges={['top', 'bottom']}>
               {/* Search Header */}
               <View style={styles.searchOverlayHeader}>
                 <View style={styles.searchOverlayBar}>
@@ -3586,7 +3590,7 @@ export default function HomeScreen() {
                   </View>
                 )}
               </ScrollView>
-            </View>
+            </SafeAreaView>
           </View>
         </Modal>
 
