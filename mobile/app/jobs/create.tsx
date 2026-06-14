@@ -211,21 +211,21 @@ const getPlaceholdersByCategory = (categoryId: string, subCategory?: string) => 
 const getCategoryImage = (id: string | undefined) => {
   if (!id) return null;
   switch (id) {
-    case 'elektrik': return require('../../assets/images/categories/electric.png');
-    case 'cilingir': return require('../../assets/images/categories/locksmith_3d_clean.png');
-    case 'klima': return require('../../assets/images/categories/ac_3d_clean.png');
-    case 'beyaz-esya': return require('../../assets/images/categories/appliances_3d_clean.png');
-    case 'tesisat': return require('../../assets/images/categories/plumbing.png');
-    case 'temizlik': return require('../../assets/images/categories/cleaning_3d_clean.png');
-    case 'nakliyat': return require('../../assets/images/categories/moving_3d_clean.png');
-    case 'boya-badana': return require('../../assets/images/categories/painting_3d_clean.png');
-    case 'koltuk-hali': return require('../../assets/images/categories/sofacl_3d_clean.png');
-    case 'mobilya-montaj': return require('../../assets/images/categories/furniture_3d_clean.png');
-    case 'kucuk-nakliye': return require('../../assets/images/categories/smallcg_3d_clean.png');
-    case 'kombi-servis': return require('../../assets/images/categories/boiler_3d_clean.png');
-    case 'asansor': return require('../../assets/images/categories/elevator_3d_clean.png');
-    case 'bocek-ilaclama': return require('../../assets/images/categories/pest_3d_clean.png');
-    case 'guvenlik-kamera': return require('../../assets/images/categories/seccam_3d_clean.png');
+    case 'elektrik': return require('../../assets/images/categories/electric_v2.png');
+    case 'cilingir': return require('../../assets/images/categories/locksmith_3d_clean_v2.png');
+    case 'klima': return require('../../assets/images/categories/ac_3d_clean_v2.png');
+    case 'beyaz-esya': return require('../../assets/images/categories/appliances_3d_clean_v2.png');
+    case 'tesisat': return require('../../assets/images/categories/plumbing_v2.png');
+    case 'temizlik': return require('../../assets/images/categories/cleaning_3d_clean_v2.png');
+    case 'nakliyat': return require('../../assets/images/categories/moving_3d_clean_v2.png');
+    case 'boya-badana': return require('../../assets/images/categories/painting_3d_clean_v2.png');
+    case 'koltuk-hali': return require('../../assets/images/categories/sofacl_3d_clean_v2.png');
+    case 'mobilya-montaj': return require('../../assets/images/categories/furniture_3d_clean_v2.png');
+    case 'kucuk-nakliye': return require('../../assets/images/categories/smallcg_3d_clean_v2.png');
+    case 'kombi-servis': return require('../../assets/images/categories/boiler_3d_clean_v2.png');
+    case 'asansor': return require('../../assets/images/categories/elevator_3d_clean_v2.png');
+    case 'bocek-ilaclama': return require('../../assets/images/categories/pest_3d_clean_v2.png');
+    case 'guvenlik-kamera': return require('../../assets/images/categories/seccam_3d_clean_v2.png');
     default: return null;
   }
 };
