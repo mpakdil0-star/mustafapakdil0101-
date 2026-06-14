@@ -7,6 +7,7 @@ import {
     Dimensions,
     Platform,
     ScrollView,
+    TextInput,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -26,6 +27,8 @@ export default function RoleSelectScreen() {
     }>();
     const [userType, setUserType] = useState<'CITIZEN' | 'ELECTRICIAN' | null>(initialRole || null);
     const [serviceCategory, setServiceCategory] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSearchActive, setIsSearchActive] = useState(false);
 
     const canProceed = userType === 'CITIZEN' || (userType === 'ELECTRICIAN' && serviceCategory);
 
@@ -146,67 +149,113 @@ export default function RoleSelectScreen() {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Profession Selection (Visible when Usta is selected) */}
                     {userType === 'ELECTRICIAN' && (
                         <View style={styles.professionSection}>
                             <View style={styles.sectionHeaderRow}>
-                                <Ionicons name="sparkles" size={14} color="#3B82F6" style={{ marginRight: 6 }} />
-                                <Text style={styles.sectionLabel}>Uzmanlık Alanınızı Seçin</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                                    <Ionicons name="sparkles" size={14} color="#3B82F6" style={{ marginRight: 6 }} />
+                                    <Text style={styles.sectionLabel}>Uzmanlık Alanınızı Seçin</Text>
+                                </View>
+                                <TouchableOpacity 
+                                    onPress={() => {
+                                        setIsSearchActive(!isSearchActive);
+                                        if (isSearchActive) setSearchQuery('');
+                                    }}
+                                    style={styles.searchIconButton}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons 
+                                        name={isSearchActive ? "close-circle" : "search"} 
+                                        size={18} 
+                                        color={isSearchActive ? "#EF4444" : "#3B82F6"} 
+                                    />
+                                </TouchableOpacity>
                             </View>
+
+                            {isSearchActive && (
+                                <View style={styles.searchInputContainer}>
+                                    <Ionicons name="search" size={16} color="rgba(255,255,255,0.4)" style={{ marginRight: 8 }} />
+                                    <TextInput
+                                        style={styles.searchInput}
+                                        placeholder="Kategori ara... (örn. Boya, Çilingir)"
+                                        placeholderTextColor="rgba(255,255,255,0.3)"
+                                        value={searchQuery}
+                                        onChangeText={setSearchQuery}
+                                        autoCapitalize="none"
+                                        autoCorrect={false}
+                                    />
+                                </View>
+                            )}
                             
                             <View style={styles.professionGrid}>
-                                {SERVICE_CATEGORIES.map((cat: ServiceCategory) => {
-                                    const isSelected = serviceCategory === cat.id;
-                                    return (
-                                        <TouchableOpacity
-                                            key={cat.id}
-                                            style={[
-                                                styles.professionCard,
-                                                isSelected && { 
-                                                    borderColor: cat.colors[0], 
-                                                    backgroundColor: '#0F253B',
-                                                },
-                                            ]}
-                                            onPress={() => setServiceCategory(cat.id)}
-                                            activeOpacity={0.95}
-                                        >
-                                            {isSelected ? (
-                                                <View
-                                                    style={[
-                                                        styles.professionIconBgSelected,
-                                                        { backgroundColor: cat.colors[0] }
-                                                    ]}
-                                                >
-                                                    <Ionicons 
-                                                        name={cat.icon as any} 
-                                                        size={26} 
-                                                        color="#FFFFFF" 
-                                                    />
-                                                </View>
-                                            ) : (
-                                                <View style={styles.professionIconBgUnselected}>
-                                                    <Ionicons 
-                                                        name={cat.icon as any} 
-                                                        size={26} 
-                                                        color={cat.colors[0]} 
-                                                    />
-                                                </View>
-                                            )}
-
-                                            <Text style={[
-                                                styles.professionName,
-                                                isSelected && { color: '#FFFFFF', fontFamily: fonts.bold }
-                                            ]}>
-                                                {cat.name}
-                                            </Text>
-                                            {isSelected && (
-                                                <View style={[styles.professionCheck, { backgroundColor: cat.colors[0] }]}>
-                                                    <Ionicons name="checkmark" size={9} color="#FFFFFF" />
-                                                </View>
-                                            )}
-                                        </TouchableOpacity>
+                                {(() => {
+                                    const filtered = SERVICE_CATEGORIES.filter((cat: ServiceCategory) =>
+                                        cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                        cat.description.toLowerCase().includes(searchQuery.toLowerCase())
                                     );
-                                })}
+
+                                    if (filtered.length === 0) {
+                                        return (
+                                            <View style={styles.noResultsContainer}>
+                                                <Ionicons name="alert-circle-outline" size={24} color="rgba(255,255,255,0.2)" style={{ marginBottom: 6 }} />
+                                                <Text style={styles.noResultsText}>Kategori bulunamadı</Text>
+                                            </View>
+                                        );
+                                    }
+
+                                    return filtered.map((cat: ServiceCategory) => {
+                                        const isSelected = serviceCategory === cat.id;
+                                        return (
+                                            <TouchableOpacity
+                                                key={cat.id}
+                                                style={[
+                                                    styles.professionCard,
+                                                    isSelected && { 
+                                                        borderColor: cat.colors[0], 
+                                                        backgroundColor: '#0F253B',
+                                                    },
+                                                ]}
+                                                onPress={() => setServiceCategory(cat.id)}
+                                                activeOpacity={0.95}
+                                            >
+                                                {isSelected ? (
+                                                    <View
+                                                        style={[
+                                                            styles.professionIconBgSelected,
+                                                            { backgroundColor: cat.colors[0] }
+                                                        ]}
+                                                    >
+                                                        <Ionicons 
+                                                            name={cat.icon as any} 
+                                                            size={26} 
+                                                            color="#FFFFFF" 
+                                                        />
+                                                    </View>
+                                                ) : (
+                                                    <View style={styles.professionIconBgUnselected}>
+                                                        <Ionicons 
+                                                            name={cat.icon as any} 
+                                                            size={26} 
+                                                            color={cat.colors[0]} 
+                                                        />
+                                                    </View>
+                                                )}
+
+                                                <Text style={[
+                                                    styles.professionName,
+                                                    isSelected && { color: '#FFFFFF', fontFamily: fonts.bold }
+                                                ]}>
+                                                    {cat.name}
+                                                </Text>
+                                                {isSelected && (
+                                                    <View style={[styles.professionCheck, { backgroundColor: cat.colors[0] }]}>
+                                                        <Ionicons name="checkmark" size={9} color="#FFFFFF" />
+                                                    </View>
+                                                )}
+                                            </TouchableOpacity>
+                                        );
+                                    });
+                                })()}
                             </View>
                         </View>
                     )}
@@ -453,5 +502,39 @@ const styles = StyleSheet.create({
         fontSize: 13.5,
         color: '#0D9488',
         textDecorationLine: 'underline',
+    },
+    searchIconButton: {
+        padding: 4,
+        borderRadius: 8,
+        backgroundColor: 'rgba(255,255,255,0.04)',
+    },
+    searchInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#0A1726',
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        height: 44,
+        marginBottom: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.08)',
+    },
+    searchInput: {
+        flex: 1,
+        fontFamily: fonts.medium,
+        fontSize: 14,
+        color: '#FFFFFF',
+        paddingVertical: 8,
+    },
+    noResultsContainer: {
+        width: '100%',
+        paddingVertical: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    noResultsText: {
+        fontFamily: fonts.medium,
+        fontSize: 14,
+        color: 'rgba(255,255,255,0.4)',
     },
 });
