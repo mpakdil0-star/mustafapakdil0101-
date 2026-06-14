@@ -3406,7 +3406,7 @@ export default function HomeScreen() {
                               style={[
                                 styles.mainCategoryCard,
                                 isExpanded 
-                                  ? { borderColor: primaryColor + '40', backgroundColor: 'rgba(255, 255, 255, 0.05)', shadowColor: primaryColor, shadowOpacity: 0.08, shadowRadius: 10, elevation: 4 }
+                                  ? { borderColor: colors.primary + '30', backgroundColor: 'rgba(255, 255, 255, 0.05)', shadowColor: colors.primary, shadowOpacity: 0.08, shadowRadius: 10, elevation: 4 }
                                   : { borderColor: 'rgba(255, 255, 255, 0.06)' }
                               ]}
                             >
