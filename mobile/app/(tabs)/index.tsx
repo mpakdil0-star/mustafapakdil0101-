@@ -3329,6 +3329,7 @@ export default function HomeScreen() {
                     autoFocus={true}
                     autoCapitalize="none"
                     autoCorrect={false}
+                    underlineColorAndroid="transparent"
                   />
                   {searchQuery.length > 0 && (
                     <TouchableOpacity onPress={() => setSearchQuery('')}>
@@ -6037,6 +6038,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#FFFFFF',
     paddingVertical: 8,
+    backgroundColor: 'transparent',
   },
   searchOverlayCloseBtn: {
     marginLeft: 14,
