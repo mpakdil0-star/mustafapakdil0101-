@@ -9,11 +9,11 @@ import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
 const getCategoryImage = (id: string | undefined) => {
   if (!id) return null;
   switch (id) {
-    case 'elektrik': return require('../../assets/images/categories/electric_v2.png');
+    case 'elektrik': return require('../../assets/images/categories/electric_3d_clean_v3.png');
     case 'cilingir': return require('../../assets/images/categories/locksmith_3d_clean_v2.png');
     case 'klima': return require('../../assets/images/categories/ac_3d_clean_v2.png');
     case 'beyaz-esya': return require('../../assets/images/categories/appliances_3d_clean_v2.png');
-    case 'tesisat': return require('../../assets/images/categories/plumbing_v2.png');
+    case 'tesisat': return require('../../assets/images/categories/plumbing_3d_clean_v3.png');
     case 'temizlik': return require('../../assets/images/categories/cleaning_3d_clean_v2.png');
     case 'nakliyat': return require('../../assets/images/categories/moving_3d_clean_v2.png');
     case 'boya-badana': return require('../../assets/images/categories/painting_3d_clean_v2.png');
