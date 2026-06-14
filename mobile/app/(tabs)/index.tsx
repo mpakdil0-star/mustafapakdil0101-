@@ -3307,12 +3307,12 @@ export default function HomeScreen() {
         >
           <View style={styles.searchOverlayBackdrop}>
             <LinearGradient
-              colors={['#07111E', '#0A1E36', '#040B14']}
+              colors={['#021D1A', '#052A26', '#010E0D']}
               style={StyleSheet.absoluteFill}
             />
             {/* Glowing Decorative Background Blobs */}
             <View style={[styles.searchGlowBlob, { top: -60, left: -60, backgroundColor: '#0D9488', opacity: 0.15 }]} />
-            <View style={[styles.searchGlowBlob, { bottom: -100, right: -60, backgroundColor: '#3B82F6', opacity: 0.12 }]} />
+            <View style={[styles.searchGlowBlob, { bottom: -100, right: -60, backgroundColor: '#0D9488', opacity: 0.08 }]} />
 
             <View style={[styles.searchOverlayContainer, { paddingTop: Platform.OS === 'ios' ? 50 : 20 }]}>
               {/* Search Header */}
@@ -3354,40 +3354,110 @@ export default function HomeScreen() {
                 showsVerticalScrollIndicator={false}
               >
                 {searchQuery.trim().length === 0 ? (
-                  // Popular Services / Quick Start Section
-                  <View style={styles.searchOverlaySection}>
-                    <Text style={styles.searchSectionTitle}>Popüler Hizmetler</Text>
-                    <View style={styles.popularServicesGrid}>
-                      {[
-                        { name: 'Elektrik Tesisatı', parentCategory: 'elektrik', emoji: '⚡' },
-                        { name: 'Kapı Açma (Çilingir)', parentCategory: 'cilingir', actualName: 'Kapı Açma', emoji: '🔑' },
-                        { name: 'Klima Montaj', parentCategory: 'klima', emoji: '❄️' },
-                        { name: 'Ev Temizliği', parentCategory: 'temizlik', emoji: '🧹' },
-                        { name: 'Boya Badana', parentCategory: 'boya-badana', emoji: '🎨' },
-                        { name: 'Kombi Bakım', parentCategory: 'kombi-servis', emoji: '🔥' },
-                      ].map((item, idx) => {
-                        const parent = SERVICE_CATEGORIES.find(c => c.id === item.parentCategory);
-                        const glowColor = parent?.colors[0] || '#0D9488';
-                        return (
-                          <TouchableOpacity
-                            key={idx}
-                            style={[styles.popularServicePill, { borderColor: glowColor + '30' }]}
-                            onPress={() => {
-                              setIsSearchOverlayVisible(false);
-                              setSearchQuery('');
-                              handleActionWithAuth('/jobs/create', { 
-                                serviceCategory: item.parentCategory,
-                                category: item.actualName || item.name 
-                              });
-                            }}
-                          >
-                            <Text style={{ marginRight: 6, fontSize: 13 }}>{item.emoji}</Text>
-                            <Text style={styles.popularServiceText}>{item.name}</Text>
-                          </TouchableOpacity>
-                        );
-                      })}
+                  <>
+                    {/* Popular Services / Quick Start Section */}
+                    <View style={styles.searchOverlaySection}>
+                      <Text style={styles.searchSectionTitle}>Popüler Hizmetler</Text>
+                      <View style={styles.popularServicesGrid}>
+                        {[
+                          { name: 'Elektrik Tesisatı', parentCategory: 'elektrik', emoji: '⚡' },
+                          { name: 'Kapı Açma (Çilingir)', parentCategory: 'cilingir', actualName: 'Kapı Açma', emoji: '🔑' },
+                          { name: 'Klima Montaj', parentCategory: 'klima', emoji: '❄️' },
+                          { name: 'Ev Temizliği', parentCategory: 'temizlik', emoji: '🧹' },
+                          { name: 'Boya Badana', parentCategory: 'boya-badana', emoji: '🎨' },
+                          { name: 'Kombi Bakım', parentCategory: 'kombi-servis', emoji: '🔥' },
+                        ].map((item, idx) => {
+                          const parent = SERVICE_CATEGORIES.find(c => c.id === item.parentCategory);
+                          const glowColor = parent?.colors[0] || '#0D9488';
+                          return (
+                            <TouchableOpacity
+                              key={idx}
+                              style={[styles.popularServicePill, { borderColor: glowColor + '30' }]}
+                              onPress={() => {
+                                setIsSearchOverlayVisible(false);
+                                setSearchQuery('');
+                                handleActionWithAuth('/jobs/create', { 
+                                  serviceCategory: item.parentCategory,
+                                  category: item.actualName || item.name 
+                                });
+                              }}
+                            >
+                              <Text style={{ marginRight: 6, fontSize: 13 }}>{item.emoji}</Text>
+                              <Text style={styles.popularServiceText}>{item.name}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
                     </View>
-                  </View>
+
+                    {/* All Main Services and Sub-branches (Alt Dallar) */}
+                    <View style={styles.searchOverlaySection}>
+                      <Text style={styles.searchSectionTitle}>Tüm Ana Hizmetler & Alt Dalları</Text>
+                      <View style={styles.categoryListContainer}>
+                        {SERVICE_CATEGORIES.map((cat) => {
+                          const primaryColor = cat.colors[0];
+                          const subCats = JOB_CATEGORIES.filter(sub => sub.parentCategory === cat.id);
+                          return (
+                            <View
+                              key={cat.id}
+                              style={[
+                                styles.mainCategoryCard,
+                                { borderColor: primaryColor + '20' }
+                              ]}
+                            >
+                              {/* Card Header */}
+                              <TouchableOpacity
+                                style={styles.mainCategoryHeader}
+                                activeOpacity={0.7}
+                                onPress={() => {
+                                  setIsSearchOverlayVisible(false);
+                                  setSearchQuery('');
+                                  handleActionWithAuth('/jobs/create', { serviceCategory: cat.id });
+                                }}
+                              >
+                                <View
+                                  style={[
+                                    styles.mainCategoryIconContainer,
+                                    { backgroundColor: primaryColor + '12', borderColor: primaryColor + '25' }
+                                  ]}
+                                >
+                                  <Ionicons name={cat.icon as any} size={20} color={primaryColor} />
+                                </View>
+                                <View style={styles.mainCategoryTextContainer}>
+                                  <Text style={styles.mainCategoryName}>{cat.name}</Text>
+                                  <Text style={styles.mainCategoryDesc} numberOfLines={1}>
+                                    {cat.description}
+                                  </Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={16} color="rgba(255, 255, 255, 0.2)" />
+                              </TouchableOpacity>
+
+                              {/* Subcategories flex wrapper */}
+                              <View style={styles.subCategoriesWrapper}>
+                                {subCats.map((sub) => (
+                                  <TouchableOpacity
+                                    key={sub.id}
+                                    style={styles.subCategoryPill}
+                                    activeOpacity={0.7}
+                                    onPress={() => {
+                                      setIsSearchOverlayVisible(false);
+                                      setSearchQuery('');
+                                      handleActionWithAuth('/jobs/create', {
+                                        serviceCategory: cat.id,
+                                        category: sub.name
+                                      });
+                                    }}
+                                  >
+                                    <Text style={styles.subCategoryPillText}>{sub.name}</Text>
+                                  </TouchableOpacity>
+                                ))}
+                              </View>
+                            </View>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  </>
                 ) : (
                   // Filtered Results
                   <View>
@@ -5895,7 +5965,7 @@ const styles = StyleSheet.create({
   },
   searchOverlayBackdrop: {
     flex: 1,
-    backgroundColor: '#07111E',
+    backgroundColor: '#021D1A',
   },
   searchGlowBlob: {
     position: 'absolute',
@@ -5923,7 +5993,7 @@ const styles = StyleSheet.create({
     height: 52,
     borderWidth: 1.5,
     borderColor: 'rgba(255, 255, 255, 0.12)',
-    shadowColor: '#3B82F6',
+    shadowColor: '#0D9488',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
@@ -6054,5 +6124,64 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  categoryListContainer: {
+    gap: 12,
+  },
+  mainCategoryCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 20,
+    borderWidth: 1.2,
+    padding: 14,
+    marginBottom: 12,
+  },
+  mainCategoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  mainCategoryIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+  },
+  mainCategoryTextContainer: {
+    flex: 1,
+  },
+  mainCategoryName: {
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  mainCategoryDesc: {
+    fontFamily: fonts.regular,
+    fontSize: 11.5,
+    color: 'rgba(255, 255, 255, 0.35)',
+  },
+  subCategoriesWrapper: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    paddingTop: 10,
+  },
+  subCategoryPill: {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.07)',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  subCategoryPillText: {
+    fontFamily: fonts.medium,
+    fontSize: 10.5,
+    color: 'rgba(255, 255, 255, 0.65)',
   },
 });
