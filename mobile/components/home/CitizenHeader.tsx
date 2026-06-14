@@ -96,17 +96,17 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
           activeOpacity={0.7}
           onPress={onSearchPress}
         >
-          <Ionicons name="search-outline" size={18} color="#64748B" />
+          <Ionicons name="search-outline" size={18} color="rgba(255, 255, 255, 0.85)" />
           <Text style={styles.headerFullSearchPlaceholder}>Hizmet veya Kategori Ara...</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.seeAllPillInsideSearch, { backgroundColor: 'rgba(13, 148, 136, 0.08)', borderColor: 'rgba(13, 148, 136, 0.15)' }]}
+          style={[styles.seeAllPillInsideSearch, { backgroundColor: 'rgba(255, 255, 255, 0.18)', borderColor: 'rgba(255, 255, 255, 0.25)' }]}
           activeOpacity={0.7}
           onPress={() => handleActionWithAuth('/electricians')}
         >
           <Text style={styles.seeAllPillText}>Tüm Ustalar</Text>
-          <Ionicons name="arrow-forward" size={11} color="#0D9488" style={{ marginLeft: 3 }} />
+          <Ionicons name="arrow-forward" size={11} color="#FFFFFF" style={{ marginLeft: 3 }} />
         </TouchableOpacity>
       </View>
 
@@ -260,17 +260,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
     borderRadius: 14,
     height: 48,
     paddingHorizontal: 16,
     marginBottom: 16,
     width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   headerFullSearchInputArea: {
     flex: 1,
@@ -282,7 +279,7 @@ const styles = StyleSheet.create({
   headerFullSearchPlaceholder: {
     fontFamily: fonts.medium,
     fontSize: 12.5,
-    color: '#64748B',
+    color: 'rgba(255, 255, 255, 0.8)',
   },
   seeAllPillInsideSearch: {
     flexDirection: 'row',
@@ -295,7 +292,7 @@ const styles = StyleSheet.create({
   seeAllPillText: {
     fontFamily: fonts.bold,
     fontSize: 10.5,
-    color: '#0D9488',
+    color: '#FFFFFF',
     letterSpacing: 0.2,
   },
   quickPillsContainer: {
