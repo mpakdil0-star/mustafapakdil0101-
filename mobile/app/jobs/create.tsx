@@ -1046,15 +1046,21 @@ export default function CreateJobScreen() {
                               color={selected ? svc.colors[0] : colors.textSecondary}
                             />
                           )}
-                          <Text
-                            style={[
-                              styles.pillText,
-                              { flex: 1, fontSize: 12, color: colors.textSecondary, backgroundColor: 'transparent' },
-                              selected && { color: svc.colors[0], fontFamily: fonts.bold },
-                            ]}
-                          >
-                            {svc.name}
-                          </Text>
+                          <View style={{ flex: 1, backgroundColor: 'transparent', justifyContent: 'center' }}>
+                            <Text
+                              style={[
+                                styles.pillText,
+                                {
+                                  fontSize: 12,
+                                  color: selected ? svc.colors[0] : colors.textSecondary,
+                                  fontFamily: selected ? fonts.bold : undefined,
+                                  backgroundColor: 'transparent',
+                                }
+                              ]}
+                            >
+                              {svc.name}
+                            </Text>
+                          </View>
                         </TouchableOpacity>
                       );
                     })}

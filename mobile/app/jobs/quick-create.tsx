@@ -467,7 +467,14 @@ export default function QuickCreateScreen() {
                                         <Image source={getCategoryImage(type.id)} style={styles.type3dImage} resizeMode="contain" />
                                     </View>
                                     <Text
-                                        style={[styles.typeLabel, { color: colors.textSecondary }, isSelected && { color: type.color, fontFamily: fonts.bold }]}
+                                        style={[
+                                            styles.typeLabel,
+                                            {
+                                                color: isSelected ? type.color : colors.textSecondary,
+                                                fontFamily: isSelected ? fonts.bold : undefined,
+                                                backgroundColor: 'transparent'
+                                            }
+                                        ]}
                                         numberOfLines={2}
                                     >
                                         {type.label}
