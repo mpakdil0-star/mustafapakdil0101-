@@ -3369,12 +3369,11 @@ export default function HomeScreen() {
                           { name: 'Boya Badana', parentCategory: 'boya-badana', emoji: '🎨' },
                           { name: 'Kombi Bakım', parentCategory: 'kombi-servis', emoji: '🔥' },
                         ].map((item, idx) => {
-                          const parent = SERVICE_CATEGORIES.find(c => c.id === item.parentCategory);
-                          const glowColor = parent?.colors[0] || '#0D9488';
                           return (
                             <TouchableOpacity
                               key={idx}
-                              style={[styles.popularServicePill, { borderColor: glowColor + '30' }]}
+                              style={styles.popularServicePill}
+                              activeOpacity={0.7}
                               onPress={() => {
                                 setIsSearchOverlayVisible(false);
                                 setSearchQuery('');
@@ -3385,7 +3384,7 @@ export default function HomeScreen() {
                               }}
                             >
                               <Text style={{ marginRight: 6, fontSize: 13 }}>{item.emoji}</Text>
-                              <Text style={styles.popularServiceText}>{item.name}</Text>
+                              <Text style={styles.popularServiceText} numberOfLines={1}>{item.name}</Text>
                             </TouchableOpacity>
                           );
                         })}
@@ -6066,25 +6065,25 @@ const styles = StyleSheet.create({
   popularServicesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
+    justifyContent: 'space-between',
   },
   popularServicePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    shadowColor: '#0D9488',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    flexBasis: '48%',
+    flexGrow: 1,
   },
   popularServiceText: {
+    flex: 1,
     fontFamily: fonts.semiBold,
-    fontSize: 12.5,
+    fontSize: 12,
     color: '#FFFFFF',
   },
   searchOverlayEmpty: {
