@@ -125,11 +125,11 @@ const getDescriptionPlaceholder = (type: string | null, subCategoryId?: string):
 
 const getCategoryImage = (id: string) => {
     switch (id) {
-        case 'elektrik': return require('../../assets/images/categories/electric.png');
-        case 'cilingir': return require('../../assets/images/categories/locksmith_3d_clean.png');
-        case 'klima': return require('../../assets/images/categories/ac_3d_clean.png');
-        case 'beyaz-esya': return require('../../assets/images/categories/appliances_3d_clean.png');
-        case 'tesisat': return require('../../assets/images/categories/plumbing.png');
+        case 'elektrik': return require('../../assets/images/categories/electric_v2.png');
+        case 'cilingir': return require('../../assets/images/categories/locksmith_3d_clean_v2.png');
+        case 'klima': return require('../../assets/images/categories/ac_3d_clean_v2.png');
+        case 'beyaz-esya': return require('../../assets/images/categories/appliances_3d_clean_v2.png');
+        case 'tesisat': return require('../../assets/images/categories/plumbing_v2.png');
         default: return undefined;
     }
 };
