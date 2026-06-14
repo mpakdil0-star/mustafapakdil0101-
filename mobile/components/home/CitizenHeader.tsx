@@ -115,6 +115,16 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
           { emoji: '❄️', label: 'Klima', color: '#34D399', id: 'klima' },
           { emoji: '🔧', label: 'Beyaz Eşya', color: '#A78BFA', id: 'beyaz-esya' },
           { emoji: '🚿', label: 'Su/Tesisat', color: '#38BDF8', id: 'tesisat' },
+          { emoji: '🧹', label: 'Temizlik', color: '#C084FC', id: 'temizlik' },
+          { emoji: '🚚', label: 'Nakliyat', color: '#FB923C', id: 'nakliyat' },
+          { emoji: '🎨', label: 'Boya Badana', color: '#F472B6', id: 'boya-badana' },
+          { emoji: '🛋️', label: 'Koltuk/Halı', color: '#34D399', id: 'koltuk-hali' },
+          { emoji: '🔩', label: 'Mobilya', color: '#C084FC', id: 'mobilya-montaj' },
+          { emoji: '📦', label: 'Küçük Nakliye', color: '#FACC15', id: 'kucuk-nakliye' },
+          { emoji: '🔥', label: 'Kombi', color: '#F87171', id: 'kombi-servis' },
+          { emoji: '🛗', label: 'Asansör', color: '#64748B', id: 'asansor' },
+          { emoji: '🐛', label: 'İlaçlama', color: '#22D3EE', id: 'bocek-ilaclama' },
+          { emoji: '📹', label: 'Güvenlik', color: '#818CF8', id: 'guvenlik-kamera' },
         ].map((pill) => (
           <TouchableOpacity
             key={pill.id}

@@ -41,6 +41,16 @@ const getSpecialtyIcon = (specialty: string) => {
     if (spec.includes('Klima')) return 'snow-sharp';
     if (spec.includes('Beyaz Eşya')) return 'hardware-chip-sharp';
     if (spec.includes('Tesisat')) return 'water-sharp';
+    if (spec.includes('Temizlik')) return 'sparkles';
+    if (spec.includes('Nakliyat')) return 'car-sharp';
+    if (spec.includes('Boya')) return 'color-palette-sharp';
+    if (spec.includes('Koltuk') || spec.includes('Halı')) return 'bed-sharp';
+    if (spec.includes('Mobilya')) return 'cube-sharp';
+    if (spec.includes('Küçük Nakliye')) return 'cube-outline';
+    if (spec.includes('Kombi')) return 'flame-sharp';
+    if (spec.includes('Asansör')) return 'swap-vertical-sharp';
+    if (spec.includes('Böcek') || spec.includes('İlaçlama')) return 'bug-sharp';
+    if (spec.includes('Güvenlik') || spec.includes('Kamera')) return 'videocam-sharp';
     return 'construct-sharp';
 };
 
@@ -149,6 +159,16 @@ export default function ElectriciansListScreen() {
             if (cat === 'beyaz-esya') return 'Beyaz Eşya';
             if (cat === 'tesisat') return 'Tesisat';
             if (cat === 'elektrik') return 'Elektrik';
+            if (cat === 'temizlik') return 'Temizlik';
+            if (cat === 'nakliyat') return 'Nakliyat';
+            if (cat === 'boya-badana') return 'Boya Badana';
+            if (cat === 'koltuk-hali') return 'Koltuk/Halı Yıkama';
+            if (cat === 'mobilya-montaj') return 'Mobilya Montaj';
+            if (cat === 'kucuk-nakliye') return 'Küçük Nakliye';
+            if (cat === 'kombi-servis') return 'Kombi Servisi';
+            if (cat === 'asansor') return 'Asansör Bakım';
+            if (cat === 'bocek-ilaclama') return 'Böcek İlaçlama';
+            if (cat === 'guvenlik-kamera') return 'Güvenlik Kamera';
 
             const specs = item.specialties || item.electricianProfile?.specialties || item.services || [];
             const specsStr = Array.isArray(specs) ? specs.join(' ').toLowerCase() : '';

@@ -1,6 +1,8 @@
 /**
  * Hizmet Kategorileri (Service Categories)
- * Ana meslekler: elektrik, cilingir, klima, beyaz-esya, tesisat
+ * Ana meslekler: elektrik, cilingir, klima, beyaz-esya, tesisat,
+ * temizlik, nakliyat, boya-badana, koltuk-hali, mobilya-montaj,
+ * kucuk-nakliye, kombi-servis, asansor, bocek-ilaclama, guvenlik-kamera
  */
 
 export const SERVICE_CATEGORIES = [
@@ -8,7 +10,17 @@ export const SERVICE_CATEGORIES = [
     'cilingir',
     'klima',
     'beyaz-esya',
-    'tesisat'
+    'tesisat',
+    'temizlik',
+    'nakliyat',
+    'boya-badana',
+    'koltuk-hali',
+    'mobilya-montaj',
+    'kucuk-nakliye',
+    'kombi-servis',
+    'asansor',
+    'bocek-ilaclama',
+    'guvenlik-kamera'
 ] as const;
 
 export type ServiceCategory = typeof SERVICE_CATEGORIES[number];

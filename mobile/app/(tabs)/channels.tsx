@@ -38,11 +38,16 @@ const getServiceLabel = (category: string) => {
   if (cat === 'klima') return 'Klima Ustası';
   if (cat === 'beyaz-esya') return 'Beyaz Eşya Servisi';
   if (cat === 'tesisat') return 'Su Tesisatçısı';
-  if (cat === 'kombi') return 'Kombi Servisi';
-  if (cat === 'boya') return 'Boya Badana';
-  if (cat === 'temizlik') return 'Temizlik';
+  if (cat === 'temizlik') return 'Temizlik Hizmeti';
   if (cat === 'nakliyat') return 'Nakliyat';
-  if (cat === 'montaj') return 'Montaj Ustası';
+  if (cat === 'boya-badana') return 'Boya Badana';
+  if (cat === 'koltuk-hali') return 'Koltuk/Halı Yıkama';
+  if (cat === 'mobilya-montaj') return 'Mobilya Montaj';
+  if (cat === 'kucuk-nakliye') return 'Küçük Nakliye';
+  if (cat === 'kombi-servis') return 'Kombi Servisi';
+  if (cat === 'asansor') return 'Asansör Bakım';
+  if (cat === 'bocek-ilaclama') return 'Böcek İlaçlama';
+  if (cat === 'guvenlik-kamera') return 'Güvenlik Kamera';
   return 'Usta';
 };
 

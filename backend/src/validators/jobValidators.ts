@@ -33,7 +33,7 @@ export const createJobValidation = [
 
     body('serviceCategory')
         .optional()
-        .isIn(['elektrik', 'cilingir', 'klima', 'beyaz-esya', 'tesisat'])
+        .isIn(['elektrik', 'cilingir', 'klima', 'beyaz-esya', 'tesisat', 'temizlik', 'nakliyat', 'boya-badana', 'koltuk-hali', 'mobilya-montaj', 'kucuk-nakliye', 'kombi-servis', 'asansor', 'bocek-ilaclama', 'guvenlik-kamera'])
         .withMessage('Geçersiz hizmet kategorisi'),
 
     body('location')

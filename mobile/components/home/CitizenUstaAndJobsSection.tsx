@@ -40,6 +40,16 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
     if (cat === 'beyaz-esya') return 'Beyaz Eşya';
     if (cat === 'tesisat') return 'Tesisat';
     if (cat === 'elektrik') return 'Elektrik';
+    if (cat === 'temizlik') return 'Temizlik';
+    if (cat === 'nakliyat') return 'Nakliyat';
+    if (cat === 'boya-badana') return 'Boya Badana';
+    if (cat === 'koltuk-hali') return 'Koltuk/Halı Yıkama';
+    if (cat === 'mobilya-montaj') return 'Mobilya Montaj';
+    if (cat === 'kucuk-nakliye') return 'Küçük Nakliye';
+    if (cat === 'kombi-servis') return 'Kombi Servisi';
+    if (cat === 'asansor') return 'Asansör Bakım';
+    if (cat === 'bocek-ilaclama') return 'Böcek İlaçlama';
+    if (cat === 'guvenlik-kamera') return 'Güvenlik Kamera';
 
     const specs = elec.specialties || elec.electricianProfile?.specialties || [];
     const specsStr = Array.isArray(specs) ? specs.join(' ').toLowerCase() : '';

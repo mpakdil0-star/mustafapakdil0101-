@@ -150,6 +150,56 @@ const getPlaceholdersByCategory = (categoryId: string, subCategory?: string) => 
         title: 'Örn: Buzdolabı soğutmuyor',
         description: 'Çamaşır makinesi sallanıyor, motor sesi geliyor, kapı contaları yıpranmış...'
       };
+    case 'temizlik':
+      return {
+        title: 'Örn: Ev temizliği / İnşaat sonrası temizlik',
+        description: 'Ev, ofis veya inşaat sonrası temizlik ihtiyacınızı detaylarıyla anlatın...'
+      };
+    case 'nakliyat':
+      return {
+        title: 'Örn: 3+1 daire evden eve nakliyat',
+        description: 'Kaçıncı kat, asansör var mı, yaklaşık eşya miktarını belirtin...'
+      };
+    case 'boya-badana':
+      return {
+        title: 'Örn: 2 oda 1 salon boya badana',
+        description: 'Odaların boyutları, tavan yüksekliği, mevcut boya durumu, istenilen renk/marka...'
+      };
+    case 'koltuk-hali':
+      return {
+        title: 'Örn: 3\'lü koltuk takımı yıkama',
+        description: 'Koltuk/halı boyutu, kumaş türü, leke durumu...'
+      };
+    case 'mobilya-montaj':
+      return {
+        title: 'Örn: IKEA mutfak dolabı montajı',
+        description: 'Mobilyanın markası/modeli, parça sayısı, montaj yeri...'
+      };
+    case 'kucuk-nakliye':
+      return {
+        title: 'Örn: Buzdolabı 3. kata taşıma',
+        description: 'Taşınacak eşya, boyutu/ağırlığı, kaçıncı kat, asansör durumu...'
+      };
+    case 'kombi-servis':
+      return {
+        title: 'Örn: Kombi bakımı / su basıyor',
+        description: 'Kombinin markası/modeli, arıza belirtileri, ne zamandır sorunlu...'
+      };
+    case 'asansor':
+      return {
+        title: 'Örn: Asansör arıza / periyodik bakım',
+        description: 'Asansör tipi, kaç katlı, arıza belirtileri...'
+      };
+    case 'bocek-ilaclama':
+      return {
+        title: 'Örn: Evde hamamböceği ilaçlama',
+        description: 'Haşere türü, ev/iş yeri m², kaçıncı kat, çocuk/evcil hayvan durumu...'
+      };
+    case 'guvenlik-kamera':
+      return {
+        title: 'Örn: 4 kamera güvenlik sistemi kurulumu',
+        description: 'Kaç kamera, iç/dış mekan, kayıt cihazı (DVR/NVR), internet bağlantısı...'
+      };
     default:
       return {
         title: 'Örn: İhtiyacınızı kısaca belirtin',

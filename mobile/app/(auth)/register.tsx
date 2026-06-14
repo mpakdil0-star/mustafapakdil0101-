@@ -270,7 +270,9 @@ export default function RegisterScreen() {
     }
   };
 
-  const accentColor = userType === 'CITIZEN' ? '#0D9488' : '#4682B4';
+  const selectedCategory = SERVICE_CATEGORIES.find(c => c.id === serviceCategory);
+  const accentColor = userType === 'CITIZEN' ? '#0D9488' : (selectedCategory?.colors[0] || '#3B82F6');
+  const accentGradient = userType === 'CITIZEN' ? ['#0D9488', '#0F766E'] : (selectedCategory?.colors || ['#3B82F6', '#1D4ED8']);
   const [legalModal, setLegalModal] = useState<{ visible: boolean; type: 'KVKK' | 'TERMS' }>({ visible: false, type: 'KVKK' });
 
   return (
@@ -403,24 +405,47 @@ export default function RegisterScreen() {
             </View>
 
             <View style={styles.roleBadgeContainer}>
-              <View style={[styles.roleBadge, { backgroundColor: accentColor + '20', borderColor: accentColor }]}>
-                <Ionicons
-                  name={userType === 'ELECTRICIAN' ? 'construct' : 'person'}
-                  size={16}
-                  color={accentColor}
-                />
-                <Text style={[styles.roleBadgeText, { color: accentColor }]}>
-                  {userType === 'ELECTRICIAN' 
-                    ? `${SERVICE_CATEGORIES.find(c => c.id === serviceCategory)?.name || 'Usta'} olarak kayıt` 
-                    : 'Müşteri olarak kayıt'}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => router.replace('/(auth)/role-select')}
-                  style={styles.changeRoleBtn}
-                >
-                  <Text style={styles.changeRoleText}>Değiştir</Text>
-                </TouchableOpacity>
-              </View>
+              {userType === 'ELECTRICIAN' ? (
+                <View style={[styles.specialtyCard, { borderColor: accentColor + '30', backgroundColor: '#0A1726' }]}>
+                  <View style={[styles.specialtyIconBg, { backgroundColor: accentColor + '15' }]}>
+                    <Ionicons name={selectedCategory?.icon as any || 'construct'} size={24} color={accentColor} />
+                  </View>
+                  <View style={styles.specialtyInfo}>
+                    <Text style={styles.specialtyLabel}>UZMANLIK ALANINIZ</Text>
+                    <Text style={styles.specialtyName}>{selectedCategory?.name || 'Usta'}</Text>
+                    <Text style={styles.specialtyDesc} numberOfLines={1}>
+                      {selectedCategory?.description || 'Hizmet sunarak kazanç elde edin'}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => router.replace('/(auth)/role-select')}
+                    style={styles.specialtyChangeBtn}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.specialtyChangeText}>Değiştir</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={[styles.specialtyCard, { borderColor: accentColor + '30', backgroundColor: '#0A1726' }]}>
+                  <View style={[styles.specialtyIconBg, { backgroundColor: accentColor + '15' }]}>
+                    <Ionicons name="person" size={24} color={accentColor} />
+                  </View>
+                  <View style={styles.specialtyInfo}>
+                    <Text style={styles.specialtyLabel}>KAYIT TÜRÜ</Text>
+                    <Text style={styles.specialtyName}>Müşteri / Vatandaş</Text>
+                    <Text style={styles.specialtyDesc} numberOfLines={1}>
+                      Hizmet ilanı oluşturup usta çağırın
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => router.replace('/(auth)/role-select')}
+                    style={styles.specialtyChangeBtn}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.specialtyChangeText}>Değiştir</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
 
             <View style={styles.formSection}>
@@ -540,6 +565,7 @@ export default function RegisterScreen() {
                     }}
                     error={errors.fullName}
                     editable={!isLoading}
+                    leftIcon={<Ionicons name="person-outline" size={20} color="rgba(255,255,255,0.5)" />}
                     labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
                     inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }}
                     style={{ color: '#FFFFFF' }}
@@ -560,6 +586,7 @@ export default function RegisterScreen() {
                     autoComplete="email"
                     error={errors.email}
                     editable={!isLoading}
+                    leftIcon={<Ionicons name="mail-outline" size={20} color="rgba(255,255,255,0.5)" />}
                     labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
                     inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }}
                     style={{ color: '#FFFFFF' }}
@@ -577,6 +604,7 @@ export default function RegisterScreen() {
                     keyboardType="phone-pad"
                     error={errors.phone}
                     editable={!isLoading}
+                    leftIcon={<Ionicons name="call-outline" size={20} color="rgba(255,255,255,0.5)" />}
                     labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
                     inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }}
                     style={{ color: '#FFFFFF' }}
@@ -597,6 +625,7 @@ export default function RegisterScreen() {
                     autoComplete="password"
                     error={errors.password}
                     editable={!isLoading}
+                    leftIcon={<Ionicons name="lock-closed-outline" size={20} color="rgba(255,255,255,0.5)" />}
                     labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
                     inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }}
                     style={{ color: '#FFFFFF' }}
@@ -619,7 +648,7 @@ export default function RegisterScreen() {
                     ]}
                   >
                     <LinearGradient
-                      colors={[accentColor, accentColor === '#0D9488' ? '#0EA5E9' : '#2E5C8A']}
+                      colors={accentGradient as any}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                       style={styles.registerButtonGradient}
@@ -1072,5 +1101,59 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.8)',
     lineHeight: 22,
     paddingBottom: 40,
+  },
+  specialtyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  specialtyIconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  specialtyInfo: {
+    flex: 1,
+  },
+  specialtyLabel: {
+    fontFamily: fonts.bold,
+    fontSize: 9.5,
+    color: 'rgba(255,255,255,0.4)',
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  specialtyName: {
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  specialtyDesc: {
+    fontFamily: fonts.medium,
+    fontSize: 11.5,
+    color: 'rgba(255,255,255,0.5)',
+  },
+  specialtyChangeBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  specialtyChangeText: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    color: '#FFFFFF',
   },
 });

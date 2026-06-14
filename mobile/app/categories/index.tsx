@@ -13,6 +13,16 @@ import {
     KLIMA_CATEGORIES,
     BEYAZ_ESYA_CATEGORIES,
     TESISAT_CATEGORIES,
+    TEMIZLIK_CATEGORIES,
+    NAKLIYAT_CATEGORIES,
+    BOYA_BADANA_CATEGORIES,
+    KOLTUK_HALI_CATEGORIES,
+    MOBILYA_MONTAJ_CATEGORIES,
+    KUCUK_NAKLIYE_CATEGORIES,
+    KOMBI_SERVIS_CATEGORIES,
+    ASANSOR_CATEGORIES,
+    BOCEK_ILACLAMA_CATEGORIES,
+    GUVENLIK_KAMERA_CATEGORIES,
     JobCategory
 } from '../../constants/jobCategories';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
@@ -30,6 +40,16 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     { id: 'klima', title: 'Klima', emoji: '❄️', categories: KLIMA_CATEGORIES },
     { id: 'beyaz-esya', title: 'Beyaz Eşya', emoji: '🏠', categories: BEYAZ_ESYA_CATEGORIES },
     { id: 'tesisat', title: 'Tesisat', emoji: '💧', categories: TESISAT_CATEGORIES },
+    { id: 'temizlik', title: 'Temizlik', emoji: '🧹', categories: TEMIZLIK_CATEGORIES },
+    { id: 'nakliyat', title: 'Evden Eve Nakliyat', emoji: '🚚', categories: NAKLIYAT_CATEGORIES },
+    { id: 'boya-badana', title: 'Boya Badana', emoji: '🎨', categories: BOYA_BADANA_CATEGORIES },
+    { id: 'koltuk-hali', title: 'Koltuk/Halı Yıkama', emoji: '🛋️', categories: KOLTUK_HALI_CATEGORIES },
+    { id: 'mobilya-montaj', title: 'Mobilya Montaj', emoji: '🔩', categories: MOBILYA_MONTAJ_CATEGORIES },
+    { id: 'kucuk-nakliye', title: 'Küçük Nakliye', emoji: '📦', categories: KUCUK_NAKLIYE_CATEGORIES },
+    { id: 'kombi-servis', title: 'Kombi Servisi', emoji: '🔥', categories: KOMBI_SERVIS_CATEGORIES },
+    { id: 'asansor', title: 'Asansör Bakım', emoji: '🛗', categories: ASANSOR_CATEGORIES },
+    { id: 'bocek-ilaclama', title: 'Böcek İlaçlama', emoji: '🐛', categories: BOCEK_ILACLAMA_CATEGORIES },
+    { id: 'guvenlik-kamera', title: 'Güvenlik Kamera', emoji: '📹', categories: GUVENLIK_KAMERA_CATEGORIES },
 ];
 
 export default function CategoriesScreen() {

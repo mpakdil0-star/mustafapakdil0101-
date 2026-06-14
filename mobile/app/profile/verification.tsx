@@ -48,9 +48,16 @@ const getServiceDocumentLabel = (category: string = 'elektrik') => {
         case 'klima': return 'Klima Teknikerliği Belgesi';
         case 'beyaz-esya': return 'Beyaz Eşya Servis Belgesi';
         case 'cilingir': return 'Anahtarcı/Çilingir Belgesi';
-        case 'boya': return 'Boya ve Badana Ustalık Belgesi';
+        case 'temizlik': return 'Temizlik Hizmeti Yetki Belgesi';
         case 'nakliyat': return 'Nakliyat Yetki Belgesi';
-        case 'temizlik': return 'Temizlik Şirketi Yetki Belgesi';
+        case 'boya-badana': return 'Boya ve Badana Ustalık Belgesi';
+        case 'koltuk-hali': return 'Koltuk/Halı Yıkama Belgesi';
+        case 'mobilya-montaj': return 'Mobilya Montaj Ustalık Belgesi';
+        case 'kucuk-nakliye': return 'Küçük Nakliye Yetki Belgesi';
+        case 'kombi-servis': return 'Kombi Servis Yetki Belgesi';
+        case 'asansor': return 'Asansör Bakım Yetki Belgesi';
+        case 'bocek-ilaclama': return 'Böcek İlaçlama Yetki Belgesi';
+        case 'guvenlik-kamera': return 'Güvenlik Sistemleri Belgesi';
         case 'elektrik': default: return 'Elektrik Ustası Belgesi';
     }
 };

@@ -56,6 +56,16 @@ const ServiceCategoryItem = ({ cat, index, onPress, styles, colors }: any) => {
     if (id === 'klima') return 'Klima Servisi';
     if (id === 'beyaz-esya') return 'Beyaz Eşya Ustası';
     if (id === 'tesisat') return 'Tesisat Ustası';
+    if (id === 'temizlik') return 'Temizlik Hizmeti';
+    if (id === 'nakliyat') return 'Nakliyat Hizmeti';
+    if (id === 'boya-badana') return 'Boya Badana Ustası';
+    if (id === 'koltuk-hali') return 'Koltuk/Halı Yıkama';
+    if (id === 'mobilya-montaj') return 'Mobilya Montaj Ustası';
+    if (id === 'kucuk-nakliye') return 'Küçük Nakliye';
+    if (id === 'kombi-servis') return 'Kombi Servisi';
+    if (id === 'asansor') return 'Asansör Bakım';
+    if (id === 'bocek-ilaclama') return 'Böcek İlaçlama';
+    if (id === 'guvenlik-kamera') return 'Güvenlik Kamera';
     return defaultName;
   };
 
@@ -65,6 +75,16 @@ const ServiceCategoryItem = ({ cat, index, onPress, styles, colors }: any) => {
     if (id === 'klima') return 'Bakım, Montaj & Onarım';
     if (id === 'beyaz-esya') return 'Cihaz Tamir & Onarım';
     if (id === 'tesisat') return 'Tesisat, Kaçak & Montaj';
+    if (id === 'temizlik') return 'Ev, Ofis & İnşaat Temizliği';
+    if (id === 'nakliyat') return 'Ev & Ofis Taşıma';
+    if (id === 'boya-badana') return 'Boya, Badana & Dekorasyon';
+    if (id === 'koltuk-hali') return 'Koltuk, Halı & Perde';
+    if (id === 'mobilya-montaj') return 'Kurulum & Demontaj';
+    if (id === 'kucuk-nakliye') return 'Tek Parça Eşya Taşıma';
+    if (id === 'kombi-servis') return 'Bakım, Tamir & Montaj';
+    if (id === 'asansor') return 'Bakım, Tamir & Kontrol';
+    if (id === 'bocek-ilaclama') return 'Haşere & Böcek Mücadele';
+    if (id === 'guvenlik-kamera') return 'Kamera & Alarm Sistemi';
     return 'Güvenilir Hizmetler';
   };
 
@@ -120,6 +140,16 @@ const getUstaCategory = (elec: any) => {
   if (cat === 'beyaz-esya') return 'Beyaz Eşya';
   if (cat === 'tesisat') return 'Tesisat';
   if (cat === 'elektrik') return 'Elektrik';
+  if (cat === 'temizlik') return 'Temizlik';
+  if (cat === 'nakliyat') return 'Nakliyat';
+  if (cat === 'boya-badana') return 'Boya Badana';
+  if (cat === 'koltuk-hali') return 'Koltuk/Halı Yıkama';
+  if (cat === 'mobilya-montaj') return 'Mobilya Montaj';
+  if (cat === 'kucuk-nakliye') return 'Küçük Nakliye';
+  if (cat === 'kombi-servis') return 'Kombi Servisi';
+  if (cat === 'asansor') return 'Asansör Bakım';
+  if (cat === 'bocek-ilaclama') return 'Böcek İlaçlama';
+  if (cat === 'guvenlik-kamera') return 'Güvenlik Kamera';
 
   // Fallback: Check specialties array for keywords
   const specs = elec.specialties || elec.electricianProfile?.specialties || [];
