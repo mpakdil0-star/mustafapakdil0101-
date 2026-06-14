@@ -3306,6 +3306,14 @@ export default function HomeScreen() {
           }}
         >
           <View style={styles.searchOverlayBackdrop}>
+            <LinearGradient
+              colors={['#07111E', '#0A1E36', '#040B14']}
+              style={StyleSheet.absoluteFill}
+            />
+            {/* Glowing Decorative Background Blobs */}
+            <View style={[styles.searchGlowBlob, { top: -60, left: -60, backgroundColor: '#0D9488', opacity: 0.15 }]} />
+            <View style={[styles.searchGlowBlob, { bottom: -100, right: -60, backgroundColor: '#3B82F6', opacity: 0.12 }]} />
+
             <View style={[styles.searchOverlayContainer, { paddingTop: Platform.OS === 'ios' ? 50 : 20 }]}>
               {/* Search Header */}
               <View style={styles.searchOverlayHeader}>
@@ -3343,6 +3351,7 @@ export default function HomeScreen() {
                 style={styles.searchOverlayResults}
                 contentContainerStyle={{ paddingBottom: 40 }}
                 keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
               >
                 {searchQuery.trim().length === 0 ? (
                   // Popular Services / Quick Start Section
@@ -3350,29 +3359,33 @@ export default function HomeScreen() {
                     <Text style={styles.searchSectionTitle}>Popüler Hizmetler</Text>
                     <View style={styles.popularServicesGrid}>
                       {[
-                        { name: 'Elektrik Tesisatı', parentCategory: 'elektrik' },
-                        { name: 'Kapı Açma (Çilingir)', parentCategory: 'cilingir', actualName: 'Kapı Açma' },
-                        { name: 'Klima Montaj', parentCategory: 'klima' },
-                        { name: 'Ev Temizliği', parentCategory: 'temizlik' },
-                        { name: 'Boya Badana', parentCategory: 'boya-badana' },
-                        { name: 'Kombi Bakım', parentCategory: 'kombi-servis' },
-                      ].map((item, idx) => (
-                        <TouchableOpacity
-                          key={idx}
-                          style={styles.popularServicePill}
-                          onPress={() => {
-                            setIsSearchOverlayVisible(false);
-                            setSearchQuery('');
-                            handleActionWithAuth('/jobs/create', { 
-                              serviceCategory: item.parentCategory,
-                              category: item.actualName || item.name 
-                            });
-                          }}
-                        >
-                          <Ionicons name="flash-outline" size={12} color="#0D9488" style={{ marginRight: 4 }} />
-                          <Text style={styles.popularServiceText}>{item.name}</Text>
-                        </TouchableOpacity>
-                      ))}
+                        { name: 'Elektrik Tesisatı', parentCategory: 'elektrik', emoji: '⚡' },
+                        { name: 'Kapı Açma (Çilingir)', parentCategory: 'cilingir', actualName: 'Kapı Açma', emoji: '🔑' },
+                        { name: 'Klima Montaj', parentCategory: 'klima', emoji: '❄️' },
+                        { name: 'Ev Temizliği', parentCategory: 'temizlik', emoji: '🧹' },
+                        { name: 'Boya Badana', parentCategory: 'boya-badana', emoji: '🎨' },
+                        { name: 'Kombi Bakım', parentCategory: 'kombi-servis', emoji: '🔥' },
+                      ].map((item, idx) => {
+                        const parent = SERVICE_CATEGORIES.find(c => c.id === item.parentCategory);
+                        const glowColor = parent?.colors[0] || '#0D9488';
+                        return (
+                          <TouchableOpacity
+                            key={idx}
+                            style={[styles.popularServicePill, { borderColor: glowColor + '30' }]}
+                            onPress={() => {
+                              setIsSearchOverlayVisible(false);
+                              setSearchQuery('');
+                              handleActionWithAuth('/jobs/create', { 
+                                serviceCategory: item.parentCategory,
+                                category: item.actualName || item.name 
+                              });
+                            }}
+                          >
+                            <Text style={{ marginRight: 6, fontSize: 13 }}>{item.emoji}</Text>
+                            <Text style={styles.popularServiceText}>{item.name}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
                     </View>
                   </View>
                 ) : (
@@ -3415,21 +3428,21 @@ export default function HomeScreen() {
                           {matchedMain.map((cat) => (
                             <TouchableOpacity
                               key={`main-${cat.id}`}
-                              style={styles.searchResultRow}
+                              style={[styles.searchResultRow, { borderColor: cat.colors[0] + '20' }]}
                               onPress={() => {
                                 setIsSearchOverlayVisible(false);
                                 setSearchQuery('');
                                 handleActionWithAuth('/jobs/create', { serviceCategory: cat.id });
                               }}
                             >
-                              <View style={[styles.searchResultIconBg, { backgroundColor: cat.colors[0] + '20' }]}>
+                              <View style={[styles.searchResultIconBg, { backgroundColor: cat.colors[0] + '15', borderColor: cat.colors[0] + '35' }]}>
                                 <Ionicons name={cat.icon as any} size={20} color={cat.colors[0]} />
                               </View>
                               <View style={styles.searchResultInfo}>
                                 <Text style={styles.searchResultTitle}>{cat.name}</Text>
                                 <Text style={styles.searchResultSub}>{cat.description}</Text>
                               </View>
-                              <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.2)" />
+                              <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
                             </TouchableOpacity>
                           ))}
 
@@ -3440,7 +3453,7 @@ export default function HomeScreen() {
                             return (
                               <TouchableOpacity
                                 key={`sub-${sub.id}`}
-                                style={styles.searchResultRow}
+                                style={[styles.searchResultRow, { borderColor: iconColor + '20' }]}
                                 onPress={() => {
                                   setIsSearchOverlayVisible(false);
                                   setSearchQuery('');
@@ -3450,16 +3463,18 @@ export default function HomeScreen() {
                                   });
                                 }}
                               >
-                                <View style={[styles.searchResultIconBg, { backgroundColor: iconColor + '20' }]}>
+                                <View style={[styles.searchResultIconBg, { backgroundColor: iconColor + '15', borderColor: iconColor + '35' }]}>
                                   <Ionicons name={sub.icon as any} size={20} color={iconColor} />
                                 </View>
                                 <View style={styles.searchResultInfo}>
                                   <Text style={styles.searchResultTitle}>{sub.name}</Text>
-                                  <Text style={styles.searchResultSub}>
-                                    {parent?.name || 'Hizmet'} Alt Kategorisi
-                                  </Text>
+                                  <View style={[styles.searchResultBadge, { backgroundColor: iconColor + '10', borderColor: iconColor + '25' }]}>
+                                    <Text style={[styles.searchResultBadgeText, { color: iconColor }]}>
+                                      {parent?.name || 'Hizmet'}
+                                    </Text>
+                                  </View>
                                 </View>
-                                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.2)" />
+                                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
                               </TouchableOpacity>
                             );
                           })}
@@ -5880,27 +5895,39 @@ const styles = StyleSheet.create({
   },
   searchOverlayBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(7, 17, 30, 0.95)',
+    backgroundColor: '#07111E',
+  },
+  searchGlowBlob: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    borderRadius: 125,
   },
   searchOverlayContainer: {
     flex: 1,
     paddingHorizontal: 20,
+    position: 'relative',
   },
   searchOverlayHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   searchOverlayBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    height: 48,
-    borderWidth: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 52,
+    borderWidth: 1.5,
     borderColor: 'rgba(255, 255, 255, 0.12)',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
   searchOverlayInput: {
     flex: 1,
@@ -5930,7 +5957,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.4)',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    marginBottom: 12,
+    marginBottom: 14,
   },
   popularServicesGrid: {
     flexDirection: 'row',
@@ -5940,12 +5967,16 @@ const styles = StyleSheet.create({
   popularServicePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 18,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderWidth: 1.5,
     borderColor: 'rgba(255, 255, 255, 0.08)',
+    shadowColor: '#0D9488',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   popularServiceText: {
     fontFamily: fonts.semiBold,
@@ -5974,30 +6005,54 @@ const styles = StyleSheet.create({
   searchResultRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
   },
   searchResultIconBg: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
+    borderWidth: 1,
   },
   searchResultInfo: {
     flex: 1,
   },
   searchResultTitle: {
     fontFamily: fonts.bold,
-    fontSize: 14.5,
+    fontSize: 15,
     color: '#FFFFFF',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   searchResultSub: {
     fontFamily: fonts.medium,
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.4)',
+    color: 'rgba(255, 255, 255, 0.45)',
+  },
+  searchResultBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    marginTop: 6,
+    borderWidth: 1,
+  },
+  searchResultBadgeText: {
+    fontFamily: fonts.bold,
+    fontSize: 9.5,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });
