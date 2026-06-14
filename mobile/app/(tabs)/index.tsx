@@ -3302,6 +3302,7 @@ export default function HomeScreen() {
           visible={isSearchOverlayVisible}
           animationType="fade"
           transparent={true}
+          statusBarTranslucent={true}
           onRequestClose={() => {
             setIsSearchOverlayVisible(false);
             setSearchQuery('');
@@ -3323,11 +3324,11 @@ export default function HomeScreen() {
               {/* Search Header */}
               <View style={styles.searchOverlayHeader}>
                 <View style={styles.searchOverlayBar}>
-                  <Ionicons name="search" size={20} color="rgba(255,255,255,0.4)" style={{ marginRight: 8 }} />
+                  <Ionicons name="search" size={20} color="rgba(255,255,255,0.55)" style={{ marginRight: 8 }} />
                   <TextInput
                     style={styles.searchOverlayInput}
                     placeholder="Hizmet veya kategori arayın..."
-                    placeholderTextColor="rgba(255,255,255,0.3)"
+                    placeholderTextColor="rgba(255,255,255,0.45)"
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     autoFocus={true}
@@ -6023,12 +6024,12 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 52,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: 'rgba(255, 255, 255, 0.18)',
     shadowColor: '#0D9488',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -6050,7 +6051,7 @@ const styles = StyleSheet.create({
   searchOverlayCloseText: {
     fontFamily: fonts.bold,
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: 'rgba(255, 255, 255, 0.85)',
   },
   searchOverlayResults: {
     flex: 1,
