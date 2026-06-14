@@ -12,6 +12,7 @@ interface CitizenHeaderProps {
   badgePulseAnim: any;
   handleActionWithAuth: (route: string, params?: any) => void;
   colors: any;
+  onSearchPress?: () => void;
 }
 
 export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
@@ -21,6 +22,7 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
   badgePulseAnim,
   handleActionWithAuth,
   colors,
+  onSearchPress,
 }) => {
   const router = useRouter();
 
@@ -91,7 +93,7 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
       <TouchableOpacity
         style={styles.headerFullSearchBar}
         activeOpacity={0.85}
-        onPress={() => handleActionWithAuth('/electricians')}
+        onPress={onSearchPress || (() => handleActionWithAuth('/electricians'))}
       >
         <View style={styles.headerFullSearchInner}>
           <Ionicons name="search-outline" size={18} color="rgba(255, 255, 255, 0.75)" />

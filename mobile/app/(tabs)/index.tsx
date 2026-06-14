@@ -294,6 +294,8 @@ export default function HomeScreen() {
   // Marketplace Search and Filtering States
   const [marketSearchQuery, setMarketSearchQuery] = useState('');
   const [marketSelectedFilter, setMarketSelectedFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOverlayVisible, setIsSearchOverlayVisible] = useState(false);
 
   // AsyncStorage key for marketplace persistence
   const MARKETPLACE_STORAGE_KEY = 'marketplace_products_v1';
@@ -1288,6 +1290,7 @@ export default function HomeScreen() {
                 badgePulseAnim={badgePulseAnim}
                 handleActionWithAuth={handleActionWithAuth}
                 colors={colors}
+                onSearchPress={() => setIsSearchOverlayVisible(true)}
               />
             </ImageBackground>
           )}
@@ -3288,6 +3291,184 @@ export default function HomeScreen() {
                   </View>
                 </ScrollView>
               )}
+            </View>
+          </View>
+        </Modal>
+
+        {/* Combined Search Overlay Modal */}
+        <Modal
+          visible={isSearchOverlayVisible}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => {
+            setIsSearchOverlayVisible(false);
+            setSearchQuery('');
+          }}
+        >
+          <View style={styles.searchOverlayBackdrop}>
+            <View style={[styles.searchOverlayContainer, { paddingTop: Platform.OS === 'ios' ? 50 : 20 }]}>
+              {/* Search Header */}
+              <View style={styles.searchOverlayHeader}>
+                <View style={styles.searchOverlayBar}>
+                  <Ionicons name="search" size={20} color="rgba(255,255,255,0.4)" style={{ marginRight: 8 }} />
+                  <TextInput
+                    style={styles.searchOverlayInput}
+                    placeholder="Hizmet veya kategori arayın..."
+                    placeholderTextColor="rgba(255,255,255,0.3)"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    autoFocus={true}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setSearchQuery('')}>
+                      <Ionicons name="close-circle" size={18} color="rgba(255,255,255,0.5)" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsSearchOverlayVisible(false);
+                    setSearchQuery('');
+                  }}
+                  style={styles.searchOverlayCloseBtn}
+                >
+                  <Text style={styles.searchOverlayCloseText}>Kapat</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Results ScrollView */}
+              <ScrollView
+                style={styles.searchOverlayResults}
+                contentContainerStyle={{ paddingBottom: 40 }}
+                keyboardShouldPersistTaps="handled"
+              >
+                {searchQuery.trim().length === 0 ? (
+                  // Popular Services / Quick Start Section
+                  <View style={styles.searchOverlaySection}>
+                    <Text style={styles.searchSectionTitle}>Popüler Hizmetler</Text>
+                    <View style={styles.popularServicesGrid}>
+                      {[
+                        { name: 'Elektrik Tesisatı', parentCategory: 'elektrik' },
+                        { name: 'Kapı Açma (Çilingir)', parentCategory: 'cilingir', actualName: 'Kapı Açma' },
+                        { name: 'Klima Montaj', parentCategory: 'klima' },
+                        { name: 'Ev Temizliği', parentCategory: 'temizlik' },
+                        { name: 'Boya Badana', parentCategory: 'boya-badana' },
+                        { name: 'Kombi Bakım', parentCategory: 'kombi-servis' },
+                      ].map((item, idx) => (
+                        <TouchableOpacity
+                          key={idx}
+                          style={styles.popularServicePill}
+                          onPress={() => {
+                            setIsSearchOverlayVisible(false);
+                            setSearchQuery('');
+                            handleActionWithAuth('/jobs/create', { 
+                              serviceCategory: item.parentCategory,
+                              category: item.actualName || item.name 
+                            });
+                          }}
+                        >
+                          <Ionicons name="flash-outline" size={12} color="#0D9488" style={{ marginRight: 4 }} />
+                          <Text style={styles.popularServiceText}>{item.name}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                ) : (
+                  // Filtered Results
+                  <View>
+                    {/* Hizmet Kategorileri (Main/Sub categories combined) */}
+                    {(() => {
+                      const q = searchQuery.toLowerCase();
+                      
+                      // Match main categories
+                      const matchedMain = SERVICE_CATEGORIES.filter(c => 
+                        c.name.toLowerCase().includes(q) || 
+                        c.description.toLowerCase().includes(q)
+                      );
+                      
+                      // Match sub categories
+                      const matchedSub = JOB_CATEGORIES.filter(c => 
+                        c.name.toLowerCase().includes(q) && 
+                        // Avoid duplicate with main category names
+                        !matchedMain.some(m => m.id === c.parentCategory && m.name.toLowerCase() === c.name.toLowerCase())
+                      );
+
+                      if (matchedMain.length === 0 && matchedSub.length === 0) {
+                        return (
+                          <View style={styles.searchOverlayEmpty}>
+                            <Ionicons name="search-outline" size={48} color="rgba(255,255,255,0.15)" style={{ marginBottom: 12 }} />
+                            <Text style={styles.searchEmptyTitle}>Sonuç Bulunamadı</Text>
+                            <Text style={styles.searchEmptySubtitle}>
+                              "{searchQuery}" aramasıyla eşleşen bir hizmet türü bulamadık.
+                            </Text>
+                          </View>
+                        );
+                      }
+
+                      return (
+                        <View style={styles.searchOverlaySection}>
+                          <Text style={styles.searchSectionTitle}>Eşleşen Hizmetler</Text>
+                          
+                          {/* Render Main Category Matches */}
+                          {matchedMain.map((cat) => (
+                            <TouchableOpacity
+                              key={`main-${cat.id}`}
+                              style={styles.searchResultRow}
+                              onPress={() => {
+                                setIsSearchOverlayVisible(false);
+                                setSearchQuery('');
+                                handleActionWithAuth('/jobs/create', { serviceCategory: cat.id });
+                              }}
+                            >
+                              <View style={[styles.searchResultIconBg, { backgroundColor: cat.colors[0] + '20' }]}>
+                                <Ionicons name={cat.icon as any} size={20} color={cat.colors[0]} />
+                              </View>
+                              <View style={styles.searchResultInfo}>
+                                <Text style={styles.searchResultTitle}>{cat.name}</Text>
+                                <Text style={styles.searchResultSub}>{cat.description}</Text>
+                              </View>
+                              <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.2)" />
+                            </TouchableOpacity>
+                          ))}
+
+                          {/* Render Sub Category Matches */}
+                          {matchedSub.map((sub) => {
+                            const parent = SERVICE_CATEGORIES.find(c => c.id === sub.parentCategory);
+                            const iconColor = parent?.colors[0] || '#0D9488';
+                            return (
+                              <TouchableOpacity
+                                key={`sub-${sub.id}`}
+                                style={styles.searchResultRow}
+                                onPress={() => {
+                                  setIsSearchOverlayVisible(false);
+                                  setSearchQuery('');
+                                  handleActionWithAuth('/jobs/create', { 
+                                    serviceCategory: sub.parentCategory,
+                                    category: sub.name 
+                                  });
+                                }}
+                              >
+                                <View style={[styles.searchResultIconBg, { backgroundColor: iconColor + '20' }]}>
+                                  <Ionicons name={sub.icon as any} size={20} color={iconColor} />
+                                </View>
+                                <View style={styles.searchResultInfo}>
+                                  <Text style={styles.searchResultTitle}>{sub.name}</Text>
+                                  <Text style={styles.searchResultSub}>
+                                    {parent?.name || 'Hizmet'} Alt Kategorisi
+                                  </Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.2)" />
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      );
+                    })()}
+                  </View>
+                )}
+              </ScrollView>
             </View>
           </View>
         </Modal>
@@ -5696,5 +5877,127 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 10,
     color: staticColors.textSecondary,
+  },
+  searchOverlayBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(7, 17, 30, 0.95)',
+  },
+  searchOverlayContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  searchOverlayHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  searchOverlayBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    height: 48,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  searchOverlayInput: {
+    flex: 1,
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: '#FFFFFF',
+    paddingVertical: 8,
+  },
+  searchOverlayCloseBtn: {
+    marginLeft: 14,
+    paddingVertical: 8,
+  },
+  searchOverlayCloseText: {
+    fontFamily: fonts.bold,
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.6)',
+  },
+  searchOverlayResults: {
+    flex: 1,
+  },
+  searchOverlaySection: {
+    marginBottom: 24,
+  },
+  searchSectionTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.4)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 12,
+  },
+  popularServicesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  popularServicePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  popularServiceText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12.5,
+    color: '#FFFFFF',
+  },
+  searchOverlayEmpty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  searchEmptyTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    color: '#FFFFFF',
+    marginBottom: 6,
+  },
+  searchEmptySubtitle: {
+    fontFamily: fonts.medium,
+    fontSize: 12.5,
+    color: 'rgba(255, 255, 255, 0.4)',
+    textAlign: 'center',
+    lineHeight: 18,
+    paddingHorizontal: 30,
+  },
+  searchResultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  searchResultIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  searchResultInfo: {
+    flex: 1,
+  },
+  searchResultTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 14.5,
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  searchResultSub: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.4)',
   },
 });
