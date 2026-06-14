@@ -1036,7 +1036,7 @@ export default function CreateJobScreen() {
                           {getCategoryImage(svc.id) ? (
                             <Image
                               source={getCategoryImage(svc.id)}
-                              style={styles.pillImage}
+                              style={[styles.pillImage, { backgroundColor: 'transparent' }]}
                               resizeMode="contain"
                             />
                           ) : (
@@ -1049,7 +1049,7 @@ export default function CreateJobScreen() {
                           <Text
                             style={[
                               styles.pillText,
-                              { flex: 1, fontSize: 12, color: colors.textSecondary },
+                              { flex: 1, fontSize: 12, color: colors.textSecondary, backgroundColor: 'transparent' },
                               selected && { color: svc.colors[0], fontFamily: fonts.bold },
                             ]}
                           >
