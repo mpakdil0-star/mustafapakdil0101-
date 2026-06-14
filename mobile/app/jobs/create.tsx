@@ -1019,6 +1019,12 @@ export default function CreateJobScreen() {
                             { paddingVertical: 8, borderColor: colors.border, backgroundColor: colors.surfaceElevated },
                             selected && {
                               backgroundColor: svc.colors[0] + '14',
+                              borderColor: svc.colors[0] + '40', // 25% opacity border for soft category color match
+                              shadowColor: svc.colors[0],
+                              shadowOffset: { width: 0, height: 3 },
+                              shadowOpacity: 0.18,
+                              shadowRadius: 6,
+                              elevation: 3,
                             },
                           ]}
                           onPress={() => {
@@ -1036,7 +1042,7 @@ export default function CreateJobScreen() {
                           ) : (
                             <Ionicons
                               name={svc.icon as any}
-                              size={16}
+                              size={18}
                               color={selected ? svc.colors[0] : colors.textSecondary}
                             />
                           )}
@@ -1971,8 +1977,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   pillImage: {
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
     zIndex: 2,
   },
   urgencyGrid: {
