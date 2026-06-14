@@ -1,10 +1,32 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fonts } from '../../constants/typography';
 import { colors as staticColors } from '../../constants/colors';
 import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
+
+const getCategoryImage = (id: string | undefined) => {
+  if (!id) return null;
+  switch (id) {
+    case 'elektrik': return require('../../assets/images/categories/electric_v2.png');
+    case 'cilingir': return require('../../assets/images/categories/locksmith_3d_clean_v2.png');
+    case 'klima': return require('../../assets/images/categories/ac_3d_clean_v2.png');
+    case 'beyaz-esya': return require('../../assets/images/categories/appliances_3d_clean_v2.png');
+    case 'tesisat': return require('../../assets/images/categories/plumbing_v2.png');
+    case 'temizlik': return require('../../assets/images/categories/cleaning_3d_clean_v2.png');
+    case 'nakliyat': return require('../../assets/images/categories/moving_3d_clean_v2.png');
+    case 'boya-badana': return require('../../assets/images/categories/painting_3d_clean_v2.png');
+    case 'koltuk-hali': return require('../../assets/images/categories/sofacl_3d_clean_v2.png');
+    case 'mobilya-montaj': return require('../../assets/images/categories/furniture_3d_clean_v2.png');
+    case 'kucuk-nakliye': return require('../../assets/images/categories/smallcg_3d_clean_v2.png');
+    case 'kombi-servis': return require('../../assets/images/categories/boiler_3d_clean_v2.png');
+    case 'asansor': return require('../../assets/images/categories/elevator_3d_clean_v2.png');
+    case 'bocek-ilaclama': return require('../../assets/images/categories/pest_3d_clean_v2.png');
+    case 'guvenlik-kamera': return require('../../assets/images/categories/seccam_3d_clean_v2.png');
+    default: return null;
+  }
+};
 
 // --- Category Item Sub-Component ---
 const ServiceCategoryItem: React.FC<{
@@ -86,7 +108,15 @@ const ServiceCategoryItem: React.FC<{
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
-          <Ionicons name={cat.icon} size={20} color={colors.primary} />
+          {getCategoryImage(cat.id) ? (
+            <Image 
+              source={getCategoryImage(cat.id)!} 
+              style={styles.serviceCategoryImage} 
+              resizeMode="contain" 
+            />
+          ) : (
+            <Ionicons name={cat.icon} size={20} color={colors.primary} />
+          )}
         </View>
 
         {/* Text Content */}
@@ -291,6 +321,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(13, 148, 136, 0.15)',
+  },
+  serviceCategoryImage: {
+    width: 32,
+    height: 32,
+    zIndex: 2,
   },
   serviceCategoryTextContainer: {
     flex: 1,
