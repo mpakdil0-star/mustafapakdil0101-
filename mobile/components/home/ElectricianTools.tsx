@@ -38,11 +38,15 @@ export const ElectricianTools: React.FC<ElectricianToolsProps> = ({
               padding: 16,
               flexDirection: 'row',
               alignItems: 'center',
-              shadowColor: '#1E293B',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.1,
-              shadowRadius: 8,
-              elevation: 4,
+              borderLeftWidth: 4,
+              borderLeftColor: '#E5C158',
+              borderWidth: 1,
+              borderColor: 'rgba(229, 193, 88, 0.15)',
+              shadowColor: '#E5C158',
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.12,
+              shadowRadius: 12,
+              elevation: 5,
               position: 'relative',
               overflow: 'hidden'
             }}
@@ -54,14 +58,31 @@ export const ElectricianTools: React.FC<ElectricianToolsProps> = ({
               <Ionicons name="sparkles-outline" size={76} color="rgba(255, 255, 255, 0.04)" />
             </View>
 
-            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255, 255, 255, 0.1)', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.25)', marginRight: 12 }}>
+            <View style={{ 
+              width: 36, 
+              height: 36, 
+              borderRadius: 18, 
+              backgroundColor: 'rgba(229, 193, 88, 0.08)', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              borderWidth: 1, 
+              borderColor: 'rgba(229, 193, 88, 0.3)', 
+              marginRight: 12 
+            }}>
               <Ionicons name="sparkles" size={18} color="#E5C158" />
             </View>
 
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
                 <Text style={{ fontFamily: fonts.bold, fontSize: 14, color: '#FFF', marginRight: 6 }}>AI Teknik Kılavuz</Text>
-                <View style={{ backgroundColor: 'rgba(229, 193, 88, 0.2)', paddingHorizontal: 6, paddingVertical: 1.5, borderRadius: 6 }}>
+                <View style={{ 
+                  backgroundColor: 'rgba(229, 193, 88, 0.15)', 
+                  paddingHorizontal: 6, 
+                  paddingVertical: 1.5, 
+                  borderRadius: 6,
+                  borderWidth: 1,
+                  borderColor: 'rgba(229, 193, 88, 0.35)'
+                }}>
                   <Text style={{ color: '#E5C158', fontSize: 8, fontFamily: fonts.bold }}>YENİ</Text>
                 </View>
               </View>
@@ -70,7 +91,7 @@ export const ElectricianTools: React.FC<ElectricianToolsProps> = ({
               </Text>
             </View>
 
-            <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+            <Ionicons name="chevron-forward" size={18} color="#E5C158" />
           </LinearGradient>
         </TouchableOpacity>
       </View>
