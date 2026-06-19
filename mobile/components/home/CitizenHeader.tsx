@@ -119,7 +119,8 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
           activeOpacity={0.8}
           onPress={() => router.push({ pathname: '/ai-assistant', params: { role: 'CITIZEN' } })}
         >
-          <Ionicons name="sparkles" size={16} color="#2DD4BF" />
+          <Ionicons name="sparkles" size={14} color="#2DD4BF" style={{ marginRight: 4 }} />
+          <Text style={styles.searchBarAiText}>AI</Text>
         </TouchableOpacity>
       </View>
 
@@ -340,12 +341,20 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   searchBarAiIconBtn: {
-    padding: 6,
+    flexDirection: 'row',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
     borderRadius: 8,
     backgroundColor: 'rgba(45, 212, 191, 0.14)',
     borderWidth: 1,
     borderColor: 'rgba(45, 212, 191, 0.28)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  searchBarAiText: {
+    fontFamily: fonts.bold,
+    fontSize: 10,
+    color: '#2DD4BF',
+    letterSpacing: 0.2,
   },
 });
