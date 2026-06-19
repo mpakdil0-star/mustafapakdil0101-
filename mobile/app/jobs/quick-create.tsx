@@ -608,7 +608,7 @@ export default function QuickCreateScreen() {
                                             { borderColor: colors.border, backgroundColor: colors.surface },
                                             isSelected && {
                                                 borderColor: type.color,
-                                                backgroundColor: type.color + '08',
+                                                backgroundColor: 'transparent',
                                                 shadowColor: type.color,
                                                 shadowOffset: { width: 0, height: 4 },
                                                 shadowOpacity: 0.25,
@@ -624,7 +624,7 @@ export default function QuickCreateScreen() {
                                             setErrors(prev => ({ ...prev, type: '' }));
                                         }}
                                     >
-                                        <View style={[styles.typeIconBox, { backgroundColor: type.color + '12' }]}>
+                                        <View style={[styles.typeIconBox, { backgroundColor: isSelected ? 'transparent' : type.color + '12' }]}>
                                             <Image source={getCategoryImage(type.id)} style={styles.type3dImage} resizeMode="contain" />
                                         </View>
                                         <Text
