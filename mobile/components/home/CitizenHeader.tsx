@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { fonts } from '../../constants/typography';
 import { getFileUrl } from '../../constants/api';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface CitizenHeaderProps {
   user: any;
@@ -109,6 +110,34 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
           <Ionicons name="arrow-forward" size={11} color="#FFFFFF" style={{ marginLeft: 3 }} />
         </TouchableOpacity>
       </View>
+
+      {/* AI Assistant Quick Banner */}
+      <TouchableOpacity
+        style={styles.aiBannerContainer}
+        activeOpacity={0.85}
+        onPress={() => router.push({ pathname: '/ai-assistant', params: { role: 'CITIZEN' } })}
+      >
+        <LinearGradient
+          colors={['rgba(255, 255, 255, 0.09)', 'rgba(255, 255, 255, 0.03)']}
+          style={styles.aiBannerGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 8 }}>
+            <View style={styles.aiBannerIconCircle}>
+              <Ionicons name="sparkles" size={13} color="#2DD4BF" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.aiBannerTitle}>Arıza Teşhis Sihirbazı (AI)</Text>
+              <Text style={styles.aiBannerSubtitle}>Arızayı tarif et, yapay zeka ilanını hazırlasın</Text>
+            </View>
+          </View>
+          <View style={styles.aiBannerBadge}>
+            <Text style={styles.aiBannerBadgeText}>Hemen Dene</Text>
+            <Ionicons name="chevron-forward" size={11} color="#2DD4BF" />
+          </View>
+        </LinearGradient>
+      </TouchableOpacity>
 
       {/* Neon-Glass Quick Search Pills / Category Capsules */}
       <ScrollView
@@ -318,5 +347,56 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(255, 255, 255, 0.95)',
     letterSpacing: 0.2,
+  },
+  aiBannerContainer: {
+    width: '100%',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.16)',
+    overflow: 'hidden',
+    marginBottom: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  aiBannerGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    justifyContent: 'space-between',
+  },
+  aiBannerIconCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(45, 212, 191, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(45, 212, 191, 0.3)',
+  },
+  aiBannerTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 12,
+    color: '#FFFFFF',
+  },
+  aiBannerSubtitle: {
+    fontFamily: fonts.medium,
+    fontSize: 9.5,
+    color: 'rgba(255, 255, 255, 0.65)',
+    marginTop: 0.5,
+  },
+  aiBannerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(45, 212, 191, 0.18)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 2,
+  },
+  aiBannerBadgeText: {
+    fontFamily: fonts.bold,
+    fontSize: 9,
+    color: '#2DD4BF',
   },
 });

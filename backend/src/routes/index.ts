@@ -20,6 +20,7 @@ import ledgerRoutes from './ledgerRoutes';
 import marketplaceRoutes from './marketplaceRoutes';
 import showcaseRoutes from './showcaseRoutes';
 import communityRoutes from './communityRoutes';
+import aiRoutes from './aiRoutes';
 
 const router = Router();
 
@@ -61,5 +62,6 @@ router.use('/ledger', ledgerRoutes);
 router.use('/marketplace', marketplaceRoutes);
 router.use('/showcase', showcaseRoutes);
 router.use('/community', communityRoutes);
+router.use('/ai', aiRoutes);
 
 export default router;

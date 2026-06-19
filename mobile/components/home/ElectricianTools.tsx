@@ -117,6 +117,56 @@ export const ElectricianTools: React.FC<ElectricianToolsProps> = ({
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* AI TECHNICAL ASSISTANT CARD */}
+      <View style={{ marginTop: spacing.md }}>
+        <TouchableOpacity
+          onPress={() => handleActionWithAuth('/ai-assistant', { role: 'ELECTRICIAN' })}
+          activeOpacity={0.85}
+        >
+          <LinearGradient
+            colors={['#1E293B', '#2E5C8A']}
+            style={{
+              borderRadius: 16,
+              padding: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              shadowColor: '#1E293B',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 8,
+              elevation: 4,
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+          >
+            {/* Giant watermark icon */}
+            <View style={{ position: 'absolute', bottom: -10, right: -10, opacity: 0.8, transform: [{ rotate: '-10deg' }] }}>
+              <Ionicons name="sparkles-outline" size={76} color="rgba(255, 255, 255, 0.04)" />
+            </View>
+
+            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255, 255, 255, 0.1)', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.25)', marginRight: 12 }}>
+              <Ionicons name="sparkles" size={18} color="#E5C158" />
+            </View>
+
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 14, color: '#FFF', marginRight: 6 }}>AI Teknik Kılavuz</Text>
+                <View style={{ backgroundColor: 'rgba(229, 193, 88, 0.2)', paddingHorizontal: 6, paddingVertical: 1.5, borderRadius: 6 }}>
+                  <Text style={{ color: '#E5C158', fontSize: 8, fontFamily: fonts.bold }}>YENİ</Text>
+                </View>
+              </View>
+              <Text style={{ fontFamily: fonts.medium, fontSize: 11, color: '#CBD5E1' }} numberOfLines={1}>
+                Hata kodları, teklif şablonları ve teknik yardım al
+              </Text>
+            </View>
+
+            <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };

@@ -1298,6 +1298,8 @@ export default function HomeScreen() {
           )}
         </View>
 
+
+
         {/* Push Notification Banner — Fallback for users who dismissed the initial popup */}
         {showPushBanner && isAuthenticated && (
           <View style={[styles.bannerWrapper, { marginTop: 16, marginBottom: -4 }]}>

@@ -15,7 +15,7 @@ import {
     Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/api';
@@ -181,6 +181,7 @@ const trLowerCase = (str: string) => {
 
 export default function QuickCreateScreen() {
     const router = useRouter();
+    const { category: paramCategory, description: paramDescription } = useLocalSearchParams<{ category?: string; description?: string }>();
     const dispatch = useAppDispatch();
     const { isLoading } = useAppSelector((state) => state.jobs);
     const { user, isAuthenticated } = useAppSelector((state) => state.auth);    const colors = useAppColors();
@@ -204,6 +205,19 @@ export default function QuickCreateScreen() {
     const [createdJobId, setCreatedJobId] = useState<string | null>(null);
     const [photoLoading, setPhotoLoading] = useState(false);
     const [selectedSubCategory, setSelectedSubCategory] = useState<JobCategory | null>(null);
+
+    useEffect(() => {
+        if (paramCategory) {
+            setSelectedType(paramCategory);
+            const subCats = getSubCategoriesByParent(paramCategory);
+            if (subCats && subCats.length > 0) {
+                setSelectedSubCategory(subCats[0]);
+            }
+        }
+        if (paramDescription) {
+            setDescription(paramDescription);
+        }
+    }, [paramCategory, paramDescription]);
 
     // Project specific states
     const [projectBuildingType, setProjectBuildingType] = useState('');
