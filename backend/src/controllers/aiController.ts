@@ -3,7 +3,7 @@ import { AuthRequest } from '../middleware/auth';
 
 const CITIZEN_SYSTEM_PROMPT = `Sen "İşBitir" platformunun yapay zekalı arıza teşhis sihirbazısın. Vatandaş kullanıcılara evlerindeki veya iş yerlerindeki arızaları teşhis etmede yardımcı oluyorsun.
 Görevin:
-1. Kullanıcıdan gelen sorunu dinle ve arızanın ne olduğunu anlamak için kısa sorular sor (örn. prizden ses geliyor mu, su sızıntısı ne boyutta vb.).
+1. Kullanıcıdan gelen sorunu dinle, gönderilen arıza fotoğraflarını/görsellerini analiz et ve arızanın ne olduğunu anlamak için kısa sorular sor veya güvenlik uyarıları ve çözümler öner.
 2. Sorunla ilgili her zaman TÜRKÇE cevap ver. Net, kısa ve samimi ol.
 3. KULLANICI GÜVENLİĞİ BİRİNCİ ÖNCELİKTİR. Eğer durum elektrik çarpması riski, gaz kaçağı veya yapısal çökme gibi tehlikeli durumlar içeriyorsa, KESİNLİKLE kalın harflerle GÜVENLİK UYARISI yap (Örn: "⚠️ UYARI: Elektrik sigortasını kapatın ve kendiniz müdahale etmeyin!").
 4. Güvenli durumlarda basit, tehlikesiz kontrol adımları (DIY) öner (örn: bataryanın altındaki vanayı kapatmak, şalteri kontrol etmek).
@@ -39,13 +39,13 @@ Görevin:
 
 export const handleAiChat = async (req: AuthRequest, res: Response) => {
   try {
-    const { message, history } = req.body;
+    const { message, history, image } = req.body;
     const userType = req.user?.userType || 'CITIZEN';
 
-    if (!message || typeof message !== 'string') {
+    if (!message && !image) {
       return res.status(400).json({
         success: false,
-        error: { message: 'Message is required' }
+        error: { message: 'Message or image is required' }
       });
     }
 
@@ -53,7 +53,10 @@ export const handleAiChat = async (req: AuthRequest, res: Response) => {
 
     if (!apiKey) {
       console.log('💡 GEMINI_API_KEY not found in environment. Using smart Turkish fallback.');
-      const responseText = getFallbackResponse(message, userType, history);
+      let responseText = getFallbackResponse(message || '', userType, history);
+      if (image) {
+        responseText = `💡 **Bilgi:** Fotoğraflı arıza teşhisi özelliği için Gemini API kurulumu gerekmektedir. Şu an için sadece yazdığınız metne göre arıza tespiti yapıyorum.\n\n` + responseText;
+      }
       return res.json({
         success: true,
         data: {
@@ -78,9 +81,23 @@ export const handleAiChat = async (req: AuthRequest, res: Response) => {
         });
       });
     }
+    
+    const userParts: any[] = [];
+    if (message) {
+      userParts.push({ text: message });
+    }
+    if (image && image.base64 && image.mimeType) {
+      userParts.push({
+        inlineData: {
+          mimeType: image.mimeType,
+          data: image.base64
+        }
+      });
+    }
+
     contents.push({
       role: 'user',
-      parts: [{ text: message }]
+      parts: userParts
     });
 
     const response = await (global as any).fetch(url, {
@@ -127,7 +144,11 @@ export const handleAiChat = async (req: AuthRequest, res: Response) => {
     const userType = req.user?.userType || 'CITIZEN';
     const message = req.body?.message || '';
     const history = req.body?.history;
-    const responseText = getFallbackResponse(message, userType, history);
+    const image = req.body?.image;
+    let responseText = getFallbackResponse(message, userType, history);
+    if (image) {
+      responseText = `⚠️ **Bağlantı Hatası:** Yapay zeka ile fotoğraf analizi gerçekleştirilemedi. Arızayı metin üzerinden tespit etmeye çalışıyorum.\n\n` + responseText;
+    }
 
     return res.json({
       success: true,

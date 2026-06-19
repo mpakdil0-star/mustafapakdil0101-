@@ -10,12 +10,16 @@ import {
   Platform,
   SafeAreaView,
   Animated,
-  StatusBar
+  StatusBar,
+  Image,
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
 import { useAppColors } from '../../hooks/useAppColors';
 import { fonts } from '../../constants/typography';
 import { aiService, ChatMessage } from '../../services/aiService';
@@ -24,6 +28,7 @@ interface MessageItem {
   id: string;
   role: 'user' | 'model';
   text: string;
+  imageUri?: string;
   report?: {
     category: string;
     subCategory?: string;
@@ -44,7 +49,88 @@ export default function AiAssistantScreen() {
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [imageMimeType, setImageMimeType] = useState<string>('image/jpeg');
+  const [isPickingImage, setIsPickingImage] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+
+  const pickImage = async () => {
+    try {
+      setIsPickingImage(true);
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('İzin Gerekli', 'Fotoğraflı arıza teşhisi için galeri erişim izni vermeniz gerekmektedir.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        setSelectedImage(asset.uri);
+        setImageBase64(asset.base64 || null);
+        setImageMimeType(asset.mimeType || 'image/jpeg');
+      }
+    } catch (error) {
+      console.error('Pick image error:', error);
+      Alert.alert('Hata', 'Fotoğraf seçilirken bir sorun oluştu.');
+    } finally {
+      setIsPickingImage(false);
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      setIsPickingImage(true);
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('İzin Gerekli', 'Fotoğraflı arıza teşhisi için kamera erişim izni vermeniz gerekmektedir.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        setSelectedImage(asset.uri);
+        setImageBase64(asset.base64 || null);
+        setImageMimeType(asset.mimeType || 'image/jpeg');
+      }
+    } catch (error) {
+      console.error('Take photo error:', error);
+      Alert.alert('Hata', 'Fotoğraf çekilirken bir sorun oluştu.');
+    } finally {
+      setIsPickingImage(false);
+    }
+  };
+
+  const handleAttachPress = () => {
+    Alert.alert(
+      'Görsel Ekle',
+      'Arızanın fotoğrafını nasıl eklemek istersiniz?',
+      [
+        { text: 'Kamera ile Çek', onPress: takePhoto },
+        { text: 'Galeriden Seç', onPress: pickImage },
+        { text: 'Vazgeç', style: 'cancel' }
+      ]
+    );
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImageBase64(null);
+  };
   
   // Typing indicator animation state
   const dot1Opacity = useRef(new Animated.Value(0.3)).current;
@@ -134,16 +220,23 @@ export default function AiAssistantScreen() {
   };
 
   const handleSend = async () => {
-    if (!inputText.trim() || isLoading) return;
+    if ((!inputText.trim() && !selectedImage) || isLoading) return;
     
     const userMsgText = inputText.trim();
+    const currentImageUri = selectedImage;
+    const currentImageBase64 = imageBase64;
+    const currentImageMimeType = imageMimeType;
+    
     setInputText('');
+    setSelectedImage(null);
+    setImageBase64(null);
     
     // Add user message to local state
     const userMessage: MessageItem = {
       id: Date.now().toString(),
       role: 'user',
-      text: userMsgText
+      text: userMsgText,
+      imageUri: currentImageUri || undefined
     };
     
     const updatedMessages = [...messages, userMessage];
@@ -163,7 +256,12 @@ export default function AiAssistantScreen() {
           text: m.text
         }));
         
-      const response = await aiService.sendMessage(userMsgText, history);
+      const imagePayload = currentImageBase64 && currentImageMimeType ? {
+        base64: currentImageBase64,
+        mimeType: currentImageMimeType
+      } : undefined;
+        
+      const response = await aiService.sendMessage(userMsgText, history, imagePayload);
       
       // Parse backend response for any [TEŞHİS RAPORU] block
       const { cleanText, report } = parseReportBlock(response.text);
@@ -227,6 +325,14 @@ export default function AiAssistantScreen() {
               ? [styles.userBubble, { backgroundColor: isElectrician ? '#2E5C8A' : '#115E59' }] 
               : styles.modelBubble
           ]}>
+            {item.imageUri && (
+              <Image 
+                source={{ uri: item.imageUri }} 
+                style={styles.messageImage} 
+                resizeMode="cover"
+              />
+            )}
+            
             {hasSafetyWarning && !isUser ? (
               <View style={styles.warningContainer}>
                 <View style={styles.warningHeader}>
@@ -236,9 +342,11 @@ export default function AiAssistantScreen() {
                 <Text style={styles.warningText}>{textContent}</Text>
               </View>
             ) : (
-              <Text style={[styles.bubbleText, isUser ? styles.userBubbleText : styles.modelBubbleText]}>
-                {textContent}
-              </Text>
+              (textContent ? (
+                <Text style={[styles.bubbleText, isUser ? styles.userBubbleText : styles.modelBubbleText]}>
+                  {textContent}
+                </Text>
+              ) : null)
             )}
           </View>
           
@@ -346,12 +454,37 @@ export default function AiAssistantScreen() {
         
         {/* Floating Input Pill bar */}
         <View style={[styles.inputContainerOuter, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+          {selectedImage && (
+            <View style={styles.previewContainer}>
+              <View style={styles.previewImageWrapper}>
+                <Image source={{ uri: selectedImage }} style={styles.previewImage} />
+                <TouchableOpacity style={styles.removeImageBtn} onPress={handleRemoveImage}>
+                  <Ionicons name="close-circle" size={20} color="#F87171" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
           <View style={styles.inputBarFloating}>
+            {!isElectrician && (
+              <TouchableOpacity
+                style={styles.attachBtn}
+                onPress={handleAttachPress}
+                disabled={isLoading || isPickingImage}
+              >
+                {isPickingImage ? (
+                  <ActivityIndicator size="small" color="#94A3B8" />
+                ) : (
+                  <Ionicons name="camera" size={20} color="#94A3B8" />
+                )}
+              </TouchableOpacity>
+            )}
+
             <TextInput
               style={styles.textInput}
               value={inputText}
               onChangeText={setInputText}
-              placeholder={isElectrician ? "Teknik soru sorun veya şablon isteyin..." : "Arızayı tarif edin (örn: Prizden ses geliyor)..."}
+              placeholder={isElectrician ? "Teknik soru sorun..." : "Tarif edin veya fotoğraf çekip ekleyin..."}
               placeholderTextColor="#64748B"
               multiline
               maxLength={500}
@@ -360,10 +493,10 @@ export default function AiAssistantScreen() {
               style={[
                 styles.sendBtn, 
                 { backgroundColor: isElectrician ? '#4682B4' : '#0D9488' },
-                !inputText.trim() && styles.sendBtnDisabled
+                (!inputText.trim() && !selectedImage) && styles.sendBtnDisabled
               ]}
               onPress={handleSend}
-              disabled={!inputText.trim() || isLoading}
+              disabled={(!inputText.trim() && !selectedImage) || isLoading}
             >
               <Ionicons name="send" size={16} color="#FFF" />
             </TouchableOpacity>
@@ -648,5 +781,45 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: {
     opacity: 0.4,
+  },
+  previewContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 8,
+    flexDirection: 'row',
+  },
+  previewImageWrapper: {
+    position: 'relative',
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#0D9488',
+    overflow: 'visible',
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 6,
+  },
+  removeImageBtn: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#0F172A',
+    borderRadius: 10,
+    elevation: 3,
+  },
+  attachBtn: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 4,
+  },
+  messageImage: {
+    width: 200,
+    height: 150,
+    borderRadius: 12,
+    marginBottom: 6,
   }
 });
