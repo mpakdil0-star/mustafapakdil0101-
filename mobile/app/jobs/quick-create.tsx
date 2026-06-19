@@ -607,13 +607,7 @@ export default function QuickCreateScreen() {
                                             styles.typeBtn,
                                             { borderColor: colors.border, backgroundColor: colors.surface },
                                             isSelected && {
-                                                borderColor: type.color,
                                                 backgroundColor: 'transparent',
-                                                shadowColor: type.color,
-                                                shadowOffset: { width: 0, height: 4 },
-                                                shadowOpacity: 0.25,
-                                                shadowRadius: 8,
-                                                elevation: 6,
                                             },
                                             hasError && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
                                         ]}
@@ -631,7 +625,7 @@ export default function QuickCreateScreen() {
                                             style={[
                                                 styles.typeLabel,
                                                 {
-                                                    color: isSelected ? type.color : colors.textSecondary,
+                                                    color: isSelected ? colors.text : colors.textSecondary,
                                                     fontFamily: isSelected ? fonts.bold : undefined,
                                                     backgroundColor: 'transparent'
                                                 }
@@ -640,9 +634,6 @@ export default function QuickCreateScreen() {
                                         >
                                             {type.label}
                                         </Text>
-                                        {isSelected && (
-                                            <View style={[styles.accentLine, { backgroundColor: type.color }]} />
-                                        )}
                                         {isSelected && (
                                             <LinearGradient
                                                 colors={[type.color, type.color + 'CC']}
