@@ -607,6 +607,7 @@ export default function QuickCreateScreen() {
                                             styles.typeBtn,
                                             { borderColor: colors.border, backgroundColor: colors.surface },
                                             isSelected && {
+                                                borderColor: type.color,
                                                 backgroundColor: 'transparent',
                                             },
                                             hasError && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
@@ -625,7 +626,7 @@ export default function QuickCreateScreen() {
                                             style={[
                                                 styles.typeLabel,
                                                 {
-                                                    color: isSelected ? colors.text : colors.textSecondary,
+                                                    color: isSelected ? type.color : colors.textSecondary,
                                                     fontFamily: isSelected ? fonts.bold : undefined,
                                                     backgroundColor: 'transparent'
                                                 }
