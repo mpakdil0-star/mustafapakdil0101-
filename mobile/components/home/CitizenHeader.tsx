@@ -90,42 +90,36 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
         </View>
       </View>
 
-      {/* Side-by-Side Search Bar and AI Assistant Button */}
-      <View style={styles.searchRow}>
-        <View style={styles.headerFullSearchBarContainer}>
-          <TouchableOpacity
-            style={styles.headerFullSearchInputArea}
-            activeOpacity={0.7}
-            onPress={onSearchPress}
-          >
-            <Ionicons name="search-outline" size={18} color="rgba(255, 255, 255, 0.85)" />
-            <Text style={styles.headerFullSearchPlaceholder} numberOfLines={1}>Hizmet veya Kategori Ara...</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.seeAllPillInsideSearch, { backgroundColor: 'rgba(255, 255, 255, 0.18)', borderColor: 'rgba(255, 255, 255, 0.25)' }]}
-            activeOpacity={0.7}
-            onPress={() => handleActionWithAuth('/electricians')}
-          >
-            <Text style={styles.seeAllPillText}>Tüm Ustalar</Text>
-            <Ionicons name="arrow-forward" size={11} color="#FFFFFF" style={{ marginLeft: 3 }} />
-          </TouchableOpacity>
-        </View>
-
-        {/* AI Assistant Quick Button */}
+      {/* Full-Width Glassmorphic Search Bar with Integrated AI Trigger */}
+      <View style={styles.headerFullSearchBarContainer}>
         <TouchableOpacity
-          style={styles.headerAiButtonSide}
+          style={styles.headerFullSearchInputArea}
+          activeOpacity={0.7}
+          onPress={onSearchPress}
+        >
+          <Ionicons name="search-outline" size={18} color="rgba(255, 255, 255, 0.85)" />
+          <Text style={styles.headerFullSearchPlaceholder} numberOfLines={1}>Hizmet ara veya Yapay Zekaya sor...</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.seeAllPillInsideSearch, { backgroundColor: 'rgba(255, 255, 255, 0.18)', borderColor: 'rgba(255, 255, 255, 0.25)', marginRight: 6 }]}
+          activeOpacity={0.7}
+          onPress={() => handleActionWithAuth('/electricians')}
+        >
+          <Text style={styles.seeAllPillText}>Tüm Ustalar</Text>
+          <Ionicons name="arrow-forward" size={11} color="#FFFFFF" style={{ marginLeft: 3 }} />
+        </TouchableOpacity>
+
+        {/* Separator line */}
+        <View style={styles.searchBarVerticalSeparator} />
+
+        {/* AI Sparkles Trigger Button */}
+        <TouchableOpacity
+          style={styles.searchBarAiIconBtn}
           activeOpacity={0.8}
           onPress={() => router.push({ pathname: '/ai-assistant', params: { role: 'CITIZEN' } })}
         >
-          <LinearGradient
-            colors={['rgba(45, 212, 191, 0.22)', 'rgba(13, 148, 136, 0.12)']}
-            style={styles.headerAiButtonSideGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Ionicons name="sparkles" size={18} color="#2DD4BF" />
-          </LinearGradient>
+          <Ionicons name="sparkles" size={16} color="#2DD4BF" />
         </TouchableOpacity>
       </View>
 
@@ -275,16 +269,7 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontFamily: fonts.bold,
   },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: 16,
-    gap: 8,
-  },
   headerFullSearchBarContainer: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -292,6 +277,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     height: 48,
     paddingHorizontal: 16,
+    marginBottom: 16,
     width: '100%',
     borderWidth: 1.2,
     borderColor: 'rgba(255, 255, 255, 0.25)',
@@ -346,22 +332,18 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.95)',
     letterSpacing: 0.2,
   },
-  headerAiButtonSide: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    overflow: 'hidden',
-    borderWidth: 1.2,
-    borderColor: 'rgba(45, 212, 191, 0.35)',
-    shadowColor: '#2DD4BF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
+  searchBarVerticalSeparator: {
+    width: 1,
+    height: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    marginHorizontal: 8,
   },
-  headerAiButtonSideGradient: {
-    width: '100%',
-    height: '100%',
+  searchBarAiIconBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(45, 212, 191, 0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(45, 212, 191, 0.28)',
     justifyContent: 'center',
     alignItems: 'center',
   },
