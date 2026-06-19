@@ -265,16 +265,112 @@ Sizin için bir beyaz eşya teknik servis talebi hazırladım. Ustalardan teklif
     } else if (msgLower.includes('kombi') || msgLower.includes('petek') || msgLower.includes('ısınma') || msgLower.includes('petekler')) {
       matchedCategory = 'kombi-servis';
       title = 'Kombi Arızası ve Petek Temizliği';
-      description = 'Kombi sıcak su vermiyor veya petekler ısınmıyor. Bar basıncının ayarlanması, kombi arıza giderme veya makineli petek temizliği gerekiyor.';
+      description = 'Kombi sıcak su vermiyor veya petekler ısınmıyor. Bar basıncının ayarlanması, kombi arıza giderme veya petek temizliği gerekiyor.';
       explanationText = `Kombi sistemlerindeki arızalarda gaz ve su basınçları çok önemlidir.
 
-⚠️ **GÜVENLİK UYARISI:** Evde gaz veya çürük yumurta kokusu alıyorsanız, derhal kombiyi kapatın, ana gaz vanasını kapatın, pencereleri açın ve 187 Doğalgaz Acil hattını arayın! Elektrik düğmelerine basmayın.
+⚠️ **GÜVENLİK UYARISI:** Evde doğalgaz veya çürük yumurta kokusu alıyorsanız, derhal kombiyi kapatın, ana gaz vanasını kapatın, pencereleri açın ve 187 Doğalgaz Acil hattını arayın! Elektrik düğmelerine basmayın.
 
 **Önerilen Adımlar:**
 1. Kombi su basınç göstergesini (manometre) kontrol edin. Basınç 1.0 barın altındaysa kombi altındaki küçük vanayı açarak 1.5 bar olana kadar su ekleyin.
-2. Kombinizi kapatıp 1 dakika bekledikten sonra tekrar açın (Resetleme).
+2. Kombinizi resetleyin (kapatıp 1 dakika bekledikten sonra tekrar açın).
 
 Sizin için kombi ve petek servisi ilanı oluşturdum. Aşağıdaki butondan hızlıca ilan verebilirsiniz.`;
+    } else if (msgLower.includes('nakliyat') || msgLower.includes('taşı') || msgLower.includes('taşımacı') || msgLower.includes('nakliye') || msgLower.includes('taşınma')) {
+      matchedCategory = 'nakliyat';
+      title = 'Evden Eve Nakliyat & Taşıma Hizmeti';
+      description = 'Ev veya iş yeri eşyalarının yeni adrese güvenle taşınması ve nakliye aracı desteği talep ediliyor.';
+      explanationText = `Ev taşıma ve nakliyat süreçlerinde planlama en önemli adımdır.
+
+**Önerilen Adımlar:**
+1. Kırılacak hassas eşyalarınızı önceden kolileyip üzerine mutlaka uyarı yazısı yazın.
+2. Beyaz eşyaların sabitleme vidalarını takın ve taşımadan önce boşaltıp buzlarını çözdürün.
+3. Yeni evdeki yerleşim planını önceden belirleyin.
+
+Sizin için evden eve nakliyat ilanı hazırladım. Aşağıdaki butona tıklayarak profesyonel nakliyeci ustalardan teklif alabilirsiniz.`;
+    } else if (msgLower.includes('temizlik') || msgLower.includes('temizle') || msgLower.includes('gündelik') || msgLower.includes('temizlikçi')) {
+      matchedCategory = 'temizlik';
+      title = 'Detaylı Ev & Ofis Temizliği';
+      description = 'Ev veya ofis temizliği için deneyimli yardımcı desteği talep ediliyor.';
+      explanationText = `Profesyonel temizlik hizmeti alırken ihtiyaçlarınızı netleştirmeniz önemlidir.
+
+**Önerilen Adımlar:**
+1. İnşaat sonrası temizlik veya standart ev temizliği gibi detayları ustaya belirtin.
+2. Temizlik malzemelerinin usta tarafından mı yoksa sizin tarafınızdan mı sağlanacağını netleştirin.
+
+Sizin için temizlik hizmeti ilanı hazırladım. Aşağıdaki butondan hızlıca ilan verebilirsiniz.`;
+    } else if (msgLower.includes('boya') || msgLower.includes('badana') || msgLower.includes('duvar') || msgLower.includes('alçı') || msgLower.includes('boyacı')) {
+      matchedCategory = 'boya-badana';
+      title = 'Boya Badana & Duvar Boyama Hizmeti';
+      description = 'Ev veya ofis odalarının alçı, sıva ve boya badana işlemlerinin yapılması gerekiyor.';
+      explanationText = `Boya badana işlerinde renk seçimi ve yüzey hazırlığı çok önemlidir.
+
+**Önerilen Adımlar:**
+1. Boyanacak alanlardaki priz kapaklarını sökün ve süpürgelikleri maskeleme bandıyla kapatın.
+2. Eşyaları odanın ortasına toplayıp üzerlerini koruyucu örtüyle örtün.
+
+Sizin için boya badana ilanı hazırladım. Aşağıdaki butondan hemen teklif almaya başlayabilirsiniz.`;
+    } else if (msgLower.includes('koltuk') || msgLower.includes('halı') || msgLower.includes('yıkama') || msgLower.includes('temizleme')) {
+      matchedCategory = 'koltuk-hali';
+      title = 'Koltuk ve Halı Yıkama Hizmeti';
+      description = 'Koltukların ve halıların profesyonel makinelerle yerinde veya fabrikada yıkanması.';
+      explanationText = `Koltuk ve halı yıkama işlemleri kumaş türüne göre özel deterjanlar gerektirir.
+
+**Önerilen Adımlar:**
+1. Yıkanacak ürünlerin kumaş türünü ve varsa lekelerin kaynağını ustaya önceden bildirin.
+2. Yıkama sonrası kuruma süresi için ortamın havalandırılmasını sağlayın.
+
+Sizin için yıkama hizmeti ilanı hazırladım. Aşağıdaki butondan teklif toplayabilirsiniz.`;
+    } else if (msgLower.includes('mobilya') || msgLower.includes('montaj') || msgLower.includes('kurulum') || msgLower.includes('dolap') || msgLower.includes('kurma')) {
+      matchedCategory = 'mobilya-montaj';
+      title = 'Mobilya Kurulum & Montaj Hizmeti';
+      description = 'Demonte mobilyaların (gardırop, dolap, masa vb.) montajının yapılması gerekiyor.';
+      explanationText = `Mobilya montajında doğru kılavuz takibi ve hizalama önemlidir.
+
+**Önerilen Adımlar:**
+1. Mobilya paketlerini montajın yapılacağı odada açın.
+2. Eksik vida veya parça olup olmadığını paket içeriğinden kontrol edin.
+
+Sizin için mobilya montaj ilanı hazırladım. Aşağıdaki butondan usta bulabilirsiniz.`;
+    } else if (msgLower.includes('kurye') || msgLower.includes('hafif') || msgLower.includes('kamyonet') || msgLower.includes('küçük nakliye')) {
+      matchedCategory = 'kucuk-nakliye';
+      title = 'Küçük Nakliye & Parça Eşya Taşıma';
+      description = 'Birkaç parça eşyanın kamyonet veya hafif ticari araçla hızlıca taşınması.';
+      explanationText = `Küçük nakliye işlerinde eşyaların boyutlarını ve ağırlığını net belirtmek uygun araç seçimi için kritiktir.
+
+**Önerilen Adımlar:**
+1. Taşınacak parça eşyaların ölçülerini önceden kaydedin.
+2. Taşıma esnasında paketleme gerekip gerekmediğini ustaya bildirin.
+
+Sizin için küçük nakliye ilanı hazırladım. Aşağıdaki butondan hemen ilan oluşturabilirsiniz.`;
+    } else if (msgLower.includes('asansör') || msgLower.includes('asansor') || msgLower.includes('revizyon') || msgLower.includes('asansör arıza')) {
+      matchedCategory = 'asansor';
+      title = 'Asansör Bakım & Onarım Hizmeti';
+      description = 'Asansörün periyodik bakımı veya arıza onarım işlemlerinin yapılması.';
+      explanationText = `Asansör sistemleri can güvenliği açısından sadece yetkili firmalarca kontrol edilmelidir.
+
+⚠️ **GÜVENLİK UYARISI:** Arızalı asansörü kesinlikle kullanıma kapatın ve üzerine uyarı levhası asın. Yetkisiz kişilerin müdahale etmesine izin vermeyin.
+
+Sizin için asansör servis ilanı hazırladım. Aşağıdaki butondan yetkili ustalara ulaşabilirsiniz.`;
+    } else if (msgLower.includes('böcek') || msgLower.includes('haşere') || msgLower.includes('ilaçlama') || msgLower.includes('fare') || msgLower.includes('pire')) {
+      matchedCategory = 'bocek-ilaclama';
+      title = 'Böcek ve Haşere İlaçlama Hizmeti';
+      description = 'Ev veya iş yerindeki haşere, böcek ve kemirgenlere karşı profesyonel ilaçlama.';
+      explanationText = `İlaçlama işlemlerinde kullanılan kimyasalların sağlık bakanlığı onaylı olması gerekir.
+
+⚠️ **GÜVENLİK UYARISI:** İlaçlama esnasında ortamda evcil hayvan veya gıda maddesi bulundurmayın. İlaçlama sonrası alanı belirtilen süre boyunca havalandırın.
+
+Sizin için ilaçlama ilanı hazırladım. Aşağıdaki butondan teklif alabilirsiniz.`;
+    } else if (msgLower.includes('kamera') || msgLower.includes('güvenlik') || msgLower.includes('alarm') || msgLower.includes('cctv')) {
+      matchedCategory = 'guvenlik-kamera';
+      title = 'Güvenlik Kamerası & Alarm Kurulumu';
+      description = 'Kamera sistemlerinin montajı, kablolama ve alarm kurulumu işlemleri.';
+      explanationText = `Kamera ve alarm konumlandırması güvenlik açıklarını kapatmak için önemlidir.
+
+**Önerilen Adımlar:**
+1. Kameraların kör nokta kalmayacak şekilde yerleştirileceği yerleri belirleyin.
+2. İnternet altyapısının uzaktan izleme için hazır olduğundan emin olun.
+
+Sizin için güvenlik kamerası ilanı hazırladım. Aşağıdaki butondan hemen ilan verebilirsiniz.`;
     } else {
       // Default general diagnostic
       matchedCategory = 'elektrik';
