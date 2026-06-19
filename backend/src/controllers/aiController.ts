@@ -8,15 +8,27 @@ Görevin:
 3. KULLANICI GÜVENLİĞİ BİRİNCİ ÖNCELİKTİR. Eğer durum elektrik çarpması riski, gaz kaçağı veya yapısal çökme gibi tehlikeli durumlar içeriyorsa, KESİNLİKLE kalın harflerle GÜVENLİK UYARISI yap (Örn: "⚠️ UYARI: Elektrik sigortasını kapatın ve kendiniz müdahale etmeyin!").
 4. Güvenli durumlarda basit, tehlikesiz kontrol adımları (DIY) öner (örn: bataryanın altındaki vanayı kapatmak, şalteri kontrol etmek).
 5. Desteklediğimiz 15 hizmet kategorisi şunlardır: elektrik, cilingir, klima, beyaz-esya, tesisat, temizlik, nakliyat, boya-badana, koltuk-hali, mobilya-montaj, kucuk-nakliye, kombi-servis, asansor, bocek-ilaclama, guvenlik-kamera.
-6. Sorunu ve hangi kategoriye girdiğini anladığında, cevabının en sonunda KESİNLİKLE aşağıdaki özel formatta teşhis raporu bloğu oluştur. Bu blok mobil uygulama tarafından otomatik okunup kullanıcının tek tıkla ilan açmasını sağlayacaktır.
+6. Sorunu ve hangi kategoriye/alt kategoriye girdiğini anladığında, cevabının en sonunda KESİNLİKLE aşağıdaki özel formatta teşhis raporu bloğu oluştur. Bu blok mobil uygulama tarafından otomatik okunup kullanıcının tek tıkla ilan açmasını sağlayacaktır.
 Format:
 [TEŞHİS RAPORU]
 {
   "category": "kategori_id",
+  "subCategory": "alt_kategori_id",
   "title": "Kısa ve açıklayıcı ilan başlığı",
   "description": "Sorunun kısa ve anlaşılır özeti. Ustanın anlayacağı detayda olmalı."
 }
-Kategori ID'si yukarıda listelenen 15 kategori id'sinden biri olmak zorundadır. Örneğin: elektrik, tesisat, cilingir vb.`;
+Kategori ID'si yukarıda listelenen 15 kategori id'sinden biri olmak zorundadır. Örneğin: elektrik, tesisat, cilingir vb.
+Alt Kategori ID'si ise o kategoriye ait en uygun alt hizmet başlığı olmalıdır. Örneğin:
+- elektrik için: elektrik-proje, elektrik-tesisat, elektrik-tamir, aydinlatma, priz-anahtar, elektrik-panosu, kablo-cekimi, uydu-sistemleri, elektrik-kontrol, elektrik-diger
+- cilingir için: kapi-acma, kilit-degisimi, anahtar-kopyalama, kasa-acma, oto-cilingir, cilingir-diger
+- tesisat için: tikaniklik, su-kacagi, musluk-batarya, petek-kombi, tuvalet-lavabo, tesisat-diger
+- beyaz-esya için: camasir-makinesi, bulasik-makinesi, buzdolabi, firin-ocak, kurutma-makinesi, beyaz-esya-diger
+- klima için: klima-montaj, klima-bakim, klima-tamir, gaz-dolumu, klima-temizlik, klima-diger
+- nakliyat için: ev-tasima, ofis-tasima, esya-paketleme, depolama, nakliyat-diger
+- temizlik için: ev-temizligi, ofis-temizligi, insaat-temizligi, temizlik-diger
+- boya-badana için: ic-cephe-boya, dis-cephe-boya, duvar-kagidi, dekorasyon, boya-diger
+- kombi-servis için: kombi-bakim, kombi-tamir, kombi-montaj, kombi-diger
+(Diğer ana kategoriler için de benzer mantıkta alt kategoriler üretebilirsin, örn: asansor-bakim, ev-ilaclama, kamera-kurulum, alarm-sistemi vb.)`;
 
 const USTA_SYSTEM_PROMPT = `Sen "İşBitir" platformunun profesyonel teknik destek ve teklif hazırlama asistanısın. Hizmet veren ustalara (elektrikçi, tesisatçı vb.) teknik konularda ve teklif yazmada yardımcı oluyorsun.
 Görevin:
@@ -399,9 +411,95 @@ Lütfen arızayı veya yapılması gereken işi kısaca yazar mısınız?`;
     }
 
     // Append the TEŞHİS RAPORU block only if we gave a diagnostic suggestion
+    const matchedSub = getFallbackSubCategory(matchedCategory, msgLower);
     const hasDiagnostic = explanationText.includes('İlan Oluştur') || explanationText.includes('ilanı hazırladım') || explanationText.includes('ilan hazırlığı');
-    const reportBlock = hasDiagnostic ? `\n\n[TEŞHİS RAPORU]\n{\n  "category": "${matchedCategory}",\n  "title": "${title}",\n  "description": "${description}"\n}` : '';
+    const reportBlock = hasDiagnostic ? `\n\n[TEŞHİS RAPORU]\n{\n  "category": "${matchedCategory}",\n  "subCategory": "${matchedSub}",\n  "title": "${title}",\n  "description": "${description}"\n}` : '';
 
     return `${explanationText}${reportBlock}`;
+  }
+}
+
+/**
+ * Helper to determine best matching subcategory in fallback mode
+ */
+function getFallbackSubCategory(category: string, text: string): string {
+  const t = text.toLowerCase();
+  switch (category) {
+    case 'elektrik':
+      if (t.includes('lamba') || t.includes('ampul') || t.includes('ışık') || t.includes('avize')) return 'aydinlatma';
+      if (t.includes('priz') || t.includes('anahtar')) return 'priz-anahtar';
+      if (t.includes('şalter') || t.includes('sigorta') || t.includes('pano')) return 'elektrik-panosu';
+      if (t.includes('kablo') || t.includes('hat') || t.includes('çek')) return 'kablo-cekimi';
+      if (t.includes('uydu') || t.includes('çanak') || t.includes('anten')) return 'uydu-sistemleri';
+      if (t.includes('proje') || t.includes('çizim')) return 'elektrik-proje';
+      if (t.includes('kontrol') || t.includes('kaçak')) return 'elektrik-kontrol';
+      return 'elektrik-tamir';
+    case 'tesisat':
+      if (t.includes('musluk') || t.includes('batarya') || t.includes('çeşme')) return 'musluk-batarya';
+      if (t.includes('tıkan') || t.includes('gitmiyor') || t.includes('lavabo gideri')) return 'tikaniklik';
+      if (t.includes('sızıntı') || t.includes('kaçak') || t.includes('damla')) return 'su-kacagi';
+      if (t.includes('kombi') || t.includes('petek') || t.includes('ısınma')) return 'petek-kombi';
+      return 'tuvalet-lavabo';
+    case 'cilingir':
+      if (t.includes('barel') || t.includes('göbek') || t.includes('değiş')) return 'kilit-degisimi';
+      if (t.includes('kasa')) return 'kasa-acma';
+      if (t.includes('oto') || t.includes('araba') || t.includes('araç')) return 'oto-cilingir';
+      return 'kapi-acma';
+    case 'klima':
+      if (t.includes('bakım') || t.includes('filtre')) return 'klima-bakim';
+      if (t.includes('gaz')) return 'gaz-dolumu';
+      if (t.includes('temizlik') || t.includes('yıkama')) return 'klima-temizlik';
+      if (t.includes('soğut') || t.includes('sıcak') || t.includes('bozuk') || t.includes('tamir')) return 'klima-tamir';
+      return 'klima-diger';
+    case 'beyaz-esya':
+      if (t.includes('çamaşır')) return 'camasir-makinesi';
+      if (t.includes('bulaşık')) return 'bulasik-makinesi';
+      if (t.includes('buzdolabı') || t.includes('dolap')) return 'buzdolabi';
+      if (t.includes('fırın') || t.includes('ocak')) return 'firin-ocak';
+      if (t.includes('kurutma')) return 'kurutma-makinesi';
+      return 'beyaz-esya-diger';
+    case 'kombi-servis':
+      if (t.includes('bakım')) return 'kombi-bakim';
+      if (t.includes('montaj') || t.includes('kurma')) return 'kombi-montaj';
+      return 'kombi-tamir';
+    case 'nakliyat':
+      if (t.includes('ofis') || t.includes('işyeri')) return 'ofis-tasima';
+      if (t.includes('paket') || t.includes('koli')) return 'esya-paketleme';
+      if (t.includes('depo')) return 'depolama';
+      return 'ev-tasima';
+    case 'temizlik':
+      if (t.includes('ofis') || t.includes('işyeri') || t.includes('büro')) return 'ofis-temizligi';
+      if (t.includes('inşaat') || t.includes('tadilat sonrası')) return 'insaat-temizligi';
+      return 'ev-temizligi';
+    case 'boya-badana':
+      if (t.includes('dış') || t.includes('apartman dışı')) return 'dis-cephe-boya';
+      if (t.includes('kağıt') || t.includes('duvar kağıdı')) return 'duvar-kagidi';
+      if (t.includes('dekorasyon') || t.includes('alçıpan')) return 'dekorasyon';
+      return 'ic-cephe-boya';
+    case 'koltuk-hali':
+      if (t.includes('halı')) return 'hali-yikama';
+      if (t.includes('perde')) return 'perde-yikama';
+      return 'koltuk-yikama';
+    case 'mobilya-montaj':
+      if (t.includes('demontaj') || t.includes('sök')) return 'mobilya-demontaj';
+      if (t.includes('mutfak')) return 'mutfak-montaj';
+      return 'mobilya-kurulum';
+    case 'kucuk-nakliye':
+      if (t.includes('market') || t.includes('alışveriş') || t.includes('koli')) return 'market-alisveris';
+      return 'tek-parca-tasima';
+    case 'asansor':
+      if (t.includes('bakım')) return 'asansor-bakim';
+      if (t.includes('montaj') || t.includes('kurulum')) return 'asansor-montaj';
+      return 'asansor-tamir';
+    case 'bocek-ilaclama':
+      if (t.includes('işyeri') || t.includes('ofis') || t.includes('fabrika')) return 'isyeri-ilaclama';
+      if (t.includes('bahçe') || t.includes('tarla') || t.includes('açık alan')) return 'bahce-ilaclama';
+      return 'ev-ilaclama';
+    case 'guvenlik-kamera':
+      if (t.includes('alarm')) return 'alarm-sistemi';
+      if (t.includes('bakım') || t.includes('arıza') || t.includes('onarım')) return 'kamera-bakim';
+      return 'kamera-kurulum';
+    default:
+      return '';
   }
 }

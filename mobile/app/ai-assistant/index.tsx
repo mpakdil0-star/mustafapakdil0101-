@@ -26,6 +26,7 @@ interface MessageItem {
   text: string;
   report?: {
     category: string;
+    subCategory?: string;
     title: string;
     description: string;
   };
@@ -120,6 +121,7 @@ export default function AiAssistantScreen() {
           cleanText,
           report: {
             category: reportObj.category,
+            subCategory: reportObj.subCategory || undefined,
             title: reportObj.title || 'Arıza İlanı',
             description: reportObj.description || ''
           }
@@ -192,12 +194,13 @@ export default function AiAssistantScreen() {
     }
   };
 
-  const handleCreateJob = (category: string, description: string) => {
+  const handleCreateJob = (category: string, description: string, subCategory?: string) => {
     router.push({
       pathname: '/jobs/quick-create',
       params: {
         category,
-        description
+        description,
+        subCategory: subCategory || ''
       }
     });
   };
@@ -257,7 +260,7 @@ export default function AiAssistantScreen() {
                 
                 <TouchableOpacity
                   style={styles.createJobBtn}
-                  onPress={() => handleCreateJob(item.report!.category, item.report!.description)}
+                  onPress={() => handleCreateJob(item.report!.category, item.report!.description, item.report!.subCategory)}
                   activeOpacity={0.85}
                 >
                   <LinearGradient

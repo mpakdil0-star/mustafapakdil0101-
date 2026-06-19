@@ -181,7 +181,7 @@ const trLowerCase = (str: string) => {
 
 export default function QuickCreateScreen() {
     const router = useRouter();
-    const { category: paramCategory, description: paramDescription } = useLocalSearchParams<{ category?: string; description?: string }>();
+    const { category: paramCategory, description: paramDescription, subCategory: paramSubCategory } = useLocalSearchParams<{ category?: string; description?: string; subCategory?: string }>();
     const dispatch = useAppDispatch();
     const { isLoading } = useAppSelector((state) => state.jobs);
     const { user, isAuthenticated } = useAppSelector((state) => state.auth);    const colors = useAppColors();
@@ -211,13 +211,14 @@ export default function QuickCreateScreen() {
             setSelectedType(paramCategory);
             const subCats = getSubCategoriesByParent(paramCategory);
             if (subCats && subCats.length > 0) {
-                setSelectedSubCategory(subCats[0]);
+                const matchedSub = subCats.find(sc => sc.id === paramSubCategory);
+                setSelectedSubCategory(matchedSub || subCats[0]);
             }
         }
         if (paramDescription) {
             setDescription(paramDescription);
         }
-    }, [paramCategory, paramDescription]);
+    }, [paramCategory, paramDescription, paramSubCategory]);
 
     // Project specific states
     const [projectBuildingType, setProjectBuildingType] = useState('');
