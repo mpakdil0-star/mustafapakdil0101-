@@ -448,7 +448,7 @@ function getFallbackSubCategory(category: string, text: string): string {
   const t = text.toLowerCase();
   switch (category) {
     case 'elektrik':
-      if (t.includes('lamba') || t.includes('ampul') || t.includes('ışık') || t.includes('avize') || t.includes('aydınlatma') || t.includes('aydinlatma')) return 'aydinlatma';
+      if (t.includes('lamba') || t.includes('ampul') || t.includes('ışık') || t.includes('avize') || t.includes('aydınlatma') || t.includes('aydinlatma') || t.includes('led') || t.includes('şerit') || t.includes('spot')) return 'aydinlatma';
       if (t.includes('priz') || t.includes('anahtar')) return 'priz-anahtar';
       if (t.includes('şalter') || t.includes('sigorta') || t.includes('pano')) return 'elektrik-panosu';
       if (t.includes('kablo') || t.includes('hat') || t.includes('çek')) return 'kablo-cekimi';
@@ -532,10 +532,10 @@ function getFallbackSubCategory(category: string, text: string): string {
 function matchCategoryFromText(text: string): string | null {
   const t = text.toLowerCase();
   
-  if (t.includes('priz') || t.includes('şalter') || t.includes('sigorta') || t.includes('kablo') || t.includes('elektrik') || t.includes('cızırtı') || t.includes('kıvılcım') || t.includes('lamba') || t.includes('ampul') || t.includes('ışık') || t.includes('avize')) {
+  if (t.includes('priz') || t.includes('şalter') || t.includes('sigorta') || t.includes('kablo') || t.includes('elektrik') || t.includes('cızırtı') || t.includes('kıvılcım') || t.includes('lamba') || t.includes('ampul') || t.includes('ışık') || t.includes('avize') || t.includes('led') || t.includes('şerit') || t.includes('spot') || t.includes('aydınlatma') || t.includes('aydinlatma')) {
     return 'elektrik';
   }
-  if (t.includes('musluk') || t.includes('su') || t.includes('tesisat') || t.includes('akıt') || t.includes('boru') || t.includes('tıkan') || t.includes('sızıntı') || t.includes('banyo') || t.includes('lavabo')) {
+  if (t.includes('musluk') || t.includes('su') || t.includes('tesisat') || t.includes('akıt') || t.includes('boru') || t.includes('tıkan') || t.includes('sızıntı') || t.includes('banyo') || t.includes('lavabo') || t.includes('batarya') || t.includes('çeşme') || t.includes('gider')) {
     return 'tesisat';
   }
   if (t.includes('kilit') || t.includes('anahtar') || t.includes('kapı') || t.includes('çilingir') || t.includes('barel') || t.includes('göbek')) {
