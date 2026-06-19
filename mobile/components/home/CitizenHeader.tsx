@@ -118,7 +118,7 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
         onPress={() => router.push({ pathname: '/ai-assistant', params: { role: 'CITIZEN' } })}
       >
         <LinearGradient
-          colors={['rgba(255, 255, 255, 0.09)', 'rgba(255, 255, 255, 0.03)']}
+          colors={['rgba(255, 255, 255, 0.12)', 'rgba(255, 255, 255, 0.04)']}
           style={styles.aiBannerGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -352,10 +352,17 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.16)',
+    borderColor: 'rgba(45, 212, 191, 0.25)',
+    borderLeftWidth: 3.5,
+    borderLeftColor: '#2DD4BF',
     overflow: 'hidden',
     marginBottom: 14,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    shadowColor: '#2DD4BF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 4,
   },
   aiBannerGradient: {
     flexDirection: 'row',
