@@ -491,10 +491,12 @@ export default function QuickCreateScreen() {
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 40}
             >
                 <ScrollView
-                    style={styles.scrollView}                    contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, 16) + 32 }]}
+                    style={styles.scrollView}
+                    contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, 16) + 32 }]}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
-                >                    <LinearGradient
+                >
+                    <LinearGradient
                         colors={emergencyGradient}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
@@ -515,7 +517,9 @@ export default function QuickCreateScreen() {
                                 <Text style={styles.bannerBadgeText}>7/24</Text>
                             </View>
                         </View>
-                    </LinearGradient>                    {/* Section: Hizmet */}
+                    </LinearGradient>
+
+                    {/* Section: Hizmet */}
                     <View style={[styles.sectionLabelRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
                         {isSearchActive ? (
                             <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 8 }}>
