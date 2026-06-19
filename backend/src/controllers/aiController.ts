@@ -325,7 +325,7 @@ Sizin için bir beyaz eşya teknik servis talebi hazırladım. Ustalardan teklif
 1. Kombi su basınç göstergesini (manometre) kontrol edin. Basınç 1.0 barın altındaysa kombi altındaki küçük vanayı açarak 1.5 bar olana kadar su ekleyin.
 2. Kombinizi resetleyin (kapatıp 1 dakika bekledikten sonra tekrar açın).
 
-Sizin için kombi ve petek servisi ilanı oluşturdum. Aşağıdaki butondan hızlıca ilan verebilirsiniz.`;
+Sizin için kombi ve petek servisi ilanı hazırladım. Aşağıdaki butondan hızlıca ilan verebilirsiniz.`;
     } else if (matchedCategory === 'nakliyat') {
       title = 'Evden Eve Nakliyat & Taşıma Hizmeti';
       description = getFinalDesc('Ev veya iş yeri eşyalarının yeni adrese güvenle taşınması ve nakliye aracı desteği talep ediliyor.');
@@ -430,7 +430,11 @@ Lütfen arızayı veya yapılması gereken işi kısaca yazar mısınız?`;
 
     // Append the TEŞHİS RAPORU block only if we gave a diagnostic suggestion
     const matchedSub = getFallbackSubCategory(matchedCategory, msgLower);
-    const hasDiagnostic = explanationText.includes('İlan Oluştur') || explanationText.includes('ilanı hazırladım') || explanationText.includes('ilan hazırlığı');
+    const hasDiagnostic = explanationText.includes('İlan Oluştur') || 
+                          explanationText.includes('ilanı hazırladım') || 
+                          explanationText.includes('ilan hazırlığı') ||
+                          explanationText.includes('ilanı oluşturdum') ||
+                          explanationText.includes('ilan verebilirsiniz');
     const reportBlock = hasDiagnostic ? `\n\n[TEŞHİS RAPORU]\n{\n  "category": "${matchedCategory}",\n  "subCategory": "${matchedSub}",\n  "title": "${title}",\n  "description": "${description}"\n}` : '';
 
     return `${explanationText}${reportBlock}`;
