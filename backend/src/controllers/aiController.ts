@@ -41,7 +41,7 @@ export const handleAiChat = async (req: AuthRequest, res: Response) => {
 
     if (!apiKey) {
       console.log('💡 GEMINI_API_KEY not found in environment. Using smart Turkish fallback.');
-      const responseText = getFallbackResponse(message, userType);
+      const responseText = getFallbackResponse(message, userType, history);
       return res.json({
         success: true,
         data: {
@@ -114,7 +114,8 @@ export const handleAiChat = async (req: AuthRequest, res: Response) => {
     // Fallback to local rule engine if network request fails
     const userType = req.user?.userType || 'CITIZEN';
     const message = req.body?.message || '';
-    const responseText = getFallbackResponse(message, userType);
+    const history = req.body?.history;
+    const responseText = getFallbackResponse(message, userType, history);
 
     return res.json({
       success: true,
@@ -130,8 +131,19 @@ export const handleAiChat = async (req: AuthRequest, res: Response) => {
 /**
  * Intelligent Keyword-based Fallback System in Turkish
  */
-function getFallbackResponse(message: string, userType: string): string {
-  const msgLower = message.toLowerCase();
+function getFallbackResponse(message: string, userType: string, history?: any[]): string {
+  // Combine current message and history user messages to analyze full context
+  let fullContext = message.toLowerCase();
+  if (history && Array.isArray(history)) {
+    history.forEach((h: any) => {
+      const role = h.role === 'model' ? 'model' : 'user';
+      if (role === 'user' && h.text) {
+        fullContext += ' ' + h.text.toLowerCase();
+      }
+    });
+  }
+
+  const msgLower = fullContext;
 
   if (userType === 'ELECTRICIAN') {
     // Usta Fallback Responses
@@ -200,7 +212,7 @@ Sorunuzu netleştirirseniz size detaylı bilgi sunabilirim.`;
     let description = 'Evin elektrik tesisatındaki sorunların giderilmesi için usta desteği.';
     let explanationText = '';
 
-    if (msgLower.includes('priz') || msgLower.includes('şalter') || msgLower.includes('sigorta') || msgLower.includes('kablo') || msgLower.includes('elektrik') || msgLower.includes('cızırtı') || msgLower.includes('kıvılcım')) {
+    if (msgLower.includes('priz') || msgLower.includes('şalter') || msgLower.includes('sigorta') || msgLower.includes('kablo') || msgLower.includes('elektrik') || msgLower.includes('cızırtı') || msgLower.includes('kıvılcım') || msgLower.includes('lamba') || msgLower.includes('ampul') || msgLower.includes('ışık') || msgLower.includes('avize')) {
       matchedCategory = 'elektrik';
       title = 'Priz veya Sigorta Arızası Onarımı';
       description = 'Prizde temassızlık/kıvılcım sorunu var veya şalter sürekli atıyor. Tesisatın kontrol edilip arızalı elemanların değiştirilmesi gerekiyor.';
