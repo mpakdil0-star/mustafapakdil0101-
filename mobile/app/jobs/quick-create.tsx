@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
     View,
     Text,
@@ -11,6 +11,8 @@ import {
     KeyboardAvoidingView,
     Platform,
     Modal,
+    Animated,
+    Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -26,6 +28,7 @@ import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { colors as staticColors } from '../../constants/colors';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthGuardModal } from '../../components/common/AuthGuardModal';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
 import {
@@ -44,6 +47,16 @@ const EMERGENCY_TYPES = [
     { id: 'cilingir', label: 'Çilingir', color: '#D97706', icon: 'key' },
     { id: 'beyaz-esya', label: 'Beyaz Eşya', color: '#16A34A', icon: 'construct' },
     { id: 'klima', label: 'Klima', color: '#2563EB', icon: 'snow' },
+    { id: 'temizlik', label: 'Temizlik', color: '#7C3AED', icon: 'sparkles' },
+    { id: 'nakliyat', label: 'Nakliyat', color: '#EA580C', icon: 'car' },
+    { id: 'boya-badana', label: 'Boya Badana', color: '#DB2777', icon: 'color-palette' },
+    { id: 'koltuk-hali', label: 'Koltuk/Halı', color: '#059669', icon: 'bed' },
+    { id: 'mobilya-montaj', label: 'Mobilya', color: '#9333EA', icon: 'cube' },
+    { id: 'kucuk-nakliye', label: 'Küçük Nakliye', color: '#CA8A04', icon: 'cube-outline' },
+    { id: 'kombi-servis', label: 'Kombi', color: '#DC2626', icon: 'flame' },
+    { id: 'asansor', label: 'Asansör', color: '#475569', icon: 'swap-vertical' },
+    { id: 'bocek-ilaclama', label: 'İlaçlama', color: '#0891B2', icon: 'bug' },
+    { id: 'guvenlik-kamera', label: 'Kamera', color: '#4F46E5', icon: 'videocam' },
 ];
 
 const BUILDING_TYPES = [
@@ -111,14 +124,22 @@ const getDescriptionPlaceholder = (type: string | null, subCategoryId?: string):
     if (subCategoryId === 'su-kacagi') return 'Örn: Banyonun alt katındaki komşunun tavanında sararma ve damlama var, kaçağın cihazla bulunması lazım...';
     if (subCategoryId === 'musluk-batarya') return 'Örn: Lavabo çeşmesi dipten su kaçırıyor, yeni batarya aldım sadece montajı yapılacak...';
     if (subCategoryId === 'petek-kombi') return 'Örn: Kombi çalışıyor ama peteklerin alt kısmı soğuk kalıyor. Makineli petek temizliği istiyorum...';
-    if (subCategoryId === 'tuvalet-lavabo') return 'Örn: Klozetin sifonu sürekli içeriye su akıtıyor, şamandıra bozuk, yenisi takılacak...';
-
-    switch (type) {
+    if (subCategoryId === 'tuvalet-lavabo') return 'Örn: Klozetin sifonu sürekli içeriye su akıtıyor, şamandıra bozuk, yenisi takılacak...';    switch (type) {
         case 'elektrik': return 'Örnek: Mutfak prizleri çalışmıyor, sigorta attı, vb...';
         case 'tesisat': return 'Örnek: Lavabodan su akıyor, acil tamir lazım...';
         case 'cilingir': return 'Örnek: Anahtar içeride kaldı, kapı kilitli...';
         case 'beyaz-esya': return 'Örnek: Çamaşır makinesi su boşaltmıyor...';
         case 'klima': return 'Örnek: Klima soğutmuyor, acil servis lazım...';
+        case 'temizlik': return 'Örnek: Ev temizliği yapılacak, 3+1 daire...';
+        case 'nakliyat': return 'Örnek: 2+1 eşyalar taşınacak, 3. kat asansörsüz...';
+        case 'boya-badana': return 'Örnek: 2 oda boyası yapılacak, renk değişimi...';
+        case 'koltuk-hali': return 'Örnek: L koltuk ve 2 halı yıkanacak...';
+        case 'mobilya-montaj': return 'Örnek: İkea dolap ve yatak montajı yapılacak...';
+        case 'kucuk-nakliye': return 'Örnek: Tek parça koltuk taşınacak, 5. kata...';
+        case 'kombi-servis': return 'Örnek: Kombi su ısıtmıyor, arıza kodu veriyor...';
+        case 'asansor': return 'Örnek: Asansör arada kalıyor, bakım gerekiyor...';
+        case 'bocek-ilaclama': return 'Örnek: Mutfakta hamamböceği var, ilaçlama lazım...';
+        case 'guvenlik-kamera': return 'Örnek: 4 kameralı sistem kurulacak, dış mekan...';
         default: return 'Sorununuzu kısaca açıklayın...';
     }
 };
@@ -130,20 +151,44 @@ const getCategoryImage = (id: string) => {
         case 'klima': return require('../../assets/images/categories/ac_3d_clean_v2.png');
         case 'beyaz-esya': return require('../../assets/images/categories/appliances_3d_clean_v2.png');
         case 'tesisat': return require('../../assets/images/categories/plumbing_3d_clean_v3.png');
+        case 'temizlik': return require('../../assets/images/categories/cleaning_3d_clean_v2.png');
+        case 'nakliyat': return require('../../assets/images/categories/moving_3d_clean_v2.png');
+        case 'boya-badana': return require('../../assets/images/categories/painting_3d_clean_v2.png');
+        case 'koltuk-hali': return require('../../assets/images/categories/sofacl_3d_clean_v2.png');
+        case 'mobilya-montaj': return require('../../assets/images/categories/furniture_3d_clean_v2.png');
+        case 'kucuk-nakliye': return require('../../assets/images/categories/smallcg_3d_clean_v2.png');
+        case 'kombi-servis': return require('../../assets/images/categories/boiler_3d_clean_v2.png');
+        case 'asansor': return require('../../assets/images/categories/elevator_3d_clean_v2.png');
+        case 'bocek-ilaclama': return require('../../assets/images/categories/pest_3d_clean_v2.png');
+        case 'guvenlik-kamera': return require('../../assets/images/categories/seccam_3d_clean_v2.png');
         default: return undefined;
     }
 };
 
 const MAX_IMAGES = 3;
 
+const trLowerCase = (str: string) => {
+    return str
+        .replace(/İ/g, 'i')
+        .replace(/I/g, 'ı')
+        .replace(/Ş/g, 'ş')
+        .replace(/Ğ/g, 'ğ')
+        .replace(/Ü/g, 'ü')
+        .replace(/Ö/g, 'ö')
+        .replace(/Ç/g, 'ç')
+        .toLowerCase();
+};
+
 export default function QuickCreateScreen() {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { isLoading } = useAppSelector((state) => state.jobs);
-    const { user, isAuthenticated } = useAppSelector((state) => state.auth);
-    const colors = useAppColors();
+    const { user, isAuthenticated } = useAppSelector((state) => state.auth);    const colors = useAppColors();
+    const insets = useSafeAreaInsets();
 
     const [selectedType, setSelectedType] = useState<string | null>(null);
+    const [isSearchActive, setIsSearchActive] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
     const [images, setImages] = useState<string[]>([]);
     const [description, setDescription] = useState<string>('');
     const [budget, setBudget] = useState<string>('');
@@ -188,7 +233,26 @@ export default function QuickCreateScreen() {
 
     const showAlert = (title: string, message: string, type: any = 'info', buttons?: any[]) => {
         setAlertConfig({ visible: true, title, message, type, buttons });
-    };
+    };    // Pulse animation for emergency banner
+    const pulseAnim = useRef(new Animated.Value(1)).current;
+    useEffect(() => {
+        const pulse = Animated.loop(
+            Animated.sequence([
+                Animated.timing(pulseAnim, { toValue: 1.15, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+                Animated.timing(pulseAnim, { toValue: 1, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+            ])
+        );
+        pulse.start();
+        return () => pulse.stop();
+    }, []);    // Helper: get active type color
+    const activeColor = EMERGENCY_TYPES.find(t => t.id === selectedType)?.color || colors.primary;
+
+    const filteredTypes = EMERGENCY_TYPES.filter(type => {
+        if (!searchQuery) return true;
+        const normalizedQuery = trLowerCase(searchQuery);
+        const normalizedLabel = trLowerCase(type.label);
+        return normalizedLabel.includes(normalizedQuery);
+    });
 
     const districtOptions = getDistrictsByCity(city);
     const neighborhoodOptions = getNeighborhoodsByCityAndDistrict(city, district);
@@ -380,15 +444,23 @@ export default function QuickCreateScreen() {
         } catch (err: any) {
             showAlert('Hata', err.message || 'Hızlı çağrı oluşturulamadı', 'error');
         }
-    };
-
-    const getCategoryFromType = (type: string): string => {
+    };    const getCategoryFromType = (type: string): string => {
         switch (type) {
             case 'elektrik': return 'Elektrik Tamiri';
             case 'tesisat': return 'Tesisat';
             case 'cilingir': return 'Çilingir';
             case 'beyaz-esya': return 'Beyaz Eşya';
             case 'klima': return 'Klima Servisi';
+            case 'temizlik': return 'Temizlik';
+            case 'nakliyat': return 'Evden Eve Nakliyat';
+            case 'boya-badana': return 'Boya Badana';
+            case 'koltuk-hali': return 'Koltuk/Halı Yıkama';
+            case 'mobilya-montaj': return 'Mobilya Montaj';
+            case 'kucuk-nakliye': return 'Küçük Nakliye';
+            case 'kombi-servis': return 'Kombi Servisi';
+            case 'asansor': return 'Asansör Bakım';
+            case 'bocek-ilaclama': return 'Böcek İlaçlama';
+            case 'guvenlik-kamera': return 'Güvenlik Kamera';
             default: return 'Diğer';
         }
     };
@@ -405,93 +477,179 @@ export default function QuickCreateScreen() {
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 40}
             >
                 <ScrollView
-                    style={styles.scrollView}
-                    contentContainerStyle={[styles.content, { paddingBottom: 20 }]}
+                    style={styles.scrollView}                    contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, 16) + 32 }]}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
-                >
-                    <LinearGradient
+                >                    <LinearGradient
                         colors={emergencyGradient}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.emergencyBanner}
                     >
-                        <View style={styles.emergencyIconWrapper}>
+                        <Animated.View style={[styles.emergencyIconWrapper, { transform: [{ scale: pulseAnim }] }]}>
                             <Ionicons name="flash" size={22} color="#FFF" />
-                        </View>
+                        </Animated.View>
                         <View style={styles.bannerTextBlock}>
                             <Text style={styles.bannerTitle}>Hızlı müdahale</Text>
                             <Text style={styles.bannerSubtitle} numberOfLines={2}>
-                                Çağrınız bölgenizdeki ustalara iletilir.
+                                Çağrınız bölgenizdeki ustalara anında iletilir.
                             </Text>
                         </View>
                         <View style={styles.bannerBadge}>
-                            <Text style={styles.bannerBadgeText}>7/24</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#4ADE80' }} />
+                                <Text style={styles.bannerBadgeText}>7/24</Text>
+                            </View>
                         </View>
-                    </LinearGradient>
-
-                    {/* Section: Hizmet */}
-                    <View style={styles.sectionLabelRow}>
-                        <Ionicons name="construct-outline" size={16} color={colors.primary} />
-                        <Text style={[styles.sectionLabelText, { color: colors.text }]}>Hizmet Seçin</Text>
+                    </LinearGradient>                    {/* Section: Hizmet */}
+                    <View style={[styles.sectionLabelRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
+                        {isSearchActive ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 8 }}>
+                                <LinearGradient
+                                    colors={[activeColor, activeColor + 'CC']}
+                                    style={styles.stepBadge}
+                                >
+                                    <Text style={styles.stepBadgeText}>1</Text>
+                                </LinearGradient>
+                                <TextInput
+                                    style={[
+                                        styles.searchInput,
+                                        {
+                                            color: colors.text,
+                                            borderColor: activeColor + '50',
+                                            backgroundColor: colors.surfaceElevated,
+                                        }
+                                    ]}
+                                    placeholder="Hizmet ara... (örn: boya, kombi)"
+                                    placeholderTextColor={colors.textLight}
+                                    value={searchQuery}
+                                    onChangeText={setSearchQuery}
+                                    autoFocus
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                />
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        setIsSearchActive(false);
+                                        setSearchQuery('');
+                                    }}
+                                    style={styles.searchCloseBtn}
+                                >
+                                    <Ionicons name="close-circle" size={22} color={activeColor} />
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                    <LinearGradient
+                                        colors={[activeColor, activeColor + 'CC']}
+                                        style={styles.stepBadge}
+                                    >
+                                        <Text style={styles.stepBadgeText}>1</Text>
+                                    </LinearGradient>
+                                    <Text style={[styles.sectionLabelText, { color: colors.text }]}>Hizmet Seçin</Text>
+                                </View>
+                                <TouchableOpacity
+                                    onPress={() => setIsSearchActive(true)}
+                                    style={[
+                                        styles.searchToggleBtn,
+                                        {
+                                            backgroundColor: colors.surfaceElevated,
+                                            borderColor: colors.border,
+                                            borderWidth: 1,
+                                            borderRadius: 10,
+                                            width: 32,
+                                            height: 32,
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                        }
+                                    ]}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons name="search-outline" size={16} color={activeColor} />
+                                </TouchableOpacity>
+                            </>
+                        )}
                     </View>
 
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.typeScrollContent}
-                        decelerationRate="fast"
-                        snapToInterval={108}
-                    >
-                        {EMERGENCY_TYPES.map((type) => {
-                            const isSelected = selectedType === type.id;
-                            const hasError = !!errors.type && !selectedType;
-                            return (
-                                <TouchableOpacity
-                                    key={type.id}
-                                    style={[
-                                        styles.typeBtn,
-                                        { borderColor: colors.border },
-                                        isSelected && { borderColor: type.color, backgroundColor: type.color + '08' },
-                                        hasError && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
-                                        isSelected && styles.typeBtnSelected
-                                    ]}
-                                    activeOpacity={0.85}
-                                    onPress={() => {
-                                        setSelectedType(type.id);
-                                        setSelectedSubCategory(null);
-                                        setErrors(prev => ({ ...prev, type: '' }));
-                                    }}
-                                >
-                                    <View style={styles.typeIconBox}>
-                                        <Image source={getCategoryImage(type.id)} style={styles.type3dImage} resizeMode="contain" />
-                                    </View>
-                                    <Text
-                                        style={[
-                                            styles.typeLabel,
-                                            {
-                                                color: isSelected ? type.color : colors.textSecondary,
-                                                fontFamily: isSelected ? fonts.bold : undefined,
-                                                backgroundColor: 'transparent'
-                                            }
+                    {filteredTypes.length > 0 ? (
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.typeScrollContent}
+                            decelerationRate="fast"
+                        >
+                            {filteredTypes.map((type) => {
+                                const isSelected = selectedType === type.id;
+                                const hasError = !!errors.type && !selectedType;
+                                return (
+                                    <TouchableOpacity
+                                        key={type.id}                                        style={[
+                                            styles.typeBtn,
+                                            { borderColor: colors.border, backgroundColor: colors.surface },
+                                            isSelected && {
+                                                borderColor: type.color,
+                                                backgroundColor: type.color + '08',
+                                                shadowColor: type.color,
+                                                shadowOffset: { width: 0, height: 4 },
+                                                shadowOpacity: 0.25,
+                                                shadowRadius: 8,
+                                                elevation: 6,
+                                            },
+                                            hasError && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
                                         ]}
-                                        numberOfLines={2}
+                                        activeOpacity={0.85}
+                                        onPress={() => {
+                                            setSelectedType(type.id);
+                                            setSelectedSubCategory(null);
+                                            setErrors(prev => ({ ...prev, type: '' }));
+                                        }}
                                     >
-                                        {type.label}
-                                    </Text>
-                                    {isSelected && (
-                                        <LinearGradient
-                                            colors={[type.color, type.color + 'CC']}
-                                            style={styles.checkIndicator}
+                                        <View style={[styles.typeIconBox, { backgroundColor: type.color + '12' }]}>
+                                            <Image source={getCategoryImage(type.id)} style={styles.type3dImage} resizeMode="contain" />
+                                        </View>
+                                        <Text
+                                            style={[
+                                                styles.typeLabel,
+                                                {
+                                                    color: isSelected ? type.color : colors.textSecondary,
+                                                    fontFamily: isSelected ? fonts.bold : undefined,
+                                                    backgroundColor: 'transparent'
+                                                }
+                                            ]}
+                                            numberOfLines={2}
                                         >
-                                            <Ionicons name="checkmark" size={10} color="#FFF" />
-                                        </LinearGradient>
-                                    )}
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
-                    {errors.type && !selectedType && (
+                                            {type.label}
+                                        </Text>
+                                        {isSelected && (
+                                            <View style={[styles.accentLine, { backgroundColor: type.color }]} />
+                                        )}
+                                        {isSelected && (
+                                            <LinearGradient
+                                                colors={[type.color, type.color + 'CC']}
+                                                style={styles.checkIndicator}
+                                            >
+                                                <Ionicons name="checkmark" size={10} color="#FFF" />
+                                            </LinearGradient>
+                                        )}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    ) : (
+                        <View style={[
+                            styles.emptySearchContainer,
+                            {                                borderColor: colors.border + '50',
+                                backgroundColor: colors.surfaceElevated,
+                            }
+                        ]}>
+                            <Ionicons name="search-outline" size={24} color={colors.textSecondary + '60'} />
+                            <Text style={[styles.emptySearchText, { color: colors.textSecondary }]}>
+                                Aradığınız usta / hizmet bulunamadı.
+                            </Text>
+                        </View>
+                    )}
+                    {!!errors.type && !selectedType && (
                         <Text style={styles.errorTextSmall}>{errors.type}</Text>
                     )}
 
@@ -533,11 +691,10 @@ export default function QuickCreateScreen() {
 
                                     return (
                                         <TouchableOpacity
-                                            key={sub.id}
-                                            style={[
+                                            key={sub.id}                                            style={[
                                                 styles.subCategoryChip,
-                                                { borderColor: isProject ? '#3B82F6' : colors.border },
-                                                isProject && !isSubSelected && { borderStyle: 'dashed', borderWidth: 1.5, backgroundColor: '#EFF6FF' },
+                                                { borderColor: isProject ? '#3B82F6' : colors.border, backgroundColor: colors.surface },
+                                                isProject && !isSubSelected && { borderStyle: 'dashed', borderWidth: 1.5, backgroundColor: colors.surfaceElevated },
                                                 isSubSelected && {
                                                     backgroundColor: sub.colors ? sub.colors[0] : colors.primary,
                                                     borderColor: sub.colors ? sub.colors[0] : colors.primary
@@ -566,7 +723,7 @@ export default function QuickCreateScreen() {
                                     );
                                 })}
                             </ScrollView>
-                            {errors.subCategory && !selectedSubCategory && (
+                            {!!errors.subCategory && !selectedSubCategory && (
                                 <Text style={[styles.errorTextSmall, { marginTop: 8 }]}>{errors.subCategory}</Text>
                             )}
                         </View>
@@ -617,7 +774,7 @@ export default function QuickCreateScreen() {
                                         onChangeText={(val) => { setProjectArea(val); setErrors(prev => ({ ...prev, projectArea: '' })); }}
                                         keyboardType="numeric"
                                     />
-                                    {errors.projectArea && <Text style={styles.errorTextSmall}>{errors.projectArea}</Text>}
+                                    {!!errors.projectArea && <Text style={styles.errorTextSmall}>{errors.projectArea}</Text>}
                                 </View>
                             </View>
 
@@ -752,7 +909,7 @@ export default function QuickCreateScreen() {
                                         <Text style={[styles.choiceBtnText, projectNeedsApproval === false && styles.choiceBtnTextActive]}>Müşteri</Text>
                                     </TouchableOpacity>
                                 </View>
-                                {errors.projectNeedsApproval && <Text style={styles.errorTextSmall}>{errors.projectNeedsApproval}</Text>}
+                                {!!errors.projectNeedsApproval && <Text style={styles.errorTextSmall}>{errors.projectNeedsApproval}</Text>}
                             </View>
 
                             <View style={{ marginTop: 16 }}>
@@ -778,7 +935,7 @@ export default function QuickCreateScreen() {
                                         <Text style={[styles.choiceBtnText, projectHasArchitecturePlan === false && styles.choiceBtnTextActive]}>Yok (Rölöve)</Text>
                                     </TouchableOpacity>
                                 </View>
-                                {errors.projectHasArchitecturePlan && <Text style={styles.errorTextSmall}>{errors.projectHasArchitecturePlan}</Text>}
+                                {!!errors.projectHasArchitecturePlan && <Text style={styles.errorTextSmall}>{errors.projectHasArchitecturePlan}</Text>}
                                 {projectHasArchitecturePlan === true && (
                                     <View style={{ 
                                         flexDirection: 'row', 
@@ -810,11 +967,15 @@ export default function QuickCreateScreen() {
                                 )}
                             </View>
                         </Card>
-                    )}
-
-                    {/* Section: Konum */}
+                    )}                    {/* Section: Konum */}
+                    <View style={styles.sectionDivider} />
                     <View style={styles.sectionLabelRow}>
-                        <Ionicons name="location-outline" size={16} color={colors.primary} />
+                        <LinearGradient
+                            colors={[activeColor, activeColor + 'CC']}
+                            style={styles.stepBadge}
+                        >
+                            <Text style={styles.stepBadgeText}>2</Text>
+                        </LinearGradient>
                         <Text style={[styles.sectionLabelText, { color: colors.text }]}>Konum Bilgisi</Text>
                     </View>
 
@@ -898,19 +1059,22 @@ export default function QuickCreateScreen() {
                                 multiline
                                 placeholderTextColor={colors.textLight}
                             />
-                            {errors.address && <Text style={styles.errorTextSmall}>{errors.address}</Text>}
+                            {!!errors.address && <Text style={styles.errorTextSmall}>{errors.address}</Text>}
                         </View>
-                    </Card>
-
-
-
-                    {/* Section: Açıklama */}
+                    </Card>                    {/* Section: Açıklama */}
+                    <View style={styles.sectionDivider} />
                     <View style={styles.sectionLabelRow}>
-                        <Ionicons name="create-outline" size={16} color={colors.primary} />
+                        <LinearGradient
+                            colors={[activeColor, activeColor + 'CC']}
+                            style={styles.stepBadge}
+                        >
+                            <Text style={styles.stepBadgeText}>3</Text>
+                        </LinearGradient>
                         <Text style={[styles.sectionLabelText, { color: colors.text }]}>Sorunu Anlatın</Text>
                     </View>
 
                     <Card variant="default" style={styles.mainCard}>
+                        <View style={[styles.cardAccentTop, { backgroundColor: activeColor }]} />
                         <View>
                             <TextInput
                                 style={[
@@ -926,16 +1090,16 @@ export default function QuickCreateScreen() {
                                 textAlignVertical="top"
                                 placeholderTextColor={colors.textLight}
                             />
-                            {errors.description && <Text style={styles.errorTextSmall}>{errors.description}</Text>}
+                            {!!errors.description && <Text style={styles.errorTextSmall}>{errors.description}</Text>}
                         </View>
                         <View style={styles.photoRow}>
-                            <TouchableOpacity style={[styles.photoBtn, { backgroundColor: colors.borderLight }]} onPress={handleTakePhoto}>
-                                <Ionicons name="camera" size={16} color={colors.primary} />
-                                <Text style={[styles.photoBtnText, { color: colors.primary }]}>Çek</Text>
+                            <TouchableOpacity style={[styles.photoBtn, styles.photoBtnDashed, { borderColor: activeColor + '40' }]} onPress={handleTakePhoto}>
+                                <Ionicons name="camera" size={16} color={activeColor} />
+                                <Text style={[styles.photoBtnText, { color: activeColor }]}>Çek</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={[styles.photoBtn, { backgroundColor: colors.borderLight }]} onPress={handlePickImage}>
-                                <Ionicons name="images" size={16} color={colors.primary} />
-                                <Text style={[styles.photoBtnText, { color: colors.primary }]}>Galeri</Text>
+                            <TouchableOpacity style={[styles.photoBtn, styles.photoBtnDashed, { borderColor: activeColor + '40' }]} onPress={handlePickImage}>
+                                <Ionicons name="images" size={16} color={activeColor} />
+                                <Text style={[styles.photoBtnText, { color: activeColor }]}>Galeri</Text>
                             </TouchableOpacity>
                             {images.map((img, i) => (
                                 <View key={i} style={styles.imgPreview}>
@@ -947,7 +1111,7 @@ export default function QuickCreateScreen() {
                             ))}
                         </View>
                         <View style={[styles.budgetRow, { borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}>
-                            <Ionicons name="wallet-outline" size={18} color={colors.textLight} />
+                            <Ionicons name="wallet-outline" size={18} color={activeColor} />
                             <TextInput
                                 style={[styles.budgetInput, { color: colors.text }]}
                                 placeholder="Tahmini bütçe (opsiyonel)"
@@ -956,21 +1120,21 @@ export default function QuickCreateScreen() {
                                 keyboardType="numeric"
                                 placeholderTextColor={colors.textLight}
                             />
-                            <Text style={[styles.currency, { color: colors.textSecondary }]}>₺</Text>
+                            <Text style={[styles.currency, { color: activeColor }]}>₺</Text>
                         </View>
-                    </Card>
-
-                    <Button
+                    </Card>                    <Button
                         title="Hemen Usta Çağır"
                         onPress={handleSubmit}
                         loading={isLoading}
                         variant="primary"
-                        style={styles.submitBtn}
+                        style={[styles.submitBtn, {
+                            shadowColor: activeColor,
+                        }]}
                         icon={<Ionicons name="flash" size={20} color="#FFF" />}
                     />
                     <View style={styles.safetyRow}>
-                        <Ionicons name="shield-checkmark" size={14} color={colors.textLight} />
-                        <Text style={[styles.safetyHint, { color: colors.textLight }]}>Güvenliğiniz için ödemeyi uygulama üzerinden yapın.</Text>
+                        <Ionicons name="shield-checkmark" size={14} color="#10B981" />
+                        <Text style={[styles.safetyHint, { color: colors.textSecondary }]}>Güvenliğiniz için ödemeyi uygulama üzerinden yapın.</Text>
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
@@ -983,18 +1147,23 @@ export default function QuickCreateScreen() {
                 title="Giriş Gerekiyor"
                 message="Acil usta çağırabilmek için giriş yapmanız gerekmektedir."
                 icon="flash-outline"
-            />
-
-            <Modal visible={showSuccessModal} transparent animationType="fade">
+            />            <Modal visible={showSuccessModal} transparent animationType="fade">
                 <View style={styles.modalOverlay}>
                     <LinearGradient colors={['rgba(30, 41, 59, 0.98)', 'rgba(15, 23, 42, 0.95)']} style={styles.successModal}>
+                        {/* Decorative radial circles */}
+                        <View style={[styles.decorCircle, { top: -30, right: -30, width: 120, height: 120, backgroundColor: activeColor + '08' }]} />
+                        <View style={[styles.decorCircle, { bottom: -20, left: -20, width: 80, height: 80, backgroundColor: activeColor + '06' }]} />
                         <View style={styles.successIconBox}>
-                            <LinearGradient colors={['#EF4444', '#DC2626']} style={styles.iconCircle}>
-                                <Ionicons name="flash" size={32} color="#FFF" />
-                            </LinearGradient>
+                            <View style={[styles.iconOuterRing, { borderColor: activeColor + '30' }]}>
+                                <LinearGradient colors={[activeColor, activeColor + 'CC']} style={styles.iconCircle}>
+                                    <Ionicons name="checkmark" size={36} color="#FFF" />
+                                </LinearGradient>
+                            </View>
                         </View>
                         <Text style={styles.successTitle}>Çağrı Gönderildi!</Text>
-                        <Text style={styles.successMessage}>Ustalar en kısa sürede teklif verecek.</Text>
+                        <Text style={styles.successMessage}>
+                            {selectedType ? `${EMERGENCY_TYPES.find(t => t.id === selectedType)?.label || ''} ustası en kısa sürede teklif verecek.` : 'Ustalar en kısa sürede teklif verecek.'}
+                        </Text>
                         <Button title="Çağrıyı Takip Et" onPress={() => { setShowSuccessModal(false); router.replace(`/jobs/${createdJobId}`); }} variant="primary" fullWidth />
                     </LinearGradient>
                 </View>
@@ -1022,70 +1191,76 @@ export default function QuickCreateScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1 },
-    scrollView: { flex: 1 },
-    content: { paddingHorizontal: 12, paddingTop: 4, paddingBottom: 10 },
-    emergencyBanner: {
+const styles = StyleSheet.create({    container: { flex: 1 },    scrollView: { flex: 1 },
+    content: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 10 },    emergencyBanner: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderRadius: 14,
-        marginBottom: 8,
-        elevation: 4,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderRadius: 18,
+        marginBottom: 14,
+        elevation: 6,
         shadowColor: '#EF4444',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 6,
-    },
-    emergencyIconWrapper: {
-        width: 38,
-        height: 38,
-        borderRadius: 12,
-        backgroundColor: 'rgba(255,255,255,0.25)',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+    },    emergencyIconWrapper: {
+        width: 42,
+        height: 42,
+        borderRadius: 14,
+        backgroundColor: 'rgba(255,255,255,0.35)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 10,
+        marginRight: 12,
+    },    bannerTextBlock: { flex: 1, minWidth: 0 },
+    bannerTitle: { fontFamily: fonts.bold, fontSize: 16, color: '#FFF', letterSpacing: -0.3 },
+    bannerSubtitle: { fontFamily: fonts.medium, fontSize: 12, color: 'rgba(255,255,255,0.92)', marginTop: 2, lineHeight: 16 },    bannerBadge: {
+        backgroundColor: 'rgba(255,255,255,0.18)',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 12,
+        marginLeft: 8,
     },
-    bannerTextBlock: { flex: 1, minWidth: 0 },
-    bannerTitle: { fontFamily: fonts.bold, fontSize: 15, color: '#FFF', letterSpacing: -0.2 },
-    bannerSubtitle: { fontFamily: fonts.medium, fontSize: 12, color: 'rgba(255,255,255,0.9)', marginTop: 1, lineHeight: 15 },
-    bannerBadge: {
-        backgroundColor: 'rgba(0,0,0,0.2)',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 10,
-        marginLeft: 6,
-    },
-    bannerBadgeText: { fontFamily: fonts.bold, fontSize: 11, color: '#FFF', letterSpacing: 0.5 },
-    sectionLabelRow: {
+    bannerBadgeText: { fontFamily: fonts.bold, fontSize: 11, color: '#FFF', letterSpacing: 0.5 },    sectionLabelRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
-        marginBottom: 6,
-        marginTop: 2,
+        gap: 8,
+        marginBottom: 12,
+        marginTop: 14,
         paddingHorizontal: 2,
     },
     sectionLabelText: {
         fontFamily: fonts.bold,
-        fontSize: 13,
+        fontSize: 14,
         letterSpacing: -0.2,
     },
-    sectionBlock: { marginBottom: 4, marginTop: 0 },
-    sectionBlockTight: { marginTop: 4 },
-    sectionKicker: { fontFamily: fonts.bold, fontSize: 11, letterSpacing: 0.5, marginBottom: 2, textTransform: 'uppercase', opacity: 0.6 },
-    sectionTitle: { fontFamily: fonts.bold, fontSize: 14, letterSpacing: -0.2 },
-    typeScrollContent: { gap: 8, paddingVertical: 2, paddingRight: 4, marginBottom: 6 },
+    stepBadge: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    stepBadgeText: {
+        fontFamily: fonts.bold,
+        fontSize: 11,
+        color: '#FFF',
+    },
+    sectionDivider: {
+        height: 1,
+        backgroundColor: 'rgba(0,0,0,0.05)',
+        marginVertical: 10,
+        marginHorizontal: 4,
+    },    typeScrollContent: { gap: 8, paddingVertical: 4, paddingRight: 4, marginBottom: 8 },
     typeBtn: {
-        width: 74,
-        height: 104,
+        width: 80,
+        height: 96,
         backgroundColor: '#FFF',
-        borderRadius: 18,
-        borderWidth: 1.5,
+        borderRadius: 20,
+        borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 10,
+        paddingVertical: 8,
         paddingHorizontal: 4,
         position: 'relative',
         shadowColor: 'transparent',
@@ -1094,51 +1269,44 @@ const styles = StyleSheet.create({
         shadowRadius: 0,
         elevation: 0,
     },
-    typeBtnSelected: {
-        elevation: 0,
-        shadowOpacity: 0,
-        shadowRadius: 0,
-        backgroundColor: '#F8FAFC',
-    },
-    typeIconBox: { width: 48, height: 48, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
-    type3dImage: { width: '100%', height: '100%' },
-    typeLabel: { fontFamily: fonts.semiBold, fontSize: 11, textAlign: 'center', lineHeight: 14, width: '100%' },
-    checkIndicator: { position: 'absolute', top: 6, right: 6, width: 16, height: 16, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
-    mainCard: { padding: 12, borderRadius: 16, marginBottom: 8, elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 6 },
+    typeIconBox: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+    type3dImage: { width: '85%', height: '85%' },
+    typeLabel: { fontFamily: fonts.semiBold, fontSize: 10, textAlign: 'center', lineHeight: 13, width: '100%' },
+    accentLine: { width: 20, height: 2.5, borderRadius: 2, marginTop: 3 },
+    checkIndicator: { position: 'absolute', top: 5, right: 5, width: 16, height: 16, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },    mainCard: { padding: 14, borderRadius: 18, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, overflow: 'hidden' },
+    cardAccentTop: { height: 3, borderRadius: 2, marginBottom: 12, marginHorizontal: -14, marginTop: -14, },
     addressScroll: { flexDirection: 'row', marginBottom: 10 },
     addressChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1, marginRight: 8 },
     addressChipText: { fontFamily: fonts.bold, fontSize: 11 },
     row: { flexDirection: 'row', gap: 8, marginBottom: 4 },
     addressInput: { borderRadius: 12, borderWidth: 1, padding: 12, fontFamily: fonts.medium, fontSize: 13, marginTop: 8, minHeight: 48, textAlignVertical: 'top' },
-    textArea: { borderRadius: 12, borderWidth: 1, padding: 12, fontFamily: fonts.medium, fontSize: 13, minHeight: 60, textAlignVertical: 'top' },
-    photoRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 10 },
-    photoBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: 'transparent' },
-    photoBtnIconWrap: { width: 0, height: 0 }, // no longer used but kept for safety if referenced elsewhere
-    photoBtnText: { fontFamily: fonts.bold, fontSize: 11 },
-    imgPreview: { width: 44, height: 44, borderRadius: 10, position: 'relative', borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)' },
-    img: { width: '100%', height: '100%', borderRadius: 9 },
-    imgRemove: { position: 'absolute', top: -5, right: -5, backgroundColor: '#FFF', borderRadius: 10, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2 },
+    textArea: { borderRadius: 12, borderWidth: 1, padding: 12, fontFamily: fonts.medium, fontSize: 13, minHeight: 60, textAlignVertical: 'top' },    photoRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+    photoBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12, borderWidth: 1, borderColor: 'transparent' },
+    photoBtnDashed: { borderStyle: 'dashed', borderWidth: 1.5, backgroundColor: 'transparent' },
+    photoBtnIconWrap: { width: 0, height: 0 },
+    photoBtnText: { fontFamily: fonts.bold, fontSize: 12 },    imgPreview: { width: 48, height: 48, borderRadius: 12, position: 'relative', borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)' },
+    img: { width: '100%', height: '100%', borderRadius: 11 },
+    imgRemove: { position: 'absolute', top: -6, right: -6, backgroundColor: '#FFF', borderRadius: 12, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 3 },
     budgetRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, borderWidth: 1 },
     budgetInput: { flex: 1, paddingHorizontal: 6, fontFamily: fonts.bold, fontSize: 13 },
-    currency: { fontFamily: fonts.bold, fontSize: 14 },
-    submitBtn: { 
-        marginTop: 10, 
-        minHeight: 48, 
-        borderRadius: 14, 
-        shadowColor: '#EF4444', 
-        shadowOffset: { width: 0, height: 3 }, 
-        shadowOpacity: 0.25, 
-        shadowRadius: 8, 
-        elevation: 6 
+    currency: { fontFamily: fonts.bold, fontSize: 14 },    submitBtn: { 
+        marginTop: 14, 
+        minHeight: 52, 
+        borderRadius: 16, 
+        shadowOffset: { width: 0, height: 4 }, 
+        shadowOpacity: 0.3, 
+        shadowRadius: 10, 
+        elevation: 8 
     },
-    safetyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 8, paddingHorizontal: 16 },
-    safetyHint: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 14, opacity: 0.65 },
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-    successModal: { width: '100%', borderRadius: 32, padding: 32, alignItems: 'center' },
-    successIconBox: { marginBottom: 24 },
-    iconCircle: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', elevation: 12, shadowColor: '#EF4444', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 16 },
-    successTitle: { fontFamily: fonts.extraBold, fontSize: 26, color: '#FFF', marginBottom: 10 },
-    successMessage: { fontFamily: fonts.medium, fontSize: 15, color: 'rgba(255,255,255,0.8)', textAlign: 'center', marginBottom: 32, lineHeight: 22 },
+    safetyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10, paddingHorizontal: 16 },
+    safetyHint: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 15 },    modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.88)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+    successModal: { width: '100%', borderRadius: 32, padding: 36, alignItems: 'center', overflow: 'hidden' },
+    decorCircle: { position: 'absolute', borderRadius: 999 },
+    successIconBox: { marginBottom: 28 },
+    iconOuterRing: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, justifyContent: 'center', alignItems: 'center' },
+    iconCircle: { width: 76, height: 76, borderRadius: 38, justifyContent: 'center', alignItems: 'center', elevation: 12, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 16 },
+    successTitle: { fontFamily: fonts.extraBold, fontSize: 28, color: '#FFF', marginBottom: 10, letterSpacing: -0.5 },
+    successMessage: { fontFamily: fonts.medium, fontSize: 15, color: 'rgba(255,255,255,0.82)', textAlign: 'center', marginBottom: 32, lineHeight: 23 },
     subCategoryContainer: {
         marginBottom: 20,
         marginTop: 4,
@@ -1241,8 +1409,7 @@ const styles = StyleSheet.create({
     pillText: {
         fontFamily: fonts.bold,
         fontSize: 12,
-    },
-    descriptionInput: {
+    },    descriptionInput: {
         borderRadius: 16,
         borderWidth: 1,
         padding: 12,
@@ -1250,5 +1417,37 @@ const styles = StyleSheet.create({
         fontSize: 13,
         minHeight: 60,
         textAlignVertical: 'top',
+    },    searchInput: {
+        flex: 1,
+        height: 38,
+        borderRadius: 19,
+        borderWidth: 1.5,
+        paddingHorizontal: 14,
+        fontFamily: fonts.medium,
+        fontSize: 13,
+        paddingVertical: 0,
+    },
+    searchCloseBtn: {
+        padding: 4,
+    },
+    searchToggleBtn: {
+        padding: 0,
+    },
+    emptySearchContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 24,
+        paddingHorizontal: 16,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderStyle: 'dashed',
+        marginHorizontal: 4,
+        marginBottom: 8,
+    },
+    emptySearchText: {
+        fontFamily: fonts.medium,
+        fontSize: 13,
+        textAlign: 'center',
+        marginTop: 6,
     },
 });

@@ -3311,24 +3311,26 @@ export default function HomeScreen() {
           {isSearchOverlayVisible && (
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
           )}
-          <View style={styles.searchOverlayBackdrop}>
+          <View style={[styles.searchOverlayBackdrop, { backgroundColor: colors.primaryDark || '#021D1A' }]}>
             <LinearGradient
-              colors={['#021D1A', '#052A26', '#010E0D']}
+              colors={colors.gradientAmethystDark as any || ['#0F172A', '#115E59', '#0D9488']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
               style={StyleSheet.absoluteFill}
             />
             {/* Glowing Decorative Background Blobs */}
-            <View style={[styles.searchGlowBlob, { top: -60, left: -60, backgroundColor: '#0D9488', opacity: 0.15 }]} />
-            <View style={[styles.searchGlowBlob, { bottom: -100, right: -60, backgroundColor: '#0D9488', opacity: 0.08 }]} />
+            <View style={[styles.searchGlowBlob, { top: -60, left: -60, backgroundColor: colors.primaryLight || '#2DD4BF', opacity: 0.18 }]} />
+            <View style={[styles.searchGlowBlob, { bottom: -100, right: -60, backgroundColor: colors.primary || '#0D9488', opacity: 0.10 }]} />
 
             <SafeAreaView style={styles.searchOverlayContainer} edges={['top', 'bottom']}>
               {/* Search Header */}
               <View style={styles.searchOverlayHeader}>
-                <View style={styles.searchOverlayBar}>
-                  <Ionicons name="search" size={20} color="rgba(255,255,255,0.55)" style={{ marginRight: 8 }} />
+                <View style={[styles.searchOverlayBar, { shadowColor: colors.primary, borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
+                  <Ionicons name="search" size={20} color={colors.primaryLight || 'rgba(255,255,255,0.55)'} style={{ marginRight: 8 }} />
                   <TextInput
                     style={styles.searchOverlayInput}
                     placeholder="Hizmet veya kategori arayın..."
-                    placeholderTextColor="rgba(255,255,255,0.45)"
+                    placeholderTextColor="rgba(255,255,255,0.4)"
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     autoFocus={true}
@@ -3349,7 +3351,7 @@ export default function HomeScreen() {
                   }}
                   style={styles.searchOverlayCloseBtn}
                 >
-                  <Text style={styles.searchOverlayCloseText}>Kapat</Text>
+                  <Text style={[styles.searchOverlayCloseText, { color: colors.primaryLight || '#FFFFFF' }]}>Kapat</Text>
                 </TouchableOpacity>
               </View>
 
@@ -3358,13 +3360,14 @@ export default function HomeScreen() {
                 style={styles.searchOverlayResults}
                 contentContainerStyle={{ paddingBottom: 40 }}
                 keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
                 showsVerticalScrollIndicator={false}
               >
                 {searchQuery.trim().length === 0 ? (
                   <>
                     {/* Popular Services / Quick Start Section */}
                     <View style={styles.searchOverlaySection}>
-                      <Text style={styles.searchSectionTitle}>Popüler Hizmetler</Text>
+                      <Text style={[styles.searchSectionTitle, { color: colors.primaryLight || 'rgba(255, 255, 255, 0.45)' }]}>Popüler Hizmetler</Text>
                       <View style={styles.popularServicesGrid}>
                         {[
                           { name: 'Elektrik Tesisatı', parentCategory: 'elektrik', emoji: '⚡' },
@@ -3398,7 +3401,7 @@ export default function HomeScreen() {
 
                     {/* All Main Services and Sub-branches (Alt Dallar) */}
                     <View style={styles.searchOverlaySection}>
-                      <Text style={styles.searchSectionTitle}>Tüm Ana Hizmetler & Alt Dalları</Text>
+                      <Text style={[styles.searchSectionTitle, { color: colors.primaryLight || 'rgba(255, 255, 255, 0.45)' }]}>Tüm Ana Hizmetler & Alt Dalları</Text>
                       <View style={styles.categoryListContainer}>
                         {SERVICE_CATEGORIES.map((cat) => {
                           const primaryColor = cat.colors[0];
@@ -3410,7 +3413,8 @@ export default function HomeScreen() {
                               key={cat.id}
                               style={[
                                 styles.mainCategoryCard,
-                                isExpanded && { backgroundColor: 'rgba(255, 255, 255, 0.06)' }
+                                { borderLeftColor: primaryColor, borderLeftWidth: 4 },
+                                isExpanded && { backgroundColor: 'rgba(255, 255, 255, 0.06)', borderColor: primaryColor + '30' }
                               ]}
                             >
                               {/* Card Header */}
@@ -3446,7 +3450,7 @@ export default function HomeScreen() {
                                 <Ionicons 
                                   name={isExpanded ? "chevron-down" : "chevron-forward"} 
                                   size={18} 
-                                  color={isExpanded ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.3)"} 
+                                  color={isExpanded ? primaryColor : "rgba(255, 255, 255, 0.35)"} 
                                   style={{ marginLeft: 8 }}
                                 />
                               </TouchableOpacity>
@@ -3456,7 +3460,7 @@ export default function HomeScreen() {
                                 <View style={styles.subCategoriesWrapper}>
                                   {/* Main Category Direct Application Pill */}
                                   <TouchableOpacity
-                                    style={[styles.subCategoryPill, styles.mainCategoryDirectPill, { borderColor: 'rgba(255, 255, 255, 0.15)', backgroundColor: 'rgba(255, 255, 255, 0.08)' }]}
+                                    style={[styles.subCategoryPill, styles.mainCategoryDirectPill, { borderColor: primaryColor + '30', backgroundColor: primaryColor + '18' }]}
                                     activeOpacity={0.7}
                                     onPress={() => {
                                       setIsSearchOverlayVisible(false);
@@ -3464,16 +3468,16 @@ export default function HomeScreen() {
                                       handleActionWithAuth('/jobs/create', { serviceCategory: cat.id });
                                     }}
                                   >
-                                    <Text style={[styles.subCategoryPillText, { color: '#FFFFFF', fontFamily: fonts.bold }]}>
+                                    <Text style={[styles.subCategoryPillText, { color: primaryColor, fontFamily: fonts.bold }]}>
                                       Hepsini Gör / Genel Başvuru
                                     </Text>
-                                    <Ionicons name="arrow-forward" size={11} color="#FFFFFF" style={{ marginLeft: 3 }} />
+                                    <Ionicons name="arrow-forward" size={11} color={primaryColor} style={{ marginLeft: 3 }} />
                                   </TouchableOpacity>
 
                                   {subCats.map((sub) => (
                                     <TouchableOpacity
                                       key={sub.id}
-                                      style={[styles.subCategoryPill, { borderColor: 'rgba(255, 255, 255, 0.08)' }]}
+                                      style={[styles.subCategoryPill, { borderColor: primaryColor + '20', backgroundColor: 'rgba(255, 255, 255, 0.02)' }]}
                                       activeOpacity={0.7}
                                       onPress={() => {
                                         setIsSearchOverlayVisible(false);
@@ -3517,11 +3521,13 @@ export default function HomeScreen() {
 
                       if (matchedMain.length === 0 && matchedSub.length === 0) {
                         return (
-                          <View style={styles.searchOverlayEmpty}>
-                            <Ionicons name="search-outline" size={48} color="rgba(255,255,255,0.15)" style={{ marginBottom: 12 }} />
+                          <View style={[styles.searchOverlayEmpty, { borderColor: (colors.border || 'rgba(255,255,255,0.08)') + '80', borderStyle: 'dashed', borderWidth: 1.5, borderRadius: 24, paddingVertical: 48, paddingHorizontal: 24, backgroundColor: 'rgba(255,255,255,0.01)', marginHorizontal: 4 }]}>
+                            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255, 255, 255, 0.03)', justifyContent: 'center', alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+                              <Ionicons name="search-outline" size={28} color={colors.primaryLight || 'rgba(255,255,255,0.35)'} />
+                            </View>
                             <Text style={styles.searchEmptyTitle}>Sonuç Bulunamadı</Text>
                             <Text style={styles.searchEmptySubtitle}>
-                              "{searchQuery}" aramasıyla eşleşen bir hizmet türü bulamadık.
+                              "{searchQuery}" aramasıyla eşleşen bir hizmet türü bulamadık. Lütfen farklı kelimelerle tekrar deneyin.
                             </Text>
                           </View>
                         );
@@ -3529,27 +3535,27 @@ export default function HomeScreen() {
 
                       return (
                         <View style={styles.searchOverlaySection}>
-                          <Text style={styles.searchSectionTitle}>Eşleşen Hizmetler</Text>
+                          <Text style={[styles.searchSectionTitle, { color: colors.primaryLight || 'rgba(255, 255, 255, 0.45)' }]}>Eşleşen Hizmetler</Text>
                           
                           {/* Render Main Category Matches */}
                           {matchedMain.map((cat) => (
                             <TouchableOpacity
                               key={`main-${cat.id}`}
-                              style={[styles.searchResultRow, { borderColor: cat.colors[0] + '20' }]}
+                              style={[styles.searchResultRow, { borderLeftColor: cat.colors[0], borderLeftWidth: 4, borderColor: cat.colors[0] + '20' }]}
                               onPress={() => {
                                 setIsSearchOverlayVisible(false);
                                 setSearchQuery('');
                                 handleActionWithAuth('/jobs/create', { serviceCategory: cat.id });
                               }}
                             >
-                              <View style={[styles.searchResultIconBg, { backgroundColor: cat.colors[0] + '15', borderColor: cat.colors[0] + '35' }]}>
+                              <View style={[styles.searchResultIconBg, { backgroundColor: cat.colors[0] + '12', borderColor: cat.colors[0] + '30' }]}>
                                 <Ionicons name={cat.icon as any} size={20} color={cat.colors[0]} />
                               </View>
                               <View style={styles.searchResultInfo}>
                                 <Text style={styles.searchResultTitle}>{cat.name}</Text>
                                 <Text style={styles.searchResultSub}>{cat.description}</Text>
                               </View>
-                              <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
+                              <Ionicons name="chevron-forward" size={16} color={cat.colors[0]} />
                             </TouchableOpacity>
                           ))}
 
@@ -3560,7 +3566,7 @@ export default function HomeScreen() {
                             return (
                               <TouchableOpacity
                                 key={`sub-${sub.id}`}
-                                style={[styles.searchResultRow, { borderColor: iconColor + '20' }]}
+                                style={[styles.searchResultRow, { borderLeftColor: iconColor, borderLeftWidth: 4, borderColor: iconColor + '20' }]}
                                 onPress={() => {
                                   setIsSearchOverlayVisible(false);
                                   setSearchQuery('');
@@ -3570,7 +3576,7 @@ export default function HomeScreen() {
                                   });
                                 }}
                               >
-                                <View style={[styles.searchResultIconBg, { backgroundColor: iconColor + '15', borderColor: iconColor + '35' }]}>
+                                <View style={[styles.searchResultIconBg, { backgroundColor: iconColor + '12', borderColor: iconColor + '30' }]}>
                                   <Ionicons name={sub.icon as any} size={20} color={iconColor} />
                                 </View>
                                 <View style={styles.searchResultInfo}>
@@ -3581,7 +3587,7 @@ export default function HomeScreen() {
                                     </Text>
                                   </View>
                                 </View>
-                                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
+                                <Ionicons name="chevron-forward" size={16} color={iconColor} />
                               </TouchableOpacity>
                             );
                           })}
@@ -6019,22 +6025,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
+    marginTop: Platform.OS === 'ios' ? 14 : 28,
   },
   searchOverlayBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 16,
+    borderRadius: 18,
     paddingHorizontal: 16,
-    height: 52,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.18)',
-    shadowColor: '#0D9488',
+    height: 54,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
   },
   searchOverlayInput: {
     flex: 1,
@@ -6113,12 +6119,12 @@ const styles = StyleSheet.create({
   searchResultRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderRadius: 16,
     padding: 14,
     marginBottom: 12,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -6167,10 +6173,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   mainCategoryCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: 20,
-    borderWidth: 1.2,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     padding: 14,
     marginBottom: 12,
   },
@@ -6202,7 +6208,7 @@ const styles = StyleSheet.create({
   mainCategoryDesc: {
     fontFamily: fonts.regular,
     fontSize: 11.5,
-    color: 'rgba(255, 255, 255, 0.35)',
+    color: 'rgba(255, 255, 255, 0.48)',
   },
   subCategoriesWrapper: {
     flexDirection: 'row',
