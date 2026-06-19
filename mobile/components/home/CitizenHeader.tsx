@@ -293,6 +293,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 12.5,
     color: 'rgba(255, 255, 255, 0.8)',
+    flex: 1,
   },
   seeAllPillInsideSearch: {
     flexDirection: 'row',
