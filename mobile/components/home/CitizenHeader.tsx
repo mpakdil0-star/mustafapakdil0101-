@@ -102,7 +102,7 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.seeAllPillInsideSearch, { backgroundColor: 'rgba(255, 255, 255, 0.18)', borderColor: 'rgba(255, 255, 255, 0.25)' }]}
+          style={styles.seeAllPillInsideSearch}
           activeOpacity={0.7}
           onPress={() => handleActionWithAuth('/electricians')}
         >
@@ -118,14 +118,14 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
         onPress={() => router.push({ pathname: '/ai-assistant', params: { role: 'CITIZEN' } })}
       >
         <LinearGradient
-          colors={['rgba(255, 255, 255, 0.12)', 'rgba(255, 255, 255, 0.04)']}
+          colors={['rgba(13, 148, 136, 0.24)', 'rgba(45, 212, 191, 0.07)']}
           style={styles.aiBannerGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 10 }}>
             <View style={styles.aiBannerIconCircle}>
-              <Ionicons name="sparkles" size={13} color="#2DD4BF" />
+              <Ionicons name="sparkles" size={14} color="#2DD4BF" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.aiBannerTitle}>Arıza Teşhis Sihirbazı (AI)</Text>
@@ -289,14 +289,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 14,
     height: 48,
     paddingHorizontal: 16,
     marginBottom: 16,
     width: '100%',
-    borderWidth: 1.2,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   headerFullSearchInputArea: {
     flex: 1,
@@ -308,15 +313,17 @@ const styles = StyleSheet.create({
   headerFullSearchPlaceholder: {
     fontFamily: fonts.medium,
     fontSize: 12.5,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 0.75)',
   },
   seeAllPillInsideSearch: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 18,
-    borderWidth: 1.2,
+    borderRadius: 10,
+    borderWidth: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: 'rgba(255, 255, 255, 0.18)',
   },
   seeAllPillText: {
     fontFamily: fonts.bold,
@@ -350,60 +357,61 @@ const styles = StyleSheet.create({
   },
   aiBannerContainer: {
     width: '100%',
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(45, 212, 191, 0.25)',
-    borderLeftWidth: 3.5,
-    borderLeftColor: '#2DD4BF',
+    borderColor: 'rgba(45, 212, 191, 0.35)',
     overflow: 'hidden',
-    marginBottom: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    marginBottom: 16,
+    backgroundColor: 'rgba(13, 148, 136, 0.1)',
     shadowColor: '#2DD4BF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
+    elevation: 5,
   },
   aiBannerGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     justifyContent: 'space-between',
   },
   aiBannerIconCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: 'rgba(45, 212, 191, 0.15)',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(45, 212, 191, 0.18)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(45, 212, 191, 0.3)',
+    borderColor: 'rgba(45, 212, 191, 0.35)',
   },
   aiBannerTitle: {
     fontFamily: fonts.bold,
-    fontSize: 12,
+    fontSize: 12.5,
     color: '#FFFFFF',
+    letterSpacing: 0.1,
   },
   aiBannerSubtitle: {
     fontFamily: fonts.medium,
-    fontSize: 9.5,
-    color: 'rgba(255, 255, 255, 0.65)',
-    marginTop: 0.5,
+    fontSize: 10,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 1,
   },
   aiBannerBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(45, 212, 191, 0.18)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    backgroundColor: 'rgba(45, 212, 191, 0.22)',
+    borderColor: 'rgba(45, 212, 191, 0.35)',
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
     gap: 2,
   },
   aiBannerBadgeText: {
     fontFamily: fonts.bold,
-    fontSize: 9,
+    fontSize: 9.5,
     color: '#2DD4BF',
   },
 });
