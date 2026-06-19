@@ -1018,13 +1018,8 @@ export default function CreateJobScreen() {
                             styles.pill,
                             { paddingVertical: 8, borderColor: colors.border, backgroundColor: colors.surfaceElevated },
                             selected && {
-                              backgroundColor: svc.colors[0] + '14',
-                              borderColor: svc.colors[0] + '40', // 25% opacity border for soft category color match
-                              shadowColor: svc.colors[0],
-                              shadowOffset: { width: 0, height: 3 },
-                              shadowOpacity: 0.18,
-                              shadowRadius: 6,
-                              elevation: 3,
+                              borderColor: svc.colors[0],
+                              backgroundColor: 'transparent',
                             },
                           ]}
                           onPress={() => {
