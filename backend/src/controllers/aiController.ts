@@ -219,18 +219,50 @@ Size şu konularda yardımcı olabilirim:
 Sorunuzu netleştirirseniz size detaylı bilgi sunabilirim.`;
   } else {
     // Citizen Fallback Responses
-    let matchedCategory = 'elektrik';
-    let title = 'Elektrik Tesisatı Kontrolü';
-    let description = 'Evin elektrik tesisatındaki sorunların giderilmesi için usta desteği.';
+    let matchedCategory: string | undefined = matchCategoryFromText(message) || undefined;
+    
+    // If no category matched in the current message, check history from newest to oldest
+    if (!matchedCategory && history && Array.isArray(history)) {
+      const reversedHistory = [...history].reverse();
+      for (const h of reversedHistory) {
+        const role = h.role === 'model' ? 'model' : 'user';
+        if (role === 'user' && h.text) {
+          const categoryCandidate = matchCategoryFromText(h.text);
+          if (categoryCandidate) {
+            matchedCategory = categoryCandidate;
+            break;
+          }
+        }
+      }
+    }
+
+    let title = 'Genel Ev Bakım & Onarım Hizmeti';
+    let description = 'Evdeki teknik sorunlerin giderilmesi için genel usta desteği talep ediliyor.';
     let explanationText = '';
 
-    if (msgLower.includes('priz') || msgLower.includes('şalter') || msgLower.includes('sigorta') || msgLower.includes('kablo') || msgLower.includes('elektrik') || msgLower.includes('cızırtı') || msgLower.includes('kıvılcım') || msgLower.includes('lamba') || msgLower.includes('ampul') || msgLower.includes('ışık') || msgLower.includes('avize')) {
-      matchedCategory = 'elektrik';
+    // Find a descriptive text from user's current message or recent history
+    let userDesc = message;
+    if ((!userDesc || userDesc.length < 5) && history && Array.isArray(history)) {
+      const lastDescUser = [...history].reverse().find(h => h.role === 'user' && h.text && h.text.length > 5);
+      if (lastDescUser) {
+        userDesc = lastDescUser.text;
+      }
+    }
+    const cleanUserDesc = userDesc || '';
+    const getFinalDesc = (defaultVal: string) => {
+      const lower = cleanUserDesc.toLowerCase();
+      if (cleanUserDesc.length > 5 && !lower.includes('usta lazım') && !lower.includes('bul') && !lower.includes('çağır') && !lower.includes('lazım') && !lower.includes('istiyorum')) {
+        return cleanUserDesc;
+      }
+      return defaultVal;
+    };
+
+    if (matchedCategory === 'elektrik') {
       title = 'Priz veya Sigorta Arızası Onarımı';
-      description = 'Prizde temassızlık/kıvılcım sorunu var veya şalter sürekli atıyor. Tesisatın kontrol edilip arızalı elemanların değiştirilmesi gerekiyor.';
+      description = getFinalDesc('Prizde temassızlık/kıvılcım veya lamba/aydınlatma arızası. Tesisatın kontrol edilip onarılması gerekiyor.');
       explanationText = `Elektrik tesisatı arızaları çok hassas ve risklidir.
 
-⚠️ **ÖNEMLİ GÜVENLİK UYARISI:** Lütfen arızalı prizin bağlı olduğu veya tüm dairenin ana sigortasını kapatın! Prizleri sökmeye veya kabloları kurcalamaya çalışmayın.
+⚠️ **ÖNEMLİ GÜVENLİK UYARISI:** Lütfen arızalı prizin/lambanın bağlı olduğu veya tüm dairenin ana sigortasını kapatın! Prizleri sökmeye veya kabloları kurcalamaya çalışmayın.
 
 **Önerilen İlk Yardım Adımları:**
 1. Arızalı prize takılı olan tüm fişleri çıkartın.
@@ -238,10 +270,9 @@ Sorunuzu netleştirirseniz size detaylı bilgi sunabilirim.`;
 3. Kendi başınıza müdahale etmeyin.
 
 Sizin için bir elektrik arıza talebi hazırladım. Aşağıdaki **"Tek Tıkla İlan Oluştur"** butonuna basarak ilaninizi hemen yayinlayabilir ve bölgenizdeki en iyi elektrikçi ustalardan teklif alabilirsiniz.`;
-    } else if (msgLower.includes('musluk') || msgLower.includes('su') || msgLower.includes('tesisat') || msgLower.includes('akıt') || msgLower.includes('boru') || msgLower.includes('tıkan') || msgLower.includes('sızıntı') || msgLower.includes('banyo') || msgLower.includes('lavabo')) {
-      matchedCategory = 'tesisat';
+    } else if (matchedCategory === 'tesisat') {
       title = 'Su Tesisatı Sızıntısı & Musluk Tamiri';
-      description = 'Musluk dipten su damlatıyor veya giderde tıkanıklık var. Su sızıntısının tespiti ve arızalı parçanın onarımı/değişimi gerekiyor.';
+      description = getFinalDesc('Musluk dipten su damlatıyor veya giderde tıkanıklık var. Su sızıntısının tespiti ve arızalı parçanın onarımı/değişimi gerekiyor.');
       explanationText = `Su tesisatı sızıntısı evinize ve alt kata zarar verebilir.
 
 ⚠️ **UYARI:** Eğer sızıntı büyükse, daire girişindeki (saatin yanındaki) ana vanayı çevirerek suyu tamamen kapatın.
@@ -252,10 +283,9 @@ Sizin için bir elektrik arıza talebi hazırladım. Aşağıdaki **"Tek Tıkla 
 3. Sızıntı yerinin etrafındaki elektrikli aletleri uzaklaştırın.
 
 Sizin için bir su tesisatı ilanı hazırladım. Aşağıdaki buton yardımıyla hemen teklif almaya başlayabilirsiniz.`;
-    } else if (msgLower.includes('kilit') || msgLower.includes('anahtar') || msgLower.includes('kapı') || msgLower.includes('çilingir') || msgLower.includes('barel') || msgLower.includes('göbek')) {
-      matchedCategory = 'cilingir';
+    } else if (matchedCategory === 'cilingir') {
       title = 'Acil Çilingir & Kilit Değişimi';
-      description = 'Anahtar kapının arkasında kaldı veya kilit göbeği bozuldu. Kapının zarar verilmeden açılması ve kilit barelinin değiştirilmesi gerekiyor.';
+      description = getFinalDesc('Anahtar kapının arkasında kaldı veya kilit göbeği bozuldu. Kapının zarar verilmeden açılması ve kilit barelinin değiştirilmesi gerekiyor.');
       explanationText = `Kapıda kalma durumlarında kilidi zorlamamak en doğrusudur.
 
 **Önerilen Adımlar:**
@@ -263,10 +293,9 @@ Sizin için bir su tesisatı ilanı hazırladım. Aşağıdaki buton yardımıyl
 2. Çelik kapılarda kartla açma gibi amatör yöntemler kapı kasasına zarar verebilir.
 
 Sizin için acil bir çilingir hizmet talebi hazırladım. Aşağıdaki butona tıklayarak en yakın güvenilir çilingir ustasını çağırabilirsiniz.`;
-    } else if (msgLower.includes('klima') || msgLower.includes('soğut') || msgLower.includes('sıcak') || msgLower.includes('gaz')) {
-      matchedCategory = 'klima';
+    } else if (matchedCategory === 'klima') {
       title = 'Klima Bakım ve Gaz Dolumu';
-      description = 'Klima açılıyor fakat soğuk/sıcak hava üflemiyor. Gaz seviyesinin kontrol edilmesi, gerekiyorsa gaz dolumu ve filtre temizliği yapılması lazım.';
+      description = getFinalDesc('Klima açılıyor fakat soğuk/sıcak hava üflemiyor. Gaz seviyesinin kontrol edilmesi, gerekiyorsa gaz dolumu ve filtre temizliği yapılması lazım.');
       explanationText = `Klima performans sorunları genellikle gaz eksilmesi veya filtre tıkanıklığından kaynaklanır.
 
 **Önerilen Adımlar:**
@@ -275,10 +304,9 @@ Sizin için acil bir çilingir hizmet talebi hazırladım. Aşağıdaki butona t
 3. Klimanın kumanda modunun (Kar tanesi veya Güneş simgesi) doğru ayarlandığından emin olun.
 
 Sizin için bir klima servisi ilanı hazırladım. Aşağıdaki butondan hemen usta bulabilirsiniz.`;
-    } else if (msgLower.includes('çamaşır') || msgLower.includes('bulaşık') || msgLower.includes('buzdolabı') || msgLower.includes('fırın') || msgLower.includes('makine') || msgLower.includes('beyaz eşya')) {
-      matchedCategory = 'beyaz-esya';
+    } else if (matchedCategory === 'beyaz-esya') {
       title = 'Beyaz Eşya Onarımı';
-      description = 'Beyaz eşya çalışırken su boşaltmıyor veya soğutmuyor. Arıza tespiti yapılması ve arızalı parçanın değiştirilmesi gerekiyor.';
+      description = getFinalDesc('Beyaz eşya çalışırken su boşaltmıyor veya soğutmuyor. Arıza tespiti yapılması ve arızalı parçanın değiştirilmesi gerekiyor.');
       explanationText = `Beyaz eşya arızalarında elektrik ve su beslemelerini kontrol etmek ilk adımdır.
 
 **Önerilen Adımlar:**
@@ -286,10 +314,9 @@ Sizin için bir klima servisi ilanı hazırladım. Aşağıdaki butondan hemen u
 2. Buzdolabınız soğutmuyorsa, arkasındaki tozlu ızgaraların hava almasını engelleyen duvar mesafesini kontrol edin.
 
 Sizin için bir beyaz eşya teknik servis talebi hazırladım. Ustalardan teklif almak için aşağıdaki butona tıklayın.`;
-    } else if (msgLower.includes('kombi') || msgLower.includes('petek') || msgLower.includes('ısınma') || msgLower.includes('petekler')) {
-      matchedCategory = 'kombi-servis';
+    } else if (matchedCategory === 'kombi-servis') {
       title = 'Kombi Arızası ve Petek Temizliği';
-      description = 'Kombi sıcak su vermiyor veya petekler ısınmıyor. Bar basıncının ayarlanması, kombi arıza giderme veya petek temizliği gerekiyor.';
+      description = getFinalDesc('Kombi sıcak su vermiyor veya petekler ısınmıyor. Bar basıncının ayarlanması, kombi arıza giderme veya petek temizliği gerekiyor.');
       explanationText = `Kombi sistemlerindeki arızalarda gaz ve su basınçları çok önemlidir.
 
 ⚠️ **GÜVENLİK UYARISI:** Evde doğalgaz veya çürük yumurta kokusu alıyorsanız, derhal kombiyi kapatın, ana gaz vanasını kapatın, pencereleri açın ve 187 Doğalgaz Acil hattını arayın! Elektrik düğmelerine basmayın.
@@ -299,10 +326,9 @@ Sizin için bir beyaz eşya teknik servis talebi hazırladım. Ustalardan teklif
 2. Kombinizi resetleyin (kapatıp 1 dakika bekledikten sonra tekrar açın).
 
 Sizin için kombi ve petek servisi ilanı oluşturdum. Aşağıdaki butondan hızlıca ilan verebilirsiniz.`;
-    } else if (msgLower.includes('nakliyat') || msgLower.includes('taşı') || msgLower.includes('taşımacı') || msgLower.includes('nakliye') || msgLower.includes('taşınma')) {
-      matchedCategory = 'nakliyat';
+    } else if (matchedCategory === 'nakliyat') {
       title = 'Evden Eve Nakliyat & Taşıma Hizmeti';
-      description = 'Ev veya iş yeri eşyalarının yeni adrese güvenle taşınması ve nakliye aracı desteği talep ediliyor.';
+      description = getFinalDesc('Ev veya iş yeri eşyalarının yeni adrese güvenle taşınması ve nakliye aracı desteği talep ediliyor.');
       explanationText = `Ev taşıma ve nakliyat süreçlerinde planlama en önemli adımdır.
 
 **Önerilen Adımlar:**
@@ -311,10 +337,9 @@ Sizin için kombi ve petek servisi ilanı oluşturdum. Aşağıdaki butondan hı
 3. Yeni evdeki yerleşim planını önceden belirleyin.
 
 Sizin için evden eve nakliyat ilanı hazırladım. Aşağıdaki butona tıklayarak profesyonel nakliyeci ustalardan teklif alabilirsiniz.`;
-    } else if (msgLower.includes('temizlik') || msgLower.includes('temizle') || msgLower.includes('gündelik') || msgLower.includes('temizlikçi')) {
-      matchedCategory = 'temizlik';
+    } else if (matchedCategory === 'temizlik') {
       title = 'Detaylı Ev & Ofis Temizliği';
-      description = 'Ev veya ofis temizliği için deneyimli yardımcı desteği talep ediliyor.';
+      description = getFinalDesc('Ev veya ofis temizliği için deneyimli yardımcı desteği talep ediliyor.');
       explanationText = `Profesyonel temizlik hizmeti alırken ihtiyaçlarınızı netleştirmeniz önemlidir.
 
 **Önerilen Adımlar:**
@@ -322,10 +347,9 @@ Sizin için evden eve nakliyat ilanı hazırladım. Aşağıdaki butona tıklaya
 2. Temizlik malzemelerinin usta tarafından mı yoksa sizin tarafınızdan mı sağlanacağını netleştirin.
 
 Sizin için temizlik hizmeti ilanı hazırladım. Aşağıdaki butondan hızlıca ilan verebilirsiniz.`;
-    } else if (msgLower.includes('boya') || msgLower.includes('badana') || msgLower.includes('duvar') || msgLower.includes('alçı') || msgLower.includes('boyacı')) {
-      matchedCategory = 'boya-badana';
+    } else if (matchedCategory === 'boya-badana') {
       title = 'Boya Badana & Duvar Boyama Hizmeti';
-      description = 'Ev veya ofis odalarının alçı, sıva ve boya badana işlemlerinin yapılması gerekiyor.';
+      description = getFinalDesc('Ev veya ofis odalarının alçı, sıva ve boya badana işlemlerinin yapılması gerekiyor.');
       explanationText = `Boya badana işlerinde renk seçimi ve yüzey hazırlığı çok önemlidir.
 
 **Önerilen Adımlar:**
@@ -333,10 +357,9 @@ Sizin için temizlik hizmeti ilanı hazırladım. Aşağıdaki butondan hızlıc
 2. Eşyaları odanın ortasına toplayıp üzerlerini koruyucu örtüyle örtün.
 
 Sizin için boya badana ilanı hazırladım. Aşağıdaki butondan hemen teklif almaya başlayabilirsiniz.`;
-    } else if (msgLower.includes('koltuk') || msgLower.includes('halı') || msgLower.includes('yıkama') || msgLower.includes('temizleme')) {
-      matchedCategory = 'koltuk-hali';
+    } else if (matchedCategory === 'koltuk-hali') {
       title = 'Koltuk ve Halı Yıkama Hizmeti';
-      description = 'Koltukların ve halıların profesyonel makinelerle yerinde veya fabrikada yıkanması.';
+      description = getFinalDesc('Koltukların ve halıların profesyonel makinelerle yerinde veya fabrikada yıkanması.');
       explanationText = `Koltuk ve halı yıkama işlemleri kumaş türüne göre özel deterjanlar gerektirir.
 
 **Önerilen Adımlar:**
@@ -344,10 +367,9 @@ Sizin için boya badana ilanı hazırladım. Aşağıdaki butondan hemen teklif 
 2. Yıkama sonrası kuruma süresi için ortamın havalandırılmasını sağlayın.
 
 Sizin için yıkama hizmeti ilanı hazırladım. Aşağıdaki butondan teklif toplayabilirsiniz.`;
-    } else if (msgLower.includes('mobilya') || msgLower.includes('montaj') || msgLower.includes('kurulum') || msgLower.includes('dolap') || msgLower.includes('kurma')) {
-      matchedCategory = 'mobilya-montaj';
+    } else if (matchedCategory === 'mobilya-montaj') {
       title = 'Mobilya Kurulum & Montaj Hizmeti';
-      description = 'Demonte mobilyaların (gardırop, dolap, masa vb.) montajının yapılması gerekiyor.';
+      description = getFinalDesc('Demonte mobilyaların (gardırop, dolap, masa vb.) montajının yapılması gerekiyor.');
       explanationText = `Mobilya montajında doğru kılavuz takibi ve hizalama önemlidir.
 
 **Önerilen Adımlar:**
@@ -355,10 +377,9 @@ Sizin için yıkama hizmeti ilanı hazırladım. Aşağıdaki butondan teklif to
 2. Eksik vida veya parça olup olmadığını paket içeriğinden kontrol edin.
 
 Sizin için mobilya montaj ilanı hazırladım. Aşağıdaki butondan usta bulabilirsiniz.`;
-    } else if (msgLower.includes('kurye') || msgLower.includes('hafif') || msgLower.includes('kamyonet') || msgLower.includes('küçük nakliye')) {
-      matchedCategory = 'kucuk-nakliye';
+    } else if (matchedCategory === 'kucuk-nakliye') {
       title = 'Küçük Nakliye & Parça Eşya Taşıma';
-      description = 'Birkaç parça eşyanın kamyonet veya hafif ticari araçla hızlıca taşınması.';
+      description = getFinalDesc('Birkaç parça eşyanın kamyonet veya hafif ticari araçla hızlıca taşınması.');
       explanationText = `Küçük nakliye işlerinde eşyaların boyutlarını ve ağırlığını net belirtmek uygun araç seçimi için kritiktir.
 
 **Önerilen Adımlar:**
@@ -366,28 +387,25 @@ Sizin için mobilya montaj ilanı hazırladım. Aşağıdaki butondan usta bulab
 2. Taşıma esnasında paketleme gerekip gerekmediğini ustaya bildirin.
 
 Sizin için küçük nakliye ilanı hazırladım. Aşağıdaki butondan hemen ilan oluşturabilirsiniz.`;
-    } else if (msgLower.includes('asansör') || msgLower.includes('asansor') || msgLower.includes('revizyon') || msgLower.includes('asansör arıza')) {
-      matchedCategory = 'asansor';
+    } else if (matchedCategory === 'asansor') {
       title = 'Asansör Bakım & Onarım Hizmeti';
-      description = 'Asansörün periyodik bakımı veya arıza onarım işlemlerinin yapılması.';
+      description = getFinalDesc('Asansörün periyodik bakımı veya arıza onarım işlemlerinin yapılması.');
       explanationText = `Asansör sistemleri can güvenliği açısından sadece yetkili firmalarca kontrol edilmelidir.
 
 ⚠️ **GÜVENLİK UYARISI:** Arızalı asansörü kesinlikle kullanıma kapatın ve üzerine uyarı levhası asın. Yetkisiz kişilerin müdahale etmesine izin vermeyin.
 
 Sizin için asansör servis ilanı hazırladım. Aşağıdaki butondan yetkili ustalara ulaşabilirsiniz.`;
-    } else if (msgLower.includes('böcek') || msgLower.includes('haşere') || msgLower.includes('ilaçlama') || msgLower.includes('fare') || msgLower.includes('pire')) {
-      matchedCategory = 'bocek-ilaclama';
+    } else if (matchedCategory === 'bocek-ilaclama') {
       title = 'Böcek ve Haşere İlaçlama Hizmeti';
-      description = 'Ev veya iş yerindeki haşere, böcek ve kemirgenlere karşı profesyonel ilaçlama.';
+      description = getFinalDesc('Ev veya iş yerindeki haşere, böcek ve kemirgenlere karşı profesyonel ilaçlama.');
       explanationText = `İlaçlama işlemlerinde kullanılan kimyasalların sağlık bakanlığı onaylı olması gerekir.
 
 ⚠️ **GÜVENLİK UYARISI:** İlaçlama esnasında ortamda evcil hayvan veya gıda maddesi bulundurmayın. İlaçlama sonrası alanı belirtilen süre boyunca havalandırın.
 
 Sizin için ilaçlama ilanı hazırladım. Aşağıdaki butondan teklif alabilirsiniz.`;
-    } else if (msgLower.includes('kamera') || msgLower.includes('güvenlik') || msgLower.includes('alarm') || msgLower.includes('cctv')) {
-      matchedCategory = 'guvenlik-kamera';
+    } else if (matchedCategory === 'guvenlik-kamera') {
       title = 'Güvenlik Kamerası & Alarm Kurulumu';
-      description = 'Kamera sistemlerinin montajı, kablolama ve alarm kurulumu işlemleri.';
+      description = getFinalDesc('Kamera sistemlerinin montajı, kablolama ve alarm kurulumu işlemleri.');
       explanationText = `Kamera ve alarm konumlandırması güvenlik açıklarını kapatmak için önemlidir.
 
 **Önerilen Adımlar:**
@@ -502,4 +520,59 @@ function getFallbackSubCategory(category: string, text: string): string {
     default:
       return '';
   }
+}
+
+/**
+ * Helper to match category from text keywords
+ */
+function matchCategoryFromText(text: string): string | null {
+  const t = text.toLowerCase();
+  
+  if (t.includes('priz') || t.includes('şalter') || t.includes('sigorta') || t.includes('kablo') || t.includes('elektrik') || t.includes('cızırtı') || t.includes('kıvılcım') || t.includes('lamba') || t.includes('ampul') || t.includes('ışık') || t.includes('avize')) {
+    return 'elektrik';
+  }
+  if (t.includes('musluk') || t.includes('su') || t.includes('tesisat') || t.includes('akıt') || t.includes('boru') || t.includes('tıkan') || t.includes('sızıntı') || t.includes('banyo') || t.includes('lavabo')) {
+    return 'tesisat';
+  }
+  if (t.includes('kilit') || t.includes('anahtar') || t.includes('kapı') || t.includes('çilingir') || t.includes('barel') || t.includes('göbek')) {
+    return 'cilingir';
+  }
+  if (t.includes('klima') || t.includes('soğut') || t.includes('sıcak') || t.includes('gaz')) {
+    return 'klima';
+  }
+  if (t.includes('çamaşır') || t.includes('bulaşık') || t.includes('buzdolabı') || t.includes('fırın') || t.includes('makine') || t.includes('beyaz eşya')) {
+    return 'beyaz-esya';
+  }
+  if (t.includes('kombi') || t.includes('petek') || t.includes('ısınma') || t.includes('petekler')) {
+    return 'kombi-servis';
+  }
+  if (t.includes('nakliyat') || t.includes('taşı') || t.includes('taşımacı') || t.includes('nakliye') || t.includes('taşınma')) {
+    return 'nakliyat';
+  }
+  if (t.includes('temizlik') || t.includes('temizle') || t.includes('gündelik') || t.includes('temizlikçi')) {
+    return 'temizlik';
+  }
+  if (t.includes('boya') || t.includes('badana') || t.includes('duvar') || t.includes('alçı') || t.includes('boyacı')) {
+    return 'boya-badana';
+  }
+  if (t.includes('koltuk') || t.includes('halı') || t.includes('yıkama') || t.includes('temizleme')) {
+    return 'koltuk-hali';
+  }
+  if (t.includes('mobilya') || t.includes('montaj') || t.includes('kurulum') || t.includes('dolap') || t.includes('kurma')) {
+    return 'mobilya-montaj';
+  }
+  if (t.includes('kurye') || t.includes('hafif') || t.includes('kamyonet') || t.includes('küçük nakliye')) {
+    return 'kucuk-nakliye';
+  }
+  if (t.includes('asansör') || t.includes('asansor') || t.includes('revizyon') || t.includes('asansör arıza')) {
+    return 'asansor';
+  }
+  if (t.includes('böcek') || t.includes('haşere') || t.includes('ilaçlama') || t.includes('fare') || t.includes('pire')) {
+    return 'bocek-ilaclama';
+  }
+  if (t.includes('kamera') || t.includes('güvenlik') || t.includes('alarm') || t.includes('cctv')) {
+    return 'guvenlik-kamera';
+  }
+  
+  return null;
 }
