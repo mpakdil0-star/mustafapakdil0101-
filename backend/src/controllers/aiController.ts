@@ -444,75 +444,75 @@ function getFallbackSubCategory(category: string, text: string): string {
   const t = text.toLowerCase();
   switch (category) {
     case 'elektrik':
-      if (t.includes('lamba') || t.includes('ampul') || t.includes('ışık') || t.includes('avize')) return 'aydinlatma';
+      if (t.includes('lamba') || t.includes('ampul') || t.includes('ışık') || t.includes('avize') || t.includes('aydınlatma') || t.includes('aydinlatma')) return 'aydinlatma';
       if (t.includes('priz') || t.includes('anahtar')) return 'priz-anahtar';
       if (t.includes('şalter') || t.includes('sigorta') || t.includes('pano')) return 'elektrik-panosu';
       if (t.includes('kablo') || t.includes('hat') || t.includes('çek')) return 'kablo-cekimi';
       if (t.includes('uydu') || t.includes('çanak') || t.includes('anten')) return 'uydu-sistemleri';
       if (t.includes('proje') || t.includes('çizim')) return 'elektrik-proje';
       if (t.includes('kontrol') || t.includes('kaçak')) return 'elektrik-kontrol';
-      return 'elektrik-tamir';
+      return '';
     case 'tesisat':
       if (t.includes('musluk') || t.includes('batarya') || t.includes('çeşme')) return 'musluk-batarya';
       if (t.includes('tıkan') || t.includes('gitmiyor') || t.includes('lavabo gideri')) return 'tikaniklik';
       if (t.includes('sızıntı') || t.includes('kaçak') || t.includes('damla')) return 'su-kacagi';
       if (t.includes('kombi') || t.includes('petek') || t.includes('ısınma')) return 'petek-kombi';
-      return 'tuvalet-lavabo';
+      return '';
     case 'cilingir':
       if (t.includes('barel') || t.includes('göbek') || t.includes('değiş')) return 'kilit-degisimi';
       if (t.includes('kasa')) return 'kasa-acma';
       if (t.includes('oto') || t.includes('araba') || t.includes('araç')) return 'oto-cilingir';
-      return 'kapi-acma';
+      return '';
     case 'klima':
       if (t.includes('bakım') || t.includes('filtre')) return 'klima-bakim';
       if (t.includes('gaz')) return 'gaz-dolumu';
       if (t.includes('temizlik') || t.includes('yıkama')) return 'klima-temizlik';
       if (t.includes('soğut') || t.includes('sıcak') || t.includes('bozuk') || t.includes('tamir')) return 'klima-tamir';
-      return 'klima-diger';
+      return '';
     case 'beyaz-esya':
       if (t.includes('çamaşır')) return 'camasir-makinesi';
       if (t.includes('bulaşık')) return 'bulasik-makinesi';
       if (t.includes('buzdolabı') || t.includes('dolap')) return 'buzdolabi';
       if (t.includes('fırın') || t.includes('ocak')) return 'firin-ocak';
       if (t.includes('kurutma')) return 'kurutma-makinesi';
-      return 'beyaz-esya-diger';
+      return '';
     case 'kombi-servis':
       if (t.includes('bakım')) return 'kombi-bakim';
       if (t.includes('montaj') || t.includes('kurma')) return 'kombi-montaj';
-      return 'kombi-tamir';
+      return '';
     case 'nakliyat':
       if (t.includes('ofis') || t.includes('işyeri')) return 'ofis-tasima';
       if (t.includes('paket') || t.includes('koli')) return 'esya-paketleme';
       if (t.includes('depo')) return 'depolama';
-      return 'ev-tasima';
+      return '';
     case 'temizlik':
       if (t.includes('ofis') || t.includes('işyeri') || t.includes('büro')) return 'ofis-temizligi';
       if (t.includes('inşaat') || t.includes('tadilat sonrası')) return 'insaat-temizligi';
-      return 'ev-temizligi';
+      return '';
     case 'boya-badana':
       if (t.includes('dış') || t.includes('apartman dışı')) return 'dis-cephe-boya';
       if (t.includes('kağıt') || t.includes('duvar kağıdı')) return 'duvar-kagidi';
       if (t.includes('dekorasyon') || t.includes('alçıpan')) return 'dekorasyon';
-      return 'ic-cephe-boya';
+      return '';
     case 'koltuk-hali':
       if (t.includes('halı')) return 'hali-yikama';
       if (t.includes('perde')) return 'perde-yikama';
-      return 'koltuk-yikama';
+      return '';
     case 'mobilya-montaj':
       if (t.includes('demontaj') || t.includes('sök')) return 'mobilya-demontaj';
       if (t.includes('mutfak')) return 'mutfak-montaj';
-      return 'mobilya-kurulum';
+      return '';
     case 'kucuk-nakliye':
       if (t.includes('market') || t.includes('alışveriş') || t.includes('koli')) return 'market-alisveris';
-      return 'tek-parca-tasima';
+      return '';
     case 'asansor':
       if (t.includes('bakım')) return 'asansor-bakim';
       if (t.includes('montaj') || t.includes('kurulum')) return 'asansor-montaj';
-      return 'asansor-tamir';
+      return '';
     case 'bocek-ilaclama':
       if (t.includes('işyeri') || t.includes('ofis') || t.includes('fabrika')) return 'isyeri-ilaclama';
       if (t.includes('bahçe') || t.includes('tarla') || t.includes('açık alan')) return 'bahce-ilaclama';
-      return 'ev-ilaclama';
+      return '';
     case 'guvenlik-kamera':
       if (t.includes('alarm')) return 'alarm-sistemi';
       if (t.includes('bakım') || t.includes('arıza') || t.includes('onarım')) return 'kamera-bakim';

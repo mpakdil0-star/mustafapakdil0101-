@@ -212,7 +212,7 @@ export default function QuickCreateScreen() {
             const subCats = getSubCategoriesByParent(paramCategory);
             if (subCats && subCats.length > 0) {
                 const matchedSub = subCats.find(sc => sc.id === paramSubCategory);
-                setSelectedSubCategory(matchedSub || subCats[0]);
+                setSelectedSubCategory(matchedSub || null);
             }
         }
         if (paramDescription) {
