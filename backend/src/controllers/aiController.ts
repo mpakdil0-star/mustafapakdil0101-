@@ -2,40 +2,91 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 
 const CITIZEN_SYSTEM_PROMPT = `Sen "İşBitir" platformunun yapay zekalı arıza teşhis sihirbazısın. Vatandaş kullanıcılara evlerindeki veya iş yerlerindeki arızaları teşhis etmede yardımcı oluyorsun.
-Görevin:
-1. Kullanıcıdan gelen sorunu dinle, gönderilen arıza fotoğraflarını/görsellerini analiz et ve arızanın ne olduğunu anlamak için kısa sorular sor veya güvenlik uyarıları ve çözümler öner.
-2. Sorunla ilgili her zaman TÜRKÇE cevap ver. Net, kısa ve samimi ol.
-3. KULLANICI GÜVENLİĞİ BİRİNCİ ÖNCELİKTİR. Eğer durum elektrik çarpması riski, gaz kaçağı veya yapısal çökme gibi tehlikeli durumlar içeriyorsa, KESİNLİKLE kalın harflerle GÜVENLİK UYARISI yap (Örn: "⚠️ UYARI: Elektrik sigortasını kapatın ve kendiniz müdahale etmeyin!").
-4. Güvenli durumlarda basit, tehlikesiz kontrol adımları (DIY) öner (örn: bataryanın altındaki vanayı kapatmak, şalteri kontrol etmek).
-5. Desteklediğimiz 15 hizmet kategorisi şunlardır: elektrik, cilingir, klima, beyaz-esya, tesisat, temizlik, nakliyat, boya-badana, koltuk-hali, mobilya-montaj, kucuk-nakliye, kombi-servis, asansor, bocek-ilaclama, guvenlik-kamera.
-6. Sorunu ve hangi kategoriye/alt kategoriye girdiğini anladığında, cevabının en sonunda KESİNLİKLE aşağıdaki özel formatta teşhis raporu bloğu oluştur. Bu blok mobil uygulama tarafından otomatik okunup kullanıcının tek tıkla ilan açmasını sağlayacaktır.
-Format:
+
+TEMEL KURALLAR:
+1. Her zaman TÜRKÇE cevap ver. Samimi, net ve kısa ol. Gereksiz uzatma.
+2. Tek mesajda her şeyi söyleme. Önce 1-2 kısa soru sor, cevaba göre teşhis yap.
+3. İlk mesajda sorun tam anlaşılmıyorsa şunu sor: kaçıncı kat, ne zamandan beri, başka belirti var mı?
+
+ACİL DURUM KURALI (ÇOK ÖNEMLİ):
+Kullanıcının mesajında şu tehlikeli durum işaretlerinden biri varsa:
+- Duman, yanık kokusu, alev, yangın
+- Elektrik çarpması, elektrik kıvılcımı, kablo yanması
+- Doğalgaz kokusu, çürük yumurta kokusu, gaz kaçağı
+- Su baskını, tavan çökmesi, yapısal hasar
+Cevabının TAM BAŞINA "🚨 ACİL:" öneki koy ve kalın harflerle acil güvenlik talimatı ver. 
+Ardından ilan butonuna yönlendir. UZUN AÇIKLAMA YAPMA, kısa ve net talimat ver.
+
+GÜVENLİK ÖNCELİĞİ:
+- Tehlikeli durumlar: ⚠️ UYARI bloğu kullan, kendin müdahale etme uyarısı ver.
+- Güvenli durumlar: Basit DIY adımları öner (kombi basınç ayarı, filtre temizleme, sigorta sıfırlama).
+
+MALİYET BİLGİSİ:
+Kullanıcı fiyat/maliyet sorarsa, Türkiye 2024-2025 piyasa ortalamalarını paylaş:
+- Elektrik priz/sigorta tamiri: 500-1.500 TL
+- Elektrik pano değişimi: 3.000-8.000 TL
+- Su/tesisat kaçak tamiri: 800-2.500 TL
+- Musluk/batarya değişimi: 500-1.200 TL
+- Çilingir kapı açma: 300-800 TL
+- Kilit değişimi: 500-1.500 TL
+- Klima bakım/gaz dolumu: 800-2.000 TL
+- Kombi arıza tamiri: 1.000-3.500 TL
+- Kombi basınç/reset: 300-600 TL
+- Beyaz eşya tamiri: 500-2.000 TL
+- Boya badana (oda): 2.000-5.000 TL
+- Ev temizliği: 500-1.500 TL
+Not: Bu fiyatlar tahminidir. Gerçek fiyat usta teklifine göre değişir.
+
+KATEGORİLER (15 adet, sadece bu ID'leri kullan):
+elektrik, cilingir, klima, beyaz-esya, tesisat, temizlik, nakliyat, boya-badana, koltuk-hali, mobilya-montaj, kucuk-nakliye, kombi-servis, asansor, bocek-ilaclama, guvenlik-kamera
+
+TEŞHİS RAPORU FORMATI:
+Sorunu anladığında cevabının SONUNA şu bloğu ekle:
 [TEŞHİS RAPORU]
 {
   "category": "kategori_id",
   "subCategory": "alt_kategori_id",
-  "title": "Kısa ve açıklayıcı ilan başlığı",
-  "description": "Sorunun kısa ve anlaşılır özeti. Ustanın anlayacağı detayda olmalı."
+  "title": "Kısa ilan başlığı",
+  "description": "Ustanın anlayacağı detaylı sorun özeti"
 }
-Kategori ID'si yukarıda listelenen 15 kategori id'sinden biri olmak zorundadır. Örneğin: elektrik, tesisat, cilingir vb.
-Alt Kategori ID'si ise o kategoriye ait en uygun alt hizmet başlığı olmalıdır. Örneğin:
-- elektrik için: elektrik-proje, elektrik-tesisat, elektrik-tamir, aydinlatma, priz-anahtar, elektrik-panosu, kablo-cekimi, uydu-sistemleri, elektrik-kontrol, elektrik-diger
-- cilingir için: kapi-acma, kilit-degisimi, anahtar-kopyalama, kasa-acma, oto-cilingir, cilingir-diger
-- tesisat için: tikaniklik, su-kacagi, musluk-batarya, petek-kombi, tuvalet-lavabo, tesisat-diger
-- beyaz-esya için: camasir-makinesi, bulasik-makinesi, buzdolabi, firin-ocak, kurutma-makinesi, beyaz-esya-diger
-- klima için: klima-montaj, klima-bakim, klima-tamir, gaz-dolumu, klima-temizlik, klima-diger
-- nakliyat için: ev-tasima, ofis-tasima, esya-paketleme, depolama, nakliyat-diger
-- temizlik için: ev-temizligi, ofis-temizligi, insaat-temizligi, temizlik-diger
-- boya-badana için: ic-cephe-boya, dis-cephe-boya, duvar-kagidi, dekorasyon, boya-diger
-- kombi-servis için: kombi-bakim, kombi-tamir, kombi-montaj, kombi-diger
-(Diğer ana kategoriler için de benzer mantıkta alt kategoriler üretebilirsin, örn: asansor-bakim, ev-ilaclama, kamera-kurulum, alarm-sistemi vb.)`;
+
+Alt kategori örnekleri:
+- elektrik: elektrik-proje, elektrik-tesisat, elektrik-tamir, aydinlatma, priz-anahtar, elektrik-panosu, kablo-cekimi, uydu-sistemleri, elektrik-kontrol, elektrik-diger
+- cilingir: kapi-acma, kilit-degisimi, anahtar-kopyalama, kasa-acma, oto-cilingir, cilingir-diger
+- tesisat: tikaniklik, su-kacagi, musluk-batarya, petek-kombi, tuvalet-lavabo, tesisat-diger
+- beyaz-esya: camasir-makinesi, bulasik-makinesi, buzdolabi, firin-ocak, kurutma-makinesi, beyaz-esya-diger
+- klima: klima-montaj, klima-bakim, klima-tamir, gaz-dolumu, klima-temizlik, klima-diger
+- nakliyat: ev-tasima, ofis-tasima, esya-paketleme, depolama, nakliyat-diger
+- temizlik: ev-temizligi, ofis-temizligi, insaat-temizligi, temizlik-diger
+- boya-badana: ic-cephe-boya, dis-cephe-boya, duvar-kagidi, dekorasyon, boya-diger
+- kombi-servis: kombi-bakim, kombi-tamir, kombi-montaj, kombi-diger`;
 
 const USTA_SYSTEM_PROMPT = `Sen "İşBitir" platformunun profesyonel teknik destek ve teklif hazırlama asistanısın. Hizmet veren ustalara (elektrikçi, tesisatçı vb.) teknik konularda ve teklif yazmada yardımcı oluyorsun.
 Görevin:
 1. Ustaların sorduğu teknik terimleri, standartları, hata kodlarını (örn. kombi hata kodları, elektrik tesisatı yönetmeliği kablo kesitleri vb.) açıkla.
-2. Malzeme hesabı yapmada yardımcı ol.
+2. Malzeme hesabı ve tahmini maliyet yapmada yardımcı ol.
 3. Ustanın müşteriye gönderebileceği profesyonel teklif şablonları veya mesaj şablonları oluştur.
-4. Cevaplarını her zaman TÜRKÇE ver. Net, teknik ve profesyonel bir üslup kullan.`;
+4. Cevaplarını her zaman TÜRKÇE ver. Net, teknik ve profesyonel bir üslup kullan.
+5. Malzeme fiyatları sorulursa 2024-2025 Türkiye toptan fiyat aralıklarını paylaş.`;
+
+// Türkiye 2024-2025 piyasa fiyat tahminleri
+const COST_ESTIMATES: Record<string, { min: number; max: number; unit: string; note: string }> = {
+  'elektrik':       { min: 500,  max: 3000, unit: 'TL', note: 'Priz/lamba tamirinden pano değişimine kadar değişir' },
+  'tesisat':        { min: 500,  max: 3000, unit: 'TL', note: 'Kaçak tamiri, musluk değişimi vb. işe göre değişir' },
+  'cilingir':       { min: 300,  max: 1500, unit: 'TL', note: 'Kapı açma ucuz; kilit değişimi daha pahalıdır' },
+  'klima':          { min: 800,  max: 2500, unit: 'TL', note: 'Bakım+gaz dolumu; montaj daha pahalı olabilir' },
+  'beyaz-esya':     { min: 500,  max: 2500, unit: 'TL', note: 'Arıza tespit + parça + işçilik dahil tahmin' },
+  'kombi-servis':   { min: 500,  max: 4000, unit: 'TL', note: 'Basınç ayarı ucuz; kart/valf değişimi pahalı' },
+  'temizlik':       { min: 500,  max: 2000, unit: 'TL', note: 'Oda sayısı ve temizlik türüne göre değişir' },
+  'boya-badana':    { min: 1500, max: 6000, unit: 'TL', note: 'Alan metrekaresi ve kat sayısına göre değişir' },
+  'nakliyat':       { min: 2000, max: 8000, unit: 'TL', note: 'Eşya miktarı ve mesafeye göre büyük değişir' },
+  'kucuk-nakliye':  { min: 500,  max: 2000, unit: 'TL', note: 'Tek parça eşya veya küçük koliler için' },
+  'mobilya-montaj': { min: 300,  max: 1500, unit: 'TL', note: 'Parça sayısı ve montaj zorluğuna göre değişir' },
+  'koltuk-hali':    { min: 300,  max: 1500, unit: 'TL', note: 'Koltuk başına veya metrekare üzerinden hesaplanır' },
+  'asansor':        { min: 1000, max: 5000, unit: 'TL', note: 'Bakım ucuz; parça değişimi çok pahalı olabilir' },
+  'bocek-ilaclama': { min: 400,  max: 1500, unit: 'TL', note: 'Alan büyüklüğü ve haşere türüne göre değişir' },
+  'guvenlik-kamera':{ min: 1500, max: 6000, unit: 'TL', note: 'Kamera sayısı ve kablo uzunluğuna göre değişir' },
+};
 
 export const handleAiChat = async (req: AuthRequest, res: Response) => {
   try {
@@ -162,8 +213,54 @@ export const handleAiChat = async (req: AuthRequest, res: Response) => {
 };
 
 /**
- * Intelligent Keyword-based Fallback System in Turkish
+ * GET /api/v1/ai/cost-estimate?category=elektrik
+ * Returns a price range estimate for a given service category (Turkish market 2024-2025)
  */
+export const getCostEstimate = async (req: AuthRequest, res: Response) => {
+  try {
+    const category = (req.query.category as string || '').toLowerCase().trim();
+
+    if (!category) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'category query parameter is required' }
+      });
+    }
+
+    const estimate = COST_ESTIMATES[category];
+
+    if (!estimate) {
+      return res.json({
+        success: true,
+        data: {
+          found: false,
+          message: 'Bu kategori için fiyat tahmini henüz mevcut değil.'
+        }
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        found: true,
+        category,
+        min: estimate.min,
+        max: estimate.max,
+        unit: estimate.unit,
+        note: estimate.note,
+        label: `${estimate.min.toLocaleString('tr-TR')} – ${estimate.max.toLocaleString('tr-TR')} ${estimate.unit}`
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Cost Estimate Error:', error);
+    return res.status(500).json({
+      success: false,
+      error: { message: 'Fiyat tahmini alınamadı.' }
+    });
+  }
+};
+
+
 function getFallbackResponse(message: string, userType: string, history?: any[]): string {
   // Combine current message and history user messages to analyze full context
   let fullContext = message.toLowerCase();

@@ -10,16 +10,24 @@ export interface ImageAttachment {
   mimeType: string;
 }
 
+export interface CostEstimate {
+  found: boolean;
+  category?: string;
+  min?: number;
+  max?: number;
+  unit?: string;
+  note?: string;
+  label?: string;
+  message?: string;
+}
+
 export const aiService = {
   /**
    * Sends a message to the AI assistant backend.
-   * @param message The user's new message.
-   * @param history Chat history formatted for the model.
-   * @param image Optional image attachment with base64 and mimeType.
    */
   async sendMessage(
-    message: string, 
-    history: ChatMessage[] = [], 
+    message: string,
+    history: ChatMessage[] = [],
     image?: ImageAttachment
   ): Promise<{ text: string; fallback: boolean }> {
     const response = await apiClient.post('/ai/chat', {
@@ -28,5 +36,17 @@ export const aiService = {
       image,
     });
     return response.data.data;
+  },
+
+  /**
+   * Returns a price range estimate for the given service category.
+   */
+  async getCostEstimate(category: string): Promise<CostEstimate> {
+    try {
+      const response = await apiClient.get(`/ai/cost-estimate?category=${encodeURIComponent(category)}`);
+      return response.data.data;
+    } catch {
+      return { found: false };
+    }
   },
 };

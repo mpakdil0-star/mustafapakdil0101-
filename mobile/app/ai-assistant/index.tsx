@@ -13,7 +13,8 @@ import {
   StatusBar,
   Image,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,13 +23,88 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { useAppColors } from '../../hooks/useAppColors';
 import { fonts } from '../../constants/typography';
-import { aiService, ChatMessage } from '../../services/aiService';
+import { aiService, ChatMessage, CostEstimate } from '../../services/aiService';
+
+// Quick reply chips
+const CITIZEN_CHIPS = [
+  { icon: '🔌', label: 'Elektrik arızası' },
+  { icon: '🔧', label: 'Su kaçağı / Tesisat' },
+  { icon: '🔒', label: 'Kapıda kaldım' },
+  { icon: '🌡️', label: 'Kombi / Isınma sorunu' },
+  { icon: '❄️', label: 'Klima sorunu' },
+  { icon: '🏠', label: 'Diğer bir arıza' },
+];
+
+const USTA_CHIPS = [
+  { icon: '📋', label: 'Teklif şablonu ver' },
+  { icon: '⚡', label: 'Kablo kesit hesabı' },
+  { icon: '🔥', label: 'Kombi hata kodu' },
+  { icon: '💰', label: 'Malzeme fiyatı' },
+];
+
+// Example scenario cards shown in empty state
+const EXAMPLE_SCENARIOS = [
+  { icon: '🔥', text: 'Kombim çalışmıyor, E01 hatası veriyor' },
+  { icon: '💧', text: 'Banyomda musluktan sürekli su damlıyor' },
+  { icon: '⚡', text: 'Salondaki priz kıvılcım çıkarıyor' },
+];
+
+/**
+ * Renders AI text with basic markdown: **bold**, bullet lists.
+ */
+function renderFormattedText(text: string, isUser: boolean): React.ReactNode {
+  if (!text) return null;
+  const lines = text.split('\n');
+  return lines.map((line, idx) => {
+    const parts = line.split(/(\*\*[^*]+\*\*)/g);
+    const rendered = parts.map((part, pi) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return (
+          <Text key={pi} style={isUser ? styles.boldUser : styles.boldModel}>
+            {part.slice(2, -2)}
+          </Text>
+        );
+      }
+      return <Text key={pi}>{part}</Text>;
+    });
+    const isBullet = line.trimStart().startsWith('- ') || line.trimStart().startsWith('• ');
+    const isNumbered = /^\d+\./.test(line.trimStart());
+    if (isBullet) {
+      return (
+        <View key={idx} style={styles.bulletRow}>
+          <Text style={isUser ? styles.bulletDotUser : styles.bulletDotModel}>•</Text>
+          <Text style={isUser ? styles.bulletTextUser : styles.bulletTextModel}>
+            {line.replace(/^[\s\-•]+/, '')}
+          </Text>
+        </View>
+      );
+    }
+    if (isNumbered) {
+      return (
+        <View key={idx} style={styles.bulletRow}>
+          <Text style={isUser ? styles.bulletDotUser : styles.bulletDotModel}>
+            {line.match(/^\d+\./)?.[0]}
+          </Text>
+          <Text style={isUser ? styles.bulletTextUser : styles.bulletTextModel}>
+            {line.replace(/^\d+\.\s*/, '')}
+          </Text>
+        </View>
+      );
+    }
+    return (
+      <Text key={idx} style={[isUser ? styles.userBubbleText : styles.modelBubbleText, { marginBottom: 2 }]}>
+        {rendered}
+      </Text>
+    );
+  });
+}
 
 interface MessageItem {
   id: string;
   role: 'user' | 'model';
   text: string;
   imageUri?: string;
+  isEmergency?: boolean;
   report?: {
     category: string;
     subCategory?: string;
@@ -53,6 +129,10 @@ export default function AiAssistantScreen() {
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [imageMimeType, setImageMimeType] = useState<string>('image/jpeg');
   const [isPickingImage, setIsPickingImage] = useState(false);
+  const [showChips, setShowChips] = useState(true);
+  const [costEstimate, setCostEstimate] = useState<CostEstimate | null>(null);
+  const [isFetchingCost, setIsFetchingCost] = useState(false);
+  const [showCostCard, setShowCostCard] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   const pickImage = async () => {
@@ -141,7 +221,7 @@ export default function AiAssistantScreen() {
   useEffect(() => {
     const welcomeText = isElectrician
       ? 'Merhaba Usta! Ben İşBitir AI Teknik Kılavuz Asistanı. Teknik konularda, hata kodlarında, malzeme hesaplamalarında veya müşteri teklif şablonu hazırlamada size yardımcı olabilirim. Nasıl yardımcı olabilirim?'
-      : 'Merhaba! Ben İşBitir Akıllı Arıza Teşhis Sihirbazıyım. Evinizde veya iş yerinizde yaşadığınız arızayı bana kısaca tarif edebilirseniz, size olası nedenleri söyleyebilir, güvenlik önlemlerini aktarabilir ve tek tıkla ilan oluşturmanıza yardımcı olabilirim. Sorununuz nedir?';
+      : 'Merhaba! Ben İşBitir Akıllı Arıza Teşhis Asistanıyım 👋\n\nEvinizde veya iş yerinizde yaşadığınız arızayı bana anlatın. Size olası nedenleri söyleyip güvenlik önlemlerini paylaşır, tek tıkla usta bulmanıza yardımcı olurum.\n\nAşağıdaki örneklerden birini seçebilir veya kendiniz yazabilirsiniz:';
       
     setMessages([
       {
@@ -219,10 +299,10 @@ export default function AiAssistantScreen() {
     return { cleanText: text, report: undefined };
   };
 
-  const handleSend = async () => {
-    if ((!inputText.trim() && !selectedImage) || isLoading) return;
+  const handleSend = async (overrideText?: string) => {
+    const userMsgText = (overrideText ?? inputText).trim();
+    if ((!userMsgText && !selectedImage) || isLoading) return;
     
-    const userMsgText = inputText.trim();
     const currentImageUri = selectedImage;
     const currentImageBase64 = imageBase64;
     const currentImageMimeType = imageMimeType;
@@ -230,8 +310,10 @@ export default function AiAssistantScreen() {
     setInputText('');
     setSelectedImage(null);
     setImageBase64(null);
+    setShowChips(false);
+    setCostEstimate(null);
+    setShowCostCard(false);
     
-    // Add user message to local state
     const userMessage: MessageItem = {
       id: Date.now().toString(),
       role: 'user',
@@ -241,20 +323,13 @@ export default function AiAssistantScreen() {
     
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
-    
-    // Scroll list to end
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-    
     setIsLoading(true);
     
     try {
-      // Map message history to send to backend
       const history: ChatMessage[] = updatedMessages
-        .slice(1) // exclude first welcome message
-        .map(m => ({
-          role: m.role,
-          text: m.text
-        }));
+        .slice(1)
+        .map(m => ({ role: m.role, text: m.text }));
         
       const imagePayload = currentImageBase64 && currentImageMimeType ? {
         base64: currentImageBase64,
@@ -262,29 +337,27 @@ export default function AiAssistantScreen() {
       } : undefined;
         
       const response = await aiService.sendMessage(userMsgText, history, imagePayload);
-      
-      // Parse backend response for any [TEŞHİS RAPORU] block
       const { cleanText, report } = parseReportBlock(response.text);
+      const isEmergency = cleanText.startsWith('🚨 ACİL') || cleanText.includes('🚨 ACİL:');
       
       setMessages(prev => [
         ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: 'model',
-          text: cleanText,
-          report
-        }
+        { id: (Date.now() + 1).toString(), role: 'model', text: cleanText, report, isEmergency }
       ]);
+
+      // Auto-fetch cost estimate when a diagnosis is returned
+      if (report?.category) {
+        setIsFetchingCost(true);
+        const est = await aiService.getCostEstimate(report.category);
+        setCostEstimate(est);
+        setShowCostCard(est.found);
+        setIsFetchingCost(false);
+      }
       
     } catch (error) {
-      console.error('AI chat failed:', error);
       setMessages(prev => [
         ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: 'model',
-          text: 'Üzgünüm, şu anda bağlantı kuramıyorum. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.'
-        }
+        { id: (Date.now() + 1).toString(), role: 'model', text: 'Üzgünüm, şu anda bağlantı kuramıyorum. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.' }
       ]);
     } finally {
       setIsLoading(false);
@@ -292,99 +365,108 @@ export default function AiAssistantScreen() {
     }
   };
 
+  const handleChipPress = (label: string) => { handleSend(label); };
+
   const handleCreateJob = (category: string, description: string, subCategory?: string) => {
     router.push({
       pathname: '/jobs/quick-create',
-      params: {
-        category,
-        description,
-        subCategory: subCategory || ''
-      }
+      params: { category, description, subCategory: subCategory || '' }
     });
   };
 
-  const renderMessage = ({ item }: { item: MessageItem }) => {
+  const renderMessage = ({ item, index }: { item: MessageItem; index: number }) => {
     const isUser = item.role === 'user';
-    const textContent = item.text;
-    
-    // Detect safety warning block
-    const hasSafetyWarning = textContent.includes('⚠️ UYARI') || textContent.includes('⚠️ ÖNEMLİ') || textContent.includes('GÜVENLİK UYARISI');
+    const hasSafetyWarning = !isUser && (
+      item.text.includes('⚠️ UYARI') || item.text.includes('⚠️ ÖNEMLİ') || item.text.includes('GÜVENLİK UYARISI')
+    );
+    const isEmergency = !isUser && item.isEmergency;
+    const isWelcome = item.id === 'welcome' && !isElectrician;
+    const isLastMessage = index === messages.length - 1;
 
     return (
-      <View style={[styles.messageRow, isUser ? styles.userRow : styles.modelRow]}>
-        {!isUser && (
-          <View style={[styles.avatarCircle, { backgroundColor: isElectrician ? '#2E5C8A' : '#0D9488' }]}>
-            <Ionicons name={isElectrician ? "hammer" : "sparkles"} size={14} color="#FFF" />
-          </View>
-        )}
-        
-        <View style={{ flex: 1, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
-          <View style={[
-            styles.bubble, 
-            isUser 
-              ? [styles.userBubble, { backgroundColor: isElectrician ? '#2E5C8A' : '#115E59' }] 
-              : styles.modelBubble
-          ]}>
-            {item.imageUri && (
-              <Image 
-                source={{ uri: item.imageUri }} 
-                style={styles.messageImage} 
-                resizeMode="cover"
-              />
-            )}
-            
-            {hasSafetyWarning && !isUser ? (
-              <View style={styles.warningContainer}>
-                <View style={styles.warningHeader}>
-                  <Ionicons name="warning" size={18} color="#F87171" />
-                  <Text style={styles.warningTitle}>GÜVENLİK UYARISI</Text>
-                </View>
-                <Text style={styles.warningText}>{textContent}</Text>
-              </View>
-            ) : (
-              (textContent ? (
-                <Text style={[styles.bubbleText, isUser ? styles.userBubbleText : styles.modelBubbleText]}>
-                  {textContent}
-                </Text>
-              ) : null)
-            )}
-          </View>
-          
-          {/* Diagnostic Report Card render (Citizen only) */}
-          {item.report && (
-            <View style={styles.reportCard}>
-              <LinearGradient
-                colors={['rgba(13, 148, 136, 0.1)', 'rgba(45, 212, 191, 0.04)']}
-                style={styles.reportGradient}
-              >
-                <View style={styles.reportHeader}>
-                  <View style={styles.reportBadge}>
-                    <Ionicons name="ribbon" size={14} color="#2DD4BF" />
-                    <Text style={styles.reportBadgeText}>Akıllı Teşhis Raporu</Text>
-                  </View>
-                </View>
-                <Text style={styles.reportTitle}>{item.report.title}</Text>
-                <Text style={styles.reportDesc}>{item.report.description}</Text>
-                
-                <TouchableOpacity
-                  style={styles.createJobBtn}
-                  onPress={() => handleCreateJob(item.report!.category, item.report!.description, item.report!.subCategory)}
-                  activeOpacity={0.85}
-                >
-                  <LinearGradient
-                    colors={['#0D9488', '#2DD4BF']}
-                    style={styles.createJobBtnGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                  >
-                    <Ionicons name="flash" size={15} color="#FFF" style={{ marginRight: 6 }} />
-                    <Text style={styles.createJobBtnText}>Tek Tıkla İlan Oluştur</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </LinearGradient>
+      <View>
+        <View style={[styles.messageRow, isUser ? styles.userRow : styles.modelRow]}>
+          {!isUser && (
+            <View style={[styles.avatarCircle, { backgroundColor: isElectrician ? '#2E5C8A' : '#0D9488' }]}>
+              <Ionicons name={isElectrician ? "hammer" : "sparkles"} size={14} color="#FFF" />
             </View>
           )}
+          <View style={{ flex: 1, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
+            {isEmergency ? (
+              <View style={styles.emergencyBanner}>
+                <View style={styles.emergencyHeader}>
+                  <Ionicons name="warning" size={18} color="#FF4444" />
+                  <Text style={styles.emergencyTitle}>🚨 ACİL DURUM</Text>
+                </View>
+                <Text style={styles.emergencyText}>{item.text.replace('🚨 ACİL:', '').trim()}</Text>
+                <TouchableOpacity style={styles.emergencyBtn} onPress={() => router.push({ pathname: '/jobs/quick-create', params: { category: 'elektrik', emergency: '1' } })}>
+                  <Ionicons name="flash" size={14} color="#FFF" style={{ marginRight: 6 }} />
+                  <Text style={styles.emergencyBtnText}>Hemen Acil Usta Bul</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={[styles.bubble, isUser ? [styles.userBubble, { backgroundColor: isElectrician ? '#2E5C8A' : '#115E59' }] : styles.modelBubble]}>
+                {item.imageUri && (
+                  <Image source={{ uri: item.imageUri }} style={styles.messageImage} resizeMode="cover" />
+                )}
+                {hasSafetyWarning && !isUser ? (
+                  <View style={styles.warningContainer}>
+                    <View style={styles.warningHeader}>
+                      <Ionicons name="warning" size={18} color="#F87171" />
+                      <Text style={styles.warningTitle}>GÜVENLİK UYARISI</Text>
+                    </View>
+                    <View>{renderFormattedText(item.text, false)}</View>
+                  </View>
+                ) : (
+                  item.text ? <View>{renderFormattedText(item.text, isUser)}</View> : null
+                )}
+              </View>
+            )}
+            {item.report && (
+              <View style={styles.reportCard}>
+                <LinearGradient colors={['rgba(13, 148, 136, 0.12)', 'rgba(45, 212, 191, 0.04)']} style={styles.reportGradient}>
+                  <View style={styles.reportHeader}>
+                    <View style={styles.reportBadge}>
+                      <Ionicons name="ribbon" size={14} color="#2DD4BF" />
+                      <Text style={styles.reportBadgeText}>Akıllı Teşhis Raporu</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.reportTitle}>{item.report.title}</Text>
+                  <Text style={styles.reportDesc}>{item.report.description}</Text>
+                  {isLastMessage && showCostCard && costEstimate?.found && (
+                    <View style={styles.costRow}>
+                      <Ionicons name="cash-outline" size={14} color="#FCD34D" />
+                      <Text style={styles.costText}>Tahmini maliyet: <Text style={styles.costAmount}>{costEstimate.label}</Text></Text>
+                    </View>
+                  )}
+                  {isLastMessage && isFetchingCost && (
+                    <View style={styles.costRow}>
+                      <ActivityIndicator size="small" color="#FCD34D" />
+                      <Text style={[styles.costText, { marginLeft: 6 }]}>Fiyat tahmini hesaplanıyor...</Text>
+                    </View>
+                  )}
+                  <TouchableOpacity style={styles.createJobBtn} onPress={() => handleCreateJob(item.report!.category, item.report!.description, item.report!.subCategory)} activeOpacity={0.85}>
+                    <LinearGradient colors={['#0D9488', '#2DD4BF']} style={styles.createJobBtnGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                      <Ionicons name="flash" size={15} color="#FFF" style={{ marginRight: 6 }} />
+                      <Text style={styles.createJobBtnText}>Tek Tıkla İlan Oluştur</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </LinearGradient>
+              </View>
+            )}
+          </View>
         </View>
+        {isWelcome && (
+          <View style={styles.scenarioContainer}>
+            {EXAMPLE_SCENARIOS.map((s, i) => (
+              <TouchableOpacity key={i} style={styles.scenarioCard} onPress={() => handleChipPress(s.text)} activeOpacity={0.8}>
+                <Text style={styles.scenarioIcon}>{s.icon}</Text>
+                <Text style={styles.scenarioText}>{s.text}</Text>
+                <Ionicons name="chevron-forward" size={14} color="#64748B" />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </View>
     );
   };
@@ -454,6 +536,19 @@ export default function AiAssistantScreen() {
         
         {/* Floating Input Pill bar */}
         <View style={[styles.inputContainerOuter, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+
+          {/* Quick Reply Chips */}
+          {showChips && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScroll} style={styles.chipsRow}>
+              {(isElectrician ? USTA_CHIPS : CITIZEN_CHIPS).map((chip, i) => (
+                <TouchableOpacity key={i} style={styles.chip} onPress={() => handleChipPress(chip.label)} activeOpacity={0.75}>
+                  <Text style={styles.chipIcon}>{chip.icon}</Text>
+                  <Text style={styles.chipLabel}>{chip.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
           {selectedImage && (
             <View style={styles.previewContainer}>
               <View style={styles.previewImageWrapper}>
@@ -467,11 +562,7 @@ export default function AiAssistantScreen() {
 
           <View style={styles.inputBarFloating}>
             {!isElectrician && (
-              <TouchableOpacity
-                style={styles.attachBtn}
-                onPress={handleAttachPress}
-                disabled={isLoading || isPickingImage}
-              >
+              <TouchableOpacity style={styles.attachBtn} onPress={handleAttachPress} disabled={isLoading || isPickingImage}>
                 {isPickingImage ? (
                   <ActivityIndicator size="small" color="#94A3B8" />
                 ) : (
@@ -479,23 +570,22 @@ export default function AiAssistantScreen() {
                 )}
               </TouchableOpacity>
             )}
-
             <TextInput
               style={styles.textInput}
               value={inputText}
               onChangeText={setInputText}
-              placeholder={isElectrician ? "Teknik soru sorun..." : "Tarif edin veya fotoğraf çekip ekleyin..."}
+              placeholder={isElectrician ? "Teknik soru sorun..." : "Arızanızı anlatın veya fotoğraf ekleyin..."}
               placeholderTextColor="#64748B"
               multiline
               maxLength={500}
             />
             <TouchableOpacity
               style={[
-                styles.sendBtn, 
+                styles.sendBtn,
                 { backgroundColor: isElectrician ? '#4682B4' : '#0D9488' },
                 (!inputText.trim() && !selectedImage) && styles.sendBtnDisabled
               ]}
-              onPress={handleSend}
+              onPress={() => handleSend()}
               disabled={(!inputText.trim() && !selectedImage) || isLoading}
             >
               <Ionicons name="send" size={16} color="#FFF" />
@@ -619,32 +709,32 @@ const styles = StyleSheet.create({
   userBubbleText: {
     color: '#FFFFFF',
     fontFamily: fonts.medium,
+    fontSize: 13.5,
+    lineHeight: 19.5,
   },
   modelBubbleText: {
     color: '#E2E8F0',
     fontFamily: fonts.regular,
-  },
-  warningContainer: {
-    padding: 1,
-  },
-  warningHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  warningTitle: {
-    color: '#F87171',
-    fontFamily: fonts.bold,
     fontSize: 13.5,
-    marginLeft: 6,
-    letterSpacing: 0.2,
+    lineHeight: 19.5,
   },
-  warningText: {
-    color: '#FEE2E2',
-    fontFamily: fonts.medium,
-    fontSize: 13.5,
-    lineHeight: 19,
-  },
+  boldUser: { fontFamily: fonts.bold, color: '#FFFFFF' },
+  boldModel: { fontFamily: fonts.bold, color: '#FFFFFF' },
+  bulletRow: { flexDirection: 'row', marginBottom: 3, paddingRight: 4 },
+  bulletDotUser: { color: '#FFFFFF', fontFamily: fonts.bold, fontSize: 13.5, marginRight: 6, lineHeight: 19.5 },
+  bulletDotModel: { color: '#2DD4BF', fontFamily: fonts.bold, fontSize: 13.5, marginRight: 6, lineHeight: 19.5 },
+  bulletTextUser: { flex: 1, color: '#FFFFFF', fontFamily: fonts.regular, fontSize: 13.5, lineHeight: 19.5 },
+  bulletTextModel: { flex: 1, color: '#E2E8F0', fontFamily: fonts.regular, fontSize: 13.5, lineHeight: 19.5 },
+  warningContainer: { padding: 1 },
+  warningHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  warningTitle: { color: '#F87171', fontFamily: fonts.bold, fontSize: 13.5, marginLeft: 6, letterSpacing: 0.2 },
+  warningText: { color: '#FEE2E2', fontFamily: fonts.medium, fontSize: 13.5, lineHeight: 19 },
+  emergencyBanner: { maxWidth: '92%', backgroundColor: 'rgba(239, 68, 68, 0.12)', borderWidth: 1.5, borderColor: 'rgba(239, 68, 68, 0.4)', borderRadius: 16, padding: 12, marginBottom: 4 },
+  emergencyHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  emergencyTitle: { color: '#FF4444', fontFamily: fonts.bold, fontSize: 14, marginLeft: 6, letterSpacing: 0.3 },
+  emergencyText: { color: '#FCA5A5', fontFamily: fonts.medium, fontSize: 13.5, lineHeight: 19, marginBottom: 10 },
+  emergencyBtn: { backgroundColor: '#DC2626', borderRadius: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 9, paddingHorizontal: 14 },
+  emergencyBtnText: { color: '#FFFFFF', fontFamily: fonts.bold, fontSize: 12.5 },
   reportCard: {
     width: '92%',
     marginTop: 8,
@@ -821,5 +911,20 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 12,
     marginBottom: 6,
-  }
+  },
+  // Cost estimate row inside report card
+  costRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(252, 211, 77, 0.08)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, marginBottom: 10, borderWidth: 1, borderColor: 'rgba(252, 211, 77, 0.15)' },
+  costText: { color: '#FDE68A', fontFamily: fonts.medium, fontSize: 12, marginLeft: 6 },
+  costAmount: { fontFamily: fonts.bold, color: '#FCD34D' },
+  // Scenario cards below welcome message
+  scenarioContainer: { paddingLeft: 38, paddingRight: 12, marginBottom: 8 },
+  scenarioCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(45, 212, 191, 0.15)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 6 },
+  scenarioIcon: { fontSize: 18, marginRight: 10 },
+  scenarioText: { flex: 1, color: '#CBD5E1', fontFamily: fonts.medium, fontSize: 13, lineHeight: 18 },
+  // Quick reply chips
+  chipsRow: { marginBottom: 8 },
+  chipsScroll: { paddingHorizontal: 16 },
+  chip: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7, marginRight: 8 },
+  chipIcon: { fontSize: 15, marginRight: 5 },
+  chipLabel: { color: '#CBD5E1', fontFamily: fonts.medium, fontSize: 12.5 },
 });
