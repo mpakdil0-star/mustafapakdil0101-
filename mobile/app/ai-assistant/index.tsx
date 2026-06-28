@@ -69,20 +69,20 @@ function renderFormattedText(text: string, isUser: boolean): React.ReactNode {
     const rendered = parts.map((part, pi) => {
       if (part.startsWith('**') && part.endsWith('**')) {
         return (
-          <Text key={pi} style={isUser ? styles.boldUser : styles.boldModel}>
+          <Text key={pi} selectable={true} style={isUser ? styles.boldUser : styles.boldModel}>
             {part.slice(2, -2)}
           </Text>
         );
       }
-      return <Text key={pi}>{part}</Text>;
+      return <Text key={pi} selectable={true}>{part}</Text>;
     });
     const isBullet = line.trimStart().startsWith('- ') || line.trimStart().startsWith('• ');
     const isNumbered = /^\d+\./.test(line.trimStart());
     if (isBullet) {
       return (
         <View key={idx} style={styles.bulletRow}>
-          <Text style={isUser ? styles.bulletDotUser : styles.bulletDotModel}>•</Text>
-          <Text style={isUser ? styles.bulletTextUser : styles.bulletTextModel}>
+          <Text selectable={true} style={isUser ? styles.bulletDotUser : styles.bulletDotModel}>•</Text>
+          <Text selectable={true} style={isUser ? styles.bulletTextUser : styles.bulletTextModel}>
             {line.replace(/^[\s\-•]+/, '')}
           </Text>
         </View>
@@ -91,17 +91,17 @@ function renderFormattedText(text: string, isUser: boolean): React.ReactNode {
     if (isNumbered) {
       return (
         <View key={idx} style={styles.bulletRow}>
-          <Text style={isUser ? styles.bulletDotUser : styles.bulletDotModel}>
+          <Text selectable={true} style={isUser ? styles.bulletDotUser : styles.bulletDotModel}>
             {line.match(/^\d+\./)?.[0]}
           </Text>
-          <Text style={isUser ? styles.bulletTextUser : styles.bulletTextModel}>
+          <Text selectable={true} style={isUser ? styles.bulletTextUser : styles.bulletTextModel}>
             {line.replace(/^\d+\.\s*/, '')}
           </Text>
         </View>
       );
     }
     return (
-      <Text key={idx} style={[isUser ? styles.userBubbleText : styles.modelBubbleText, { marginBottom: 2 }]}>
+      <Text key={idx} selectable={true} style={[isUser ? styles.userBubbleText : styles.modelBubbleText, { marginBottom: 2 }]}>
         {rendered}
       </Text>
     );
@@ -461,6 +461,18 @@ export default function AiAssistantScreen() {
                   </View>
                 ) : (
                   item.text ? <View>{renderFormattedText(item.text, isUser)}</View> : null
+                )}
+                {!isUser && item.text && (
+                  <View style={styles.bubbleFooter}>
+                    <TouchableOpacity
+                      style={styles.bubbleCopyBtn}
+                      onPress={() => handleCopyToClipboard(item.text, 'Mesaj')}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="copy-outline" size={13} color="#94A3B8" />
+                      <Text style={styles.bubbleCopyText}>Kopyala</Text>
+                    </TouchableOpacity>
+                  </View>
                 )}
               </View>
             )}
@@ -1048,4 +1060,8 @@ const styles = StyleSheet.create({
   // Message Template Card (Usta Hazır Mesaj)
   msgTemplateCard: { width: '92%', marginTop: 8, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(168, 85, 247, 0.23)', elevation: 3, shadowColor: '#A855F7', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 6 },
   msgTemplateText: { color: '#E2E8F0', fontFamily: fonts.regular, fontSize: 13, lineHeight: 19, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  // Bubble copy button
+  bubbleFooter: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 6, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: 4 },
+  bubbleCopyBtn: { flexDirection: 'row', alignItems: 'center', opacity: 0.8, paddingVertical: 2, paddingHorizontal: 6, borderRadius: 4 },
+  bubbleCopyText: { color: '#94A3B8', fontFamily: fonts.medium, fontSize: 11, marginLeft: 4 },
 });
