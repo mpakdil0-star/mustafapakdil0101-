@@ -552,7 +552,10 @@ Lütfen arızayı veya yapılması gereken işi kısaca yazar mısınız?`;
                           explanationText.includes('ilanı hazırladım') || 
                           explanationText.includes('ilan hazırlığı') ||
                           explanationText.includes('ilanı oluşturdum') ||
-                          explanationText.includes('ilan verebilirsiniz');
+                          explanationText.includes('ilan verebilirsiniz') ||
+                          explanationText.includes('talebi hazırladım') ||
+                          explanationText.includes('butondan') ||
+                          explanationText.includes('butonuna');
     const reportBlock = hasDiagnostic ? `\n\n[TEŞHİS RAPORU]\n{\n  "category": "${matchedCategory}",\n  "subCategory": "${matchedSub}",\n  "title": "${title}",\n  "description": "${description}"\n}` : '';
 
     return `${explanationText}${reportBlock}`;
