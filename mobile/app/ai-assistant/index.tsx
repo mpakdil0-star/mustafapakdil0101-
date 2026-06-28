@@ -16,6 +16,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,10 +37,12 @@ const CITIZEN_CHIPS = [
 ];
 
 const USTA_CHIPS = [
-  { icon: '📋', label: 'Teklif şablonu ver' },
+  { icon: '📋', label: 'Teklif hazırla' },
+  { icon: '✉️', label: 'İşi kabul mesajı' },
   { icon: '⚡', label: 'Kablo kesit hesabı' },
   { icon: '🔥', label: 'Kombi hata kodu' },
   { icon: '💰', label: 'Malzeme fiyatı' },
+  { icon: '📄', label: 'İş tamamlama mesajı' },
 ];
 
 // Example scenario cards shown in empty state
@@ -47,6 +50,12 @@ const EXAMPLE_SCENARIOS = [
   { icon: '🔥', text: 'Kombim çalışmıyor, E01 hatası veriyor' },
   { icon: '💧', text: 'Banyomda musluktan sürekli su damlıyor' },
   { icon: '⚡', text: 'Salondaki priz kıvılcım çıkarıyor' },
+];
+
+const USTA_SCENARIOS = [
+  { icon: '📋', text: '3 priz değişimi için teklif hazırla' },
+  { icon: '✉️', text: 'Müşteriye işi kabul mesajı yaz' },
+  { icon: '🔧', text: 'Klima E5 hata kodu ne anlama geliyor?' },
 ];
 
 /**
@@ -110,6 +119,16 @@ interface MessageItem {
     subCategory?: string;
     title: string;
     description: string;
+  };
+  quote?: {
+    items: { desc: string; amount: number }[];
+    total: number;
+    note: string;
+    validity: string;
+  };
+  messageTemplate?: {
+    type: string;
+    message: string;
   };
 }
 
@@ -265,38 +284,61 @@ export default function AiAssistantScreen() {
     };
   }, [isLoading]);
 
-  // Helper to parse potential [TEŞHİS RAPORU] blocks
-  const parseReportBlock = (text: string) => {
-    const marker = '[TEŞHİS RAPORU]';
-    if (!text.includes(marker)) return { cleanText: text, report: undefined };
-    
-    try {
-      const parts = text.split(marker);
-      const cleanText = parts[0].trim();
-      const jsonCandidate = parts[1].trim();
-      
-      // Parse JSON from code blocks or raw text
-      const cleanJsonString = jsonCandidate
-        .replace(/```json/g, '')
-        .replace(/```/g, '')
-        .trim();
-        
-      const reportObj = JSON.parse(cleanJsonString);
-      if (reportObj && reportObj.category) {
-        return {
-          cleanText,
-          report: {
-            category: reportObj.category,
-            subCategory: reportObj.subCategory || undefined,
-            title: reportObj.title || 'Arıza İlanı',
-            description: reportObj.description || ''
-          }
-        };
-      }
-    } catch (e) {
-      console.warn('Failed to parse diagnostic block JSON:', e);
+  // Parse AI response for structured blocks: [TEŞHİS RAPORU], [TEKLİF ŞABLONU], [MESAJ ŞABLONU]
+  const parseResponseBlocks = (text: string) => {
+    let cleanText = text;
+    let report: MessageItem['report'] = undefined;
+    let quote: MessageItem['quote'] = undefined;
+    let messageTemplate: MessageItem['messageTemplate'] = undefined;
+
+    // Parse [TEŞHİS RAPORU]
+    const reportMarker = '[TEŞHİS RAPORU]';
+    if (cleanText.includes(reportMarker)) {
+      try {
+        const parts = cleanText.split(reportMarker);
+        cleanText = parts[0].trim();
+        const jsonStr = parts[1].trim().replace(/```json/g, '').replace(/```/g, '').trim();
+        const obj = JSON.parse(jsonStr);
+        if (obj?.category) {
+          report = { category: obj.category, subCategory: obj.subCategory, title: obj.title || 'Arıza İlanı', description: obj.description || '' };
+        }
+      } catch {}
     }
-    return { cleanText: text, report: undefined };
+
+    // Parse [TEKLİF ŞABLONU]
+    const quoteMarker = '[TEKLİF ŞABLONU]';
+    if (cleanText.includes(quoteMarker)) {
+      try {
+        const parts = cleanText.split(quoteMarker);
+        cleanText = parts[0].trim();
+        const jsonStr = parts[1].trim().replace(/```json/g, '').replace(/```/g, '').trim();
+        const obj = JSON.parse(jsonStr);
+        if (obj?.items && obj?.total) {
+          quote = { items: obj.items, total: obj.total, note: obj.note || '', validity: obj.validity || '' };
+        }
+      } catch {}
+    }
+
+    // Parse [MESAJ ŞABLONU]
+    const msgMarker = '[MESAJ ŞABLONU]';
+    if (cleanText.includes(msgMarker)) {
+      try {
+        const parts = cleanText.split(msgMarker);
+        cleanText = parts[0].trim();
+        const jsonStr = parts[1].trim().replace(/```json/g, '').replace(/```/g, '').trim();
+        const obj = JSON.parse(jsonStr);
+        if (obj?.message) {
+          messageTemplate = { type: obj.type || 'genel', message: obj.message };
+        }
+      } catch {}
+    }
+
+    return { cleanText, report, quote, messageTemplate };
+  };
+
+  const handleCopyToClipboard = async (text: string, label: string) => {
+    await Clipboard.setStringAsync(text);
+    Alert.alert('✅ Kopyalandı', `${label} panoya kopyalandı. Mesajınıza yapıştırabilirsiniz.`);
   };
 
   const handleSend = async (overrideText?: string) => {
@@ -337,12 +379,12 @@ export default function AiAssistantScreen() {
       } : undefined;
         
       const response = await aiService.sendMessage(userMsgText, history, imagePayload);
-      const { cleanText, report } = parseReportBlock(response.text);
+      const { cleanText, report, quote, messageTemplate } = parseResponseBlocks(response.text);
       const isEmergency = cleanText.startsWith('🚨 ACİL') || cleanText.includes('🚨 ACİL:');
       
       setMessages(prev => [
         ...prev,
-        { id: (Date.now() + 1).toString(), role: 'model', text: cleanText, report, isEmergency }
+        { id: (Date.now() + 1).toString(), role: 'model', text: cleanText, report, isEmergency, quote, messageTemplate }
       ]);
 
       // Auto-fetch cost estimate when a diagnosis is returned
@@ -454,11 +496,77 @@ export default function AiAssistantScreen() {
                 </LinearGradient>
               </View>
             )}
+
+            {/* Quote Card (Usta teklif) */}
+            {item.quote && (
+              <View style={styles.quoteCard}>
+                <LinearGradient colors={['rgba(59, 130, 246, 0.12)', 'rgba(99, 102, 241, 0.04)']} style={styles.reportGradient}>
+                  <View style={styles.reportHeader}>
+                    <View style={[styles.reportBadge, { borderColor: 'rgba(96, 165, 250, 0.3)', backgroundColor: 'rgba(96, 165, 250, 0.12)' }]}>
+                      <Ionicons name="document-text" size={14} color="#60A5FA" />
+                      <Text style={[styles.reportBadgeText, { color: '#60A5FA' }]}>Profesyonel Teklif</Text>
+                    </View>
+                  </View>
+                  {item.quote.items.map((qi, idx) => (
+                    <View key={idx} style={styles.quoteItemRow}>
+                      <Text style={styles.quoteItemDesc}>{qi.desc}</Text>
+                      <Text style={styles.quoteItemAmount}>{qi.amount.toLocaleString('tr-TR')} TL</Text>
+                    </View>
+                  ))}
+                  <View style={styles.quoteTotalRow}>
+                    <Text style={styles.quoteTotalLabel}>TOPLAM</Text>
+                    <Text style={styles.quoteTotalAmount}>{item.quote.total.toLocaleString('tr-TR')} TL</Text>
+                  </View>
+                  {item.quote.note ? <Text style={styles.quoteNote}>{item.quote.note}</Text> : null}
+                  {item.quote.validity ? <Text style={styles.quoteValidity}>{item.quote.validity}</Text> : null}
+                  <TouchableOpacity
+                    style={[styles.createJobBtn, { marginTop: 6 }]}
+                    onPress={() => {
+                      const lines = item.quote!.items.map(qi => `• ${qi.desc}: ${qi.amount.toLocaleString('tr-TR')} TL`);
+                      const fullText = lines.join('\n') + `\n\nToplam: ${item.quote!.total.toLocaleString('tr-TR')} TL\n${item.quote!.note}\n${item.quote!.validity}`;
+                      handleCopyToClipboard(fullText, 'Teklif');
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient colors={['#3B82F6', '#6366F1']} style={styles.createJobBtnGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                      <Ionicons name="copy" size={15} color="#FFF" style={{ marginRight: 6 }} />
+                      <Text style={styles.createJobBtnText}>Teklifi Kopyala</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </LinearGradient>
+              </View>
+            )}
+
+            {/* Message Template Card */}
+            {item.messageTemplate && (
+              <View style={styles.msgTemplateCard}>
+                <LinearGradient colors={['rgba(168, 85, 247, 0.12)', 'rgba(139, 92, 246, 0.04)']} style={styles.reportGradient}>
+                  <View style={styles.reportHeader}>
+                    <View style={[styles.reportBadge, { borderColor: 'rgba(168, 85, 247, 0.3)', backgroundColor: 'rgba(168, 85, 247, 0.12)' }]}>
+                      <Ionicons name="mail" size={14} color="#A855F7" />
+                      <Text style={[styles.reportBadgeText, { color: '#A855F7' }]}>Hazır Mesaj</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.msgTemplateText}>{item.messageTemplate.message}</Text>
+                  <TouchableOpacity
+                    style={[styles.createJobBtn, { marginTop: 8 }]}
+                    onPress={() => handleCopyToClipboard(item.messageTemplate!.message, 'Mesaj')}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient colors={['#A855F7', '#8B5CF6']} style={styles.createJobBtnGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                      <Ionicons name="copy" size={15} color="#FFF" style={{ marginRight: 6 }} />
+                      <Text style={styles.createJobBtnText}>Mesajı Kopyala</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </LinearGradient>
+              </View>
+            )}
           </View>
         </View>
-        {isWelcome && (
+        {/* Scenario cards for both roles */}
+        {item.id === 'welcome' && (
           <View style={styles.scenarioContainer}>
-            {EXAMPLE_SCENARIOS.map((s, i) => (
+            {(isElectrician ? USTA_SCENARIOS : EXAMPLE_SCENARIOS).map((s, i) => (
               <TouchableOpacity key={i} style={styles.scenarioCard} onPress={() => handleChipPress(s.text)} activeOpacity={0.8}>
                 <Text style={styles.scenarioIcon}>{s.icon}</Text>
                 <Text style={styles.scenarioText}>{s.text}</Text>
@@ -927,4 +1035,17 @@ const styles = StyleSheet.create({
   chip: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7, marginRight: 8 },
   chipIcon: { fontSize: 15, marginRight: 5 },
   chipLabel: { color: '#CBD5E1', fontFamily: fonts.medium, fontSize: 12.5 },
+  // Quote Card (Usta Teklif)
+  quoteCard: { width: '92%', marginTop: 8, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(96, 165, 250, 0.23)', elevation: 3, shadowColor: '#3B82F6', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 6 },
+  quoteItemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.06)' },
+  quoteItemDesc: { flex: 1, color: '#CBD5E1', fontFamily: fonts.regular, fontSize: 12.5, lineHeight: 17, marginRight: 8 },
+  quoteItemAmount: { color: '#93C5FD', fontFamily: fonts.bold, fontSize: 13 },
+  quoteTotalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTopWidth: 1.5, borderTopColor: 'rgba(96, 165, 250, 0.25)' },
+  quoteTotalLabel: { color: '#60A5FA', fontFamily: fonts.bold, fontSize: 12, letterSpacing: 1 },
+  quoteTotalAmount: { color: '#FFFFFF', fontFamily: fonts.bold, fontSize: 16 },
+  quoteNote: { color: '#94A3B8', fontFamily: fonts.regular, fontSize: 11, marginTop: 8, lineHeight: 15 },
+  quoteValidity: { color: '#64748B', fontFamily: fonts.regular, fontSize: 10.5, marginTop: 2, fontStyle: 'italic' },
+  // Message Template Card (Usta Hazır Mesaj)
+  msgTemplateCard: { width: '92%', marginTop: 8, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(168, 85, 247, 0.23)', elevation: 3, shadowColor: '#A855F7', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 6 },
+  msgTemplateText: { color: '#E2E8F0', fontFamily: fonts.regular, fontSize: 13, lineHeight: 19, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
 });

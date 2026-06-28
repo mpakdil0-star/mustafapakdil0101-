@@ -61,13 +61,48 @@ Alt kategori örnekleri:
 - boya-badana: ic-cephe-boya, dis-cephe-boya, duvar-kagidi, dekorasyon, boya-diger
 - kombi-servis: kombi-bakim, kombi-tamir, kombi-montaj, kombi-diger`;
 
-const USTA_SYSTEM_PROMPT = `Sen "İşBitir" platformunun profesyonel teknik destek ve teklif hazırlama asistanısın. Hizmet veren ustalara (elektrikçi, tesisatçı vb.) teknik konularda ve teklif yazmada yardımcı oluyorsun.
-Görevin:
-1. Ustaların sorduğu teknik terimleri, standartları, hata kodlarını (örn. kombi hata kodları, elektrik tesisatı yönetmeliği kablo kesitleri vb.) açıkla.
-2. Malzeme hesabı ve tahmini maliyet yapmada yardımcı ol.
-3. Ustanın müşteriye gönderebileceği profesyonel teklif şablonları veya mesaj şablonları oluştur.
-4. Cevaplarını her zaman TÜRKÇE ver. Net, teknik ve profesyonel bir üslup kullan.
-5. Malzeme fiyatları sorulursa 2024-2025 Türkiye toptan fiyat aralıklarını paylaş.`;
+const USTA_SYSTEM_PROMPT = `Sen "İşBitir" platformunun profesyonel teknik destek ve teklif hazırlama asistanısın. Hizmet veren ustalara (elektrikçi, tesisatçı, çilingir vb.) teknik konularda, teklif yazmada ve müşteri iletişiminde yardımcı oluyorsun.
+
+TEMEL KURALLAR:
+1. Her zaman TÜRKÇE cevap ver. Profesyonel, net ve teknik bir üslup kullan.
+2. Malzeme fiyatları sorulursa 2024-2025 Türkiye toptan fiyat aralıklarını paylaş.
+
+TEKLİF YAZMA ÖZELLİĞİ (ÇOK ÖNEMLİ):
+Usta bir iş/ilan açıklaması verip teklif istediğinde, müşteriye gönderilecek profesyonel bir teklif üret.
+Teklifi metin olarak açıkla, sonra cevabının EN SONUNA şu bloğu ekle:
+
+[TEKLİF ŞABLONU]
+{
+  "items": [
+    { "desc": "İşçilik: Priz sökümü ve yeni hat çekimi", "amount": 800 },
+    { "desc": "Malzeme: 3x Schneider priz kasası", "amount": 450 },
+    { "desc": "Sıva tamir ve boya rötuş", "amount": 250 }
+  ],
+  "total": 1500,
+  "note": "KDV dahil. 1 yıl işçilik garantisi.",
+  "validity": "Bu teklif 7 gün geçerlidir."
+}
+
+Teklif kuralları:
+- Her kalemi "İşçilik:" veya "Malzeme:" ön ekiyle yaz
+- Fiyatları Türkiye 2024-2025 piyasa rayicine göre gerçekçi belirle
+- Toplam tutarı ayrıca "total" olarak yaz
+- Not kısmına garanti, KDV ve ödeme bilgisi ekle
+
+MÜŞTERİ MESAJ ŞABLONLARI:
+Usta müşteriye hazır mesaj istediğinde (kabul, red, bilgilendirme vb.), profesyonel ve kibar bir mesaj yaz. Cevabının EN SONUNA şu bloğu ekle:
+
+[MESAJ ŞABLONU]
+{
+  "type": "kabul|red|bilgilendirme|tamamlama|ek_maliyet",
+  "message": "Sayın müşterimiz, teklifiniz kabul edilmiştir..."
+}
+
+TEKNİK BİLGİ:
+- Elektrik tesisatı kablo kesitleri ve sigorta standartları
+- Kombi, klima, beyaz eşya hata kodları ve çözümleri
+- Malzeme hesaplama (kablo metresi, boru çapı vb.)
+- İş güvenliği kuralları ve yönetmelikler`;
 
 // Türkiye 2024-2025 piyasa fiyat tahminleri
 const COST_ESTIMATES: Record<string, { min: number; max: number; unit: string; note: string }> = {
@@ -277,24 +312,43 @@ function getFallbackResponse(message: string, userType: string, history?: any[])
 
   if (userType === 'ELECTRICIAN') {
     // Usta Fallback Responses
-    if (msgLower.includes('teklif') || msgLower.includes('fiyat') || msgLower.includes('mesaj')) {
-      return `Ustalarımız için profesyonel müşteri teklif şablonu aşağıdadır. İhtiyacınıza göre kopyalayıp düzenleyebilirsiniz:
+    if (msgLower.includes('teklif') || msgLower.includes('fiyat ver') || msgLower.includes('fiyat hazırla')) {
+      return `İşte size uyarlayabileceğiniz profesyonel bir teklif şablonu. İş açıklamanızı daha detaylı yazarsanız, size özel kalem kalem teklif hazırlayabilirim.
 
-**[KOPYALANABİLİR TEKLİF ŞABLONU]**
---------------------------------------------------
-*Merhaba Sayın [Müşteri Adı],*
+**Teklif aşağıdaki kartta hazır.** "Teklifi Kopyala" butonuna basarak müşterinize direkt gönderebilirsiniz.
 
-*İşBitir platformu üzerinden iletmiş olduğunuz arıza/bakım talebini inceledim. Belirttiğiniz detaylar doğrultusunda tahmini iş planımız şu şekildedir:*
+[TEKLİF ŞABLONU]
+{
+  "items": [
+    { "desc": "İşçilik: Keşif ve arıza tespiti", "amount": 300 },
+    { "desc": "İşçilik: Onarım / montaj işçiliği", "amount": 800 },
+    { "desc": "Malzeme: Gerekli parça ve malzemeler", "amount": 500 }
+  ],
+  "total": 1600,
+  "note": "KDV dahil fiyattır. 1 yıl işçilik garantisi verilmektedir.",
+  "validity": "Bu teklif 7 gün geçerlidir."
+}`;
+    }
 
-*🛠️ **Yapılacak İşlemler:** [Örn: Sigorta panosu değişimi ve kablo kontrolü]*
-*⏳ **Tahmini Süre:** [Örn: 2-3 saat]*
-*💼 **Tahmini İşçilik & Malzeme Bedeli:** [Örn: 1.500 TL (Malzeme dahil/hariç)]*
+    if (msgLower.includes('kabul') || msgLower.includes('mesaj yaz') || msgLower.includes('mesajı yaz') || msgLower.includes('tamamla')) {
+      const isAccept = msgLower.includes('kabul');
+      const isComplete = msgLower.includes('tamamla') || msgLower.includes('bitti');
 
-*Tüm işlerimiz garantili olup, iş güvenliği standartlarına uygun olarak tamamlanacaktır. Uygun olduğunuzda detayları netleştirmek için benimle iletişime geçebilirsiniz.*
+      let msgType = 'kabul';
+      let msgText = 'Sayın müşterimiz, talebinizi inceledim ve işi kabul ediyorum. En kısa sürede size ulaşıp randevu oluşturacağım. Herhangi bir sorunuz olursa lütfen mesaj atın. Saygılarımla.';
 
-*Saygılarımla,*
-*[Adınız Soyadınız / İşletme Adınız]*
---------------------------------------------------`;
+      if (isComplete) {
+        msgType = 'tamamlama';
+        msgText = 'Sayın müşterimiz, belirtilen iş başarıyla tamamlanmıştır. Yapılan işlemler test edilmiş ve sorunsuz çalıştığı onaylanmıştır. İşçilik garantimiz 1 yıl süreyle geçerlidir. Herhangi bir sorunuz olursa bize ulaşmaktan çekinmeyin. İşBitir\'i tercih ettiğiniz için teşekkür ederiz.';
+      }
+
+      return `İşte profesyonel bir müşteri mesajı hazırladım. "Mesajı Kopyala" butonuna basarak müşterinize direkt gönderebilirsiniz.
+
+[MESAJ ŞABLONU]
+{
+  "type": "${msgType}",
+  "message": "${msgText}"
+}`;
     }
 
     if (msgLower.includes('sigorta') || msgLower.includes('kablo') || msgLower.includes('akım') || msgLower.includes('kesit')) {
