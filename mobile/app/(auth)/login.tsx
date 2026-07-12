@@ -96,10 +96,15 @@ export default function LoginScreen() {
     try {
       await dispatch(login({ email, password })).unwrap();
     } catch (err: any) {
-      const errorMessage = err?.message || err || 'Giriş yapılamadı';
+      const errorMessage = typeof err === 'string' 
+        ? err 
+        : (err?.message || (err && typeof err === 'object' ? JSON.stringify(err) : 'Giriş yapılamadı'));
+        
       const isUserNotFound =
-        errorMessage.toLowerCase().includes('bulunamadı') ||
-        errorMessage.includes('USER_NOT_FOUND') ||
+        (typeof errorMessage === 'string' && (
+          errorMessage.toLowerCase().includes('bulunamadı') ||
+          errorMessage.includes('USER_NOT_FOUND')
+        )) ||
         err?.code === 'USER_NOT_FOUND';
 
       if (isUserNotFound) {
@@ -158,7 +163,7 @@ export default function LoginScreen() {
     try {
       await dispatch(appleLogin(undefined)).unwrap();
     } catch (err: any) {
-      if (err !== 'CANCELLED') {
+      if (err !== 'CANCELLED' && err?.message !== 'CANCELLED') {
         if (err?.code === 'USER_NOT_FOUND') {
           showAlert(
             'Hesap Bulunamadı',
@@ -173,7 +178,9 @@ export default function LoginScreen() {
             ]
           );
         } else {
-          showAlert('Apple Giriş Hatası', typeof err === 'string' ? err : 'Hata oluştu', 'error');
+          // Gerçek hata mesajını göster
+          const errorMsg = typeof err === 'string' ? err : (err?.message || JSON.stringify(err) || 'Bilinmeyen hata');
+          showAlert('Apple Giriş Hatası', errorMsg, 'error');
         }
       }
     } finally {

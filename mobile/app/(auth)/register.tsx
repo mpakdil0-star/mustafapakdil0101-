@@ -227,8 +227,9 @@ export default function RegisterScreen() {
     try {
       await dispatch(appleLogin({ userType, serviceCategory: userType === 'ELECTRICIAN' ? serviceCategory : undefined })).unwrap();
     } catch (err: any) {
-      if (err !== 'CANCELLED') {
-        showAlert('Apple Kayıt Hatası', typeof err === 'string' ? err : 'Apple ile kayıt yapılırken bir hata oluştu.', 'error');
+      if (err !== 'CANCELLED' && err?.message !== 'CANCELLED') {
+        const errorMsg = typeof err === 'string' ? err : (err?.message || JSON.stringify(err) || 'Apple ile kayıt yapılırken bir hata oluştu.');
+        showAlert('Apple Kayıt Hatası', errorMsg, 'error');
       }
     } finally {
       setSocialLoading(null);
@@ -266,7 +267,10 @@ export default function RegisterScreen() {
       setVerifyCode('');
       await sendVerificationCode(email, fullName);
     } catch (err: any) {
-      showAlert('Kayıt Hatası', err?.message || err || 'Kayıt yapılırken bir hata oluştu.', 'error');
+      const errorMessage = typeof err === 'string' 
+        ? err 
+        : (err?.message || (err && typeof err === 'object' ? JSON.stringify(err) : 'Kayıt yapılırken bir hata oluştu.'));
+      showAlert('Kayıt Hatası', errorMessage, 'error');
     }
   };
 

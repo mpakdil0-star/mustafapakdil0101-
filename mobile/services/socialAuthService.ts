@@ -145,37 +145,87 @@ export const signInWithApple = async (): Promise<{ identityToken: string; fullNa
     throw new Error('Apple ile giriş sadece iOS cihazlarda kullanılabilir.');
   }
 
+  // 1. Modülü yükle
+  let AppleAuth: any;
   try {
-    const AppleAuthentication = (await import('expo-apple-authentication')).default;
-
-    const credential = await AppleAuthentication.signInAsync({
-      requestedScopes: [
-        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-        AppleAuthentication.AppleAuthenticationScope.EMAIL,
-      ],
-    });
-
-    if (!credential.identityToken) {
-      throw new Error('Apple identity token alınamadı');
+    AppleAuth = await import('expo-apple-authentication');
+    // Bazı versiyonlarda default export var, bazılarında yok
+    if (AppleAuth.default && AppleAuth.default.signInAsync) {
+      AppleAuth = AppleAuth.default;
     }
+  } catch (importError: any) {
+    console.error('❌ expo-apple-authentication modülü yüklenemedi:', importError);
+    throw new Error('Apple giriş modülü yüklenemedi. Lütfen uygulamayı güncelleyin.');
+  }
 
-    // Apple sadece ilk girişte isim bilgisi verir
-    const fullName = credential.fullName
-      ? [credential.fullName.givenName, credential.fullName.familyName].filter(Boolean).join(' ')
-      : null;
+  // 2. Apple Sign-In kullanılabilir mi kontrol et
+  try {
+    if (AppleAuth.isAvailableAsync) {
+      const isAvailable = await AppleAuth.isAvailableAsync();
+      if (!isAvailable) {
+        throw new Error('Bu cihazda Apple ile giriş desteklenmiyor. iOS 13+ gereklidir.');
+      }
+    }
+  } catch (availError: any) {
+    if (availError?.message?.includes('desteklenmiyor')) {
+      throw availError;
+    }
+    console.warn('⚠️ Apple availability check failed:', availError?.message);
+  }
 
-    return {
-      identityToken: credential.identityToken,
-      fullName: fullName || null,
-    };
-  } catch (error: any) {
+  // 3. signInAsync fonksiyonunu bul
+  const signInAsync = AppleAuth.signInAsync;
+  if (!signInAsync) {
+    console.error('❌ signInAsync bulunamadı. Modül içeriği:', Object.keys(AppleAuth));
+    throw new Error('Apple giriş fonksiyonu bulunamadı. Lütfen uygulamayı güncelleyin.');
+  }
+
+  // 4. Scope enum'larını bul
+  const FULL_NAME = AppleAuth.AppleAuthenticationScope?.FULL_NAME ?? 1;
+  const EMAIL = AppleAuth.AppleAuthenticationScope?.EMAIL ?? 0;
+
+  // 5. Apple Sign-In popup aç
+  let credential: any;
+  try {
+    credential = await signInAsync({
+      requestedScopes: [FULL_NAME, EMAIL],
+    });
+  } catch (signInError: any) {
+    console.error('❌ Apple signInAsync hatası:', JSON.stringify({
+      code: signInError?.code,
+      message: signInError?.message,
+      name: signInError?.name,
+    }));
     // Kullanıcı iptal etti
-    if (error?.code === 'ERR_REQUEST_CANCELED' || error?.code === '1001') {
+    if (
+      signInError?.code === 'ERR_REQUEST_CANCELED' ||
+      signInError?.code === 'ERR_CANCELED' ||
+      signInError?.code === '1001' ||
+      signInError?.message?.includes('canceled') ||
+      signInError?.message?.includes('cancelled')
+    ) {
       throw new Error('CANCELLED');
     }
-    console.error('Apple Sign-In hatası:', error);
-    throw new Error('Apple ile giriş başarısız oldu.');
+    throw new Error(`Apple oturum açma başarısız: ${signInError?.message || signInError?.code || 'Bilinmeyen hata'}`);
   }
+
+  // 6. Token kontrolü
+  if (!credential || !credential.identityToken) {
+    console.error('❌ Apple credential boş veya token yok:', JSON.stringify(credential));
+    throw new Error('Apple kimlik bilgisi alınamadı. Lütfen tekrar deneyin.');
+  }
+
+  // Apple sadece ilk girişte isim bilgisi verir
+  const fullName = credential.fullName
+    ? [credential.fullName.givenName, credential.fullName.familyName].filter(Boolean).join(' ')
+    : null;
+
+  console.log('✅ Apple Sign-In başarılı, token alındı');
+
+  return {
+    identityToken: credential.identityToken,
+    fullName: fullName || null,
+  };
 };
 
 // ============================================================
@@ -219,17 +269,48 @@ export const appleLoginToBackend = async (
   userType?: 'CITIZEN' | 'ELECTRICIAN',
   serviceCategory?: string
 ): Promise<SocialAuthResponse> => {
-  const response = await apiClient.post('/auth/apple', {
-    identityToken,
-    fullName,
-    userType,
-    serviceCategory,
-  });
+  // Render sunucusu uyuyor olabilir - önce uyandır
+  try {
+    await apiClient.get('/', { timeout: 10000 });
+  } catch (_) {
+    // Health check başarısız olsa bile devam et, asıl istek retry yapacak
+    console.log('⏰ Backend uyanıyor, bekleniyor...');
+  }
 
-  const data = response.data.data;
+  // Retry mekanizması: İlk istek başarısız olursa 1 kez daha dene
+  const maxRetries = 2;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await apiClient.post('/auth/apple', {
+        identityToken,
+        fullName,
+        userType,
+        serviceCategory,
+      });
 
-  // Token'ları kaydet
-  await apiService.setTokens(data.accessToken, data.refreshToken);
+      const data = response.data.data;
 
-  return data;
+      // Token'ları kaydet
+      await apiService.setTokens(data.accessToken, data.refreshToken);
+
+      return data;
+    } catch (error: any) {
+      const isNetworkError = !error?.response && (
+        error?.message?.includes('Network') ||
+        error?.message?.includes('timeout') ||
+        error?.code === 'ECONNABORTED'
+      );
+
+      // Son deneme veya network hatası değilse, hatayı fırlat
+      if (attempt === maxRetries || !isNetworkError) {
+        throw error;
+      }
+
+      // Network hatası ve henüz retry hakkımız var - bekleyip tekrar dene
+      console.log(`🔄 Backend yanıt vermedi, tekrar deneniyor (${attempt}/${maxRetries})...`);
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+  }
+
+  throw new Error('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.');
 };

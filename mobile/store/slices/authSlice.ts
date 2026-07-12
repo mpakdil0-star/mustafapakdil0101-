@@ -225,14 +225,28 @@ export const appleLogin = createAsyncThunk(
 
       return result;
     } catch (error: any) {
+      console.error('🍎 Apple Login thunk error:', error?.message, error?.response?.status);
       // Kullanıcı iptal etti
-      if (error.message === 'CANCELLED') {
+      if (error?.message === 'CANCELLED') {
         return rejectWithValue('CANCELLED');
+      }
+      // Network hatası (sunucu uyuyor veya internet yok)
+      if (!error?.response && (
+        error?.message?.includes('Network') ||
+        error?.message?.includes('timeout') ||
+        error?.message?.includes('bağlanılamadı') ||
+        error?.code === 'ECONNABORTED'
+      )) {
+        return rejectWithValue('Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.');
       }
       // Backend 404 döndüyse (kullanıcı bulunamadı)
       if (error?.response?.status === 404) {
         const email = error?.response?.data?.error?.email;
         return rejectWithValue({ code: 'USER_NOT_FOUND', email });
+      }
+      // Native Apple hatası (HTTP response yok) - mesajı doğrudan aktar
+      if (!error?.response && error?.message) {
+        return rejectWithValue(error.message);
       }
       return rejectWithValue(handleAuthError(error, 'Apple ile giriş başarısız oldu'));
     }

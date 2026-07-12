@@ -128,6 +128,9 @@ export const appleLoginController = async (
             })();
         } else {
             userId = user.id;
+            // Apple ile giriş yapan mevcut kullanıcıyı doğrulanmış olarak işaretle
+            mockStorage.updateProfile(userId, { isVerified: true });
+            user = mockStorage.getFullUser(userId, user.userType || requestedUserType);
         }
 
         // 4. Generate Tokens
