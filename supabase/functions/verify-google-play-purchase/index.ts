@@ -5,22 +5,53 @@ const headers = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Head
 const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...headers, 'Content-Type': 'application/json' } });
 const allowedProducts = new Set(['pkg_10', 'pkg_35', 'pkg_75', 'pkg_175']);
 
+const decodeBase64Utf8 = (value: string) => {
+  const binary = atob(value.trim());
+  const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+};
+
 type PurchaseStatus =
   | 'RECEIVED' | 'VERIFYING' | 'PENDING' | 'VERIFIED' | 'GRANTED'
   | 'GRANTED_PENDING_CONSUME' | 'CONSUMED' | 'CANCELED'
   | 'FAILED_RETRYABLE' | 'FAILED_FINAL';
 
+const parseGoogleServiceAccount = (rawKey: string) => {
+  let parsed: unknown = JSON.parse(rawKey.trim());
+  // Secrets copied from some dashboards can accidentally be JSON-stringified
+  // twice. Accept that representation, but validate the final object strictly.
+  if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+  if (!parsed || typeof parsed !== 'object') throw new Error('SERVICE_ACCOUNT_JSON_INVALID');
+
+  const account = parsed as { client_email?: unknown; private_key?: unknown };
+  const clientEmail = typeof account.client_email === 'string' ? account.client_email.trim() : '';
+  const privateKey = typeof account.private_key === 'string'
+    ? account.private_key.replace(/\\n/g, '\n').trim()
+    : '';
+  if (!clientEmail || !privateKey.includes('BEGIN PRIVATE KEY')) {
+    throw new Error('SERVICE_ACCOUNT_FIELDS_INVALID');
+  }
+  return { clientEmail, privateKey };
+};
+
 async function googleAccessToken(rawKey: string) {
-  const account = JSON.parse(rawKey);
+  const account = parseGoogleServiceAccount(rawKey);
   const now = Math.floor(Date.now() / 1000);
-  const key = await importPKCS8(account.private_key, 'RS256');
+  const key = await importPKCS8(account.privateKey, 'RS256');
   const assertion = await new SignJWT({ scope: 'https://www.googleapis.com/auth/androidpublisher' })
-    .setProtectedHeader({ alg: 'RS256', typ: 'JWT' }).setIssuer(account.client_email)
+    .setProtectedHeader({ alg: 'RS256', typ: 'JWT' }).setIssuer(account.clientEmail)
     .setAudience('https://oauth2.googleapis.com/token').setIssuedAt(now).setExpirationTime(now + 3600).sign(key);
   const response = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion }) });
   if (!response.ok) {
-    console.error('Google OAuth failed with status', response.status);
-    throw new Error('GOOGLE_AUTH_FAILED');
+    let reason = `HTTP_${response.status}`;
+    try {
+      const body = await response.json();
+      reason = String(body?.error || reason).replace(/[^A-Za-z0-9_.-]/g, '_').slice(0, 80);
+    } catch {
+      // Keep the HTTP-only reason when Google does not return JSON.
+    }
+    console.error('Google OAuth failed:', reason);
+    throw new Error(`GOOGLE_AUTH_FAILED:${reason}`);
   }
   return (await response.json()).access_token as string;
 }
@@ -32,15 +63,42 @@ Deno.serve(async request => {
     const url = Deno.env.get('SUPABASE_URL')!;
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const googleKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
+    const googleKeyBase64 = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY_BASE64');
+    const googleKey = googleKeyBase64
+      ? decodeBase64Utf8(googleKeyBase64)
+      : Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
     if (!googleKey) return reply({ error: 'PURCHASE_VERIFICATION_NOT_CONFIGURED' }, 503);
 
     const authorization = request.headers.get('Authorization') ?? '';
+    const requestBody = await request.json();
+
+    // Service-role-only production health probe. It verifies the exact secret
+    // loaded by this Edge runtime without exposing credentials or purchase data.
+    if (requestBody?.diagnostic === true) {
+      if (authorization !== `Bearer ${serviceKey}`) return reply({ error: 'UNAUTHORIZED' }, 401);
+      try {
+        const token = await googleAccessToken(googleKey);
+        const probe = await fetch(
+          'https://androidpublisher.googleapis.com/androidpublisher/v3/applications/com.isbitir.app/purchases/products/pkg_10/tokens/permission-probe-invalid-token',
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        return reply({
+          success: true,
+          oauthAuthenticated: true,
+          publisherStatus: probe.status,
+          publisherAuthorized: ![401, 403].includes(probe.status),
+        });
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : 'GOOGLE_AUTH_FAILED';
+        return reply({ success: false, oauthAuthenticated: false, reason }, 503);
+      }
+    }
+
     const client = createClient(url, anonKey, { global: { headers: { Authorization: authorization } }, auth: { persistSession: false } });
     const { data: { user }, error: authError } = await client.auth.getUser();
     if (authError || !user) return reply({ error: 'UNAUTHORIZED' }, 401);
 
-    const { productId, purchaseToken, packageName = 'com.isbitir.app' } = await request.json();
+    const { productId, purchaseToken, packageName = 'com.isbitir.app' } = requestBody;
     if (!allowedProducts.has(productId) || typeof purchaseToken !== 'string' || !purchaseToken || packageName !== 'com.isbitir.app') return reply({ error: 'INVALID_PURCHASE_REQUEST' }, 400);
 
     const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
@@ -81,12 +139,13 @@ Deno.serve(async request => {
     let token: string;
     try {
       token = await googleAccessToken(googleKey);
-    } catch {
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : 'GOOGLE_AUTH_FAILED';
       await writePurchaseState('FAILED_RETRYABLE', {
         last_error_code: 'GOOGLE_AUTH_FAILED',
-        last_error_message: 'Google OAuth token could not be created.',
+        last_error_message: reason.slice(0, 500),
       });
-      return reply({ error: 'GOOGLE_AUTH_FAILED', retryable: true }, 503);
+      return reply({ error: 'GOOGLE_AUTH_FAILED', reason, retryable: true }, 503);
     }
     const base = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(packageName)}/purchases/products/${encodeURIComponent(productId)}/tokens/${encodeURIComponent(purchaseToken)}`;
     const purchaseResponse = await fetch(base, { headers: { Authorization: `Bearer ${token}` } });

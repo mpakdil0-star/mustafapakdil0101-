@@ -116,6 +116,55 @@ const getPurchaseIdentity = (purchase: any) => {
     };
 };
 
+const purchaseVerificationAlert = (error: any, missingPurchaseData: boolean) => {
+    const code = String(
+        error?.code
+        || error?.response?.data?.error
+        || error?.message
+        || 'PURCHASE_VERIFICATION_FAILED'
+    ).trim();
+
+    if (missingPurchaseData || code === 'PURCHASE_TOKEN_MISSING' || code === 'INVALID_PURCHASE_REQUEST') {
+        return {
+            title: 'İşlem Bilgisi Eksik',
+            message: 'Google Play satın alma bilgisi uygulamaya tam ulaşmadı. İşlem tüketilmedi; bu sayfaya tekrar girerek kontrol edebilirsiniz.',
+        };
+    }
+    if (code === 'PURCHASE_PENDING') {
+        return {
+            title: 'Google Play Onayı Bekleniyor',
+            message: 'Ödemeniz Google Play’de beklemede. Google işlemi tamamladığında bu sayfaya tekrar girerek kredinizi alabilirsiniz.',
+        };
+    }
+    if (code === 'PURCHASE_NOT_COMPLETED') {
+        return {
+            title: 'İşlem İptal Edildi',
+            message: 'Google Play bu satın almayı iptal edilmiş veya iade edilmiş olarak bildiriyor. Bu işlem için kredi yüklenmedi; Play Store ödeme geçmişinizi kontrol edin.',
+        };
+    }
+    if (code === 'PURCHASE_SESSION_REQUIRED' || code === 'UNAUTHORIZED') {
+        return {
+            title: 'Oturum Yenilenmeli',
+            message: 'Ödemeyi doğrulamak için oturumunuz yenilenemedi. Uygulamadan çıkış yapıp tekrar giriş yaptıktan sonra Kredi Yükle sayfasını açın.',
+        };
+    }
+    if (
+        code === 'GOOGLE_AUTH_FAILED'
+        || code === 'GOOGLE_PLAY_ACCESS_DENIED'
+        || code === 'PURCHASE_VERIFICATION_NOT_CONFIGURED'
+        || code === 'CREDIT_GRANT_FAILED'
+    ) {
+        return {
+            title: 'Sunucu Doğrulama Hatası',
+            message: `Satın alma tüketilmedi ve tekrar doğrulanabilir. Lütfen biraz sonra yeniden deneyin. Hata kodu: ${code}`,
+        };
+    }
+    return {
+        title: 'İşlem Doğrulanamadı',
+        message: `Satın alma tüketilmedi. Bu sayfaya tekrar girerek güvenle yeniden kontrol edebilirsiniz. Hata kodu: ${code}`,
+    };
+};
+
 export default function BuyCreditsScreen() {
     const router = useRouter();
     const dispatch = useAppDispatch();
@@ -304,6 +353,7 @@ export default function BuyCreditsScreen() {
                 let backendSuccess = false;
                 let newBalance: number | null = null;
                 let alreadyProcessed = false;
+                let verificationError: any = null;
 
                 // 1. Backend'e doğrulat
                 try {
@@ -315,6 +365,7 @@ export default function BuyCreditsScreen() {
                         alreadyProcessed = response.data?.alreadyProcessed === true;
                     }
                 } catch (verifyError: any) {
+                    verificationError = verifyError;
                     const errorMsg = verifyError.response?.data?.message || verifyError.message || '';
                     console.error('Backend doğrulama hatası:', errorMsg);
                     
@@ -327,13 +378,12 @@ export default function BuyCreditsScreen() {
                 // 2. Sunucu onayı yoksa ürünü tüketme; token kurtarma için kalsın.
                 if (!backendSuccess) {
                     const missingPurchaseData = !productId || !purchaseToken;
+                    const alert = purchaseVerificationAlert(verificationError, missingPurchaseData);
                     setAlertConfig({
                         visible: true,
                         type: 'error',
-                        title: 'İşlem Beklemede',
-                        message: missingPurchaseData
-                            ? 'Google Play işlem bilgisi henüz uygulamaya tam ulaşmadı. Satın alma tüketilmedi; bu sayfaya tekrar girdiğinizde sistem işlemi otomatik olarak yeniden kontrol edecek.'
-                            : 'Ödemeniz Google Play tarafından alındı ancak henüz sunucu tarafından doğrulanamadı. Satın alma tüketilmedi; bağlantı veya sunucu düzeldiğinde bu sayfaya tekrar girerek güvenle tamamlayabilirsiniz.'
+                        title: alert.title,
+                        message: alert.message,
                     });
                     return;
                 }

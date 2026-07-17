@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { Ionicons } from '@expo/vector-icons';
 import { colors as staticColors } from '../../constants/colors';
@@ -14,21 +14,34 @@ export default function AdminDashboardScreen() {
     const router = useRouter();
     const colors = useAppColors();
     const [stats, setStats] = React.useState<any>(null);
+    const [refreshing, setRefreshing] = React.useState(false);
+    const [statsError, setStatsError] = React.useState(false);
 
-    React.useEffect(() => {
-        fetchStats();
-    }, []);
-
-    const fetchStats = async () => {
+    const fetchStats = React.useCallback(async () => {
         try {
+            setStatsError(false);
             const response = { data: { success: true, data: await adminService.dashboardStats() } };
             if (response.data.success) {
                 setStats(response.data.data);
             }
         } catch (error) {
             console.error('Fetch stats error:', error);
+            setStatsError(true);
+        } finally {
+            setRefreshing(false);
         }
-    };
+    }, []);
+
+    useFocusEffect(React.useCallback(() => {
+        void fetchStats();
+        const interval = setInterval(() => void fetchStats(), 30_000);
+        return () => clearInterval(interval);
+    }, [fetchStats]));
+
+    const refreshStats = React.useCallback(() => {
+        setRefreshing(true);
+        void fetchStats();
+    }, [fetchStats]);
 
     const menuItems = [
         {
@@ -86,7 +99,10 @@ export default function AdminDashboardScreen() {
         <View style={styles.container}>
             <PremiumHeader title="Yönetici Paneli" showBackButton />
 
-            <ScrollView contentContainerStyle={styles.content}>
+            <ScrollView
+                contentContainerStyle={styles.content}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshStats} tintColor={colors.primary} colors={[colors.primary]} />}
+            >
                 <View style={styles.headerSection}>
                     <Text style={styles.welcomeText}>Hoş Geldiniz,</Text>
                     <Text style={[styles.roleText, { color: colors.primary }]}>Admin</Text>
@@ -102,6 +118,17 @@ export default function AdminDashboardScreen() {
                         <StatCard label="Bekleyen Onay" value={stats?.pendingVerifications} color="#F59E0B" />
                         <StatCard label="Ciro (TL)" value={stats?.totalRevenue} color="#8B5CF6" />
                     </View>
+                    <View style={styles.statsMetaRow}>
+                        <View style={[styles.liveDot, statsError && styles.errorDot]} />
+                        <Text style={[styles.statsMetaText, statsError && styles.statsErrorText]}>
+                            {statsError
+                                ? 'İstatistikler yenilenemedi — aşağı çekip tekrar deneyin'
+                                : stats?.generatedAt
+                                    ? `Son güncelleme ${new Date(stats.generatedAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
+                                    : 'Güncel veriler yükleniyor'}
+                        </Text>
+                    </View>
+                    <Text style={styles.revenueNote}>Ciro, sunucuda doğrulanıp krediye çevrilen Google Play paketlerinin güncel liste fiyatı toplamıdır.</Text>
                 </View>
 
                 <View style={styles.menuTitleContainer}>
@@ -166,6 +193,37 @@ const styles = StyleSheet.create({
     statsRow: {
         flexDirection: 'row',
         gap: 12
+    },
+    statsMetaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 2,
+    },
+    liveDot: {
+        width: 7,
+        height: 7,
+        borderRadius: 4,
+        backgroundColor: '#10B981',
+        marginRight: 7,
+    },
+    errorDot: {
+        backgroundColor: '#EF4444',
+    },
+    statsMetaText: {
+        fontFamily: fonts.medium,
+        fontSize: 11,
+        color: '#047857',
+    },
+    statsErrorText: {
+        color: '#B91C1C',
+    },
+    revenueNote: {
+        fontFamily: fonts.medium,
+        fontSize: 10,
+        lineHeight: 14,
+        color: '#64748B',
+        textAlign: 'center',
     },
     statCard: {
         flex: 1,

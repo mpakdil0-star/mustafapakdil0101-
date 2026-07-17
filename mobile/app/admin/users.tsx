@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, RefreshControl, Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform, ScrollView, Image, Clipboard } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { colors as staticColors } from '../../constants/colors';
@@ -8,10 +8,12 @@ import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
 import { adminService } from '../../services/adminService';
+import { authService } from '../../services/authService';
 import { messageService } from '../../services/messageService';
 import { getFileUrl } from '../../constants/api';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { impersonateLogin } from '../../store/slices/authSlice';
+import { RootState } from '../../store/store';
 
 
 
@@ -27,6 +29,7 @@ interface User {
     creditBalance: number;
     isVerified: boolean;
     isActive: boolean;
+    isBanned?: boolean;
     verificationStatus?: string;
     completedJobsCount?: number;
     serviceCategory?: string;
@@ -34,6 +37,8 @@ interface User {
     locations?: { city: string; district?: string }[];
     pushStatus?: 'ACTIVE' | 'PENDING' | 'DISABLED' | 'UNINSTALLED';
     createdAt?: string;
+    updatedAt?: string;
+    lastSeenAt?: string;
 }
 
 type FilterType = 'ALL' | 'CITIZEN' | 'ELECTRICIAN' | 'ENGINEER';
@@ -47,6 +52,7 @@ export default function AdminUsersScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState((params.initialSearch as string) || '');
+    const [debouncedSearch, setDebouncedSearch] = useState((params.initialSearch as string) || '');
     const [filter, setFilter] = useState<FilterType>((params.initialFilter as FilterType) || 'ALL');
     const [city, setCity] = useState((params.initialCity as string) || '');
     const [district, setDistrict] = useState((params.initialDistrict as string) || '');
@@ -54,6 +60,7 @@ export default function AdminUsersScreen() {
     
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
 
     // Modal State
@@ -66,6 +73,7 @@ export default function AdminUsersScreen() {
     const [messagingUserId, setMessagingUserId] = useState<string | null>(null); 
     const [impersonatingUserId, setImpersonatingUserId] = useState<string | null>(null); 
     const dispatch = useDispatch();
+    const currentAdminId = useSelector((state: RootState) => state.auth.user?.id);
 
     // Bulk Notification State
     const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
@@ -128,6 +136,13 @@ export default function AdminUsersScreen() {
     };
 
     const handleDeleteUser = async (userId: string, fullName: string) => {
+        try {
+            await adminService.deleteUser(userId, true);
+        } catch (error: any) {
+            Alert.alert('Silme işlemi kullanılamıyor', error?.message || 'Kullanıcı silme ön kontrolü başarısız oldu.');
+            return;
+        }
+
         Alert.alert(
             '⚠️ Kullanıcıyı Sil',
             `"${fullName}" adlı kullanıcıyı tamamen silmek istediğinize emin misiniz? bu işlem geri alınamaz.`,
@@ -142,6 +157,7 @@ export default function AdminUsersScreen() {
                             const res = { data: { success: true } };
                             if (res.data.success) {
                                 setUsers(prev => prev.filter(u => u.id !== userId));
+                                setTotalCount(prev => Math.max(0, prev - 1));
                                 Alert.alert('Başarılı', 'Kullanıcının giriş hesabı ve bağlı verileri kalıcı olarak silindi.');
                             }
                         } catch (error: any) {
@@ -178,33 +194,36 @@ export default function AdminUsersScreen() {
         });
     };
 
-    const fetchUsers = useCallback(async (resetPage = false) => {
+    const fetchUsers = useCallback(async (requestedPage = 1, replace = true, silent = false) => {
         try {
-            const currentPage = resetPage ? 1 : page;
             const result = await adminService.users({
-                    search: searchQuery,
+                    search: debouncedSearch,
                     userType: filter,
                     city: city,
                     district: district,
                     serviceCategory: category,
-                    page: currentPage, limit: 20
+                    page: requestedPage, limit: 20
             });
-            const response = { data: { success: true, data: { users: result.users, pagination: { totalPages: result.totalPages } } } };
+            const response = { data: { success: true, data: { users: result.users, pagination: { totalPages: result.totalPages, totalCount: result.totalCount } } } };
 
             if (response.data.success) {
                 const { users: fetchedUsers, pagination } = response.data.data;
-                setUsers(resetPage ? fetchedUsers : [...users, ...fetchedUsers]);
+                setUsers(previous => replace
+                    ? fetchedUsers
+                    : [...previous.filter(user => !fetchedUsers.some((nextUser: User) => nextUser.id === user.id)), ...fetchedUsers]
+                );
                 setTotalPages(pagination.totalPages);
-                if (resetPage) setPage(1);
+                setTotalCount(pagination.totalCount);
+                if (replace) setPage(1);
             }
         } catch (error: any) {
             console.error('Failed to fetch users:', error);
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
             setIsLoadingMore(false);
             setRefreshing(false);
         }
-    }, [searchQuery, filter, city, district, category, page]);
+    }, [debouncedSearch, filter, city, district, category]);
 
     useEffect(() => {
         if (params.initialSearch !== undefined) setSearchQuery(params.initialSearch as string);
@@ -215,35 +234,34 @@ export default function AdminUsersScreen() {
     }, [params]);
 
     useEffect(() => {
-        setLoading(true);
-        fetchUsers(true);
-    }, [filter, city, district, category]);
-
-    useEffect(() => {
-        if (page > 1) {
-            fetchUsers(false);
-        }
-    }, [page]);
-
-    useEffect(() => {
         const debounce = setTimeout(() => {
-            setLoading(true);
-            fetchUsers(true);
+            setDebouncedSearch(searchQuery);
         }, 500);
         return () => clearTimeout(debounce);
     }, [searchQuery]);
 
+    useEffect(() => {
+        setLoading(true);
+        fetchUsers(1, true);
+    }, [fetchUsers]);
+
+    useFocusEffect(useCallback(() => {
+        fetchUsers(1, true, true);
+        const refreshTimer = setInterval(() => {
+            fetchUsers(1, true, true);
+        }, 15000);
+        return () => clearInterval(refreshTimer);
+    }, [fetchUsers]));
+
     const onRefresh = () => {
         setRefreshing(true);
-        fetchUsers(true);
+        fetchUsers(1, true);
     };
 
     const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
         try {
             await adminService.setUserActive(userId, !currentStatus);
-            setUsers(users.map(u =>
-                u.id === userId ? { ...u, isActive: !currentStatus } : u
-            ));
+            await fetchUsers(1, true, true);
             Alert.alert('Başarılı', currentStatus ? 'Kullanıcı askıya alındı' : 'Kullanıcı aktifleştirildi');
         } catch (error) {
             Alert.alert('Hata', 'İşlem başarısız oldu');
@@ -281,6 +299,14 @@ export default function AdminUsersScreen() {
 
     // Admin olarak başka bir kullanıcının hesabına geçici giriş yap
     const handleImpersonate = async (targetUser: User) => {
+        if (!targetUser.isActive || targetUser.isBanned) {
+            Alert.alert('Hesap aktif değil', 'Kullanıcı hesabına geçmeden önce hesabı aktifleştirin.');
+            return;
+        }
+        if (targetUser.userType === 'ADMIN') {
+            Alert.alert('İşlem engellendi', 'Başka bir yönetici hesabına geçiş yapılamaz.');
+            return;
+        }
         Alert.alert(
             '🔐 Hesaba Geçiş',
             `"${targetUser.fullName}" adlı kullanıcının hesabına 4 saatliğine giriş yapmak istediğinizden emin misiniz?\n\nGeri dönmek için çıkış yapıp kendi hesabınızla giriş yapabilirsiniz.`,
@@ -292,33 +318,16 @@ export default function AdminUsersScreen() {
                     onPress: async () => {
                         setImpersonatingUserId(targetUser.id);
                         try {
-                            throw new Error('Supabase Auth güvenlik modeli nedeniyle kullanıcı hesabına bürünme mobil istemcide devre dışıdır.');
-                            const response: any = { data: { success: false } };
-                            if (response.data.success) {
-                                const { accessToken, user } = response.data.data;
-                                // Admin token'ını yedekle
-                                throw new Error('Impersonation Supabase Auth üzerinde desteklenmiyor.');
-                                // Token'ı SecureStore'a kaydet
-                                void accessToken;
-                                // Redux store'u atomik olarak güncelle (user + token birlikte)
-                                dispatch(impersonateLogin({
-                                    user: {
-                                        ...user,
-                                        isVerified: user.isVerified,
-                                        isImpersonated: true,
-                                    },
-
-
-                                    accessToken,
-                                }));
-                                Alert.alert(
-                                    '✅ Geçiş Başarılı',
-                                    `"${user.fullName}" hesabına geçildi. Ana sayfaya yönlendiriliyorsunuz.\n\nNot: Bu oturum 4 saat geçerlidir.`,
-                                    [{ text: 'Tamam', onPress: () => router.replace('/(tabs)') }]
-                                );
-                            }
+                            const credentials = await adminService.createImpersonation(targetUser.id);
+                            const session = await authService.startImpersonation(credentials);
+                            dispatch(impersonateLogin(session));
+                            Alert.alert(
+                                '✅ Geçiş Başarılı',
+                                `"${session.user.fullName}" hesabına geçildi. Üstteki yönetici bandındaki × düğmesiyle güvenli biçimde geri dönebilirsiniz.\n\nBu oturum en fazla 4 saat geçerlidir.`,
+                                [{ text: 'Tamam', onPress: () => router.replace('/(tabs)') }]
+                            );
                         } catch (error: any) {
-                            const msg = error.response?.data?.error?.message || 'Hesaba geçiş başarısız oldu.';
+                            const msg = error?.message || error.response?.data?.error?.message || 'Hesaba geçiş başarısız oldu.';
                             Alert.alert('Hata', msg);
                         } finally {
                             setImpersonatingUserId(null);
@@ -347,9 +356,10 @@ export default function AdminUsersScreen() {
 
             const confirmedBalance = await adminService.addCredit(selectedUserId, amount);
 
-            setUsers(users.map(u =>
+            setUsers(previous => previous.map(u =>
                 u.id === selectedUserId ? { ...u, creditBalance: confirmedBalance } : u
             ));
+            await fetchUsers(1, true, true);
 
             setCreditModalVisible(false);
             Alert.alert('Başarılı', `${amount} kredi eklendi`);
@@ -392,18 +402,36 @@ export default function AdminUsersScreen() {
                 <View style={styles.userInfo}>
                     <View style={styles.nameRow}>
                         <Text style={styles.userName} numberOfLines={1}>{item.fullName}</Text>
-                        {item.isVerified && (
-                            <Ionicons name="checkmark-circle" size={16} color="#10B981" style={{ marginLeft: 4 }} />
+                        {item.pushStatus === 'ACTIVE' && (
+                            <TouchableOpacity
+                                onPress={() => Alert.alert(
+                                    'Bildirimler Açık',
+                                    'Yeşil tik, kullanıcının bildirim tercihinin açık olduğunu ve hesabına bağlı aktif bir push cihazı bulunduğunu gösterir.'
+                                )}
+                                style={{ marginLeft: 4 }}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                            </TouchableOpacity>
                         )}
-                        {item.pushStatus && (
+                        {item.isVerified && (
+                            <TouchableOpacity
+                                onPress={() => Alert.alert('Hesap Doğrulandı', 'Bu kullanıcının hesap doğrulaması tamamlanmış.')}
+                                style={{ marginLeft: 4 }}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Ionicons name="shield-checkmark" size={15} color="#3B82F6" />
+                            </TouchableOpacity>
+                        )}
+                        {item.pushStatus && item.pushStatus !== 'ACTIVE' && (
                             <TouchableOpacity
                                 onPress={() => {
                                     if (item.pushStatus === 'ACTIVE') {
                                         Alert.alert('Bildirim Durumu: Aktif', 'Kullanıcı bildirim alabilir durumda ve cihazı aktif (En son bu hesaptan giriş yapılmış).');
                                     } else if (item.pushStatus === 'PENDING') {
-                                        Alert.alert('Bildirim Durumu: Beklemede', 'Kullanıcı bildirimleri kapatmamış ancak şu an aktif bir cihaza bağlı değil (Başka bir hesaba geçmiş olabilir).');
+                                        Alert.alert('Bildirim İzni Doğrulanmadı', 'Bildirim tercihi kapalı değil; ancak bu hesap için henüz aktif bir push cihazı kaydedilmemiş.');
                                     } else if (item.pushStatus === 'UNINSTALLED') {
-                                        Alert.alert('Uygulama Silinmiş', 'Sistem bu cihaza bildirim yollamaya çalışırken hata aldı. Kullanıcı büyük ihtimalle uygulamayı cihazından silmiş.');
+                                        Alert.alert('Aktif Cihaz Yok', 'Bu hesaba daha önce cihaz bağlanmış; ancak şu anda aktif değil. Çıkış yapılmış, hesap değiştirilmiş veya uygulama kaldırılmış olabilir.');
                                     } else {
                                         Alert.alert('Bildirim Durumu: Kapalı', 'Kullanıcı kendi isteğiyle bildirim almayı tamamen kapatmış.');
                                     }
@@ -412,9 +440,9 @@ export default function AdminUsersScreen() {
                                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             >
                                 <Ionicons
-                                    name={item.pushStatus === 'ACTIVE' ? "notifications" : item.pushStatus === 'PENDING' ? "notifications-outline" : item.pushStatus === 'UNINSTALLED' ? "phone-portrait-outline" : "notifications-off"}
+                                    name={item.pushStatus === 'PENDING' ? "notifications-outline" : item.pushStatus === 'UNINSTALLED' ? "phone-portrait-outline" : "notifications-off"}
                                     size={16}
-                                    color={item.pushStatus === 'ACTIVE' ? '#10B981' : item.pushStatus === 'PENDING' ? '#F59E0B' : item.pushStatus === 'UNINSTALLED' ? '#EF4444' : staticColors.textLight}
+                                    color={item.pushStatus === 'PENDING' ? '#F59E0B' : item.pushStatus === 'UNINSTALLED' ? '#EF4444' : staticColors.textLight}
                                 />
                             </TouchableOpacity>
                         )}
@@ -425,7 +453,7 @@ export default function AdminUsersScreen() {
                         )}
                         {item.pushStatus === 'UNINSTALLED' && (
                             <View style={[styles.suspendedBadge, { backgroundColor: '#FEE2E2', borderColor: '#EF4444', marginLeft: 4 }]}>
-                                <Text style={[styles.suspendedText, { color: '#EF4444' }]}>Silinmiş</Text>
+                                <Text style={[styles.suspendedText, { color: '#EF4444' }]}>Cihaz yok</Text>
                             </View>
                         )}
                     </View>
@@ -435,6 +463,17 @@ export default function AdminUsersScreen() {
                             Kayıt: {new Date(item.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                         </Text>
                     )}
+                    <Text style={[styles.userRegisterDate, { color: item.isActive && !item.isBanned ? '#10B981' : '#EF4444' }]}>
+                        {item.isActive && !item.isBanned ? 'Aktif kullanıcı' : 'Askıda / erişimi kapalı'}
+                        {' • '}
+                        {item.pushStatus === 'ACTIVE'
+                            ? 'Bildirim açık'
+                            : item.pushStatus === 'DISABLED'
+                                ? 'Bildirim kapalı'
+                                : item.pushStatus === 'UNINSTALLED'
+                                    ? 'Aktif cihaz yok'
+                                    : 'Bildirim izni doğrulanmadı'}
+                    </Text>
                 </View>
                 <View style={styles.userTypeContainer}>
                     <View style={[
@@ -488,12 +527,29 @@ export default function AdminUsersScreen() {
                     <View style={styles.locationsListWrapper}>
                         <Text style={styles.locationsText} numberOfLines={expandedLocations.has(item.id) ? undefined : 1}>
                             {expandedLocations.has(item.id)
-                                ? item.locations.map(loc => [loc.district, loc.city].filter(Boolean).join(', ')).join(' • ')
-                                : Array.from(new Set(item.locations.map(loc => loc.city))).join(' • ')
+                                ? Array.from(new Set(
+                                    item.locations.map(loc => [loc.district, loc.city].filter(Boolean).join(', '))
+                                )).join(' • ')
+                                : Array.from(new Set(item.locations.map(loc => loc.city))).map(locationCity => {
+                                    const districtCount = new Set(
+                                        item.locations
+                                            ?.filter(loc => loc.city === locationCity && loc.district)
+                                            .map(loc => loc.district)
+                                    ).size;
+                                    return districtCount > 0 ? `${locationCity} (${districtCount} ilçe)` : locationCity;
+                                }).join(' • ')
                             }
                         </Text>
                     </View>
                 </TouchableOpacity>
+            )}
+            {(!item.locations || item.locations.length === 0) && (
+                <View style={styles.locationsContainer}>
+                    <View style={styles.locationsIconWrapper}>
+                        <Ionicons name="location-outline" size={14} color={staticColors.textLight} />
+                    </View>
+                    <Text style={[styles.locationsText, { color: staticColors.textLight }]}>Konum belirtilmedi</Text>
+                </View>
             )}
             {/* İletişim Bilgisi Kutucuğu */}
             {expandedInfo.has(item.id) && (
@@ -508,6 +564,18 @@ export default function AdminUsersScreen() {
                         <Text style={styles.contactInfoLabel}>Telefon:</Text>
                         <Text style={styles.contactInfoValue} selectable>{item.phone || 'Belirtilmemiş'}</Text>
                     </View>
+                    <View style={styles.contactInfoRow}>
+                        <Ionicons name="finger-print-outline" size={14} color={colors.primary} />
+                        <Text style={styles.contactInfoLabel}>Kullanıcı ID:</Text>
+                        <Text style={styles.contactInfoValue} selectable numberOfLines={1}>{item.id}</Text>
+                    </View>
+                    <View style={styles.contactInfoRow}>
+                        <Ionicons name="pulse-outline" size={14} color={colors.primary} />
+                        <Text style={styles.contactInfoLabel}>Son görülme:</Text>
+                        <Text style={styles.contactInfoValue} selectable>
+                            {item.lastSeenAt ? new Date(item.lastSeenAt).toLocaleString('tr-TR') : 'Kayıt yok'}
+                        </Text>
+                    </View>
                 </View>
             )}
             <View style={styles.actionRow}>
@@ -520,20 +588,23 @@ export default function AdminUsersScreen() {
                         <Text style={[styles.actionBtnText, { color: '#10B981' }]}>Kredi</Text>
                     </TouchableOpacity>
                 )}
-                <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: item.isActive ? '#EF444415' : '#10B98115' }]}
-                    onPress={() => toggleUserStatus(item.id, item.isActive)}
-                >
-                    <Ionicons
-                        name={item.isActive ? 'pause-circle-outline' : 'play-circle-outline'}
-                        size={14}
-                        color={item.isActive ? '#EF4444' : '#10B981'}
-                    />
-                    <Text style={[styles.actionBtnText, { color: item.isActive ? '#EF4444' : '#10B981' }]}>
-                        {item.isActive ? 'Askıya Al' : 'Aktif Et'}
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
+                {item.userType !== 'ADMIN' && (
+                    <TouchableOpacity
+                        style={[styles.actionBtn, { backgroundColor: item.isActive ? '#EF444415' : '#10B98115' }]}
+                        onPress={() => toggleUserStatus(item.id, item.isActive)}
+                    >
+                        <Ionicons
+                            name={item.isActive ? 'pause-circle-outline' : 'play-circle-outline'}
+                            size={14}
+                            color={item.isActive ? '#EF4444' : '#10B981'}
+                        />
+                        <Text style={[styles.actionBtnText, { color: item.isActive ? '#EF4444' : '#10B981' }]}>
+                            {item.isActive ? 'Askıya Al' : 'Aktif Et'}
+                        </Text>
+                    </TouchableOpacity>
+                )}
+                {item.id !== currentAdminId && (
+                  <TouchableOpacity
                     style={[styles.actionBtn, { backgroundColor: colors.primary + '15' }]}
                     onPress={() => handleSendMessage(item.id)}
                     disabled={messagingUserId === item.id}
@@ -544,7 +615,8 @@ export default function AdminUsersScreen() {
                         <Ionicons name="chatbubble-outline" size={14} color={colors.primary} />
                     )}
                     <Text style={[styles.actionBtnText, { color: colors.primary }]}>Mesaj</Text>
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity
                     style={[styles.actionBtn, { backgroundColor: '#6366F115' }]}
                     onPress={() => toggleInfo(item.id)}
@@ -552,25 +624,29 @@ export default function AdminUsersScreen() {
                     <Ionicons name={expandedInfo.has(item.id) ? 'chevron-up-outline' : 'information-circle-outline'} size={14} color="#6366F1" />
                     <Text style={[styles.actionBtnText, { color: '#6366F1' }]}>Bilgi</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: '#F59E0B15' }]}
-                    onPress={() => handleImpersonate(item)}
-                    disabled={impersonatingUserId === item.id}
-                >
-                    {impersonatingUserId === item.id ? (
-                        <ActivityIndicator size={14} color="#F59E0B" />
-                    ) : (
-                        <Ionicons name="log-in-outline" size={14} color="#F59E0B" />
-                    )}
-                    <Text style={[styles.actionBtnText, { color: '#F59E0B' }]}>Giriş</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: '#EF444415' }]}
-                    onPress={() => handleDeleteUser(item.id, item.fullName)}
-                >
-                    <Ionicons name="trash-outline" size={14} color="#EF4444" />
-                    <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Sil</Text>
-                </TouchableOpacity>
+                {item.userType !== 'ADMIN' && item.isActive && !item.isBanned && (
+                    <TouchableOpacity
+                        style={[styles.actionBtn, { backgroundColor: '#F59E0B15' }]}
+                        onPress={() => handleImpersonate(item)}
+                        disabled={impersonatingUserId === item.id}
+                    >
+                        {impersonatingUserId === item.id ? (
+                            <ActivityIndicator size={14} color="#F59E0B" />
+                        ) : (
+                            <Ionicons name="log-in-outline" size={14} color="#F59E0B" />
+                        )}
+                        <Text style={[styles.actionBtnText, { color: '#F59E0B' }]}>Giriş</Text>
+                    </TouchableOpacity>
+                )}
+                {item.userType !== 'ADMIN' && (
+                    <TouchableOpacity
+                        style={[styles.actionBtn, { backgroundColor: '#EF444415' }]}
+                        onPress={() => handleDeleteUser(item.id, item.fullName)}
+                    >
+                        <Ionicons name="trash-outline" size={14} color="#EF4444" />
+                        <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Sil</Text>
+                    </TouchableOpacity>
+                )}
             </View>
         </TouchableOpacity>
     );
@@ -590,7 +666,7 @@ export default function AdminUsersScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: '#F8FAFC' }]}>
-            <PremiumHeader title="Kullanıcı Yönetimi" subtitle={`${users.length} kayıt`} showBackButton />
+            <PremiumHeader title="Kullanıcı Yönetimi" subtitle={`${totalCount} kayıt • otomatik güncel`} showBackButton />
 
             <View style={[styles.searchContainer, { backgroundColor: 'transparent', paddingBottom: 0 }]}>
                 <View style={[styles.searchBox, { borderRadius: 12, backgroundColor: '#fff' }]}>
@@ -678,7 +754,9 @@ export default function AdminUsersScreen() {
                     onEndReached={() => {
                         if (page < totalPages && !loading && !isLoadingMore) {
                             setIsLoadingMore(true);
-                            setPage(prev => prev + 1);
+                            const nextPage = page + 1;
+                            setPage(nextPage);
+                            fetchUsers(nextPage, false);
                         }
                     }}
                     onEndReachedThreshold={0.5}

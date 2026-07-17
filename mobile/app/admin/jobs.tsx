@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, RefreshControl, TextInput } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
@@ -17,19 +17,23 @@ export default function AdminJobsScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
 
     // Pagination State
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
 
-    const fetchJobs = async (pageNum: number = 1, shouldRefresh: boolean = false) => {
-        if (loading && pageNum > 1) return; // Prevent double loading
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 350);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
+    const fetchJobs = useCallback(async (pageNum: number = 1, shouldRefresh: boolean = false) => {
         try {
             if (pageNum === 1 && !shouldRefresh) setLoading(true); // Only show initial loader
             const limit = 20;
-            const result = await adminService.jobs(pageNum, limit);
+            const result = await adminService.jobs(pageNum, limit, debouncedSearch);
             const response = { data: { success: true, data: result.data, pagination: { hasMore: result.hasMore } } };
 
             if (response.data.success) {
@@ -53,12 +57,12 @@ export default function AdminJobsScreen() {
             setRefreshing(false);
             setIsFetchingMore(false);
         }
-    };
+    }, [debouncedSearch]);
 
     useFocusEffect(
         useCallback(() => {
-            fetchJobs(1);
-        }, [])
+            void fetchJobs(1);
+        }, [fetchJobs])
     );
 
     const onRefresh = () => {
@@ -125,19 +129,6 @@ export default function AdminJobsScreen() {
             default: return status;
         }
     };
-
-    // Note: Filtering logic currently happens on client-side for demonstrated purposes.
-    // For large datasets, search should also move to backend.
-    const filteredJobs = jobs.filter(job => {
-        if (!searchQuery) return true;
-        const q = searchQuery.toLowerCase();
-        return (
-            job.title?.toLowerCase().includes(q) ||
-            job.citizen?.fullName?.toLowerCase().includes(q) ||
-            job.category?.toLowerCase().includes(q) ||
-            job.location?.city?.toLowerCase().includes(q)
-        );
-    });
 
     const renderItem = ({ item }: { item: any }) => (
         <TouchableOpacity 
@@ -234,7 +225,7 @@ export default function AdminJobsScreen() {
                 </View>
             ) : (
                 <FlatList
-                    data={filteredJobs}
+                    data={jobs}
                     renderItem={renderItem}
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.list}

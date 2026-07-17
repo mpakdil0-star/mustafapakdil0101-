@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -8,9 +8,11 @@ import {
     ActivityIndicator,
     Alert,
     Modal,
-    TextInput
+    TextInput,
+    Linking
 } from 'react-native';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { fonts } from '../../constants/typography';
@@ -26,6 +28,7 @@ interface Report {
     jobId?: string;
     reason: string;
     description: string;
+    evidence?: string[];
     status: 'PENDING' | 'UNDER_REVIEW' | 'RESOLVED' | 'DISMISSED';
     createdAt: string;
     reporter?: { fullName: string }; // Optional mock data support
@@ -51,6 +54,7 @@ const REASON_LABELS: Record<string, string> = {
 };
 
 export default function AdminReportsScreen() {
+    const router = useRouter();
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -90,9 +94,9 @@ export default function AdminReportsScreen() {
         }
     }, []);
 
-    useEffect(() => {
-        fetchReports();
-    }, []);
+    useFocusEffect(useCallback(() => {
+        void fetchReports();
+    }, [fetchReports]));
 
     const handleUpdateStatus = async (status: string, banUser: boolean = false) => {
         if (!selectedReport) return;
@@ -194,6 +198,37 @@ export default function AdminReportsScreen() {
                                 <Text style={styles.detailLabel}>Sebep:</Text>
                                 <Text style={styles.detailValue}>{REASON_LABELS[selectedReport.reason] || selectedReport.reason}</Text>
                             </View>
+
+                            {!!selectedReport.jobId && (
+                                <TouchableOpacity
+                                    style={styles.contextButton}
+                                    onPress={() => {
+                                        const jobId = selectedReport.jobId as string;
+                                        setSelectedReport(null);
+                                        // Keep the report context available to the administrator.
+                                        router.push(`/jobs/${jobId}`);
+                                    }}
+                                >
+                                    <Ionicons name="briefcase-outline" size={18} color="#3B82F6" />
+                                    <Text style={styles.contextButtonText}>İlgili ilanı görüntüle</Text>
+                                </TouchableOpacity>
+                            )}
+
+                            {!!selectedReport.evidence?.length && (
+                                <View style={styles.evidenceSection}>
+                                    <Text style={styles.detailLabel}>Kanıtlar:</Text>
+                                    {selectedReport.evidence.map((url, index) => (
+                                        <TouchableOpacity
+                                            key={`${url}-${index}`}
+                                            style={styles.evidenceButton}
+                                            onPress={() => Linking.openURL(url).catch(() => Alert.alert('Hata', 'Kanıt dosyası açılamadı.'))}
+                                        >
+                                            <Ionicons name="document-attach-outline" size={18} color="#7C3AED" />
+                                            <Text style={styles.evidenceButtonText}>Kanıt {index + 1}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            )}
 
                             <View style={styles.detailRow}>
                                 <Text style={styles.detailLabel}>Şikayet Eden:</Text>
@@ -388,6 +423,39 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         borderWidth: 1,
         borderColor: '#E2E8F0',
+    },
+    contextButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        padding: 12,
+        marginTop: 14,
+        marginBottom: 14,
+        borderRadius: 10,
+        backgroundColor: '#EFF6FF',
+    },
+    contextButtonText: {
+        fontFamily: fonts.bold,
+        fontSize: 13,
+        color: '#2563EB',
+    },
+    evidenceSection: {
+        gap: 8,
+        marginBottom: 16,
+    },
+    evidenceButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        padding: 11,
+        borderRadius: 10,
+        backgroundColor: '#F5F3FF',
+    },
+    evidenceButtonText: {
+        fontFamily: fonts.bold,
+        fontSize: 13,
+        color: '#7C3AED',
     },
     descriptionText: {
         fontFamily: fonts.regular,

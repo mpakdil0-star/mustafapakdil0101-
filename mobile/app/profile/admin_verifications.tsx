@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -11,7 +11,7 @@ import {
     Modal,
     Dimensions,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
@@ -23,6 +23,7 @@ import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
 import { adminService } from '../../services/adminService';
 import { getFileUrl } from '../../constants/api';
+import { useAppSelector } from '../../hooks/redux';
 
 interface VerificationRequest {
     userId: string;
@@ -38,7 +39,8 @@ interface VerificationRequest {
     };
     verificationDocuments: {
         documentType: string;
-        documentUrl: string;
+        path?: string;
+        documentUrl?: string | null;
         submittedAt: string;
     };
 }
@@ -78,9 +80,11 @@ export default function AdminVerificationsScreen() {
     const router = useRouter();
     const [requests, setRequests] = useState<VerificationRequest[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const colors = useAppColors();
+    const { user, isAuthenticated } = useAppSelector((state) => state.auth);
 
     const [alertConfig, setAlertConfig] = useState<{
         visible: boolean;
@@ -95,10 +99,13 @@ export default function AdminVerificationsScreen() {
     };
 
     useEffect(() => {
-        loadRequests();
-    }, []);
+        if (isAuthenticated && user && user.userType !== 'ADMIN') {
+            router.replace('/');
+        }
+    }, [isAuthenticated, user, router]);
 
-    const loadRequests = async () => {
+    const loadRequests = useCallback(async () => {
+        if (!isAuthenticated || user?.userType !== 'ADMIN') return;
         try {
             const response = { data: { success: true, data: await adminService.verifications() } };
             if (response.data.success) {
@@ -109,8 +116,13 @@ export default function AdminVerificationsScreen() {
             showAlert('Hata', 'Bekleyen başvurular yüklenemedi.', 'error');
         } finally {
             setIsLoading(false);
+            setRefreshing(false);
         }
-    };
+    }, [isAuthenticated, user?.userType]);
+
+    useFocusEffect(useCallback(() => {
+        void loadRequests();
+    }, [loadRequests]));
 
     const handleProcess = async (userId: string, status: 'VERIFIED' | 'REJECTED') => {
         const action = status === 'VERIFIED' ? 'onaylamak' : 'reddetmek';
@@ -236,6 +248,14 @@ export default function AdminVerificationsScreen() {
         </Card>
     );
 
+    if (!isAuthenticated || !user || user.userType !== 'ADMIN') {
+        return (
+            <View style={styles.center}>
+                <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
             <PremiumHeader title="Doğrulama Havuzu" showBackButton />
@@ -255,6 +275,11 @@ export default function AdminVerificationsScreen() {
                     renderItem={renderItem}
                     keyExtractor={item => item.userId}
                     contentContainerStyle={styles.list}
+                    refreshing={refreshing}
+                    onRefresh={() => {
+                        setRefreshing(true);
+                        void loadRequests();
+                    }}
                 />
             )}
 

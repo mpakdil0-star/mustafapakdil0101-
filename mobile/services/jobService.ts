@@ -1,3 +1,5 @@
+import { File } from 'expo-file-system';
+
 import { assertSupabaseConfigured, supabase } from './supabase';
 
 const supabaseStorageBaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
@@ -107,12 +109,19 @@ const uploadJobImages = async (userId: string, jobId: string, uris: string[]) =>
       uploaded.push(uri);
       continue;
     }
-    const response = await fetch(uri);
-    if (!response.ok) throw new Error(`İlan görseli okunamadı (${index + 1}).`);
-    const contentType = response.headers.get('content-type') || undefined;
+    let fileData: ArrayBuffer;
+    let contentType: string | undefined;
+    try {
+      const file = new File(uri);
+      fileData = await file.arrayBuffer();
+      contentType = file.type || undefined;
+    } catch (error) {
+      console.warn('İlan görseli yerel dosyadan okunamadı:', error);
+      throw new Error(`Seçilen ${index + 1}. fotoğraf okunamadı. Lütfen fotoğrafı yeniden seçin.`);
+    }
     const extension = extensionFor(uri, contentType);
     const path = `${userId}/${jobId}/${Date.now()}-${index}.${extension}`;
-    const { error } = await supabase.storage.from('job-images').upload(path, await response.arrayBuffer(), {
+    const { error } = await supabase.storage.from('job-images').upload(path, fileData, {
       contentType: contentType || `image/${extension === 'jpg' ? 'jpeg' : extension}`,
       upsert: false,
     });
@@ -163,33 +172,40 @@ const writableJobData = (data: Partial<CreateJobData>) => {
 
 export const jobService = {
   async createJob(data: CreateJobData) {
-    assertSupabaseConfigured();
-    const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError || !authData.user) throw authError || new Error('İlan oluşturmak için giriş yapmalısınız.');
+    try {
+      assertSupabaseConfigured();
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData.user) throw authError || new Error('İlan oluşturmak için giriş yapmalısınız.');
 
-    const { data: row, error } = await supabase.from('job_posts').insert({
-      ...writableJobData(data),
-      citizen_id: authData.user.id,
-      images: [],
-      status: 'OPEN',
-    }).select('*').single();
-    if (error) throw error;
+      const { data: row, error } = await supabase.from('job_posts').insert({
+        ...writableJobData(data),
+        citizen_id: authData.user.id,
+        images: [],
+        status: 'OPEN',
+      }).select('*').single();
+      if (error) throw error;
 
-    if (data.images?.length) {
-      let uploadedImages: string[] = [];
-      try {
-        uploadedImages = await uploadJobImages(authData.user.id, row.id, data.images);
-        const { data: updated, error: updateError } = await supabase
-          .from('job_posts').update({ images: uploadedImages }).eq('id', row.id).select('*').single();
-        if (updateError) throw updateError;
-        return mapJob(updated);
-      } catch (uploadError) {
-        await deleteJobImages(uploadedImages);
-        await supabase.rpc('delete_job', { job_id: row.id });
-        throw uploadError;
+      if (data.images?.length) {
+        let uploadedImages: string[] = [];
+        try {
+          uploadedImages = await uploadJobImages(authData.user.id, row.id, data.images);
+          const { data: updated, error: updateError } = await supabase
+            .from('job_posts').update({ images: uploadedImages }).eq('id', row.id).select('*').single();
+          if (updateError) throw updateError;
+          return mapJob(updated);
+        } catch (uploadError) {
+          await deleteJobImages(uploadedImages);
+          await supabase.rpc('delete_job', { job_id: row.id });
+          throw uploadError;
+        }
       }
+      return mapJob(row);
+    } catch (error) {
+      if (error instanceof TypeError && /network request failed/i.test(error.message)) {
+        throw new Error('Supabase bağlantısı kurulamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.');
+      }
+      throw error;
     }
-    return mapJob(row);
   },
 
   async getJobs(filters?: {

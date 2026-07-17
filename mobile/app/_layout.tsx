@@ -71,6 +71,7 @@ function RootLayoutNav() {
   const hasCheckedInitialNotification = useRef(false);
   const notificationNavigationInFlight = useRef<string | null>(null);
   const notificationNavigationWatchdog = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shouldClearInitialNotificationResponse = useRef(false);
 
   const showAlert = (title: string, message: string, type: any = 'info', buttons?: any[]) => {
     setAlertConfig({ visible: true, title, message, type, buttons });
@@ -154,7 +155,7 @@ function RootLayoutNav() {
     if (!isAuthenticated || !user?.id || user.isImpersonated) return;
 
     let handled = false;
-    const revokeLocalSession = async () => {
+    const revokeLocalSession = async (reason = 'ADMIN_DELETED') => {
       if (handled) return;
       handled = true;
       try {
@@ -164,7 +165,14 @@ function RootLayoutNav() {
       }
       dispatch(clearSession());
       router.replace('/welcome');
-      Alert.alert('Oturum sonlandırıldı', 'Hesabınız yönetici tarafından silindi.');
+      Alert.alert(
+        'Oturum sonlandırıldı',
+        reason === 'ADMIN_SUSPENDED'
+          ? 'Hesabınız yönetici tarafından askıya alındı.'
+          : reason === 'ADMIN_BANNED'
+            ? 'Hesabınız bir şikâyet incelemesi sonucunda yönetici tarafından kapatıldı.'
+          : 'Hesabınız yönetici tarafından silindi.'
+      );
     };
 
     const channel = supabase
@@ -177,7 +185,7 @@ function RootLayoutNav() {
           table: 'account_revocations',
           filter: `user_id=eq.${user.id}`,
         },
-        () => { void revokeLocalSession(); },
+        payload => { void revokeLocalSession((payload.new as any)?.reason); },
       )
       .subscribe();
 
@@ -185,18 +193,41 @@ function RootLayoutNav() {
     // the Realtime channel was still connecting.
     supabase
       .from('account_revocations')
-      .select('id')
+      .select('id,reason')
       .eq('user_id', user.id)
       .limit(1)
       .maybeSingle()
       .then(({ data }) => {
-        if (data) void revokeLocalSession();
+        if (data) void revokeLocalSession(data.reason);
       });
 
     return () => {
       void supabase.removeChannel(channel);
     };
   }, [isAuthenticated, user?.id, user?.isImpersonated, dispatch, router]);
+
+  useEffect(() => {
+    if (!user?.isImpersonated || !user.impersonationExpiresAt) return;
+    const remaining = new Date(user.impersonationExpiresAt).getTime() - Date.now();
+
+    const restoreAdmin = async () => {
+      try {
+        await dispatch(stopImpersonation()).unwrap();
+        router.replace('/admin/users');
+        Alert.alert('Yönetici moduna dönüldü', 'Süreli kullanıcı oturumu sona erdi.');
+      } catch {
+        Alert.alert('Oturum hatası', 'Yönetici hesabına otomatik dönüş yapılamadı. Lütfen uygulamayı yeniden açın.');
+      }
+    };
+
+    if (remaining <= 0) {
+      void restoreAdmin();
+      return;
+    }
+
+    const expiryTimer = setTimeout(() => { void restoreAdmin(); }, remaining);
+    return () => clearTimeout(expiryTimer);
+  }, [user?.isImpersonated, user?.impersonationExpiresAt, dispatch, router]);
 
   useEffect(() => {
     const interaction = InteractionManager.runAfterInteractions(() => {
@@ -529,6 +560,14 @@ function RootLayoutNav() {
 
         const NotifModule = await import('expo-notifications');
 
+        const pushPreferenceEnabled = async () => {
+          const preferences: Record<string, unknown> = await preferenceService
+            .get<Record<string, unknown>>()
+            .catch(() => ({} as Record<string, unknown>));
+          const configured = preferences.pushEnabled ?? preferences.push;
+          return configured !== false;
+        };
+
         // --- ANDROID KANAL AYARLARI (ANLIK BİLDİRİM İÇİN ŞART) ---
         if (Platform.OS === 'android') {
           await NotifModule.setNotificationChannelAsync('default', {
@@ -544,8 +583,13 @@ function RootLayoutNav() {
         const { status } = await NotifModule.getPermissionsAsync();
 
         if (status === 'granted') {
-          // Already granted — register token + mark device as complete
-          await authService.registerPushToken();
+          // Respect the in-app switch. OS permission alone must not silently
+          // re-enable a preference the user explicitly disabled.
+          if (await pushPreferenceEnabled()) {
+            await authService.registerPushToken();
+          } else {
+            await authService.deactivateCurrentPushToken();
+          }
           const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
           await AsyncStorage.setItem('device_push_prompt_completed', 'true');
           return;
@@ -556,6 +600,9 @@ function RootLayoutNav() {
         const promptCompleted = await AsyncStorage.getItem('device_push_prompt_completed');
 
         if (promptCompleted === 'true') {
+          await authService.deactivateCurrentPushToken();
+          const currentPreferences = await preferenceService.get<Record<string, unknown>>().catch(() => ({}));
+          await preferenceService.update({ ...currentPreferences, push: false, pushEnabled: false }).catch(() => {});
           // Prompt already shown on this device install — don't show again
           // The home screen banner will take over as fallback
           return;
@@ -605,6 +652,10 @@ function RootLayoutNav() {
                     const currentPreferences = await preferenceService.get<Record<string, unknown>>().catch(() => ({}));
                     await preferenceService.update({ ...currentPreferences, push: true, pushEnabled: true });
                     await AsyncStorage.setItem('push_activated', 'true');
+                  } else {
+                    await authService.deactivateCurrentPushToken();
+                    const currentPreferences = await preferenceService.get<Record<string, unknown>>().catch(() => ({}));
+                    await preferenceService.update({ ...currentPreferences, push: false, pushEnabled: false }).catch(() => {});
                   }
                   // If denied, the home screen banner will handle fallback
                 } catch (permErr) {
@@ -646,8 +697,20 @@ function RootLayoutNav() {
           const { status } = await Notifications.getPermissionsAsync();
           
           if (status === 'granted') {
-            console.log('🔄 [PushKeepAlive] App foregrounded — re-registering push token...');
-            await authService.registerPushToken();
+            const preferences: Record<string, unknown> = await preferenceService
+              .get<Record<string, unknown>>()
+              .catch(() => ({} as Record<string, unknown>));
+            const pushEnabled = (preferences.pushEnabled ?? preferences.push) !== false;
+            if (pushEnabled) {
+              console.log('🔄 [PushKeepAlive] App foregrounded — re-registering push token...');
+              await authService.registerPushToken();
+            } else {
+              await authService.deactivateCurrentPushToken();
+            }
+          } else {
+            await authService.deactivateCurrentPushToken();
+            const preferences = await preferenceService.get<Record<string, unknown>>().catch(() => ({}));
+            await preferenceService.update({ ...preferences, push: false, pushEnabled: false }).catch(() => {});
           }
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e);
@@ -870,15 +933,22 @@ function RootLayoutNav() {
     if (requestId) handledNotificationResponseIds.current.add(requestId);
 
     const data = response.notification.request.content.data as Record<string, unknown>;
-    const targetPath = getNotificationTargetPath(data) ?? (isAuthenticated ? '/profile/notifications' : '/welcome');
+    // Never resolve an unknown cold-start payload to the home/welcome route.
+    // Authentication may still be restoring at this point; keep a protected
+    // inbox fallback queued until the session is ready.
+    const targetPath = getNotificationTargetPath(data) ?? '/profile/notifications';
     console.log('[DEEP LINK] Notification navigation queued:', targetPath);
     notificationNavigationInFlight.current = null;
     setPendingNotificationPath(targetPath);
-  }, [isAuthenticated]);
+  }, []);
 
   // Deferred Deep Linking when user gets authenticated
   useEffect(() => {
     const isPublicPath = pendingNotificationPath === '/welcome';
+    if (pendingNotificationPath && isInitialized && isNavigationReady && !isAuthenticated && !isPublicPath) {
+      if (pathname !== '/welcome') router.replace('/welcome');
+      return;
+    }
     if (pendingNotificationPath && isInitialized && isNavigationReady && (isAuthenticated || isPublicPath)) {
       if (notificationNavigationInFlight.current === pendingNotificationPath) return;
       console.log('🚀 [RootNav] Navigating to deferred notification path:', pendingNotificationPath);
@@ -912,7 +982,7 @@ function RootLayoutNav() {
         interaction.cancel();
       };
     }
-  }, [isAuthenticated, isInitialized, pendingNotificationPath, isNavigationReady, router]);
+  }, [isAuthenticated, isInitialized, pendingNotificationPath, isNavigationReady, pathname, router]);
 
   // Keep the normal home redirect paused until Expo Router confirms that the
   // notification destination is actually visible. This removes the intermittent
@@ -931,6 +1001,12 @@ function RootLayoutNav() {
     const confirmationTimer = setTimeout(() => {
       notificationNavigationInFlight.current = null;
       setPendingNotificationPath(current => current === pendingNotificationPath ? null : current);
+      if (shouldClearInitialNotificationResponse.current) {
+        shouldClearInitialNotificationResponse.current = false;
+        Notifications.clearLastNotificationResponseAsync().catch(error => {
+          console.warn('[DEEP LINK] Initial notification response could not be cleared:', error);
+        });
+      }
     }, 300);
 
     return () => clearTimeout(confirmationTimer);
@@ -968,8 +1044,8 @@ function RootLayoutNav() {
       try {
         const lastNotification = await Notifications.getLastNotificationResponseAsync();
         if (lastNotification) {
+          shouldClearInitialNotificationResponse.current = true;
           queueNotificationResponse(lastNotification);
-          await Notifications.clearLastNotificationResponseAsync();
         }
       } finally {
         // Do not let the normal auth redirect send the user to the home page
@@ -978,9 +1054,7 @@ function RootLayoutNav() {
       }
     };
 
-    if (isNavigationReady) {
-      checkInitialNotification().catch(error => console.error('[DEEP LINK] Initial notification check failed:', error));
-    }
+    checkInitialNotification().catch(error => console.error('[DEEP LINK] Initial notification check failed:', error));
 
     return () => {
       responseSubscription.remove();
@@ -1019,7 +1093,14 @@ function RootLayoutNav() {
           <Text style={styles.impersonationText} numberOfLines={1}>{user.fullName?.split(' ')[0]?.toUpperCase()}</Text>
           <TouchableOpacity
             style={styles.impersonationLogoutBtn}
-            onPress={() => dispatch(stopImpersonation())}
+            onPress={async () => {
+              try {
+                await dispatch(stopImpersonation()).unwrap();
+                router.replace('/admin/users');
+              } catch {
+                Alert.alert('Hata', 'Yönetici hesabına geri dönülemedi. Lütfen tekrar deneyin.');
+              }
+            }}
             activeOpacity={0.7}
           >
             <Ionicons name="close" size={14} color="#FFF" />

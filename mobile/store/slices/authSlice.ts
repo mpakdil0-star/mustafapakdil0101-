@@ -20,6 +20,7 @@ interface User {
   profileImageUrl?: string;
   isVerified: boolean;
   isImpersonated?: boolean;
+  impersonationExpiresAt?: string;
   acceptedLegalVersion?: string;
   specialties?: string[];
   electricianProfile?: {
@@ -177,18 +178,9 @@ export const logout = createAsyncThunk(
 
 export const stopImpersonation = createAsyncThunk(
   'auth/stopImpersonation',
-  async (_, { dispatch, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const apiService = { restoreAdminFallback: async () => false };
-      const restored = await apiService.restoreAdminFallback();
-      if (restored) {
-        // Fetch original admin user data
-        const user = await authService.getMe();
-        return user;
-      }
-      // If no fallback, just logout as safety
-      await authService.logout();
-      return null;
+      return await authService.stopImpersonation();
     } catch (error: any) {
       return rejectWithValue(error.message || 'Geri dönülemedi');
     }
@@ -491,7 +483,8 @@ const authSlice = createSlice({
       })
       .addCase(stopImpersonation.fulfilled, (state, action) => {
         if (action.payload) {
-          state.user = action.payload;
+          state.user = action.payload.user;
+          state.token = action.payload.accessToken;
           state.isAuthenticated = true;
           state.error = null;
         } else {
@@ -501,9 +494,7 @@ const authSlice = createSlice({
         }
       })
       .addCase(stopImpersonation.rejected, (state) => {
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
+        state.error = 'Yönetici hesabına geri dönülemedi.';
       });
   },
 });

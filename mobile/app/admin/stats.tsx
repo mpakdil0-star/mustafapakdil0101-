@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, RefreshControl } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { Ionicons } from '@expo/vector-icons';
 import { colors as staticColors } from '../../constants/colors';
@@ -12,9 +12,15 @@ import { adminService } from '../../services/adminService';
 const { width } = Dimensions.get('window');
 
 interface KPIData {
+  registeredUsers: number;
   totalCitizens: number;
   totalElectricians: number;
   pendingVerifications: number;
+  activeJobs: number;
+  completedJobs: number;
+  successfulPurchases: number;
+  pendingPurchases: number;
+  listPriceRevenue: number;
 }
 
 interface DistributionItem {
@@ -31,6 +37,7 @@ interface HeatmapItem {
 }
 
 interface StatsData {
+  generatedAt?: string;
   kpis: KPIData;
   serviceDistribution: DistributionItem[];
   districtDistribution: DistributionItem[];
@@ -46,29 +53,41 @@ export default function AdminStatsScreen() {
   const router = useRouter();
   const colors = useAppColors();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [data, setData] = useState<StatsData | null>(null);
   const [selectedCity, setSelectedCity] = useState('ALL'); // ALL = Tüm Türkiye
   const [showAllServices, setShowAllServices] = useState(false);
   const [showAllDistricts, setShowAllDistricts] = useState(false);
   const [showCityPicker, setShowCityPicker] = useState(false);
 
-  useEffect(() => {
-    fetchStats();
-  }, [selectedCity]);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async (showInitialLoader = false) => {
     try {
-      setLoading(true);
+      if (showInitialLoader) setLoading(true);
+      setErrorMessage(null);
       const response = { data: { success: true, data: await adminService.detailedStats(selectedCity) } };
       if (response.data.success) {
         setData(response.data.data);
       }
     } catch (error) {
       console.error('Fetch detailed stats error:', error);
+      setErrorMessage('Güncel istatistikler alınamadı. Yenilemek için aşağı çekin.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [selectedCity]);
+
+  useFocusEffect(useCallback(() => {
+    void fetchStats(true);
+    const interval = setInterval(() => void fetchStats(false), 30_000);
+    return () => clearInterval(interval);
+  }, [fetchStats]));
+
+  const refreshStats = useCallback(() => {
+    setRefreshing(true);
+    void fetchStats(false);
+  }, [fetchStats]);
 
   const navigateToUsers = (filters: { 
     initialFilter?: string, 
@@ -169,7 +188,28 @@ export default function AdminStatsScreen() {
     <View style={styles.container}>
       <PremiumHeader title="Stratejik İstatistikler" showBackButton />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshStats} tintColor="#7C3AED" colors={['#7C3AED']} />}
+      >
+        <View style={styles.freshnessRow}>
+          <View style={styles.freshnessDot} />
+          <Text style={styles.freshnessText}>
+            {data?.generatedAt
+              ? `Son güncelleme: ${new Date(data.generatedAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
+              : 'Güncel veriler hazırlanıyor'}
+          </Text>
+          <TouchableOpacity onPress={refreshStats} disabled={refreshing} style={styles.refreshButton}>
+            <Ionicons name="refresh" size={17} color="#7C3AED" />
+          </TouchableOpacity>
+        </View>
+
+        {!!errorMessage && (
+          <TouchableOpacity style={styles.errorBanner} onPress={refreshStats}>
+            <Ionicons name="warning-outline" size={18} color="#B91C1C" />
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          </TouchableOpacity>
+        )}
         {/* City Filter Selection */}
         <View style={styles.filterSection}>
           <Text style={styles.filterLabel}>Bölge Seçimi:</Text>
@@ -198,6 +238,21 @@ export default function AdminStatsScreen() {
           <View style={[styles.kpiCard, { borderLeftColor: '#F59E0B', borderLeftWidth: 4 }]}>
             <Text style={styles.kpiValue}>{data?.kpis.pendingVerifications}</Text>
             <Text style={styles.kpiLabel}>Bekleyen Onay</Text>
+          </View>
+        </View>
+
+        <View style={styles.kpiContainer}>
+          <View style={[styles.kpiCard, { borderLeftColor: '#10B981', borderLeftWidth: 4 }]}>
+            <Text style={styles.kpiValue}>{data?.kpis.activeJobs}</Text>
+            <Text style={styles.kpiLabel}>Açık İlan</Text>
+          </View>
+          <View style={[styles.kpiCard, { borderLeftColor: '#0EA5E9', borderLeftWidth: 4 }]}>
+            <Text style={styles.kpiValue}>{data?.kpis.completedJobs}</Text>
+            <Text style={styles.kpiLabel}>Tamamlanan İş</Text>
+          </View>
+          <View style={[styles.kpiCard, { borderLeftColor: '#8B5CF6', borderLeftWidth: 4 }]}>
+            <Text style={styles.kpiValue}>{data?.kpis.successfulPurchases}</Text>
+            <Text style={styles.kpiLabel}>Başarılı Kredi Alımı</Text>
           </View>
         </View>
 
@@ -428,6 +483,48 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.md,
+  },
+  freshnessRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    marginBottom: 12,
+  },
+  freshnessDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10B981',
+    marginRight: 8,
+  },
+  freshnessText: {
+    flex: 1,
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: '#047857',
+  },
+  refreshButton: {
+    padding: 5,
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 12,
+    marginBottom: 12,
+    borderRadius: 12,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  errorText: {
+    flex: 1,
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: '#B91C1C',
   },
   filterSection: {
     flexDirection: 'row',

@@ -10,14 +10,18 @@ export default function AdminLayout() {
     const router = useRouter();
 
     useEffect(() => {
-        if (!isAuthenticated || user?.userType !== 'ADMIN' as any) {
-            // Note: userType might not strictly be typed as ADMIN in frontend yet, so casting or checking role logic is needed
-            // For now, if we are here, we assume the user has access or we redirect
-            // router.replace('/');
+        if (isAuthenticated && user && user.userType !== 'ADMIN') {
+            router.replace('/');
         }
-    }, [user, isAuthenticated]);
+    }, [user, isAuthenticated, router]);
 
-    if (!isAuthenticated) return null;
+    if (!isAuthenticated || !user || user.userType !== 'ADMIN') {
+        return (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+        );
+    }
 
     return (
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F8FAFC' } }}>

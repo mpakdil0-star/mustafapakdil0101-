@@ -1,8 +1,30 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
+import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { assertSupabaseConfigured, supabase } from './supabase';
+
+const IMPERSONATION_BACKUP_KEY = 'admin_impersonation_backup_v1';
+
+interface ImpersonationBackup {
+  adminUserId: string;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: string;
+  sessionId: string;
+}
+
+const readImpersonationBackup = async (): Promise<ImpersonationBackup | null> => {
+  const value = await SecureStore.getItemAsync(IMPERSONATION_BACKUP_KEY);
+  if (!value) return null;
+  try {
+    return JSON.parse(value) as ImpersonationBackup;
+  } catch {
+    await SecureStore.deleteItemAsync(IMPERSONATION_BACKUP_KEY);
+    return null;
+  }
+};
 
 export interface RegisterData {
   email: string;
@@ -49,6 +71,8 @@ const mapProfile = (row: any) => {
     city: row.city ?? undefined,
     profileImageUrl: row.profile_image_url ?? undefined,
     isVerified: Boolean(row.is_verified),
+    isActive: Boolean(row.is_active),
+    isBanned: Boolean(row.is_banned),
     isClaimed: Boolean(row.is_claimed),
     acceptedLegalVersion: row.accepted_legal_version ?? undefined,
     marketingAllowed: Boolean(row.marketing_allowed),
@@ -83,6 +107,10 @@ const getProfile = async (userId: string) => {
         ? 'Supabase kullanıcı profili bulunamadı. Veri migrasyonu veya profil trigger’ı kontrol edilmeli.'
         : error.message
     );
+  }
+  if (!data.is_active || data.is_banned || data.deleted_at) {
+    await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+    throw new Error('Hesabınız yönetici tarafından askıya alınmış. Destek için yöneticiyle iletişime geçin.');
   }
   return mapProfile(data);
 };
@@ -196,11 +224,29 @@ export const authService = {
     assertSupabaseConfigured();
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw error || new Error('Oturum bulunamadı.');
-    return getProfile(data.user.id);
+    const profile = await getProfile(data.user.id);
+    // Keep admin activity statistics meaningful even when the user declined
+    // notification permission and therefore has no push-token heartbeat.
+    const { error: activityError } = await supabase
+      .from('users')
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq('id', data.user.id);
+    if (activityError) {
+      console.warn('[Auth] Son görülme zamanı güncellenemedi:', activityError.message);
+    }
+    const backup = await readImpersonationBackup();
+    if (backup && profile.id !== backup.adminUserId) {
+      return { ...profile, isImpersonated: true, impersonationExpiresAt: backup.expiresAt };
+    }
+    return profile;
   },
 
   async getSession() {
     assertSupabaseConfigured();
+    const backup = await readImpersonationBackup();
+    if (backup && new Date(backup.expiresAt).getTime() <= Date.now()) {
+      await this.stopImpersonation();
+    }
     const { data, error } = await supabase.auth.getSession();
     if (error) throw error;
     return data.session;
@@ -244,6 +290,7 @@ export const authService = {
         await supabase.from('push_tokens').update({ is_active: false }).eq('user_id', data.user.id).eq('device_id', deviceId);
       }
     } finally {
+      await SecureStore.deleteItemAsync(IMPERSONATION_BACKUP_KEY).catch(() => {});
       await supabase.auth.signOut();
       try {
         const { signOutGoogle } = require('./socialAuthService');
@@ -252,6 +299,70 @@ export const authService = {
         // Native Google session cleanup is best-effort.
       }
     }
+  },
+
+  async startImpersonation(input: { tokenHash: string; expiresAt: string; sessionId: string }) {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !sessionData.session) {
+      throw sessionError || new Error('Yönetici oturumu bulunamadı.');
+    }
+
+    const adminProfile = await getProfile(sessionData.session.user.id);
+    if (adminProfile.userType !== 'ADMIN') throw new Error('Bu işlem yalnızca yönetici hesabıyla yapılabilir.');
+
+    const backup: ImpersonationBackup = {
+      adminUserId: adminProfile.id,
+      accessToken: sessionData.session.access_token,
+      refreshToken: sessionData.session.refresh_token,
+      expiresAt: input.expiresAt,
+      sessionId: input.sessionId,
+    };
+    await SecureStore.setItemAsync(IMPERSONATION_BACKUP_KEY, JSON.stringify(backup));
+
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        token_hash: input.tokenHash,
+        type: 'email',
+      });
+      if (error || !data.session || !data.user) {
+        throw error || new Error('Kullanıcı oturumu oluşturulamadı.');
+      }
+
+      const profile = await getProfile(data.user.id);
+      return {
+        user: { ...profile, isImpersonated: true, impersonationExpiresAt: backup.expiresAt },
+        accessToken: data.session.access_token,
+      };
+    } catch (error) {
+      await SecureStore.deleteItemAsync(IMPERSONATION_BACKUP_KEY).catch(() => {});
+      await supabase.auth.setSession({
+        access_token: backup.accessToken,
+        refresh_token: backup.refreshToken,
+      }).catch(() => {});
+      throw error;
+    }
+  },
+
+  async stopImpersonation() {
+    const backup = await readImpersonationBackup();
+    if (!backup) throw new Error('Geri dönülecek yönetici oturumu bulunamadı.');
+
+    await SecureStore.deleteItemAsync(IMPERSONATION_BACKUP_KEY);
+    const { data, error } = await supabase.auth.setSession({
+      access_token: backup.accessToken,
+      refresh_token: backup.refreshToken,
+    });
+    if (error || !data.session) {
+      await SecureStore.setItemAsync(IMPERSONATION_BACKUP_KEY, JSON.stringify(backup)).catch(() => {});
+      throw error || new Error('Yönetici oturumu geri yüklenemedi.');
+    }
+
+    await supabase.functions.invoke('admin-impersonate-user', {
+      body: { action: 'end', sessionId: backup.sessionId },
+    }).catch(() => {});
+
+    const profile = await getProfile(data.session.user.id);
+    return { user: profile, accessToken: data.session.access_token };
   },
 
   async registerPushToken(): Promise<'granted' | 'denied' | 'needs_settings' | undefined> {
@@ -311,6 +422,19 @@ export const authService = {
       data: { push_registration_error: null, push_registration_error_at: null },
     }).catch(() => {});
     return 'granted';
+  },
+
+  async deactivateCurrentPushToken() {
+    const deviceId = await AsyncStorage.getItem('supabase_push_device_id');
+    const { data } = await supabase.auth.getUser();
+    if (!deviceId || !data.user) return;
+
+    const { error } = await supabase
+      .from('push_tokens')
+      .update({ is_active: false })
+      .eq('user_id', data.user.id)
+      .eq('device_id', deviceId);
+    if (error) throw error;
   },
 
   async forgotPassword(email: string) {

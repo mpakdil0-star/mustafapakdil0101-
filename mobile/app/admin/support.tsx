@@ -123,6 +123,13 @@ export default function AdminSupportScreen() {
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.list}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <Ionicons name="chatbubbles-outline" size={52} color={staticColors.textLight} />
+                            <Text style={styles.emptyTitle}>Destek talebi bulunmuyor</Text>
+                            <Text style={styles.emptyDescription}>Yeni talepler oluşturulduğunda burada görünecek.</Text>
+                        </View>
+                    }
                 />
             )}
         </View>
@@ -141,6 +148,25 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    emptyContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: 80,
+        paddingHorizontal: 24,
+    },
+    emptyTitle: {
+        marginTop: 14,
+        fontFamily: fonts.bold,
+        fontSize: 16,
+        color: staticColors.text,
+    },
+    emptyDescription: {
+        marginTop: 6,
+        fontFamily: fonts.medium,
+        fontSize: 13,
+        color: staticColors.textSecondary,
+        textAlign: 'center',
     },
     card: {
         backgroundColor: '#fff',

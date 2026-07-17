@@ -195,16 +195,11 @@ export default function VerificationScreen() {
             setShowSuccessModal(true);
         } catch (error: any) {
             console.error('Verification submit error:', error);
-            // Show success modal anyway (demo mode)
-            setVerificationData({
-                status: 'PENDING',
-                documentType: selectedType,
-                licenseNumber: licenseNumber,
-                emoNumber: emoNumber,
-                smmNumber: smmNumber,
-                submittedAt: new Date().toISOString(),
-            });
-            setShowSuccessModal(true);
+            showAlert(
+                'Başvuru Gönderilemedi',
+                error?.message || 'Belgeniz yüklenirken bir sorun oluştu. Lütfen bağlantınızı kontrol edip tekrar deneyin.',
+                'error'
+            );
         } finally {
             setIsSubmitting(false);
         }

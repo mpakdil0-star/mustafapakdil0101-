@@ -10,7 +10,34 @@ export type NotificationNavigationData = Record<string, unknown> & {
   conversationId?: unknown;
   ticketId?: unknown;
   userId?: unknown;
+  job_id?: unknown;
+  conversation_id?: unknown;
+  ticket_id?: unknown;
+  user_id?: unknown;
+  data?: unknown;
+  payload?: unknown;
 };
+
+const objectValue = (value: unknown): NotificationNavigationData | null => {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value as NotificationNavigationData;
+  }
+  if (typeof value !== 'string') return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed as NotificationNavigationData
+      : null;
+  } catch {
+    return null;
+  }
+};
+
+const flattenNotificationData = (data: NotificationNavigationData): NotificationNavigationData => ({
+  ...(objectValue(data.payload) || {}),
+  ...(objectValue(data.data) || {}),
+  ...data,
+});
 
 const segment = (value: unknown): string | null => {
   if (typeof value !== 'string') return null;
@@ -40,33 +67,45 @@ export const getNotificationTargetPath = (
 ): string | null => {
   if (!data) return null;
 
-  const actionUrl = safeInternalActionUrl(data.actionUrl ?? data.action_url);
+  const normalizedData = flattenNotificationData(data);
+
+  const actionUrl = safeInternalActionUrl(normalizedData.actionUrl ?? normalizedData.action_url);
   if (actionUrl) return actionUrl;
 
-  const type = typeof data.type === 'string' ? data.type.trim().toLowerCase() : '';
-  const relatedType = typeof (data.relatedType ?? data.related_type) === 'string'
-    ? String(data.relatedType ?? data.related_type).trim().toUpperCase()
+  const type = typeof normalizedData.type === 'string' ? normalizedData.type.trim().toLowerCase() : '';
+  const relatedType = typeof (normalizedData.relatedType ?? normalizedData.related_type) === 'string'
+    ? String(normalizedData.relatedType ?? normalizedData.related_type).trim().toUpperCase()
     : '';
-  const relatedId = segment(data.relatedId ?? data.related_id);
+  const relatedId = segment(normalizedData.relatedId ?? normalizedData.related_id);
 
   if (type === 'calendar_reminder') return '/tools/calendar';
   if (type === 'ledger_reminder') return '/tools/ledger';
 
-  const conversationId = segment(data.conversationId)
+  const conversationId = segment(normalizedData.conversationId ?? normalizedData.conversation_id)
     ?? (relatedType === 'CONVERSATION' ? relatedId : null);
   if (conversationId) return `/messages/${conversationId}`;
 
+  if (relatedId && /(^|_)(message|conversation|chat)(_|$)/.test(type)) {
+    return `/messages/${relatedId}`;
+  }
+
   if (
-    segment(data.ticketId)
+    segment(normalizedData.ticketId ?? normalizedData.ticket_id)
     || type === 'support_ticket_updated'
     || type === 'support_reply'
     || type === 'support_status'
   ) return '/profile/support';
 
-  const jobId = segment(data.jobId) ?? (relatedType === 'JOB' ? relatedId : null);
+  const jobId = segment(normalizedData.jobId ?? normalizedData.job_id)
+    ?? (relatedType === 'JOB' ? relatedId : null);
   if (jobId) return `/jobs/${jobId}`;
 
-  const userId = segment(data.userId) ?? (relatedType === 'USER' ? relatedId : null);
+  if (relatedId && /(^|_)(job|bid|quote|work|proposal)(_|$)/.test(type)) {
+    return `/jobs/${relatedId}`;
+  }
+
+  const userId = segment(normalizedData.userId ?? normalizedData.user_id)
+    ?? (relatedType === 'USER' ? relatedId : null);
   if (userId && type === 'new_user_registered') return `/admin/users?userId=${userId}`;
 
   if (type === 'new_review') return '/profile';
