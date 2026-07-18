@@ -70,6 +70,7 @@ export default function AdminUsersScreen() {
     const [isSubmittingCredit, setIsSubmittingCredit] = useState(false);
     const [expandedLocations, setExpandedLocations] = useState<Set<string>>(new Set());
     const [expandedInfo, setExpandedInfo] = useState<Set<string>>(new Set());
+    const [expandedActions, setExpandedActions] = useState<Set<string>>(new Set());
     const [messagingUserId, setMessagingUserId] = useState<string | null>(null); 
     const [impersonatingUserId, setImpersonatingUserId] = useState<string | null>(null); 
     const dispatch = useDispatch();
@@ -84,8 +85,9 @@ export default function AdminUsersScreen() {
     const [isSendingBulk, setIsSendingBulk] = useState(false);
 
     const toggleUserSelection = (userId: string) => {
-        setExpandedLocations(new Set()); 
+        setExpandedLocations(new Set());
         setExpandedInfo(new Set());
+        setExpandedActions(new Set());
         const next = new Set(selectedUsers);
         if (next.has(userId)) {
             next.delete(userId);
@@ -184,6 +186,18 @@ export default function AdminUsersScreen() {
 
     const toggleInfo = (userId: string) => {
         setExpandedInfo(prev => {
+            const next = new Set(prev);
+            if (next.has(userId)) {
+                next.delete(userId);
+            } else {
+                next.add(userId);
+            }
+            return next;
+        });
+    };
+
+    const toggleActions = (userId: string) => {
+        setExpandedActions(prev => {
             const next = new Set(prev);
             if (next.has(userId)) {
                 next.delete(userId);
@@ -385,6 +399,19 @@ export default function AdminUsersScreen() {
             activeOpacity={isSelectionMode ? 0.8 : 1}
         >
             <View style={styles.userHeader}>
+                <TouchableOpacity
+                    style={styles.selectionButton}
+                    onPress={() => toggleUserSelection(item.id)}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: isSelected }}
+                    accessibilityLabel={`${item.fullName} kullanıcısını seç`}
+                >
+                    <Ionicons
+                        name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+                        size={22}
+                        color={isSelected ? colors.primary : '#CBD5E1'}
+                    />
+                </TouchableOpacity>
                 <View style={[styles.avatar, { backgroundColor: item.userType === 'ELECTRICIAN' ? colors.primary + '20' : '#F1F5F9' }]}>
                     {item.profileImageUrl && getFileUrl(item.profileImageUrl) ? (
                         <Image
@@ -402,60 +429,6 @@ export default function AdminUsersScreen() {
                 <View style={styles.userInfo}>
                     <View style={styles.nameRow}>
                         <Text style={styles.userName} numberOfLines={1}>{item.fullName}</Text>
-                        {item.pushStatus === 'ACTIVE' && (
-                            <TouchableOpacity
-                                onPress={() => Alert.alert(
-                                    'Bildirimler Açık',
-                                    'Yeşil tik, kullanıcının bildirim tercihinin açık olduğunu ve hesabına bağlı aktif bir push cihazı bulunduğunu gösterir.'
-                                )}
-                                style={{ marginLeft: 4 }}
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            >
-                                <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                            </TouchableOpacity>
-                        )}
-                        {item.isVerified && (
-                            <TouchableOpacity
-                                onPress={() => Alert.alert('Hesap Doğrulandı', 'Bu kullanıcının hesap doğrulaması tamamlanmış.')}
-                                style={{ marginLeft: 4 }}
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            >
-                                <Ionicons name="shield-checkmark" size={15} color="#3B82F6" />
-                            </TouchableOpacity>
-                        )}
-                        {item.pushStatus && item.pushStatus !== 'ACTIVE' && (
-                            <TouchableOpacity
-                                onPress={() => {
-                                    if (item.pushStatus === 'ACTIVE') {
-                                        Alert.alert('Bildirim Durumu: Aktif', 'Kullanıcı bildirim alabilir durumda ve cihazı aktif (En son bu hesaptan giriş yapılmış).');
-                                    } else if (item.pushStatus === 'PENDING') {
-                                        Alert.alert('Bildirim İzni Doğrulanmadı', 'Bildirim tercihi kapalı değil; ancak bu hesap için henüz aktif bir push cihazı kaydedilmemiş.');
-                                    } else if (item.pushStatus === 'UNINSTALLED') {
-                                        Alert.alert('Aktif Cihaz Yok', 'Bu hesaba daha önce cihaz bağlanmış; ancak şu anda aktif değil. Çıkış yapılmış, hesap değiştirilmiş veya uygulama kaldırılmış olabilir.');
-                                    } else {
-                                        Alert.alert('Bildirim Durumu: Kapalı', 'Kullanıcı kendi isteğiyle bildirim almayı tamamen kapatmış.');
-                                    }
-                                }}
-                                style={{ marginLeft: 6, justifyContent: 'center', alignItems: 'center' }}
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            >
-                                <Ionicons
-                                    name={item.pushStatus === 'PENDING' ? "notifications-outline" : item.pushStatus === 'UNINSTALLED' ? "phone-portrait-outline" : "notifications-off"}
-                                    size={16}
-                                    color={item.pushStatus === 'PENDING' ? '#F59E0B' : item.pushStatus === 'UNINSTALLED' ? '#EF4444' : staticColors.textLight}
-                                />
-                            </TouchableOpacity>
-                        )}
-                        {!item.isActive && (
-                            <View style={styles.suspendedBadge}>
-                                <Text style={styles.suspendedText}>Askıda</Text>
-                            </View>
-                        )}
-                        {item.pushStatus === 'UNINSTALLED' && (
-                            <View style={[styles.suspendedBadge, { backgroundColor: '#FEE2E2', borderColor: '#EF4444', marginLeft: 4 }]}>
-                                <Text style={[styles.suspendedText, { color: '#EF4444' }]}>Cihaz yok</Text>
-                            </View>
-                        )}
                     </View>
                     <Text style={styles.userPhone}>{item.phone || 'Telefon yok'}</Text>
                     {item.createdAt && (
@@ -463,17 +436,6 @@ export default function AdminUsersScreen() {
                             Kayıt: {new Date(item.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                         </Text>
                     )}
-                    <Text style={[styles.userRegisterDate, { color: item.isActive && !item.isBanned ? '#10B981' : '#EF4444' }]}>
-                        {item.isActive && !item.isBanned ? 'Aktif kullanıcı' : 'Askıda / erişimi kapalı'}
-                        {' • '}
-                        {item.pushStatus === 'ACTIVE'
-                            ? 'Bildirim açık'
-                            : item.pushStatus === 'DISABLED'
-                                ? 'Bildirim kapalı'
-                                : item.pushStatus === 'UNINSTALLED'
-                                    ? 'Aktif cihaz yok'
-                                    : 'Bildirim izni doğrulanmadı'}
-                    </Text>
                 </View>
                 <View style={styles.userTypeContainer}>
                     <View style={[
@@ -495,6 +457,53 @@ export default function AdminUsersScreen() {
                         </View>
                     )}
                 </View>
+            </View>
+
+            <View style={styles.statusRow}>
+                <View style={[styles.statusChip, item.isActive && !item.isBanned ? styles.statusChipSuccess : styles.statusChipDanger]}>
+                    <View style={[styles.statusDot, { backgroundColor: item.isActive && !item.isBanned ? '#10B981' : '#EF4444' }]} />
+                    <Text style={[styles.statusChipText, { color: item.isActive && !item.isBanned ? '#047857' : '#B91C1C' }]}>
+                        {item.isActive && !item.isBanned ? 'Aktif' : 'Askıda'}
+                    </Text>
+                </View>
+                <TouchableOpacity
+                    style={[
+                        styles.statusChip,
+                        item.pushStatus === 'ACTIVE'
+                            ? styles.statusChipSuccess
+                            : item.pushStatus === 'PENDING'
+                                ? styles.statusChipWarning
+                                : styles.statusChipMuted,
+                    ]}
+                    onPress={() => Alert.alert(
+                        'Bildirim Durumu',
+                        item.pushStatus === 'ACTIVE'
+                            ? 'Bildirimler açık ve aktif bir cihaz bağlı.'
+                            : item.pushStatus === 'PENDING'
+                                ? 'Bildirim tercihi açık ancak aktif cihaz henüz doğrulanmadı.'
+                                : item.pushStatus === 'UNINSTALLED'
+                                    ? 'Bu hesaba bağlı aktif cihaz bulunmuyor.'
+                                    : 'Kullanıcı bildirimleri kapatmış.'
+                    )}
+                >
+                    <Ionicons
+                        name={item.pushStatus === 'ACTIVE' ? 'notifications' : 'notifications-off-outline'}
+                        size={12}
+                        color={item.pushStatus === 'ACTIVE' ? '#047857' : item.pushStatus === 'PENDING' ? '#B45309' : '#64748B'}
+                    />
+                    <Text style={[
+                        styles.statusChipText,
+                        { color: item.pushStatus === 'ACTIVE' ? '#047857' : item.pushStatus === 'PENDING' ? '#B45309' : '#64748B' },
+                    ]}>
+                        {item.pushStatus === 'ACTIVE' ? 'Bildirim açık' : item.pushStatus === 'PENDING' ? 'İzin bekliyor' : 'Bildirim kapalı'}
+                    </Text>
+                </TouchableOpacity>
+                {item.isVerified && (
+                    <View style={[styles.statusChip, styles.statusChipInfo]}>
+                        <Ionicons name="shield-checkmark" size={12} color="#2563EB" />
+                        <Text style={[styles.statusChipText, { color: '#1D4ED8' }]}>Doğrulandı</Text>
+                    </View>
+                )}
             </View>
 
             {item.userType === 'ELECTRICIAN' && (
@@ -579,75 +588,88 @@ export default function AdminUsersScreen() {
                 </View>
             )}
             <View style={styles.actionRow}>
-                {item.userType === 'ELECTRICIAN' && (
-                    <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: '#10B98115' }]}
-                        onPress={() => openCreditModal(item.id)}
-                    >
-                        <Ionicons name="add-circle-outline" size={14} color="#10B981" />
-                        <Text style={[styles.actionBtnText, { color: '#10B981' }]}>Kredi</Text>
-                    </TouchableOpacity>
-                )}
-                {item.userType !== 'ADMIN' && (
-                    <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: item.isActive ? '#EF444415' : '#10B98115' }]}
-                        onPress={() => toggleUserStatus(item.id, item.isActive)}
-                    >
-                        <Ionicons
-                            name={item.isActive ? 'pause-circle-outline' : 'play-circle-outline'}
-                            size={14}
-                            color={item.isActive ? '#EF4444' : '#10B981'}
-                        />
-                        <Text style={[styles.actionBtnText, { color: item.isActive ? '#EF4444' : '#10B981' }]}>
-                            {item.isActive ? 'Askıya Al' : 'Aktif Et'}
-                        </Text>
-                    </TouchableOpacity>
-                )}
                 {item.id !== currentAdminId && (
-                  <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: colors.primary + '15' }]}
-                    onPress={() => handleSendMessage(item.id)}
-                    disabled={messagingUserId === item.id}
-                >
-                    {messagingUserId === item.id ? (
-                        <ActivityIndicator size={14} color={colors.primary} />
-                    ) : (
-                        <Ionicons name="chatbubble-outline" size={14} color={colors.primary} />
-                    )}
-                    <Text style={[styles.actionBtnText, { color: colors.primary }]}>Mesaj</Text>
-                  </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.actionBtn, styles.actionBtnPrimary, { borderColor: colors.primary + '30' }]}
+                        onPress={() => handleSendMessage(item.id)}
+                        disabled={messagingUserId === item.id}
+                    >
+                        {messagingUserId === item.id ? (
+                            <ActivityIndicator size={16} color={colors.primary} />
+                        ) : (
+                            <Ionicons name="chatbubble-ellipses-outline" size={17} color={colors.primary} />
+                        )}
+                        <Text style={[styles.actionBtnText, { color: colors.primary }]}>Mesaj</Text>
+                    </TouchableOpacity>
                 )}
                 <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: '#6366F115' }]}
+                    style={[styles.actionBtn, styles.actionBtnPrimary, { borderColor: '#6366F130' }]}
                     onPress={() => toggleInfo(item.id)}
                 >
-                    <Ionicons name={expandedInfo.has(item.id) ? 'chevron-up-outline' : 'information-circle-outline'} size={14} color="#6366F1" />
-                    <Text style={[styles.actionBtnText, { color: '#6366F1' }]}>Bilgi</Text>
+                    <Ionicons name={expandedInfo.has(item.id) ? 'chevron-up' : 'information-circle-outline'} size={17} color="#6366F1" />
+                    <Text style={[styles.actionBtnText, { color: '#4F46E5' }]}>Bilgiler</Text>
                 </TouchableOpacity>
-                {item.userType !== 'ADMIN' && item.isActive && !item.isBanned && (
+                {item.userType === 'ELECTRICIAN' && (
                     <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: '#F59E0B15' }]}
-                        onPress={() => handleImpersonate(item)}
-                        disabled={impersonatingUserId === item.id}
+                        style={[styles.actionBtn, styles.actionBtnPrimary, { borderColor: '#10B98130' }]}
+                        onPress={() => openCreditModal(item.id)}
                     >
-                        {impersonatingUserId === item.id ? (
-                            <ActivityIndicator size={14} color="#F59E0B" />
-                        ) : (
-                            <Ionicons name="log-in-outline" size={14} color="#F59E0B" />
-                        )}
-                        <Text style={[styles.actionBtnText, { color: '#F59E0B' }]}>Giriş</Text>
+                        <Ionicons name="wallet-outline" size={17} color="#059669" />
+                        <Text style={[styles.actionBtnText, { color: '#047857' }]}>Kredi</Text>
                     </TouchableOpacity>
                 )}
                 {item.userType !== 'ADMIN' && (
                     <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: '#EF444415' }]}
-                        onPress={() => handleDeleteUser(item.id, item.fullName)}
+                        style={[styles.actionBtn, styles.actionBtnPrimary, { borderColor: '#CBD5E1' }]}
+                        onPress={() => toggleActions(item.id)}
                     >
-                        <Ionicons name="trash-outline" size={14} color="#EF4444" />
-                        <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Sil</Text>
+                        <Ionicons name={expandedActions.has(item.id) ? 'chevron-up' : 'options-outline'} size={17} color="#475569" />
+                        <Text style={[styles.actionBtnText, { color: '#334155' }]}>Yönet</Text>
                     </TouchableOpacity>
                 )}
             </View>
+
+            {expandedActions.has(item.id) && item.userType !== 'ADMIN' && (
+                <View style={styles.managementPanel}>
+                    <Text style={styles.managementTitle}>Hesap işlemleri</Text>
+                    <View style={styles.managementRow}>
+                        {item.isActive && !item.isBanned && (
+                            <TouchableOpacity
+                                style={[styles.managementBtn, styles.managementBtnWarning]}
+                                onPress={() => handleImpersonate(item)}
+                                disabled={impersonatingUserId === item.id}
+                            >
+                                {impersonatingUserId === item.id ? (
+                                    <ActivityIndicator size={15} color="#B45309" />
+                                ) : (
+                                    <Ionicons name="log-in-outline" size={16} color="#B45309" />
+                                )}
+                                <Text style={[styles.managementBtnText, { color: '#92400E' }]}>Hesaba gir</Text>
+                            </TouchableOpacity>
+                        )}
+                        <TouchableOpacity
+                            style={[styles.managementBtn, item.isActive ? styles.managementBtnDanger : styles.managementBtnSuccess]}
+                            onPress={() => toggleUserStatus(item.id, item.isActive)}
+                        >
+                            <Ionicons
+                                name={item.isActive ? 'pause-circle-outline' : 'play-circle-outline'}
+                                size={16}
+                                color={item.isActive ? '#DC2626' : '#059669'}
+                            />
+                            <Text style={[styles.managementBtnText, { color: item.isActive ? '#B91C1C' : '#047857' }]}>
+                                {item.isActive ? 'Askıya al' : 'Aktif et'}
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.managementBtn, styles.managementBtnDanger]}
+                            onPress={() => handleDeleteUser(item.id, item.fullName)}
+                        >
+                            <Ionicons name="trash-outline" size={16} color="#DC2626" />
+                            <Text style={[styles.managementBtnText, { color: '#B91C1C' }]}>Sil</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
         </TouchableOpacity>
     );
 };
@@ -668,8 +690,8 @@ export default function AdminUsersScreen() {
         <View style={[styles.container, { backgroundColor: '#F8FAFC' }]}>
             <PremiumHeader title="Kullanıcı Yönetimi" subtitle={`${totalCount} kayıt • otomatik güncel`} showBackButton />
 
-            <View style={[styles.searchContainer, { backgroundColor: 'transparent', paddingBottom: 0 }]}>
-                <View style={[styles.searchBox, { borderRadius: 12, backgroundColor: '#fff' }]}>
+            <View style={styles.controlPanel}>
+                <View style={styles.searchBox}>
                     <Ionicons name="search" size={18} color={staticColors.textLight} />
                     <TextInput
                         style={styles.searchInput}
@@ -684,9 +706,6 @@ export default function AdminUsersScreen() {
                         </TouchableOpacity>
                     )}
                 </View>
-            </View>
-
-            <View style={[styles.filterRow, { paddingBottom: 8 }]}>
                 <ScrollView 
                     horizontal 
                     showsHorizontalScrollIndicator={false} 
@@ -697,39 +716,42 @@ export default function AdminUsersScreen() {
                     <FilterButton type="ELECTRICIAN" label="Usta" />
                     <FilterButton type="ENGINEER" label="Mühendis" />
                 </ScrollView>
-            </View>
-
-            {/* Toplu İşlem & Seçim Alanı */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: 4 }}>
-                <TouchableOpacity onPress={handleSelectAll} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <Ionicons 
-                        name={selectedUsers.size === users.length && users.length > 0 ? "checkbox" : "square-outline"} 
-                        size={18} 
-                        color={colors.primary} 
-                    />
-                    <Text style={{ color: colors.primary, fontFamily: fonts.semiBold, fontSize: 13 }}>
-                        {selectedUsers.size === users.length && users.length > 0 ? 'Seçimi Kaldır' : 'Tümü'}
-                    </Text>
-                </TouchableOpacity>
-                {(selectedUsers.size > 0 || users.length > 0) && (
-                    <TouchableOpacity 
-                        onPress={() => setBulkNotifModalVisible(true)} 
-                        style={{ 
-                            backgroundColor: colors.primary, 
-                            paddingHorizontal: 12, 
-                            paddingVertical: 6, 
-                            borderRadius: 10,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 4
-                        }}
-                    >
-                        <Ionicons name="megaphone-outline" size={14} color="#fff" />
-                        <Text style={{ color: '#fff', fontFamily: fonts.bold, fontSize: 12 }}>
-                            {selectedUsers.size > 0 ? `${selectedUsers.size} Seçiliye Duyuru` : 'Hızlı Duyuru'}
+                <View style={styles.bulkToolbar}>
+                    <TouchableOpacity onPress={handleSelectAll} style={styles.selectAllButton}>
+                        <Ionicons
+                            name={selectedUsers.size === users.length && users.length > 0 ? 'checkbox' : 'square-outline'}
+                            size={19}
+                            color={colors.primary}
+                        />
+                        <Text style={[styles.selectAllText, { color: colors.primary }]}>
+                            {selectedUsers.size === users.length && users.length > 0 ? 'Seçimi kaldır' : 'Sayfadakileri seç'}
                         </Text>
                     </TouchableOpacity>
-                )}
+                    {users.length > 0 && (
+                        <TouchableOpacity
+                            onPress={() => setBulkNotifModalVisible(true)}
+                            style={[styles.announcementButton, { backgroundColor: colors.primary }]}
+                        >
+                            <Ionicons name="megaphone-outline" size={15} color="#fff" />
+                            <Text style={styles.announcementText}>
+                                {selectedUsers.size > 0 ? `${selectedUsers.size} kişiye duyuru` : 'Hızlı duyuru'}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </View>
+
+            <View style={styles.resultsHeader}>
+                <View>
+                    <Text style={styles.resultsTitle}>Kullanıcılar</Text>
+                    <Text style={styles.resultsSubtitle}>
+                        {selectedUsers.size > 0 ? `${selectedUsers.size} kullanıcı seçildi` : `${totalCount} kayıt listeleniyor`}
+                    </Text>
+                </View>
+                <View style={styles.liveBadge}>
+                    <View style={styles.liveDot} />
+                    <Text style={styles.liveText}>Canlı</Text>
+                </View>
             </View>
 
             {loading && users.length === 0 ? (
@@ -890,20 +912,30 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#F8FAFC',
     },
-    searchContainer: {
-        padding: spacing.md,
-        paddingBottom: 0,
+    controlPanel: {
+        backgroundColor: '#FFFFFF',
+        marginHorizontal: spacing.md,
+        marginTop: 12,
+        borderRadius: 20,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#E8EEF4',
+        shadowColor: '#0F172A',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.04,
+        shadowRadius: 10,
+        elevation: 2,
     },
     searchBox: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: staticColors.white,
-        borderRadius: 14,
-        paddingHorizontal: 16,
-        height: 50,
+        borderRadius: 13,
+        paddingHorizontal: 14,
+        height: 48,
         gap: 10,
         borderWidth: 1,
         borderColor: '#E2E8F0',
+        backgroundColor: '#F8FAFC',
     },
     searchInput: {
         flex: 1,
@@ -911,17 +943,15 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: staticColors.text,
     },
-    filterRow: {
-        paddingVertical: spacing.sm,
-    },
     filterScroll: {
-        paddingHorizontal: spacing.md,
+        paddingTop: 10,
+        paddingBottom: 2,
         gap: 8,
     },
     filterBtn: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
+        paddingHorizontal: 15,
+        paddingVertical: 9,
+        borderRadius: 12,
         backgroundColor: staticColors.white,
         borderWidth: 1,
         borderColor: '#E2E8F0',
@@ -931,48 +961,127 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: staticColors.textSecondary,
     },
+    bulkToolbar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 12,
+        paddingTop: 10,
+        borderTopWidth: 1,
+        borderTopColor: '#F1F5F9',
+    },
+    selectAllButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 7,
+        paddingVertical: 6,
+    },
+    selectAllText: {
+        fontFamily: fonts.semiBold,
+        fontSize: 12,
+    },
+    announcementButton: {
+        minHeight: 36,
+        paddingHorizontal: 12,
+        borderRadius: 11,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+    },
+    announcementText: {
+        color: '#FFFFFF',
+        fontFamily: fonts.bold,
+        fontSize: 12,
+    },
+    resultsHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: spacing.md,
+        paddingTop: 17,
+        paddingBottom: 4,
+    },
+    resultsTitle: {
+        color: '#0F172A',
+        fontFamily: fonts.bold,
+        fontSize: 17,
+    },
+    resultsSubtitle: {
+        color: '#94A3B8',
+        fontFamily: fonts.medium,
+        fontSize: 11,
+        marginTop: 2,
+    },
+    liveBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        backgroundColor: '#ECFDF5',
+        paddingHorizontal: 9,
+        paddingVertical: 5,
+        borderRadius: 10,
+    },
+    liveDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#10B981',
+    },
+    liveText: {
+        color: '#047857',
+        fontFamily: fonts.semiBold,
+        fontSize: 10,
+    },
     listContent: {
-        padding: spacing.md,
-        gap: 12,
+        paddingHorizontal: spacing.md,
+        paddingTop: 8,
         paddingBottom: 80,
     },
     userCard: {
         backgroundColor: staticColors.white,
-        borderRadius: 20,
-        padding: 12,
-        marginBottom: 8,
+        borderRadius: 18,
+        padding: 14,
+        marginBottom: 12,
         borderWidth: 1,
         borderColor: '#F1F5F9',
-        shadowColor: '#64748B',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
+        shadowColor: '#0F172A',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.055,
+        shadowRadius: 12,
+        elevation: 3,
     },
     userCardInactive: {
-        opacity: 0.6,
-        borderColor: '#EF4444',
+        backgroundColor: '#FFFBFB',
+        borderColor: '#FECACA',
     },
     userHeader: {
         flexDirection: 'row',
         alignItems: 'center',
     },
+    selectionButton: {
+        width: 26,
+        height: 44,
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        marginRight: 4,
+    },
     avatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
+        width: 48,
+        height: 48,
+        borderRadius: 15,
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
     },
     avatarImage: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
+        width: 48,
+        height: 48,
+        borderRadius: 15,
     },
     userInfo: {
         flex: 1,
-        marginLeft: 12,
+        marginLeft: 11,
     },
     nameRow: {
         flexDirection: 'row',
@@ -980,19 +1089,19 @@ const styles = StyleSheet.create({
     },
     userName: {
         fontFamily: fonts.bold,
-        fontSize: 15,
+        fontSize: 16,
         color: staticColors.text,
-        maxWidth: 150,
+        maxWidth: 145,
     },
     userPhone: {
         fontFamily: fonts.medium,
-        fontSize: 13,
+        fontSize: 12,
         color: staticColors.textSecondary,
         marginTop: 2,
     },
     userRegisterDate: {
         fontFamily: fonts.medium,
-        fontSize: 11,
+        fontSize: 10,
         color: '#94A3B8',
         marginTop: 2,
     },
@@ -1000,38 +1109,60 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     userTypeBadge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 8,
+        paddingHorizontal: 9,
+        paddingVertical: 5,
+        borderRadius: 9,
     },
     userTypeText: {
         fontFamily: fonts.semiBold,
         fontSize: 11,
     },
-    suspendedBadge: {
-        backgroundColor: '#EF444420',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
-        marginLeft: 6,
+    statusRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
+        marginTop: 13,
     },
-    suspendedText: {
+    statusChip: {
+        minHeight: 25,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        paddingHorizontal: 8,
+        borderRadius: 9,
+        borderWidth: 1,
+    },
+    statusChipSuccess: { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' },
+    statusChipDanger: { backgroundColor: '#FEF2F2', borderColor: '#FECACA' },
+    statusChipWarning: { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' },
+    statusChipMuted: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+    statusChipInfo: { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' },
+    statusDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+    },
+    statusChipText: {
         fontFamily: fonts.semiBold,
         fontSize: 10,
-        color: '#EF4444',
     },
     userMeta: {
         flexDirection: 'row',
-        marginTop: 8,
-        paddingTop: 8,
+        flexWrap: 'wrap',
+        marginTop: 11,
+        paddingTop: 11,
         borderTopWidth: 1,
-        borderTopColor: '#F8FAFC',
-        gap: 12,
+        borderTopColor: '#F1F5F9',
+        gap: 8,
     },
     metaItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: 5,
+        backgroundColor: '#F8FAFC',
+        paddingHorizontal: 9,
+        paddingVertical: 6,
+        borderRadius: 9,
     },
     metaText: {
         fontFamily: fonts.medium,
@@ -1040,15 +1171,18 @@ const styles = StyleSheet.create({
     },
     actionRow: {
         flexDirection: 'row',
-        marginTop: 10,
-        gap: 6,
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#F1F5F9',
+        gap: 7,
         flexWrap: 'wrap',
     },
     contactInfoBox: {
         backgroundColor: '#F8FAFC',
-        borderRadius: 12,
-        padding: 12,
-        marginTop: 10,
+        borderRadius: 13,
+        padding: 13,
+        marginTop: 12,
         borderWidth: 1,
         borderColor: '#E2E8F0',
         gap: 8,
@@ -1072,12 +1206,58 @@ const styles = StyleSheet.create({
     actionBtn: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
         paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 8,
-        gap: 3,
+        minHeight: 40,
+        borderRadius: 11,
+        gap: 6,
+    },
+    actionBtnPrimary: {
+        flexGrow: 1,
+        flexBasis: 72,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
     },
     actionBtnText: {
+        fontFamily: fonts.semiBold,
+        fontSize: 12,
+    },
+    managementPanel: {
+        backgroundColor: '#F8FAFC',
+        borderRadius: 14,
+        padding: 11,
+        marginTop: 9,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    managementTitle: {
+        fontFamily: fonts.semiBold,
+        fontSize: 10,
+        color: '#64748B',
+        textTransform: 'uppercase',
+        letterSpacing: 0.6,
+        marginBottom: 8,
+    },
+    managementRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 7,
+    },
+    managementBtn: {
+        flexGrow: 1,
+        flexBasis: 88,
+        minHeight: 38,
+        borderRadius: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 5,
+        borderWidth: 1,
+    },
+    managementBtnWarning: { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' },
+    managementBtnDanger: { backgroundColor: '#FEF2F2', borderColor: '#FECACA' },
+    managementBtnSuccess: { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' },
+    managementBtnText: {
         fontFamily: fonts.semiBold,
         fontSize: 11,
     },
@@ -1176,13 +1356,16 @@ const styles = StyleSheet.create({
     },
     locationsContainer: {
         flexDirection: 'row',
-        alignItems: 'flex-start',
-        paddingHorizontal: 16,
-        paddingBottom: 12,
-        marginTop: -4,
+        alignItems: 'center',
+        backgroundColor: '#F8FAFC',
+        borderRadius: 11,
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        marginTop: 10,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
     },
     locationsIconWrapper: {
-        marginTop: 2,
         marginRight: 6,
     },
     locationsListWrapper: {

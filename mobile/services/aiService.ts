@@ -5,6 +5,17 @@ export interface ChatMessage {
   text: string;
 }
 
+export interface DiagnosisIssue {
+  id: string;
+  category: string;
+  subCategory?: string;
+  title: string;
+  description: string;
+  severity?: 'low' | 'medium' | 'high' | 'critical';
+  safetyAction?: string;
+  confidence?: number;
+}
+
 export interface ImageAttachment {
   base64: string;
   mimeType: string;
@@ -28,9 +39,19 @@ export const aiService = {
   async sendMessage(
     message: string,
     history: ChatMessage[] = [],
-    image?: ImageAttachment
-  ): Promise<{ text: string; fallback: boolean }> {
-    const { data, error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'chat', message, history, image } });
+    image?: ImageAttachment,
+    conversationId?: string | null
+  ): Promise<{ text: string; fallback: boolean; conversationId?: string }> {
+    const { data, error } = await supabase.functions.invoke('ai-assistant', {
+      body: {
+        action: 'chat',
+        message,
+        history,
+        image,
+        conversationId,
+        capabilities: ['multi_issue_v2', 'persistent_conversation_v1'],
+      },
+    });
     if (error) throw error;
     return data.data;
   },

@@ -22,9 +22,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
-import { useAppColors } from '../../hooks/useAppColors';
 import { fonts } from '../../constants/typography';
-import { aiService, ChatMessage, CostEstimate } from '../../services/aiService';
+import { aiService, ChatMessage, CostEstimate, DiagnosisIssue } from '../../services/aiService';
 
 // Quick reply chips
 const CITIZEN_CHIPS = [
@@ -120,6 +119,7 @@ interface MessageItem {
     title: string;
     description: string;
   };
+  issues?: DiagnosisIssue[];
   quote?: {
     items: { desc: string; amount: number }[];
     total: number;
@@ -132,9 +132,25 @@ interface MessageItem {
   };
 }
 
+const getWelcomeMessage = (isElectrician: boolean): MessageItem => ({
+  id: 'welcome',
+  role: 'model',
+  text: isElectrician
+    ? 'Merhaba Usta! Teknik sorularınızı, hata kodlarını, ölçüm sonuçlarını veya iş kapsamını yazın. Birden fazla konu paylaşırsanız her birini ayrı ayrı ele alıp teklif ve müşteri mesajı hazırlayabilirim.'
+    : 'Merhaba! Yaşadığınız sorunu doğal biçimde anlatın. Aynı mesajda birden fazla arıza yazabilirsiniz; her birini ayrı başlıkta inceleyip güvenlik adımlarını ve uygun hizmet yönlendirmesini hazırlayacağım.',
+});
+
+const severityPresentation = (severity?: DiagnosisIssue['severity']) => {
+  switch (severity) {
+    case 'critical': return { label: 'Acil', color: '#FB7185', background: 'rgba(244, 63, 94, 0.13)', icon: 'warning' as const };
+    case 'high': return { label: 'Öncelikli', color: '#FBBF24', background: 'rgba(245, 158, 11, 0.13)', icon: 'alert-circle' as const };
+    case 'low': return { label: 'Düşük risk', color: '#86EFAC', background: 'rgba(34, 197, 94, 0.12)', icon: 'checkmark-circle' as const };
+    default: return { label: 'İncelenmeli', color: '#67E8F9', background: 'rgba(6, 182, 212, 0.12)', icon: 'information-circle' as const };
+  }
+};
+
 export default function AiAssistantScreen() {
   const router = useRouter();
-  const colors = useAppColors();
   const params = useLocalSearchParams<{ role?: string }>();
   const insets = useSafeAreaInsets();
   
@@ -142,6 +158,7 @@ export default function AiAssistantScreen() {
   const isElectrician = params.role === 'ELECTRICIAN';
   
   const [messages, setMessages] = useState<MessageItem[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -238,17 +255,7 @@ export default function AiAssistantScreen() {
 
   // Initialize with welcome message
   useEffect(() => {
-    const welcomeText = isElectrician
-      ? 'Merhaba Usta! Ben İşBitir AI Teknik Kılavuz Asistanı. Teknik konularda, hata kodlarında, malzeme hesaplamalarında veya müşteri teklif şablonu hazırlamada size yardımcı olabilirim. Nasıl yardımcı olabilirim?'
-      : 'Merhaba! Ben İşBitir Akıllı Arıza Teşhis Asistanıyım 👋\n\nEvinizde veya iş yerinizde yaşadığınız arızayı bana anlatın. Size olası nedenleri söyleyip güvenlik önlemlerini paylaşır, tek tıkla usta bulmanıza yardımcı olurum.\n\nAşağıdaki örneklerden birini seçebilir veya kendiniz yazabilirsiniz:';
-      
-    setMessages([
-      {
-        id: 'welcome',
-        role: 'model',
-        text: welcomeText
-      }
-    ]);
+    setMessages([getWelcomeMessage(isElectrician)]);
   }, [isElectrician]);
 
   // Typing indicator loop animation
@@ -282,37 +289,75 @@ export default function AiAssistantScreen() {
     return () => {
       if (animation) animation.stop();
     };
-  }, [isLoading]);
+  }, [isLoading, dot1Opacity, dot2Opacity, dot3Opacity]);
 
   // Parse AI response for structured blocks: [TEŞHİS RAPORU], [TEKLİF ŞABLONU], [MESAJ ŞABLONU]
   const parseResponseBlocks = (text: string) => {
     let cleanText = text;
     let report: MessageItem['report'] = undefined;
+    let issues: DiagnosisIssue[] | undefined;
     let quote: MessageItem['quote'] = undefined;
     let messageTemplate: MessageItem['messageTemplate'] = undefined;
 
-    // Parse [TEŞHİS RAPORU]
-    const reportMarker = '[TEŞHİS RAPORU]';
-    if (cleanText.includes(reportMarker)) {
+    const extractBlock = (marker: string) => {
+      const start = cleanText.indexOf(marker);
+      if (start < 0) return null;
+      const bodyStart = start + marker.length;
+      const remaining = cleanText.slice(bodyStart);
+      const nextMarkerOffset = remaining.search(/\n?\[(?:ARIZA LİSTESİ|TEŞHİS RAPORU|TEKLİF ŞABLONU|MESAJ ŞABLONU)\]/);
+      const bodyEnd = nextMarkerOffset >= 0 ? bodyStart + nextMarkerOffset : cleanText.length;
+      const block = cleanText.slice(bodyStart, bodyEnd).trim().replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+      cleanText = `${cleanText.slice(0, start)}\n${cleanText.slice(bodyEnd)}`.trim();
+      return block;
+    };
+
+    // Parse the new multi-issue response first.
+    const issueBlock = extractBlock('[ARIZA LİSTESİ]');
+    if (issueBlock) {
       try {
-        const parts = cleanText.split(reportMarker);
-        cleanText = parts[0].trim();
-        const jsonStr = parts[1].trim().replace(/```json/g, '').replace(/```/g, '').trim();
-        const obj = JSON.parse(jsonStr);
+        const obj = JSON.parse(issueBlock);
+        if (Array.isArray(obj?.issues)) {
+          issues = obj.issues
+            .filter((issue: Partial<DiagnosisIssue>) => issue?.category && issue?.title)
+            .map((issue: Partial<DiagnosisIssue>, index: number) => ({
+              id: String(issue.id || `issue-${index + 1}`),
+              category: String(issue.category),
+              subCategory: issue.subCategory ? String(issue.subCategory) : undefined,
+              title: String(issue.title),
+              description: String(issue.description || 'Yerinde kontrol edilmesi önerilir.'),
+              severity: ['low', 'medium', 'high', 'critical'].includes(String(issue.severity))
+                ? issue.severity as DiagnosisIssue['severity']
+                : 'medium',
+              safetyAction: issue.safetyAction ? String(issue.safetyAction) : undefined,
+              confidence: typeof issue.confidence === 'number' ? issue.confidence : undefined,
+            }));
+        }
+      } catch (error) {
+        console.warn('AI issue list could not be parsed', error);
+      }
+    }
+
+    // Backward compatibility for old deployed Edge Function responses.
+    const reportMarker = '[TEŞHİS RAPORU]';
+    const reportBlock = extractBlock(reportMarker);
+    if (reportBlock) {
+      try {
+        const obj = JSON.parse(reportBlock);
         if (obj?.category) {
           report = { category: obj.category, subCategory: obj.subCategory, title: obj.title || 'Arıza İlanı', description: obj.description || '' };
+          if (!issues?.length) {
+            issues = [{ id: 'issue-1', ...report, severity: 'medium' }];
+          }
         }
-      } catch {}
+      } catch (error) { console.warn('AI diagnosis report could not be parsed', error); }
     }
 
     // Parse [TEKLİF ŞABLONU]
     const quoteMarker = '[TEKLİF ŞABLONU]';
-    if (cleanText.includes(quoteMarker)) {
+    const quoteBlock = extractBlock(quoteMarker);
+    if (quoteBlock) {
       try {
-        const parts = cleanText.split(quoteMarker);
-        cleanText = parts[0].trim();
-        const jsonStr = parts[1].trim().replace(/```json/g, '').replace(/```/g, '').trim();
-        const obj = JSON.parse(jsonStr);
+        const obj = JSON.parse(quoteBlock);
         if (obj?.items && obj?.total) {
           quote = { items: obj.items, total: obj.total, note: obj.note || '', validity: obj.validity || '' };
         }
@@ -321,19 +366,17 @@ export default function AiAssistantScreen() {
 
     // Parse [MESAJ ŞABLONU]
     const msgMarker = '[MESAJ ŞABLONU]';
-    if (cleanText.includes(msgMarker)) {
+    const messageBlock = extractBlock(msgMarker);
+    if (messageBlock) {
       try {
-        const parts = cleanText.split(msgMarker);
-        cleanText = parts[0].trim();
-        const jsonStr = parts[1].trim().replace(/```json/g, '').replace(/```/g, '').trim();
-        const obj = JSON.parse(jsonStr);
+        const obj = JSON.parse(messageBlock);
         if (obj?.message) {
           messageTemplate = { type: obj.type || 'genel', message: obj.message };
         }
       } catch {}
     }
 
-    return { cleanText, report, quote, messageTemplate };
+    return { cleanText: cleanText.trim(), report, issues, quote, messageTemplate };
   };
 
   const handleCopyToClipboard = async (text: string, label: string) => {
@@ -369,7 +412,8 @@ export default function AiAssistantScreen() {
     setIsLoading(true);
     
     try {
-      const history: ChatMessage[] = updatedMessages
+      // The current message is sent separately; history must contain only prior turns.
+      const history: ChatMessage[] = messages
         .slice(1)
         .map(m => ({ role: m.role, text: m.text }));
         
@@ -378,25 +422,27 @@ export default function AiAssistantScreen() {
         mimeType: currentImageMimeType
       } : undefined;
         
-      const response = await aiService.sendMessage(userMsgText, history, imagePayload);
-      const { cleanText, report, quote, messageTemplate } = parseResponseBlocks(response.text);
+      const response = await aiService.sendMessage(userMsgText, history, imagePayload, conversationId);
+      if (response.conversationId) setConversationId(response.conversationId);
+      const { cleanText, report, issues, quote, messageTemplate } = parseResponseBlocks(response.text);
       const isEmergency = cleanText.startsWith('🚨 ACİL') || cleanText.includes('🚨 ACİL:');
       
       setMessages(prev => [
         ...prev,
-        { id: (Date.now() + 1).toString(), role: 'model', text: cleanText, report, isEmergency, quote, messageTemplate }
+        { id: (Date.now() + 1).toString(), role: 'model', text: cleanText, report, issues, isEmergency, quote, messageTemplate }
       ]);
 
       // Auto-fetch cost estimate when a diagnosis is returned
-      if (report?.category) {
+      const primaryIssue = issues?.[0] || report;
+      if (primaryIssue?.category) {
         setIsFetchingCost(true);
-        const est = await aiService.getCostEstimate(report.category);
+        const est = await aiService.getCostEstimate(primaryIssue.category);
         setCostEstimate(est);
         setShowCostCard(est.found);
         setIsFetchingCost(false);
       }
       
-    } catch (error) {
+    } catch {
       setMessages(prev => [
         ...prev,
         { id: (Date.now() + 1).toString(), role: 'model', text: 'Üzgünüm, şu anda bağlantı kuramıyorum. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.' }
@@ -408,6 +454,23 @@ export default function AiAssistantScreen() {
   };
 
   const handleChipPress = (label: string) => { handleSend(label); };
+
+  const handleNewConversation = () => {
+    const reset = () => {
+      setMessages([getWelcomeMessage(isElectrician)]);
+      setConversationId(null);
+      setInputText('');
+      handleRemoveImage();
+      setShowChips(true);
+      setCostEstimate(null);
+      setShowCostCard(false);
+    };
+    if (messages.length <= 1) return reset();
+    Alert.alert('Yeni sohbet', 'Mevcut konuşmayı kapatıp yeni bir sohbet başlatmak istiyor musunuz?', [
+      { text: 'Vazgeç', style: 'cancel' },
+      { text: 'Yeni sohbet', onPress: reset },
+    ]);
+  };
 
   const handleCreateJob = (category: string, description: string, subCategory?: string) => {
     router.push({
@@ -422,7 +485,6 @@ export default function AiAssistantScreen() {
       item.text.includes('⚠️ UYARI') || item.text.includes('⚠️ ÖNEMLİ') || item.text.includes('GÜVENLİK UYARISI')
     );
     const isEmergency = !isUser && item.isEmergency;
-    const isWelcome = item.id === 'welcome' && !isElectrician;
     const isLastMessage = index === messages.length - 1;
 
     return (
@@ -476,7 +538,7 @@ export default function AiAssistantScreen() {
                 )}
               </View>
             )}
-            {item.report && (
+            {item.report && !item.issues?.length && (
               <View style={styles.reportCard}>
                 <LinearGradient colors={['rgba(13, 148, 136, 0.12)', 'rgba(45, 212, 191, 0.04)']} style={styles.reportGradient}>
                   <View style={styles.reportHeader}>
@@ -506,6 +568,71 @@ export default function AiAssistantScreen() {
                     </LinearGradient>
                   </TouchableOpacity>
                 </LinearGradient>
+              </View>
+            )}
+
+            {item.issues && item.issues.length > 0 && (
+              <View style={styles.issuesSection}>
+                <View style={styles.issuesSectionHeader}>
+                  <View>
+                    <Text style={styles.issuesEyebrow}>AI DEĞERLENDİRMESİ</Text>
+                    <Text style={styles.issuesHeading}>
+                      {item.issues.length === 1 ? '1 konu belirlendi' : `${item.issues.length} ayrı konu belirlendi`}
+                    </Text>
+                  </View>
+                  <View style={styles.issuesCountBadge}>
+                    <Text style={styles.issuesCountText}>{item.issues.length}</Text>
+                  </View>
+                </View>
+
+                {item.issues.map((issue, issueIndex) => {
+                  const severity = severityPresentation(issue.severity);
+                  return (
+                    <View key={`${item.id}-${issue.id}`} style={styles.issueCard}>
+                      <View style={styles.issueTopRow}>
+                        <View style={styles.issueNumber}>
+                          <Text style={styles.issueNumberText}>{issueIndex + 1}</Text>
+                        </View>
+                        <View style={styles.issueTitleWrap}>
+                          <Text style={styles.issueCategory}>{issue.category}</Text>
+                          <Text style={styles.issueTitle}>{issue.title}</Text>
+                        </View>
+                        <View style={[styles.severityBadge, { backgroundColor: severity.background }]}>
+                          <Ionicons name={severity.icon} size={12} color={severity.color} />
+                          <Text style={[styles.severityText, { color: severity.color }]}>{severity.label}</Text>
+                        </View>
+                      </View>
+
+                      <Text style={styles.issueDescription}>{issue.description}</Text>
+
+                      {issue.safetyAction ? (
+                        <View style={styles.safetyActionBox}>
+                          <Ionicons name="shield-checkmark" size={16} color="#FBBF24" />
+                          <Text style={styles.safetyActionText}>{issue.safetyAction}</Text>
+                        </View>
+                      ) : null}
+
+                      {isLastMessage && issueIndex === 0 && showCostCard && costEstimate?.found ? (
+                        <View style={styles.costRow}>
+                          <Ionicons name="wallet-outline" size={15} color="#FCD34D" />
+                          <Text style={styles.costText}>Tahmini aralık: <Text style={styles.costAmount}>{costEstimate.label}</Text></Text>
+                        </View>
+                      ) : null}
+
+                      {!isElectrician && (
+                        <TouchableOpacity
+                          style={styles.issueAction}
+                          onPress={() => handleCreateJob(issue.category, issue.description, issue.subCategory)}
+                          activeOpacity={0.85}
+                        >
+                          <Text style={styles.issueActionText}>Bu konu için ilan oluştur</Text>
+                          <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  );
+                })}
+                <Text style={styles.aiDisclaimer}>AI değerlendirmesi ön bilgilendirme amaçlıdır; kesin teşhis için yerinde uzman kontrolü gerekir.</Text>
               </View>
             )}
 
@@ -595,9 +722,9 @@ export default function AiAssistantScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: bgStyle }]}>
-      {/* Hide the top system navigation stack header and the phone clock/battery status bar */}
+      {/* Hide the native stack header; keep the system status bar visible. */}
       <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar hidden={true} />
+      <StatusBar hidden={false} barStyle="light-content" backgroundColor={bgStyle} />
       
       {/* Custom Premium Header bar */}
       <View style={[
@@ -618,13 +745,18 @@ export default function AiAssistantScreen() {
           </Text>
         </View>
         
-        <View style={styles.headerRightIcon}>
-          <Ionicons 
-            name={isElectrician ? "construct" : "sparkles"} 
-            size={20} 
-            color={isElectrician ? "#E5C158" : "#2DD4BF"} 
-          />
-        </View>
+        <TouchableOpacity style={styles.newChatBtn} onPress={handleNewConversation} activeOpacity={0.8}>
+          <Ionicons name="add" size={17} color={isElectrician ? '#FDE68A' : '#5EEAD4'} />
+          <Text style={[styles.newChatText, { color: isElectrician ? '#FDE68A' : '#5EEAD4' }]}>Yeni</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.capabilityBar}>
+        <View style={styles.onlineDot} />
+        <Text style={styles.capabilityText}>
+          {isElectrician ? 'Teknik analiz  •  Teklif  •  Müşteri mesajı' : 'Çoklu arıza  •  Fotoğraflı analiz  •  Güvenlik önceliği'}
+        </Text>
+        <Ionicons name="shield-checkmark-outline" size={15} color="#64748B" />
       </View>
       
       <KeyboardAvoidingView
@@ -697,7 +829,7 @@ export default function AiAssistantScreen() {
               placeholder={isElectrician ? "Teknik soru sorun..." : "Arızanızı anlatın veya fotoğraf ekleyin..."}
               placeholderTextColor="#64748B"
               multiline
-              maxLength={500}
+              maxLength={1200}
             />
             <TouchableOpacity
               style={[
@@ -725,7 +857,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingBottom: 13,
     borderBottomWidth: 1,
   },
   headerCitizen: {
@@ -748,7 +880,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: 16.5,
+    fontSize: 17,
     fontFamily: fonts.bold,
     color: '#FFFFFF',
     letterSpacing: -0.2,
@@ -758,13 +890,28 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     marginTop: 1,
   },
-  headerRightIcon: {
-    padding: 6,
+  newChatBtn: {
+    height: 34,
+    paddingHorizontal: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
+  newChatText: { fontFamily: fonts.bold, fontSize: 11.5, marginLeft: 3 },
+  capabilityBar: {
+    minHeight: 34,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: 'rgba(255, 255, 255, 0.018)',
+  },
+  onlineDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#2DD4BF', marginRight: 8 },
+  capabilityText: { flex: 1, color: '#94A3B8', fontFamily: fonts.medium, fontSize: 10.5 },
   listContent: {
     padding: 12,
     paddingBottom: 24,
@@ -908,6 +1055,80 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     opacity: 0.9,
   },
+  issuesSection: { width: '94%', marginTop: 9 },
+  issuesSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 9,
+    paddingHorizontal: 2,
+  },
+  issuesEyebrow: { color: '#5EEAD4', fontFamily: fonts.bold, fontSize: 9.5, letterSpacing: 1.1 },
+  issuesHeading: { color: '#F8FAFC', fontFamily: fonts.bold, fontSize: 15, marginTop: 2 },
+  issuesCountBadge: {
+    width: 31,
+    height: 31,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(45, 212, 191, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(45, 212, 191, 0.24)',
+  },
+  issuesCountText: { color: '#5EEAD4', fontFamily: fonts.bold, fontSize: 14 },
+  issueCard: {
+    padding: 13,
+    marginBottom: 9,
+    borderRadius: 16,
+    backgroundColor: '#111C2E',
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.14)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  issueTopRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  issueNumber: {
+    width: 26,
+    height: 26,
+    borderRadius: 9,
+    backgroundColor: 'rgba(45, 212, 191, 0.13)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 9,
+  },
+  issueNumberText: { color: '#5EEAD4', fontFamily: fonts.bold, fontSize: 12 },
+  issueTitleWrap: { flex: 1, paddingRight: 6 },
+  issueCategory: { color: '#64748B', fontFamily: fonts.bold, fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 0.7 },
+  issueTitle: { color: '#F8FAFC', fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, marginTop: 2 },
+  severityBadge: { flexDirection: 'row', alignItems: 'center', borderRadius: 10, paddingHorizontal: 7, paddingVertical: 5 },
+  severityText: { fontFamily: fonts.bold, fontSize: 9.5, marginLeft: 3 },
+  issueDescription: { color: '#CBD5E1', fontFamily: fonts.regular, fontSize: 12.5, lineHeight: 18, marginTop: 10 },
+  safetyActionBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 9,
+    marginTop: 9,
+    borderRadius: 11,
+    backgroundColor: 'rgba(245, 158, 11, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.16)',
+  },
+  safetyActionText: { flex: 1, color: '#FDE68A', fontFamily: fonts.medium, fontSize: 11.5, lineHeight: 16, marginLeft: 7 },
+  issueAction: {
+    minHeight: 40,
+    borderRadius: 12,
+    backgroundColor: '#0D9488',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 13,
+    marginTop: 10,
+  },
+  issueActionText: { color: '#FFFFFF', fontFamily: fonts.bold, fontSize: 12 },
+  aiDisclaimer: { color: '#64748B', fontFamily: fonts.regular, fontSize: 9.5, lineHeight: 14, paddingHorizontal: 4, marginTop: 1 },
   createJobBtn: {
     borderRadius: 12,
     overflow: 'hidden',
@@ -949,7 +1170,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 2.5,
   },
   inputContainerOuter: {
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(11, 19, 31, 0.96)',
+    paddingTop: 7,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
   },
   inputBarFloating: {
     flexDirection: 'row',
@@ -957,7 +1181,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: '#111A2E',
+    backgroundColor: '#131E31',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 28,

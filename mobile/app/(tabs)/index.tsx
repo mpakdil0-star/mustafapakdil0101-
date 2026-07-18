@@ -3254,28 +3254,47 @@ export default function HomeScreen() {
           }}
         >
           {isSearchOverlayVisible && (
-            <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
+            <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
           )}
-          <View style={[styles.searchOverlayBackdrop, { backgroundColor: colors.primaryDark || '#021D1A' }]}>
+          <View style={styles.searchOverlayBackdrop}>
             <LinearGradient
-              colors={colors.gradientAmethystDark as any || ['#0F172A', '#115E59', '#0D9488']}
+              colors={['#E6FFFB', '#F5F8FA', '#F8FAFC']}
               start={{ x: 0, y: 0 }}
-              end={{ x: 0.5, y: 1 }}
+              end={{ x: 0.7, y: 1 }}
               style={StyleSheet.absoluteFill}
             />
             {/* Glowing Decorative Background Blobs */}
-            <View style={[styles.searchGlowBlob, { top: -60, left: -60, backgroundColor: colors.primaryLight || '#2DD4BF', opacity: 0.18 }]} />
-            <View style={[styles.searchGlowBlob, { bottom: -100, right: -60, backgroundColor: colors.primary || '#0D9488', opacity: 0.10 }]} />
+            <View style={[styles.searchGlowBlob, { top: -80, right: -80, backgroundColor: '#2DD4BF', opacity: 0.12 }]} />
+            <View style={[styles.searchGlowBlob, { bottom: -110, left: -80, backgroundColor: '#0D9488', opacity: 0.06 }]} />
 
             <SafeAreaView style={styles.searchOverlayContainer} edges={['top', 'bottom']}>
+              <View style={styles.searchOverlayTitleRow}>
+                <View style={styles.searchOverlayTitleCopy}>
+                  <Text style={styles.searchOverlayEyebrow}>HİZMET BULUCU</Text>
+                  <Text style={styles.searchOverlayTitle}>Nasıl yardımcı olabiliriz?</Text>
+                  <Text style={styles.searchOverlaySubtitle}>İhtiyacınızı arayın veya kategorilerden hızlıca seçin.</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsSearchOverlayVisible(false);
+                    setSearchQuery('');
+                  }}
+                  style={styles.searchOverlayDismissBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Hizmet aramasını kapat"
+                >
+                  <Ionicons name="close" size={22} color="#334155" />
+                </TouchableOpacity>
+              </View>
+
               {/* Search Header */}
               <View style={styles.searchOverlayHeader}>
-                <View style={[styles.searchOverlayBar, { shadowColor: colors.primary, borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
-                  <Ionicons name="search" size={20} color={colors.primaryLight || 'rgba(255,255,255,0.55)'} style={{ marginRight: 8 }} />
+                <View style={styles.searchOverlayBar}>
+                  <Ionicons name="search" size={21} color="#0D9488" style={{ marginRight: 10 }} />
                   <TextInput
                     style={styles.searchOverlayInput}
                     placeholder="Hizmet veya kategori arayın..."
-                    placeholderTextColor="rgba(255,255,255,0.4)"
+                    placeholderTextColor="#94A3B8"
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     autoFocus={true}
@@ -3284,20 +3303,11 @@ export default function HomeScreen() {
                     underlineColorAndroid="transparent"
                   />
                   {searchQuery.length > 0 && (
-                    <TouchableOpacity onPress={() => setSearchQuery('')}>
-                      <Ionicons name="close-circle" size={18} color="rgba(255,255,255,0.5)" />
+                    <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.searchOverlayClearBtn}>
+                      <Ionicons name="close-circle" size={20} color="#94A3B8" />
                     </TouchableOpacity>
                   )}
                 </View>
-                <TouchableOpacity
-                  onPress={() => {
-                    setIsSearchOverlayVisible(false);
-                    setSearchQuery('');
-                  }}
-                  style={styles.searchOverlayCloseBtn}
-                >
-                  <Text style={[styles.searchOverlayCloseText, { color: colors.primaryLight || '#FFFFFF' }]}>Kapat</Text>
-                </TouchableOpacity>
               </View>
 
               {/* Results ScrollView */}
@@ -3312,7 +3322,7 @@ export default function HomeScreen() {
                   <>
                     {/* Popular Services / Quick Start Section */}
                     <View style={styles.searchOverlaySection}>
-                      <Text style={[styles.searchSectionTitle, { color: colors.primaryLight || 'rgba(255, 255, 255, 0.45)' }]}>Popüler Hizmetler</Text>
+                      <Text style={styles.searchSectionTitle}>Popüler Hizmetler</Text>
                       <View style={styles.popularServicesGrid}>
                         {[
                           { name: 'Elektrik Tesisatı', parentCategory: 'elektrik', emoji: '⚡' },
@@ -3346,7 +3356,7 @@ export default function HomeScreen() {
 
                     {/* All Main Services and Sub-branches (Alt Dallar) */}
                     <View style={styles.searchOverlaySection}>
-                      <Text style={[styles.searchSectionTitle, { color: colors.primaryLight || 'rgba(255, 255, 255, 0.45)' }]}>Tüm Ana Hizmetler & Alt Dalları</Text>
+                      <Text style={styles.searchSectionTitle}>Tüm Ana Hizmetler & Alt Dalları</Text>
                       <View style={styles.categoryListContainer}>
                         {SERVICE_CATEGORIES.map((cat) => {
                           const primaryColor = cat.colors[0];
@@ -3359,7 +3369,7 @@ export default function HomeScreen() {
                               style={[
                                 styles.mainCategoryCard,
                                 { borderLeftColor: primaryColor, borderLeftWidth: 4 },
-                                isExpanded && { backgroundColor: 'rgba(255, 255, 255, 0.06)', borderColor: primaryColor + '30' }
+                                isExpanded && { backgroundColor: primaryColor + '08', borderColor: primaryColor + '30' }
                               ]}
                             >
                               {/* Card Header */}
@@ -3387,15 +3397,15 @@ export default function HomeScreen() {
                                 
                                 {/* Branch Count Badge */}
                                 {!isExpanded && (
-                                  <View style={[styles.subCountBadge, { backgroundColor: 'rgba(255, 255, 255, 0.06)' }]}>
-                                    <Text style={[styles.subCountText, { color: 'rgba(255, 255, 255, 0.5)' }]}>{subCats.length} Dal</Text>
+                                  <View style={[styles.subCountBadge, { backgroundColor: '#F1F5F9' }]}>
+                                    <Text style={[styles.subCountText, { color: '#64748B' }]}>{subCats.length} Dal</Text>
                                   </View>
                                 )}
                                 
                                 <Ionicons 
                                   name={isExpanded ? "chevron-down" : "chevron-forward"} 
                                   size={18} 
-                                  color={isExpanded ? primaryColor : "rgba(255, 255, 255, 0.35)"} 
+                                  color={isExpanded ? primaryColor : "#94A3B8"}
                                   style={{ marginLeft: 8 }}
                                 />
                               </TouchableOpacity>
@@ -3422,7 +3432,7 @@ export default function HomeScreen() {
                                   {subCats.map((sub) => (
                                     <TouchableOpacity
                                       key={sub.id}
-                                      style={[styles.subCategoryPill, { borderColor: primaryColor + '20', backgroundColor: 'rgba(255, 255, 255, 0.02)' }]}
+                                      style={[styles.subCategoryPill, { borderColor: primaryColor + '20', backgroundColor: '#F8FAFC' }]}
                                       activeOpacity={0.7}
                                       onPress={() => {
                                         setIsSearchOverlayVisible(false);
@@ -3466,9 +3476,9 @@ export default function HomeScreen() {
 
                       if (matchedMain.length === 0 && matchedSub.length === 0) {
                         return (
-                          <View style={[styles.searchOverlayEmpty, { borderColor: (colors.border || 'rgba(255,255,255,0.08)') + '80', borderStyle: 'dashed', borderWidth: 1.5, borderRadius: 24, paddingVertical: 48, paddingHorizontal: 24, backgroundColor: 'rgba(255,255,255,0.01)', marginHorizontal: 4 }]}>
-                            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255, 255, 255, 0.03)', justifyContent: 'center', alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
-                              <Ionicons name="search-outline" size={28} color={colors.primaryLight || 'rgba(255,255,255,0.35)'} />
+                          <View style={[styles.searchOverlayEmpty, { borderStyle: 'dashed', borderWidth: 1.5, borderRadius: 24, paddingVertical: 48, paddingHorizontal: 24, marginHorizontal: 4 }]}>
+                            <View style={styles.searchEmptyIcon}>
+                              <Ionicons name="search-outline" size={28} color="#0D9488" />
                             </View>
                             <Text style={styles.searchEmptyTitle}>Sonuç Bulunamadı</Text>
                             <Text style={styles.searchEmptySubtitle}>
@@ -3480,7 +3490,7 @@ export default function HomeScreen() {
 
                       return (
                         <View style={styles.searchOverlaySection}>
-                          <Text style={[styles.searchSectionTitle, { color: colors.primaryLight || 'rgba(255, 255, 255, 0.45)' }]}>Eşleşen Hizmetler</Text>
+                          <Text style={styles.searchSectionTitle}>Eşleşen Hizmetler</Text>
                           
                           {/* Render Main Category Matches */}
                           {matchedMain.map((cat) => (
@@ -5953,7 +5963,7 @@ const styles = StyleSheet.create({
   },
   searchOverlayBackdrop: {
     flex: 1,
-    backgroundColor: '#021D1A',
+    backgroundColor: '#F5F8FA',
   },
   searchGlowBlob: {
     position: 'absolute',
@@ -5966,43 +5976,81 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     position: 'relative',
   },
-  searchOverlayHeader: {
+  searchOverlayTitleRow: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginTop: Platform.OS === 'ios' ? 12 : 24,
+    marginBottom: 18,
+  },
+  searchOverlayTitleCopy: {
+    flex: 1,
+    paddingRight: 16,
+  },
+  searchOverlayEyebrow: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    color: '#0D9488',
+    marginBottom: 7,
+  },
+  searchOverlayTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 24,
+    lineHeight: 30,
+    color: '#0F172A',
+    marginBottom: 5,
+  },
+  searchOverlaySubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#64748B',
+  },
+  searchOverlayDismissBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     alignItems: 'center',
-    marginBottom: 20,
-    marginTop: Platform.OS === 'ios' ? 14 : 28,
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  searchOverlayHeader: {
+    marginBottom: 22,
   },
   searchOverlayBar: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     paddingHorizontal: 16,
-    height: 54,
+    height: 56,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.14)',
+    borderColor: '#DDE7EA',
+    shadowColor: '#0F766E',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
+    shadowOpacity: 0.09,
+    shadowRadius: 14,
     elevation: 3,
   },
   searchOverlayInput: {
     flex: 1,
     fontFamily: fonts.medium,
     fontSize: 15,
-    color: '#FFFFFF',
+    color: '#0F172A',
     paddingVertical: 8,
     backgroundColor: 'transparent',
   },
-  searchOverlayCloseBtn: {
-    marginLeft: 14,
-    paddingVertical: 8,
-  },
-  searchOverlayCloseText: {
-    fontFamily: fonts.bold,
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.85)',
+  searchOverlayClearBtn: {
+    padding: 4,
+    marginRight: -4,
   },
   searchOverlayResults: {
     flex: 1,
@@ -6012,10 +6060,10 @@ const styles = StyleSheet.create({
   },
   searchSectionTitle: {
     fontFamily: fonts.bold,
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.4)',
+    fontSize: 12,
+    color: '#475569',
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 0.9,
     marginBottom: 14,
   },
   popularServicesGrid: {
@@ -6027,36 +6075,54 @@ const styles = StyleSheet.create({
   popularServicePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 11,
     borderWidth: 1.2,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: '#E2E8F0',
     flexBasis: '48%',
     flexGrow: 1,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
   },
   popularServiceText: {
     flex: 1,
     fontFamily: fonts.semiBold,
     fontSize: 12,
-    color: '#FFFFFF',
+    color: '#1E293B',
   },
   searchOverlayEmpty: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
+    backgroundColor: '#FFFFFF',
+    borderColor: '#CBD5E1',
+  },
+  searchEmptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#E6FFFB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#BFECE7',
   },
   searchEmptyTitle: {
     fontFamily: fonts.bold,
     fontSize: 16,
-    color: '#FFFFFF',
+    color: '#0F172A',
     marginBottom: 6,
   },
   searchEmptySubtitle: {
     fontFamily: fonts.medium,
     fontSize: 12.5,
-    color: 'rgba(255, 255, 255, 0.4)',
+    color: '#64748B',
     textAlign: 'center',
     lineHeight: 18,
     paddingHorizontal: 30,
@@ -6064,15 +6130,15 @@ const styles = StyleSheet.create({
   searchResultRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-    shadowColor: '#000',
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
   },
@@ -6091,13 +6157,13 @@ const styles = StyleSheet.create({
   searchResultTitle: {
     fontFamily: fonts.bold,
     fontSize: 15,
-    color: '#FFFFFF',
+    color: '#0F172A',
     marginBottom: 4,
   },
   searchResultSub: {
     fontFamily: fonts.medium,
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.45)',
+    color: '#64748B',
   },
   searchResultBadge: {
     alignSelf: 'flex-start',
@@ -6118,10 +6184,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   mainCategoryCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: '#E2E8F0',
     padding: 14,
     marginBottom: 12,
   },
@@ -6130,7 +6196,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
+    borderBottomColor: '#EEF2F6',
   },
   mainCategoryIconContainer: {
     width: 40,
@@ -6147,13 +6213,13 @@ const styles = StyleSheet.create({
   mainCategoryName: {
     fontFamily: fonts.bold,
     fontSize: 15,
-    color: '#FFFFFF',
+    color: '#0F172A',
     marginBottom: 2,
   },
   mainCategoryDesc: {
     fontFamily: fonts.regular,
     fontSize: 11.5,
-    color: 'rgba(255, 255, 255, 0.48)',
+    color: '#64748B',
   },
   subCategoriesWrapper: {
     flexDirection: 'row',
@@ -6162,9 +6228,9 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   subCategoryPill: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.07)',
+    borderColor: '#E2E8F0',
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -6172,7 +6238,7 @@ const styles = StyleSheet.create({
   subCategoryPillText: {
     fontFamily: fonts.medium,
     fontSize: 10.5,
-    color: 'rgba(255, 255, 255, 0.65)',
+    color: '#475569',
   },
   subCountBadge: {
     paddingHorizontal: 8,
