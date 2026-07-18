@@ -947,7 +947,14 @@ function RootLayoutNav() {
   useEffect(() => {
     const isPublicPath = pendingNotificationPath === '/welcome';
     if (pendingNotificationPath && isInitialized && isNavigationReady && !isAuthenticated && !isPublicPath) {
-      if (pathname !== '/welcome') router.replace('/welcome');
+      // Keep the notification destination queued until authentication, but do
+      // not continuously force the welcome route. Expo keeps the last tapped
+      // notification response across an in-place Play Store update. Replacing
+      // every unauthenticated pathname with /welcome made login, registration
+      // and guest buttons appear completely unresponsive after an update.
+      // Only normalize the empty/root route; once welcome is visible the user
+      // must be free to continue through the public flow.
+      if (pathname === '' || pathname === '/') router.replace('/welcome');
       return;
     }
     if (pendingNotificationPath && isInitialized && isNavigationReady && (isAuthenticated || isPublicPath)) {

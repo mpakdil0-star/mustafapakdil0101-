@@ -53,9 +53,10 @@ const getServiceLabel = (category: string) => {
 };
 
 const getRelativeTime = (dateString: string) => {
-  if (!dateString) return 'Şimdi';
+  if (!dateString) return 'Tarih bilgisi yok';
   try {
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'Tarih bilgisi yok';
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
@@ -69,8 +70,8 @@ const getRelativeTime = (dateString: string) => {
     if (diffDays < 7) return `${diffDays} gün önce`;
     
     return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
-  } catch (e) {
-    return '3 saat önce';
+  } catch (_e) {
+    return 'Tarih bilgisi yok';
   }
 };
 
@@ -160,10 +161,10 @@ export default function ChannelsScreen() {
             elecRes.data.forEach((elec: any) => {
               if (elec.id) {
                 // Parse and format service areas dynamically
-                let cityOnly = elec.city || (elec.locations && elec.locations[elec.locations.length - 1]?.city) || 'İstanbul';
+                let cityOnly = elec.city || (elec.locations && elec.locations[elec.locations.length - 1]?.city) || null;
                 let serviceArea = '';
                 if (elec.locations && elec.locations.length > 0) {
-                  cityOnly = elec.locations[elec.locations.length - 1]?.city || elec.city || 'İstanbul';
+                  cityOnly = elec.locations[elec.locations.length - 1]?.city || elec.city || null;
                   const cityMap: Record<string, string[]> = {};
                   elec.locations.forEach((loc: any) => {
                     const c = loc.city || '';
@@ -202,8 +203,8 @@ export default function ChannelsScreen() {
           return {
             ...item,
             ustaAvatar: item.ustaAvatar || elecInfo.profileImageUrl || null,
-            ustaCityOnly: elecInfo.cityOnly || item.ustaCity || 'İstanbul',
-            ustaFullLocations: elecInfo.fullLocations || item.ustaCity || 'İstanbul',
+            ustaCityOnly: elecInfo.cityOnly || item.ustaCity || null,
+            ustaFullLocations: elecInfo.fullLocations || item.ustaCity || null,
             ustaVerified: elecInfo.isVerified || false,
             ustaSpecialty: elecInfo.specialties?.[0] || (elecInfo.serviceCategory ? getServiceLabel(elecInfo.serviceCategory) : null),
             ustaExperience: elecInfo.experienceYears || null,
@@ -232,11 +233,11 @@ export default function ChannelsScreen() {
             elecRes.data.forEach((elec: any) => {
               if (elec.id) {
                 // Parse and format service areas dynamically
-                let cityOnly = elec.city || (elec.locations && elec.locations[elec.locations.length - 1]?.city) || 'İstanbul';
+                let cityOnly = elec.city || (elec.locations && elec.locations[elec.locations.length - 1]?.city) || null;
                 let serviceArea = '';
                 let serviceCities: string[] = [];
                 if (elec.locations && elec.locations.length > 0) {
-                  cityOnly = elec.locations[elec.locations.length - 1]?.city || elec.city || 'İstanbul';
+                  cityOnly = elec.locations[elec.locations.length - 1]?.city || elec.city || null;
                   const cityMap: Record<string, string[]> = {};
                   elec.locations.forEach((loc: any) => {
                     const c = loc.city || '';
@@ -282,12 +283,12 @@ export default function ChannelsScreen() {
           return {
             ...item,
             ustaAvatar: item.ustaAvatar || elecInfo.profileImageUrl || null,
-            ustaCityOnly: elecInfo.cityOnly || item.ustaCity || 'İstanbul',
-            ustaFullLocations: elecInfo.fullLocations || item.ustaCity || 'İstanbul',
+            ustaCityOnly: elecInfo.cityOnly || item.ustaCity || null,
+            ustaFullLocations: elecInfo.fullLocations || item.ustaCity || null,
             ustaVerified: elecInfo.isVerified || false,
             ustaSpecialty: elecInfo.specialties?.[0] || (elecInfo.serviceCategory ? getServiceLabel(elecInfo.serviceCategory) : null),
             ustaExperience: elecInfo.experienceYears || null,
-            ustaServiceCities: elecInfo.serviceCities || [item.ustaCity || 'İstanbul'],
+            ustaServiceCities: elecInfo.serviceCities?.length ? elecInfo.serviceCities : [item.ustaCity].filter(Boolean),
           };
         });
 
@@ -316,6 +317,7 @@ export default function ChannelsScreen() {
                   ratingAverage: elec.ratingAverage ?? undefined,
                   ratingCount: elec.ratingCount ?? undefined,
                   city: elec.city || (elec.locations && elec.locations[0]?.city) || undefined,
+                  isVerified: elec.isVerified ?? false,
                 };
               }
             });
@@ -330,6 +332,7 @@ export default function ChannelsScreen() {
             ustaRatingAverage: item.ustaRatingAverage ?? elecInfo.ratingAverage ?? null,
             ustaRatingCount: item.ustaRatingCount ?? elecInfo.ratingCount ?? null,
             ustaCity: elecInfo.city || item.ustaCity || null,
+            ustaVerified: elecInfo.isVerified ?? false,
           };
         });
         setShowcaseItems(enriched);
@@ -488,17 +491,18 @@ export default function ChannelsScreen() {
 
   // Handle Delete Job Offer
   const handleDeleteJobOffer = (itemId: string) => {
-    setConfirmModalTitle('İlanı İptal Et');
-    setConfirmModalDesc('Bu iş paslama ilanınızı silmek ve yayından kaldırmak istediğinize emin misiniz?');
+    setConfirmModalTitle('İş Paylaşımını Sil');
+    setConfirmModalDesc('Bu iş paylaşımını kalıcı olarak silip yayından kaldırmak istediğinize emin misiniz?');
     setConfirmModalAction(() => async () => {
       try {
         const response = { data: { success: true, data: await communityService.deleteJob(itemId) } };
         if (response.data?.success) {
           setJobOffers(response.data.data);
-          Alert.alert('Başarılı', 'İş paslama ilanınız başarıyla iptal edildi.');
+          Alert.alert('Silindi', 'İş paylaşımınız yayından kaldırıldı.');
         }
-      } catch (err) {
-        Alert.alert('Hata', 'İlan iptal edilemedi.');
+      } catch (err: any) {
+        const isOwnershipError = String(err?.message || '').includes('CONTENT_NOT_FOUND_OR_NOT_OWNER');
+        Alert.alert('Silinemedi', isOwnershipError ? 'Bu paylaşım bulunamadı veya paylaşımı silme yetkiniz yok.' : 'İş paylaşımı silinemedi. Lütfen tekrar deneyin.');
       }
       setConfirmModalVisible(false);
     });
@@ -517,8 +521,9 @@ export default function ChannelsScreen() {
           await fetchForumPosts();
           Alert.alert('Başarılı', 'Sorunuz başarıyla silindi.');
         }
-      } catch (err) {
-        Alert.alert('Hata', 'Soru silinemedi.');
+      } catch (err: any) {
+        const isOwnershipError = String(err?.message || '').includes('CONTENT_NOT_FOUND_OR_NOT_OWNER');
+        Alert.alert('Silinemedi', isOwnershipError ? 'Bu soru bulunamadı veya soruyu silme yetkiniz yok.' : 'Soru silinemedi. Lütfen tekrar deneyin.');
       }
       setConfirmModalVisible(false);
     });
@@ -535,8 +540,8 @@ export default function ChannelsScreen() {
     const newJob = {
       title: newJobTitle,
       description: newJobDesc,
-      city: user?.city || 'İstanbul',
-      ustaCity: user?.city || 'İstanbul',
+      city: user?.city || 'Konum belirtilmedi',
+      ustaCity: user?.city || 'Konum belirtilmedi',
       ustaId: user?.id || 'mock-usta-id',
       ustaName: user?.fullName || 'Usta',
       ustaAvatar: user?.profileImageUrl || null,
@@ -546,7 +551,7 @@ export default function ChannelsScreen() {
       const response = { data: { success: true, data: await communityService.createJob(newJob) } };
       if (response.data?.success) {
         // İlanı hemen göstermek için şehir filtresini kullanıcının şehrine ayarla
-        const userCity = user?.city || 'İstanbul';
+        const userCity = user?.city || 'Konum belirtilmedi';
         if (selectedCity !== 'Tüm Türkiye' && selectedCity !== userCity) {
           setSelectedCity(userCity);
         }
@@ -628,7 +633,7 @@ export default function ChannelsScreen() {
 
   const filteredJobOffers = jobOffers.filter((job) => {
     if (selectedCity === 'Tüm Türkiye') return true;
-    const serviceCities = job.ustaServiceCities || [job.ustaCity || job.city || 'İstanbul'];
+    const serviceCities = job.ustaServiceCities?.length ? job.ustaServiceCities : [job.ustaCity || job.city].filter(Boolean);
     return serviceCities.includes(selectedCity);
   });
 
@@ -665,7 +670,7 @@ export default function ChannelsScreen() {
         count: forumPosts.length,
         countLabel: 'teknik soru',
         actionLabel: 'Yeni soru',
-        gradient: ['#0F766E', '#0D9488'] as [string, string],
+        gradient: ['#17324D', '#0F766E'] as [string, string],
       }
     : activeTab === 'jobs'
       ? {
@@ -676,7 +681,7 @@ export default function ChannelsScreen() {
           count: filteredJobOffers.length,
           countLabel: 'aktif fırsat',
           actionLabel: 'İş paylaş',
-          gradient: ['#0369A1', '#0891B2'] as [string, string],
+          gradient: ['#17324D', '#0F766E'] as [string, string],
         }
       : {
           eyebrow: 'PROFESYONEL VİTRİN',
@@ -686,7 +691,7 @@ export default function ChannelsScreen() {
           count: showcaseItems.length,
           countLabel: 'hüner kaydı',
           actionLabel: 'Hüner ekle',
-          gradient: ['#047857', '#10B981'] as [string, string],
+          gradient: ['#17324D', '#0F766E'] as [string, string],
         };
 
   const openActiveChannelComposer = () => {
@@ -776,9 +781,9 @@ export default function ChannelsScreen() {
           contentContainerStyle={styles.tabScrollView}
         >
           {[
-            { id: 'forum', label: 'Teknik Destek', icon: 'construct-outline', activeColor: colors.primary, gradientColors: [colors.primary, colors.primaryDark || '#1E40AF'] },
-            { id: 'jobs', label: 'İş Paslama', icon: 'briefcase-outline', activeColor: '#06B6D4', gradientColors: ['#06B6D4', '#0891B2'] },
-            { id: 'gallery', label: 'Hünerlerim', icon: 'bulb-outline', activeColor: '#10B981', gradientColors: ['#10B981', '#047857'] },
+            { id: 'forum', label: 'Teknik Destek', icon: 'construct-outline', activeColor: '#0F766E', gradientColors: ['#17324D', '#0F766E'] },
+            { id: 'jobs', label: 'İş Paslama', icon: 'briefcase-outline', activeColor: '#0F766E', gradientColors: ['#17324D', '#0F766E'] },
+            { id: 'gallery', label: 'Hünerlerim', icon: 'bulb-outline', activeColor: '#0F766E', gradientColors: ['#17324D', '#0F766E'] },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             const iconColor = isActive ? '#FFF' : tab.activeColor;
@@ -916,7 +921,7 @@ export default function ChannelsScreen() {
                                 onPress={(e) => {
                                   e.stopPropagation();
                                   setLocationsModalUstaName(post.ustaName || 'Usta');
-                                  setLocationsModalContent(post.ustaFullLocations ? post.ustaFullLocations.split(' • ') : [post.ustaCityOnly || 'İstanbul']);
+                                  setLocationsModalContent(post.ustaFullLocations ? post.ustaFullLocations.split(' • ') : [post.ustaCityOnly || 'Konum belirtilmedi']);
                                   setIsLocationsModalVisible(true);
                                 }}
                                 style={styles.authorCityBadge}
@@ -938,6 +943,9 @@ export default function ChannelsScreen() {
                             }}
                             style={styles.deleteButton}
                             activeOpacity={0.7}
+                            accessibilityRole="button"
+                            accessibilityLabel="Teknik destek sorusunu sil"
+                            hitSlop={8}
                           >
                             <Ionicons name="trash-outline" size={13} color="#EF4444" />
                           </TouchableOpacity>
@@ -969,10 +977,12 @@ export default function ChannelsScreen() {
                               <Ionicons name="construct-outline" size={10} color={colors.primary} />
                               <Text style={[styles.tagCapsuleText, { color: colors.primary }]}>Teknik Soru</Text>
                             </View>
-                            <View style={[styles.tagCapsule, { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' }]}>
-                              <Ionicons name="flash-outline" size={10} color="#0284C7" />
-                              <Text style={[styles.tagCapsuleText, { color: '#0284C7' }]}>Elektrik</Text>
-                            </View>
+                            {!!post.ustaSpecialty && (
+                              <View style={[styles.tagCapsule, { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' }]}>
+                                <Ionicons name="ribbon-outline" size={10} color="#0284C7" />
+                                <Text style={[styles.tagCapsuleText, { color: '#0284C7' }]}>{post.ustaSpecialty}</Text>
+                              </View>
+                            )}
                           </>
                         )}
                       </View>
@@ -1009,15 +1019,15 @@ export default function ChannelsScreen() {
             <View style={{ width: '100%' }}>
               <View style={styles.jobsHeaderRow}>
                 <TouchableOpacity
-                  style={[styles.cityFilterBtn, { borderColor: 'rgba(8, 145, 178, 0.2)' }]}
+                  style={[styles.cityFilterBtn, { borderColor: colors.primary + '30' }]}
                   onPress={() => {
                     setCitySearchQuery('');
                     setIsCityFilterModalVisible(true);
                   }}
                 >
-                  <Ionicons name="location-outline" size={14} color="#0891B2" />
-                  <Text style={[styles.cityFilterText, { color: '#0891B2' }]}>{selectedCity}</Text>
-                  <Ionicons name="chevron-down" size={12} color="#0891B2" />
+                  <Ionicons name="location-outline" size={14} color={colors.primary} />
+                  <Text style={[styles.cityFilterText, { color: colors.primary }]}>{selectedCity}</Text>
+                  <Ionicons name="chevron-down" size={12} color={colors.primary} />
                 </TouchableOpacity>
 
               </View>
@@ -1063,7 +1073,7 @@ export default function ChannelsScreen() {
                           onPress={(e) => {
                             e.stopPropagation();
                             setLocationsModalUstaName(offer.ustaName || 'Usta');
-                            setLocationsModalContent(offer.ustaFullLocations ? offer.ustaFullLocations.split(' • ') : [offer.ustaCityOnly || offer.ustaCity || 'İstanbul']);
+                            setLocationsModalContent(offer.ustaFullLocations ? offer.ustaFullLocations.split(' • ') : [offer.ustaCityOnly || offer.ustaCity || 'Konum belirtilmedi']);
                             setIsLocationsModalVisible(true);
                           }}
                         >
@@ -1073,22 +1083,22 @@ export default function ChannelsScreen() {
                             numberOfLines={1}
                             ellipsizeMode="tail"
                           >
-                            {offer.ustaFullLocations || offer.ustaCity || 'İstanbul'}
+                            {offer.ustaFullLocations || offer.ustaCity || 'Konum belirtilmedi'}
                           </Text>
                         </TouchableOpacity>
                         <View style={styles.jobCardUrgencyBadge}>
-                          <Ionicons name="flash" size={10} color="#F59E0B" style={{ marginRight: 2 }} />
-                          <Text style={styles.jobCardUrgencyText}>Aktif Fırsat</Text>
+                          <Ionicons name="time-outline" size={10} color="#F59E0B" style={{ marginRight: 2 }} />
+                          <Text style={styles.jobCardUrgencyText}>{getRelativeTime(offer.createdAt)}</Text>
                         </View>
                       </View>
 
                       <View style={styles.jobCardBody}>
                         <View style={styles.jobCardTitleRow}>
                           <Ionicons name="briefcase-outline" size={14} color={colors.primary} style={{ marginRight: 6 }} />
-                          <Text style={styles.jobCardTitle} numberOfLines={1}>{offer.title}</Text>
+                          <Text style={styles.jobCardTitle} numberOfLines={2}>{offer.title}</Text>
                         </View>
                         <View style={styles.jobCardDescContainer}>
-                          <Text style={styles.jobCardDesc} numberOfLines={2}>{offer.description}</Text>
+                          <Text style={styles.jobCardDesc} numberOfLines={3}>{offer.description}</Text>
                         </View>
                       </View>
 
@@ -1113,7 +1123,7 @@ export default function ChannelsScreen() {
                             <Text style={styles.jobCardAuthorLabel}>Paslayan Usta</Text>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
                               <Text style={styles.jobCardAuthor}>{offer.ustaName}</Text>
-                              <Ionicons name="checkmark-circle" size={12} color="#10B981" />
+                              {offer.ustaVerified && <Ionicons name="checkmark-circle" size={12} color="#10B981" />}
                             </View>
                           </View>
                         </View>
@@ -1154,10 +1164,15 @@ export default function ChannelsScreen() {
                           </View>
                           <TouchableOpacity
                             style={styles.jobDeleteBtn}
-                            onPress={() => handleDeleteJobOffer(offer.id)}
+                            onPress={(event) => {
+                              event.stopPropagation();
+                              handleDeleteJobOffer(offer.id);
+                            }}
+                            accessibilityRole="button"
+                            accessibilityLabel="İş paylaşımını sil"
                           >
                             <Ionicons name="trash" size={12} color="#EF4444" style={{ marginRight: 4 }} />
-                            <Text style={styles.jobDeleteBtnText}>İptal Et</Text>
+                            <Text style={styles.jobDeleteBtnText}>İlanı Sil</Text>
                           </TouchableOpacity>
                         </View>
                       )}
@@ -1175,7 +1190,7 @@ export default function ChannelsScreen() {
                 <View>
                   <View style={styles.sampleGalleryIntro}>
                     <View style={styles.sampleGalleryIcon}>
-                      <Ionicons name="sparkles" size={18} color="#047857" />
+                      <Ionicons name="sparkles" size={18} color="#0F766E" />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.sampleGalleryTitle}>Galerinizi çalışmalarınızla canlandırın</Text>
@@ -1261,7 +1276,7 @@ export default function ChannelsScreen() {
                             <View style={styles.showcaseCardLocRow}>
                               <Ionicons name="location" size={8} color={colors.primary} />
                               <Text style={styles.showcaseCardLocText} numberOfLines={1}>
-                                {item.ustaCity || 'İstanbul'}
+                                {item.ustaCity || 'Konum belirtilmedi'}
                               </Text>
                             </View>
                           </View>
@@ -1471,7 +1486,9 @@ export default function ChannelsScreen() {
             }}>
               <Text style={{ color: colors.warningDark || '#D97706', fontSize: 12.5, fontFamily: fonts.bold }}>Önemli Not</Text>
               <Text style={{ color: colors.textSecondary || '#78350F', fontSize: 11, fontFamily: fonts.medium, marginTop: 3 }}>
-                Bu iş paslama teklifi sadece sizin kayıtlı olduğunuz şehirdeki ({user?.city || 'İstanbul'}) ustalar tarafından görülecektir.
+                {user?.city
+                  ? `Bu iş paylaşımı kayıtlı olduğunuz şehirdeki (${user.city}) ustalar tarafından görülecektir.`
+                  : 'Hizmet bölgeniz eksik. Paylaşımınız konum belirtilmeden yayınlanacaktır.'}
               </Text>
             </View>
 
@@ -1923,7 +1940,7 @@ export default function ChannelsScreen() {
                           <Text style={{ color: '#0F172A', fontSize: 16, fontFamily: fonts.bold }} numberOfLines={1}>
                             {selectedShowcaseItem.ustaName}
                           </Text>
-                          <Ionicons name="checkmark-circle" size={15} color="#10B981" />
+                          {selectedShowcaseItem.ustaVerified && <Ionicons name="checkmark-circle" size={15} color="#0F766E" />}
                         </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                           {selectedShowcaseItem.ustaRatingAverage != null && (
@@ -2444,14 +2461,14 @@ const styles = StyleSheet.create({
   // Elite Forum Card
   forumCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
+    borderRadius: 18,
+    padding: 15,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#E6EDF3',
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.03,
+    shadowOpacity: 0.045,
     shadowRadius: 10,
     elevation: 2,
   },
@@ -2515,18 +2532,18 @@ const styles = StyleSheet.create({
   },
   forumTitle: {
     color: '#0F172A',
-    fontSize: 17,
+    fontSize: 16.5,
     fontFamily: fonts.bold,
-    lineHeight: 24,
-    marginBottom: 8,
-    marginTop: 6,
+    lineHeight: 22,
+    marginBottom: 6,
+    marginTop: 2,
   },
   forumDesc: {
     color: '#334155',
-    fontSize: 13.5,
+    fontSize: 13,
     fontFamily: fonts.regular,
-    lineHeight: 20,
-    marginBottom: 12,
+    lineHeight: 19,
+    marginBottom: 10,
   },
   tagCapsulesRow: {
     flexDirection: 'row',
@@ -2635,8 +2652,8 @@ const styles = StyleSheet.create({
   },
   jobCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 14,
+    borderRadius: 18,
+    padding: 15,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -2651,7 +2668,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   cityBadge: {
     flexDirection: 'row',
@@ -2683,19 +2700,20 @@ const styles = StyleSheet.create({
   },
   jobCardTitle: {
     color: '#0F172A',
-    fontSize: 14.5,
+    fontSize: 15.5,
     fontFamily: fonts.bold,
+    lineHeight: 20,
     flex: 1,
   },
   jobCardDesc: {
     color: '#475569',
-    fontSize: 11.5,
-    fontFamily: fonts.medium,
-    lineHeight: 16,
+    fontSize: 12.5,
+    fontFamily: fonts.regular,
+    lineHeight: 18,
   },
   jobCardBody: {
     marginVertical: 8,
-    gap: 6,
+    gap: 7,
   },
   jobCardTitleRow: {
     flexDirection: 'row',
@@ -2813,7 +2831,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     padding: 13,
     borderRadius: 18,
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#F0FDFA',
     borderWidth: 1,
     borderColor: '#CCFBF1',
   },
@@ -2826,12 +2844,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   sampleGalleryTitle: {
-    color: '#064E3B',
+    color: '#17324D',
     fontFamily: fonts.bold,
     fontSize: 12.5,
   },
   sampleGalleryDescription: {
-    color: '#047857',
+    color: '#0F766E',
     fontFamily: fonts.medium,
     fontSize: 9.5,
     lineHeight: 14,
@@ -2843,7 +2861,7 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#059669',
+    backgroundColor: '#0F766E',
   },
   sampleOverlayBadge: {
     position: 'absolute',

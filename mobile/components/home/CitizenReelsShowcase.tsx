@@ -15,6 +15,7 @@ interface CitizenReelsShowcaseProps {
   setIsShowcaseDetailModalVisible: (visible: boolean) => void;
   isAuthenticated: boolean;
   onAuthRequired: () => void;
+  onSamplePress?: () => void;
 }
 
 export const CitizenReelsShowcase: React.FC<CitizenReelsShowcaseProps> = ({
@@ -25,16 +26,19 @@ export const CitizenReelsShowcase: React.FC<CitizenReelsShowcaseProps> = ({
   setIsShowcaseDetailModalVisible,
   isAuthenticated,
   onAuthRequired,
+  onSamplePress,
 }) => {
   const [activeReelsIndex, setActiveReelsIndex] = useState(0);
   const hasRealItems = Array.isArray(homeShowcaseItems) && homeShowcaseItems.length > 0;
   const displayItems = hasRealItems ? homeShowcaseItems : SAMPLE_SHOWCASE_ITEMS;
+  const columnCount = Math.max(1, Math.ceil(displayItems.length / 2));
 
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeaderRow}>
         <View style={styles.sectionTitleContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>USTA VİTRİNİ</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Usta vitrini</Text>
+          <Text style={styles.sectionSubtitle}>Tamamlanan işlerden ilham alın.</Text>
         </View>
       </View>
 
@@ -42,18 +46,18 @@ export const CitizenReelsShowcase: React.FC<CitizenReelsShowcaseProps> = ({
         horizontal 
         showsHorizontalScrollIndicator={false} 
         contentContainerStyle={styles.vitrinScroller}
-        snapToInterval={262} // vitrinCardSmall width (250) + gap (12)
+        snapToInterval={250}
         decelerationRate="fast"
         scrollEventThrottle={16}
         onScroll={(e) => {
           const scrollPosition = e.nativeEvent.contentOffset.x;
-          const index = Math.max(0, Math.min(2, Math.round(scrollPosition / 262)));
+          const index = Math.max(0, Math.min(columnCount - 1, Math.round(scrollPosition / 250)));
           if (activeReelsIndex !== index) {
             setActiveReelsIndex(index);
           }
         }}
       >
-        {Array.from({ length: 3 }).map((_, colIndex) => {
+        {Array.from({ length: columnCount }).map((_, colIndex) => {
           const colItems = displayItems.slice(colIndex * 2, colIndex * 2 + 2);
           if (colItems.length === 0) return null;
           return (
@@ -63,7 +67,10 @@ export const CitizenReelsShowcase: React.FC<CitizenReelsShowcaseProps> = ({
                   key={item.id}
                   activeOpacity={0.85}
                   onPress={() => {
-                    if (item.isSample) return;
+                    if (item.isSample) {
+                      onSamplePress?.();
+                      return;
+                    }
                     if (!isAuthenticated) {
                       onAuthRequired();
                       return;
@@ -111,9 +118,9 @@ export const CitizenReelsShowcase: React.FC<CitizenReelsShowcaseProps> = ({
         })}
       </ScrollView>
 
-      {/* Pagination Indicators */}
-      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 12, gap: 6 }}>
-        {[0, 1, 2].map((i) => (
+      {columnCount > 1 && (
+      <View style={styles.paginationRow}>
+        {Array.from({ length: columnCount }).map((_, i) => (
           <View 
             key={i} 
             style={{
@@ -125,28 +132,36 @@ export const CitizenReelsShowcase: React.FC<CitizenReelsShowcaseProps> = ({
           />
         ))}
       </View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   section: {
-    marginVertical: spacing.md,
+    marginTop: 13,
+    marginBottom: 8,
     paddingHorizontal: spacing.screenPadding,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: 10,
     justifyContent: 'space-between',
   },
   sectionTitleContainer: {
     flex: 1,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontFamily: fonts.bold,
-    letterSpacing: 0.5,
+    fontSize: 17,
+    fontFamily: fonts.extraBold,
+    letterSpacing: -0.25,
+  },
+  sectionSubtitle: {
+    marginTop: 2,
+    color: '#64748B',
+    fontFamily: fonts.medium,
+    fontSize: 10.5,
   },
   reelsSectionBadge: {
     flexDirection: 'row',
@@ -166,15 +181,15 @@ const styles = StyleSheet.create({
   },
   vitrinScroller: {
     paddingRight: 16,
-    gap: 12,
+    gap: 10,
   },
   vitrinColumn: {
-    gap: 12,
+    gap: 9,
   },
   vitrinCardSmall: {
-    width: 250,
-    height: 125,
-    borderRadius: 16,
+    width: 240,
+    height: 108,
+    borderRadius: 15,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -242,5 +257,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 11,
     color: 'rgba(255,255,255,0.8)',
+  },
+  paginationRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+    gap: 6,
   },
 });

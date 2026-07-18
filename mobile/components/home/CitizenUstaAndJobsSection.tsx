@@ -60,8 +60,20 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
     return 'Elektrik';
   };
 
+  const getVisibleMetrics = (elec: any) => {
+    const rating = Number(elec.electricianProfile?.ratingAverage || 0);
+    const reviews = Number(elec.electricianProfile?.totalReviews || 0);
+    const completedJobs = Number(elec.electricianProfile?.completedJobs || elec.completedJobs || 0);
+
+    return [
+      { key: 'rating', value: rating.toFixed(1), numericValue: rating, label: 'puan', icon: 'star' as const, color: '#D97706' },
+      { key: 'reviews', value: String(reviews), numericValue: reviews, label: 'yorum', icon: 'chatbubble-ellipses-outline' as const, color: '#0F766E' },
+      { key: 'jobs', value: String(completedJobs), numericValue: completedJobs, label: 'iş', icon: 'checkmark-done-outline' as const, color: '#059669' },
+    ].filter(metric => metric.numericValue > 0);
+  };
+
   return (
-    <View style={[styles.section, { paddingBottom: 2, marginTop: -4, marginBottom: 0 }]}>
+    <View style={styles.section}>
       {/* Premium Capsule Tab Switcher */}
       <View style={styles.modernTabSwitcherContainer}>
         <TouchableOpacity
@@ -73,7 +85,7 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
           activeOpacity={0.7}
         >
           <Text style={[styles.modernTabText, { color: activeHomeTab === 'ustalar' ? '#FFF' : colors.textSecondary }]}>
-            ÖNE ÇIKAN USTALAR
+            Öne Çıkan Ustalar
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -85,26 +97,10 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
           activeOpacity={0.7}
         >
           <Text style={[styles.modernTabText, { color: activeHomeTab === 'ilanlar' ? '#FFF' : colors.textSecondary }]}>
-            SON İŞ İLANLARI
+            Son İş İlanları
           </Text>
         </TouchableOpacity>
       </View>
-
-      {activeHomeTab === 'ustalar' && (
-        <View style={styles.featuredIntroRow}>
-          <View style={[styles.featuredIntroIcon, { backgroundColor: colors.primary + '12' }]}>
-            <Ionicons name="shield-checkmark-outline" size={17} color={colors.primary} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.featuredIntroTitle, { color: colors.text }]}>Bölgenizde güven veren ustalar</Text>
-            <Text style={[styles.featuredIntroText, { color: colors.textSecondary }]}>Profil, hizmet bölgesi ve müşteri değerlendirmelerini karşılaştırın.</Text>
-          </View>
-          <TouchableOpacity onPress={() => router.push('/electricians')} activeOpacity={0.7} style={styles.featuredIntroAction}>
-            <Text style={[styles.featuredIntroActionText, { color: colors.primary }]}>Tümü</Text>
-            <Ionicons name="chevron-forward" size={14} color={colors.primary} />
-          </TouchableOpacity>
-        </View>
-      )}
 
       {activeHomeTab === 'ilanlar' ? (
         isLoadingRecentJobs ? (
@@ -227,8 +223,8 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
                 ]}
               >
                 <View style={[styles.featuredUstaAccent, { backgroundColor: colors.primary }]} />
-                {/* Top Row: Avatar + Info + Rating */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                {/* Identity and service information */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                   <View style={[styles.featuredUstaAvatarBorder, { borderColor: colors.primary }]}>
                     <View style={styles.featuredUstaAvatarInner}>
                       {elec.profileImageUrl ? (
@@ -240,48 +236,36 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
                   </View>
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: colors.text }} numberOfLines={1}>{elec.fullName || 'Usta'}</Text>
+                      <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: colors.text }} numberOfLines={1} maxFontSizeMultiplier={1.2}>{elec.fullName || 'Usta'}</Text>
                       {elec.isVerified === true && elec.electricianProfile?.verificationStatus === 'VERIFIED' && (
                         <Ionicons name="shield-checkmark" size={14} color="#10B981" />
                       )}
                     </View>
-                    <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: colors.textSecondary || '#64748B', marginTop: 2 }} numberOfLines={1}>{getUstaCategory(elec)}</Text>
+                    <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: colors.textSecondary || '#64748B', marginTop: 2 }} numberOfLines={1} maxFontSizeMultiplier={1.15}>{getUstaCategory(elec)}</Text>
                     <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: colors.textLight || '#94A3B8', marginTop: 1 }} numberOfLines={1}>{elec.locations?.[0] ? `${elec.locations[0].district || ''}, ${elec.locations[0].city || ''}`.replace(/^, /, '').replace(/, $/, '') || 'Türkiye' : 'Türkiye'}</Text>
                   </View>
-                  <View style={styles.featuredUstaRatingBadge}>
-                    <Ionicons name="star" size={11} color="#D97706" />
-                    <Text style={styles.featuredUstaRatingText}>{Number(elec.electricianProfile?.ratingAverage || 0).toFixed(1)}</Text>
-                  </View>
                 </View>
-                <View style={styles.featuredUstaMetricsRow}>
-                  <View style={styles.featuredUstaMetric}>
-                    <Ionicons name="star" size={13} color="#D97706" />
-                    <Text style={styles.featuredUstaMetricValue}>{Number(elec.electricianProfile?.ratingAverage || 0).toFixed(1)}</Text>
-                    <Text style={styles.featuredUstaMetricLabel}>puan</Text>
+
+                {/* Zero values add noise and reduce trust. Show only meaningful metrics. */}
+                {getVisibleMetrics(elec).length > 0 ? (
+                  <View style={styles.featuredUstaMetricsRow}>
+                    {getVisibleMetrics(elec).map((metric, index) => (
+                      <React.Fragment key={metric.key}>
+                        {index > 0 && <View style={styles.featuredUstaMetricDivider} />}
+                        <View style={styles.featuredUstaMetric}>
+                          <Ionicons name={metric.icon} size={13} color={metric.color} />
+                          <Text style={styles.featuredUstaMetricValue}>{metric.value}</Text>
+                          <Text style={styles.featuredUstaMetricLabel}>{metric.label}</Text>
+                        </View>
+                      </React.Fragment>
+                    ))}
                   </View>
-                  <View style={styles.featuredUstaMetricDivider} />
-                  <View style={styles.featuredUstaMetric}>
-                    <Ionicons name="chatbubble-ellipses-outline" size={13} color="#0F766E" />
-                    <Text style={styles.featuredUstaMetricValue}>{elec.electricianProfile?.totalReviews || 0}</Text>
-                    <Text style={styles.featuredUstaMetricLabel}>yorum</Text>
+                ) : (
+                  <View style={styles.featuredUstaEmptyMetrics}>
+                    <Ionicons name="sparkles-outline" size={13} color="#0F766E" />
+                    <Text style={styles.featuredUstaEmptyMetricsText}>Henüz değerlendirme bulunmuyor</Text>
                   </View>
-                  <View style={styles.featuredUstaMetricDivider} />
-                  <View style={styles.featuredUstaMetric}>
-                    <Ionicons name="checkmark-done-outline" size={14} color="#059669" />
-                    <Text style={styles.featuredUstaMetricValue}>{elec.electricianProfile?.completedJobs || elec.completedJobs || 0}</Text>
-                    <Text style={styles.featuredUstaMetricLabel}>iş</Text>
-                  </View>
-                </View>
-                
-                {/* Skill Chips */}
-                <View style={{ flexDirection: 'row', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
-                  <View style={[styles.featuredUstaSkillChip, { backgroundColor: colors.primary + '10' }]}>
-                    <Text style={[styles.featuredUstaSkillText, { color: colors.primary }]}>{getUstaCategory(elec)}</Text>
-                  </View>
-                  <View style={[styles.featuredUstaSkillChip, { backgroundColor: colors.primary + '08' }]}>
-                    <Text style={[styles.featuredUstaSkillText, { color: colors.primary }]}>{elec.electricianProfile?.totalReviews || 0} Değerlendirme</Text>
-                  </View>
-                </View>
+                )}
 
                 {/* Profile Button */}
                 <TouchableOpacity
@@ -346,7 +330,8 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
 const styles = StyleSheet.create({
   section: {
     paddingHorizontal: 16,
-    marginVertical: 12,
+    marginTop: 8,
+    marginBottom: 4,
     width: '100%',
   },
   modernTabSwitcherContainer: {
@@ -354,7 +339,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.04)',
     borderRadius: 14,
     padding: 3,
-    marginBottom: 14,
+    marginBottom: 9,
   },
   modernTabButton: {
     flex: 1,
@@ -372,42 +357,7 @@ const styles = StyleSheet.create({
   modernTabText: {
     fontFamily: fonts.bold,
     fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-  },
-  featuredIntroRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-    marginBottom: 8,
-    paddingHorizontal: 2,
-  },
-  featuredIntroIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  featuredIntroTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 12.5,
-  },
-  featuredIntroText: {
-    fontFamily: fonts.medium,
-    fontSize: 9.5,
-    lineHeight: 13,
-    marginTop: 1,
-  },
-  featuredIntroAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    height: 30,
-  },
-  featuredIntroActionText: {
-    fontFamily: fonts.bold,
-    fontSize: 10.5,
+    letterSpacing: 0.05,
   },
   seeAllUstaEndCard: {
     width: 155,
@@ -539,10 +489,10 @@ const styles = StyleSheet.create({
     color: '#047857',
   },
   featuredUstaCard: {
-    width: 296,
+    width: 276,
     backgroundColor: staticColors.white,
     borderRadius: 20,
-    padding: 16,
+    padding: 14,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.06,
     shadowRadius: 16,
@@ -558,16 +508,16 @@ const styles = StyleSheet.create({
     height: 3,
   },
   featuredUstaAvatarBorder: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     borderWidth: 2,
     padding: 2,
   },
   featuredUstaAvatarInner: {
     width: '100%',
     height: '100%',
-    borderRadius: 25,
+    borderRadius: 23,
     overflow: 'hidden',
     backgroundColor: '#F8FAFC',
     justifyContent: 'center',
@@ -599,12 +549,12 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
   },
   featuredUstaMetricsRow: {
-    height: 38,
+    minHeight: 34,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
     paddingHorizontal: 7,
-    marginBottom: 12,
+    marginBottom: 9,
     borderRadius: 12,
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
@@ -630,6 +580,23 @@ const styles = StyleSheet.create({
     height: 18,
     backgroundColor: '#E2E8F0',
   },
+  featuredUstaEmptyMetrics: {
+    minHeight: 34,
+    marginBottom: 9,
+    borderRadius: 11,
+    backgroundColor: '#F0FDFA',
+    borderWidth: 1,
+    borderColor: '#CCFBF1',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  featuredUstaEmptyMetricsText: {
+    color: '#64748B',
+    fontFamily: fonts.medium,
+    fontSize: 9.5,
+  },
   featuredUstaProfileBtn: {
     borderRadius: 12,
     overflow: 'hidden',
@@ -638,7 +605,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
+    paddingVertical: 7,
     paddingHorizontal: 16,
     borderRadius: 12,
     gap: 6,

@@ -10,17 +10,24 @@ export const userInsightsService={
   async electricianStats(){
     const user=await sessionUser();
     const [{data:bids,error:bidError},{data:profile,error:profileError}]=await Promise.all([
-      supabase.from('bids').select('amount,status,job_posts(status,category,completed_at)').eq('electrician_id',user.id),
+      supabase.from('bids').select('amount,status,expires_at,job_posts(status,category,completed_at,deleted_at)').eq('electrician_id',user.id),
       supabase.from('electrician_profiles').select('rating_average,total_reviews').eq('user_id',user.id).single()
     ]);
     if(bidError||profileError) throw bidError||profileError;
     const all=bids??[]; const accepted=all.filter((b:any)=>b.status==='ACCEPTED');
     const completed=accepted.filter((b:any)=>b.job_posts?.status==='COMPLETED');
     const activeJobs=accepted.filter((b:any)=>['IN_PROGRESS','PENDING_CONFIRMATION'].includes(b.job_posts?.status));
+    const now=Date.now();
+    const activeBids=all.filter((b:any)=>
+      b.status==='PENDING'
+      && ['OPEN','BIDDING'].includes(b.job_posts?.status)
+      && !b.job_posts?.deleted_at
+      && (!b.expires_at || new Date(b.expires_at).getTime()>now)
+    );
     const categoryCounts:Record<string,number>={}; completed.forEach((b:any)=>{const c=b.job_posts?.category||'Diğer';categoryCounts[c]=(categoryCounts[c]||0)+1;});
     const days=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt']; const today=new Date();
     const weeklyEarnings=Array.from({length:7},(_,index)=>{const day=new Date(today);day.setDate(today.getDate()-(6-index));const key=day.toISOString().slice(0,10);const amount=completed.filter((b:any)=>b.job_posts?.completed_at?.slice(0,10)===key).reduce((s:number,b:any)=>s+Number(b.amount),0);return{day:days[day.getDay()],amount};});
-    return {totalBids:all.length,activeBids:all.filter((b:any)=>b.status==='PENDING').length,activeJobs:activeJobs.length,completedJobs:completed.length,totalEarnings:completed.reduce((s:number,b:any)=>s+Number(b.amount),0),rating:Number(profile?.rating_average||0),reviewCount:profile?.total_reviews||0,weeklyEarnings,categoryDistribution:Object.entries(categoryCounts).map(([category,count])=>({category,count})).sort((a,b)=>b.count-a.count).slice(0,5)};
+    return {totalBids:all.length,activeBids:activeBids.length,activeJobs:activeJobs.length,completedJobs:completed.length,totalEarnings:completed.reduce((s:number,b:any)=>s+Number(b.amount),0),rating:Number(profile?.rating_average||0),reviewCount:profile?.total_reviews||0,weeklyEarnings,categoryDistribution:Object.entries(categoryCounts).map(([category,count])=>({category,count})).sort((a,b)=>b.count-a.count).slice(0,5)};
   },
   async jobHistory(){
     const user=await sessionUser();

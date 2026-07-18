@@ -180,23 +180,23 @@ export default function CategoriesScreen() {
 
                 {isExpanded ? (
                   <View style={styles.servicesArea}>
-                    <TouchableOpacity style={[styles.generalService, { borderColor: `${primary}35`, backgroundColor: `${primary}0D` }]} onPress={() => createJob(group)} activeOpacity={0.8}>
-                      <View style={[styles.serviceIcon, { backgroundColor: `${primary}18` }]}>
-                        <Ionicons name="apps" size={17} color={secondary} />
+                    <TouchableOpacity style={styles.generalService} onPress={() => createJob(group)} activeOpacity={0.8}>
+                      <View style={styles.serviceIcon}>
+                        <Ionicons name="apps-outline" size={17} color="#0F766E" />
                       </View>
                       <View style={styles.serviceCopy}>
                         <Text style={styles.serviceName}>Genel {group.title} ilanı</Text>
                         <Text style={styles.serviceHint}>Alt hizmetten emin değilseniz buradan başlayın</Text>
                       </View>
-                      <Ionicons name="arrow-forward" size={16} color={secondary} />
+                      <Ionicons name="arrow-forward" size={16} color="#0F766E" />
                     </TouchableOpacity>
 
                     <View style={styles.servicesGrid}>
                       {group.categories.map((category) => (
                         <TouchableOpacity key={category.id} style={styles.serviceCard} onPress={() => createJob(group, category)} activeOpacity={0.8}>
-                          <LinearGradient colors={category.colors} style={styles.smallServiceIcon}>
-                            <Ionicons name={category.icon as any} size={16} color="#FFFFFF" />
-                          </LinearGradient>
+                          <View style={styles.smallServiceIcon}>
+                            <Ionicons name={category.icon as any} size={16} color="#0F766E" />
+                          </View>
                           <Text style={styles.smallServiceName} numberOfLines={2}>{category.name}</Text>
                           <Ionicons name="chevron-forward" size={13} color="#94A3B8" />
                         </TouchableOpacity>
@@ -259,14 +259,14 @@ const styles = StyleSheet.create({
   tapHint: { color: '#94A3B8', fontFamily: fonts.medium, fontSize: 9, marginLeft: 7 },
   expandButton: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#EEF2F6' },
   servicesArea: { padding: 12, paddingTop: 0, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
-  generalService: { flexDirection: 'row', alignItems: 'center', minHeight: 57, borderRadius: 14, borderWidth: 1, paddingHorizontal: 11, marginTop: 11, marginBottom: 9 },
-  serviceIcon: { width: 35, height: 35, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginRight: 9 },
+  generalService: { flexDirection: 'row', alignItems: 'center', minHeight: 57, borderRadius: 14, borderWidth: 1, borderColor: '#CCFBF1', backgroundColor: '#F0FDFA', paddingHorizontal: 11, marginTop: 11, marginBottom: 9 },
+  serviceIcon: { width: 35, height: 35, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginRight: 9, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#CCFBF1' },
   serviceCopy: { flex: 1 },
   serviceName: { color: '#0F172A', fontFamily: fonts.bold, fontSize: 11.5 },
   serviceHint: { color: '#64748B', fontFamily: fonts.regular, fontSize: 9.3, marginTop: 2 },
   servicesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  serviceCard: { width: '48.7%', minHeight: 58, borderRadius: 13, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#EDF1F5', paddingHorizontal: 9, paddingVertical: 8, flexDirection: 'row', alignItems: 'center' },
-  smallServiceIcon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', marginRight: 7 },
+  serviceCard: { width: '48.7%', minHeight: 58, borderRadius: 13, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0', paddingHorizontal: 9, paddingVertical: 8, flexDirection: 'row', alignItems: 'center' },
+  smallServiceIcon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', marginRight: 7, backgroundColor: '#F0FDFA', borderWidth: 1, borderColor: '#CCFBF1' },
   smallServiceName: { flex: 1, color: '#334155', fontFamily: fonts.bold, fontSize: 9.7, lineHeight: 12 },
   emptyState: { alignItems: 'center', padding: 28, borderRadius: 19, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5EAF0' },
   emptyIcon: { width: 54, height: 54, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ECFDF5' },

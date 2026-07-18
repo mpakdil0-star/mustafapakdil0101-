@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { fonts } from '../../constants/typography';
 import { useAppDispatch } from '../../hooks/redux';
-import { setGuestRole, logout } from '../../store/slices/authSlice';
+import { clearSession, setGuestRole } from '../../store/slices/authSlice';
 
 const { width, height } = Dimensions.get('window');
 
@@ -74,10 +74,11 @@ export default function WelcomeScreen() {
         startShine();
     }, []);
 
-    const handleGuestEntry = async (role: 'CITIZEN' | 'ELECTRICIAN', path: string) => {
-        // Clear existing tokens to prevent silent login as a previous user next time
-        await dispatch(logout()).unwrap();
-        
+    const handleGuestEntry = (role: 'CITIZEN' | 'ELECTRICIAN', path: string) => {
+        // Navigation must never wait for a network-backed logout. An expired
+        // session left on the device after an app update can make sign-out
+        // stall, which previously made both guest buttons look disabled.
+        dispatch(clearSession());
         dispatch(setGuestRole(role));
         router.replace(path as any);
     };

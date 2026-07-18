@@ -817,13 +817,8 @@ export default function HomeScreen() {
       if (result && result.jobs && result.jobs.length > 0) {
         setRecentJobs(result.jobs.slice(0, 10));
       } else {
-        // Fallback: Fetch any available open jobs from database so the screen always shows REAL jobs
-        const generalJobsResult = await jobService.getJobs({ limit: 10 });
-        if (generalJobsResult && generalJobsResult.jobs) {
-          setRecentJobs(generalJobsResult.jobs.slice(0, 10));
-        } else {
-          setRecentJobs([]);
-        }
+        // Do not show unrelated categories just to fill the electrician home screen.
+        setRecentJobs([]);
       }
     } catch (error) {
       console.log('Error fetching recent jobs:', error);
@@ -1123,7 +1118,7 @@ export default function HomeScreen() {
           {isElectrician ? (
             <ImageBackground
               source={require('../../assets/images/header_bg.png')}
-              style={[styles.premiumHeader, { backgroundColor: colors.secondary || '#1E293B', borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.12)' }]}
+              style={[styles.premiumHeader, styles.electricianPremiumHeader, { backgroundColor: colors.secondary || '#1E293B', borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.12)' }]}
               imageStyle={[styles.headerImage, { opacity: 0.08 }]}
             >
               <LinearGradient
@@ -1146,6 +1141,7 @@ export default function HomeScreen() {
                 stats={stats}
                 ustaCategoryTitle={getUstaCategory(user || { serviceCategory: 'elektrik' })}
                 isAuthenticated={isAuthenticated}
+                newJobsCount={newJobsCount}
               />
             </ImageBackground>
           ) : (
@@ -1191,8 +1187,8 @@ export default function HomeScreen() {
                   <Ionicons name="notifications-off" size={24} color="#FFF" />
                 </View>
                 <View style={[styles.healthTextContainer, { flex: 1 }]}>
-                  <Text style={[styles.healthTitle, { color: '#B45309', fontSize: 14 }]}>Bildirimler Kapalı 🔕</Text>
-                  <Text style={[styles.healthSubtitle, { color: '#D97706', fontSize: 12 }]} numberOfLines={2}>
+                  <Text style={[styles.healthTitle, { color: '#B45309', fontSize: 14 }]} numberOfLines={1} maxFontSizeMultiplier={1.15}>Bildirimler Kapalı 🔕</Text>
+                  <Text style={[styles.healthSubtitle, { color: '#D97706', fontSize: 12 }]} numberOfLines={2} maxFontSizeMultiplier={1.15}>
                     İş fırsatlarını ve mesajları kaçırmayın!
                   </Text>
                 </View>
@@ -1204,7 +1200,7 @@ export default function HomeScreen() {
                     Linking.openSettings();
                   }}
                 >
-                  <Text style={{ color: '#FFF', fontFamily: fonts.bold, fontSize: 13 }}>Ayarları Aç</Text>
+                  <Text style={{ color: '#FFF', fontFamily: fonts.bold, fontSize: 13 }} numberOfLines={1} maxFontSizeMultiplier={1.1}>Ayarları Aç</Text>
                   <Ionicons name="open-outline" size={14} color="#FFF" />
                 </TouchableOpacity>
               </View>
@@ -1214,7 +1210,7 @@ export default function HomeScreen() {
 
         {/* Unified Profile Health Banner - with RGB Border Animation */}
         {
-          isInitialized && isAuthenticated && completionPercent < 100 && (
+          isInitialized && isAuthenticated && !showPushBanner && completionPercent < 100 && (
             <View style={styles.bannerWrapper}>
               {/* Theme-Adaptive Glowing Border Wrapper */}
               <Animated.View style={[styles.rgbBorderWrapper, { borderColor: animatedBorderColor, shadowColor: isElectrician ? '#FBBF24' : '#2DD4BF' }]}>
@@ -1244,10 +1240,10 @@ export default function HomeScreen() {
                       </View>
 
                       <View style={styles.healthTextContainer}>
-                        <Text style={[styles.healthTitle, { color: '#FFFFFF' }]}>
+                        <Text style={[styles.healthTitle, { color: '#FFFFFF' }]} numberOfLines={1} maxFontSizeMultiplier={1.2}>
                           {isElectrician ? 'Hesabını Tamamla' : 'Profil Sağlığı'}
                         </Text>
-                        <Text style={[styles.healthSubtitle, { color: 'rgba(255,255,255,0.7)', paddingRight: 4 }]}>
+                        <Text style={[styles.healthSubtitle, { color: 'rgba(255,255,255,0.7)', paddingRight: 4 }]} numberOfLines={2} maxFontSizeMultiplier={1.15}>
                           {isElectrician
                             ? 'Profilini tamamla, iş alma şansını %50 artır.'
                             : 'Adres ve fotoğraf ekle, usta bulman kolaylaşsın.'}
@@ -1311,34 +1307,20 @@ export default function HomeScreen() {
         {/* Electrician Quick Actions (RESTORED) */}
         {isElectrician && (
           <>
-            <ElectricianTools
-              handleActionWithAuth={handleActionWithAuth}
-              colors={colors}
-            />
-
             <ElectricianRecentJobs
               recentJobs={recentJobs}
               colors={colors}
               handleActionWithAuth={handleActionWithAuth}
             />
+
+            <ElectricianTools
+              handleActionWithAuth={handleActionWithAuth}
+              colors={colors}
+            />
           </>
         )}
 
-        {/* Vitrin / Showcase Section (Citizen Only) */}
-        {/* Vitrin / Showcase Section (Citizen Only) */}
-        {!isElectrician && (
-          <CitizenReelsShowcase
-            homeShowcaseItems={homeShowcaseItems}
-            colors={colors}
-            setSelectedShowcaseItem={setSelectedShowcaseItem}
-            setShowcaseActiveImageIndex={setShowcaseActiveImageIndex}
-            setIsShowcaseDetailModalVisible={setIsShowcaseDetailModalVisible}
-            isAuthenticated={isAuthenticated}
-            onAuthRequired={() => setShowAuthModal(true)}
-          />
-        )}
-
-        {/* KEŞFET - Main Service Categories Section (Citizen Only) */}
+        {/* Citizen journey: services first, then trusted professionals and discovery. */}
         {!isElectrician && (
           <CitizenExploreCategories
             colors={colors}
@@ -1346,9 +1328,6 @@ export default function HomeScreen() {
           />
         )}
 
-
-
-        {/* Toggleable Section: Son İş İlanları / Öne Çıkan Ustalar (Citizen Only) */}
         {!isElectrician && (
           <CitizenUstaAndJobsSection
             activeHomeTab={activeHomeTab}
@@ -1363,17 +1342,32 @@ export default function HomeScreen() {
           />
         )}
 
-        {/* ==================== PAZAR YERİ & İKİNCİ EL ==================== */}
-        <CitizenMarketplace
-          marketplaceProducts={marketplaceProducts}
-          colors={colors}
-          setIsAllProductsModalVisible={setIsAllProductsModalVisible}
-          setIsAddProductModalVisible={setIsAddProductModalVisible}
-          setSelectedProduct={setSelectedProduct}
-          setIsProductDetailModalVisible={setIsProductDetailModalVisible}
-          isAuthenticated={isAuthenticated}
-          onAuthRequired={() => setShowAuthModal(true)}
-        />
+        {!isElectrician && (
+          <CitizenReelsShowcase
+            homeShowcaseItems={homeShowcaseItems}
+            colors={colors}
+            setSelectedShowcaseItem={setSelectedShowcaseItem}
+            setShowcaseActiveImageIndex={setShowcaseActiveImageIndex}
+            setIsShowcaseDetailModalVisible={setIsShowcaseDetailModalVisible}
+            isAuthenticated={isAuthenticated}
+            onAuthRequired={() => setShowAuthModal(true)}
+            onSamplePress={() => showToast('Bu kart örnek çalışmadır. Gerçek usta çalışmaları eklendiğinde otomatik olarak güncellenir.')}
+          />
+        )}
+
+        {!isElectrician && (
+          <CitizenMarketplace
+            marketplaceProducts={marketplaceProducts}
+            colors={colors}
+            setIsAllProductsModalVisible={setIsAllProductsModalVisible}
+            setIsAddProductModalVisible={setIsAddProductModalVisible}
+            setSelectedProduct={setSelectedProduct}
+            setIsProductDetailModalVisible={setIsProductDetailModalVisible}
+            isAuthenticated={isAuthenticated}
+            onAuthRequired={() => setShowAuthModal(true)}
+            onSamplePress={() => showToast('Bu ürün örnek ilandır. Gerçek ürün ilanları yayınlandığında örnekler kaldırılır.')}
+          />
+        )}
 
         {/* ==================== YENİ İLAN EKLE MODAL ==================== */}
         <Modal
@@ -3194,21 +3188,17 @@ export default function HomeScreen() {
           )}
           <View style={styles.searchOverlayBackdrop}>
             <LinearGradient
-              colors={['#E6FFFB', '#F5F8FA', '#F8FAFC']}
+              colors={['#F0FDFA', '#F8FAFC', '#F5F7F8']}
               start={{ x: 0, y: 0 }}
-              end={{ x: 0.7, y: 1 }}
+              end={{ x: 0.35, y: 1 }}
               style={StyleSheet.absoluteFill}
             />
-            {/* Glowing Decorative Background Blobs */}
-            <View style={[styles.searchGlowBlob, { top: -80, right: -80, backgroundColor: '#2DD4BF', opacity: 0.12 }]} />
-            <View style={[styles.searchGlowBlob, { bottom: -110, left: -80, backgroundColor: '#0D9488', opacity: 0.06 }]} />
 
             <SafeAreaView style={styles.searchOverlayContainer} edges={['top', 'bottom']}>
               <View style={styles.searchOverlayTitleRow}>
                 <View style={styles.searchOverlayTitleCopy}>
-                  <Text style={styles.searchOverlayEyebrow}>HİZMET BULUCU</Text>
-                  <Text style={styles.searchOverlayTitle}>Nasıl yardımcı olabiliriz?</Text>
-                  <Text style={styles.searchOverlaySubtitle}>İhtiyacınızı arayın veya kategorilerden hızlıca seçin.</Text>
+                  <Text style={styles.searchOverlayTitle} numberOfLines={1} maxFontSizeMultiplier={1.2}>Hizmet ara</Text>
+                  <Text style={styles.searchOverlaySubtitle} numberOfLines={2} maxFontSizeMultiplier={1.15}>İhtiyacınızı yazın veya uygun hizmeti seçin.</Text>
                 </View>
                 <TouchableOpacity
                   onPress={() => {
@@ -3237,6 +3227,7 @@ export default function HomeScreen() {
                     autoCapitalize="none"
                     autoCorrect={false}
                     underlineColorAndroid="transparent"
+                    maxFontSizeMultiplier={1.2}
                   />
                   {searchQuery.length > 0 && (
                     <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.searchOverlayClearBtn}>
@@ -3258,7 +3249,7 @@ export default function HomeScreen() {
                   <>
                     {/* Popular Services / Quick Start Section */}
                     <View style={styles.searchOverlaySection}>
-                      <Text style={styles.searchSectionTitle}>Popüler Hizmetler</Text>
+                      <Text style={styles.searchSectionTitle} maxFontSizeMultiplier={1.2}>Popüler hizmetler</Text>
                       <View style={styles.popularServicesGrid}>
                         {[
                           { name: 'Elektrik Tesisatı', parentCategory: 'elektrik', emoji: '⚡' },
@@ -3283,7 +3274,7 @@ export default function HomeScreen() {
                               }}
                             >
                               <Text style={{ marginRight: 6, fontSize: 13 }}>{item.emoji}</Text>
-                              <Text style={styles.popularServiceText} numberOfLines={1}>{item.name}</Text>
+                              <Text style={styles.popularServiceText} numberOfLines={1} maxFontSizeMultiplier={1.15}>{item.name}</Text>
                             </TouchableOpacity>
                           );
                         })}
@@ -3292,7 +3283,7 @@ export default function HomeScreen() {
 
                     {/* All Main Services and Sub-branches (Alt Dallar) */}
                     <View style={styles.searchOverlaySection}>
-                      <Text style={styles.searchSectionTitle}>Tüm Ana Hizmetler & Alt Dalları</Text>
+                      <Text style={styles.searchSectionTitle} maxFontSizeMultiplier={1.2}>Tüm hizmetler</Text>
                       <View style={styles.categoryListContainer}>
                         {SERVICE_CATEGORIES.map((cat) => {
                           const primaryColor = cat.colors[0];
@@ -3325,8 +3316,8 @@ export default function HomeScreen() {
                                   <Ionicons name={cat.icon as any} size={20} color={primaryColor} />
                                 </View>
                                 <View style={styles.mainCategoryTextContainer}>
-                                  <Text style={styles.mainCategoryName}>{cat.name}</Text>
-                                  <Text style={styles.mainCategoryDesc} numberOfLines={1}>
+                                  <Text style={styles.mainCategoryName} numberOfLines={1} maxFontSizeMultiplier={1.15}>{cat.name}</Text>
+                                  <Text style={styles.mainCategoryDesc} numberOfLines={1} maxFontSizeMultiplier={1.1}>
                                     {isExpanded ? cat.description : subPreview}
                                   </Text>
                                 </View>
@@ -3334,7 +3325,7 @@ export default function HomeScreen() {
                                 {/* Branch Count Badge */}
                                 {!isExpanded && (
                                   <View style={[styles.subCountBadge, { backgroundColor: '#F1F5F9' }]}>
-                                    <Text style={[styles.subCountText, { color: '#64748B' }]}>{subCats.length} Dal</Text>
+                                    <Text style={[styles.subCountText, { color: '#64748B' }]} maxFontSizeMultiplier={1.1}>{subCats.length} seçenek</Text>
                                   </View>
                                 )}
                                 
@@ -3360,7 +3351,7 @@ export default function HomeScreen() {
                                     }}
                                   >
                                     <Text style={[styles.subCategoryPillText, { color: primaryColor, fontFamily: fonts.bold }]}>
-                                      Hepsini Gör / Genel Başvuru
+                                      Bu hizmetle ilan oluştur
                                     </Text>
                                     <Ionicons name="arrow-forward" size={11} color={primaryColor} style={{ marginLeft: 3 }} />
                                   </TouchableOpacity>
@@ -3416,8 +3407,8 @@ export default function HomeScreen() {
                             <View style={styles.searchEmptyIcon}>
                               <Ionicons name="search-outline" size={28} color="#0D9488" />
                             </View>
-                            <Text style={styles.searchEmptyTitle}>Sonuç Bulunamadı</Text>
-                            <Text style={styles.searchEmptySubtitle}>
+                            <Text style={styles.searchEmptyTitle} maxFontSizeMultiplier={1.2}>Sonuç bulunamadı</Text>
+                            <Text style={styles.searchEmptySubtitle} maxFontSizeMultiplier={1.15}>
                               "{searchQuery}" aramasıyla eşleşen bir hizmet türü bulamadık. Lütfen farklı kelimelerle tekrar deneyin.
                             </Text>
                           </View>
@@ -3426,7 +3417,7 @@ export default function HomeScreen() {
 
                       return (
                         <View style={styles.searchOverlaySection}>
-                          <Text style={styles.searchSectionTitle}>Eşleşen Hizmetler</Text>
+                          <Text style={styles.searchSectionTitle} maxFontSizeMultiplier={1.2}>Eşleşen hizmetler</Text>
                           
                           {/* Render Main Category Matches */}
                           {matchedMain.map((cat) => (
@@ -3797,7 +3788,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingBottom: 180,
+    paddingBottom: 210,
   },
   premiumHeaderContainer: {
     borderBottomLeftRadius: 32,
@@ -3814,6 +3805,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: 20,
     position: 'relative',
+  },
+  electricianPremiumHeader: {
+    paddingTop: Platform.OS === 'ios' ? 64 : 46,
   },
   headerTopRow: {
     flexDirection: 'row',
@@ -5899,54 +5893,42 @@ const styles = StyleSheet.create({
   },
   searchOverlayBackdrop: {
     flex: 1,
-    backgroundColor: '#F5F8FA',
-  },
-  searchGlowBlob: {
-    position: 'absolute',
-    width: 250,
-    height: 250,
-    borderRadius: 125,
+    backgroundColor: '#F6F8F8',
   },
   searchOverlayContainer: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     position: 'relative',
   },
   searchOverlayTitleRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginTop: Platform.OS === 'ios' ? 12 : 24,
-    marginBottom: 18,
+    marginTop: Platform.OS === 'ios' ? 8 : 14,
+    marginBottom: 14,
   },
   searchOverlayTitleCopy: {
     flex: 1,
-    paddingRight: 16,
-  },
-  searchOverlayEyebrow: {
-    fontFamily: fonts.bold,
-    fontSize: 11,
-    letterSpacing: 1.2,
-    color: '#0D9488',
-    marginBottom: 7,
+    paddingRight: 14,
   },
   searchOverlayTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 24,
-    lineHeight: 30,
+    fontFamily: fonts.extraBold,
+    fontSize: 21,
+    lineHeight: 26,
     color: '#0F172A',
-    marginBottom: 5,
+    letterSpacing: -0.35,
+    marginBottom: 2,
   },
   searchOverlaySubtitle: {
     fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 12,
+    lineHeight: 17,
     color: '#64748B',
   },
   searchOverlayDismissBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
@@ -5954,32 +5936,32 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.07,
-    shadowRadius: 10,
-    elevation: 2,
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
   },
   searchOverlayHeader: {
-    marginBottom: 22,
+    marginBottom: 18,
   },
   searchOverlayBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 56,
+    borderRadius: 15,
+    paddingHorizontal: 14,
+    height: 52,
     borderWidth: 1,
-    borderColor: '#DDE7EA',
+    borderColor: '#BFE7E2',
     shadowColor: '#0F766E',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.09,
-    shadowRadius: 14,
-    elevation: 3,
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    elevation: 2,
   },
   searchOverlayInput: {
     flex: 1,
     fontFamily: fonts.medium,
-    fontSize: 15,
+    fontSize: 14,
     color: '#0F172A',
     paddingVertical: 8,
     backgroundColor: 'transparent',
@@ -5992,72 +5974,72 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   searchOverlaySection: {
-    marginBottom: 24,
+    marginBottom: 22,
   },
   searchSectionTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 12,
-    color: '#475569',
-    textTransform: 'uppercase',
-    letterSpacing: 0.9,
-    marginBottom: 14,
+    fontFamily: fonts.extraBold,
+    fontSize: 15,
+    color: '#1E293B',
+    letterSpacing: -0.15,
+    marginBottom: 11,
   },
   popularServicesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
     justifyContent: 'space-between',
   },
   popularServicePill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    borderWidth: 1.2,
-    borderColor: '#E2E8F0',
+    borderRadius: 13,
+    minHeight: 46,
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+    borderWidth: 1,
+    borderColor: '#E1E8EB',
     flexBasis: '48%',
     flexGrow: 1,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
+    shadowOpacity: 0.025,
+    shadowRadius: 6,
     elevation: 1,
   },
   popularServiceText: {
     flex: 1,
     fontFamily: fonts.semiBold,
-    fontSize: 12,
+    fontSize: 11.5,
     color: '#1E293B',
   },
   searchOverlayEmpty: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: 48,
     backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
+    borderColor: '#D9E4E7',
   },
   searchEmptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 58,
+    height: 58,
+    borderRadius: 20,
     backgroundColor: '#E6FFFB',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
     borderWidth: 1,
     borderColor: '#BFECE7',
   },
   searchEmptyTitle: {
     fontFamily: fonts.bold,
-    fontSize: 16,
+    fontSize: 15,
     color: '#0F172A',
     marginBottom: 6,
   },
   searchEmptySubtitle: {
     fontFamily: fonts.medium,
-    fontSize: 12.5,
+    fontSize: 12,
     color: '#64748B',
     textAlign: 'center',
     lineHeight: 18,
@@ -6067,24 +6049,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 12,
+    borderRadius: 15,
+    padding: 12,
+    marginBottom: 9,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOpacity: 0.03,
+    shadowRadius: 7,
+    elevation: 1,
   },
   searchResultIconBg: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
+    marginRight: 11,
     borderWidth: 1,
   },
   searchResultInfo: {
@@ -6092,13 +6074,13 @@ const styles = StyleSheet.create({
   },
   searchResultTitle: {
     fontFamily: fonts.bold,
-    fontSize: 15,
+    fontSize: 14,
     color: '#0F172A',
     marginBottom: 4,
   },
   searchResultSub: {
     fontFamily: fonts.medium,
-    fontSize: 12,
+    fontSize: 11.5,
     color: '#64748B',
   },
   searchResultBadge: {
@@ -6117,15 +6099,20 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   categoryListContainer: {
-    gap: 12,
+    gap: 0,
   },
   mainCategoryCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 15,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    padding: 14,
-    marginBottom: 12,
+    padding: 12,
+    marginBottom: 9,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.025,
+    shadowRadius: 6,
+    elevation: 1,
   },
   mainCategoryHeader: {
     flexDirection: 'row',
@@ -6135,9 +6122,9 @@ const styles = StyleSheet.create({
     borderBottomColor: '#EEF2F6',
   },
   mainCategoryIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 11,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -6148,28 +6135,28 @@ const styles = StyleSheet.create({
   },
   mainCategoryName: {
     fontFamily: fonts.bold,
-    fontSize: 15,
+    fontSize: 14,
     color: '#0F172A',
     marginBottom: 2,
   },
   mainCategoryDesc: {
     fontFamily: fonts.regular,
-    fontSize: 11.5,
+    fontSize: 11,
     color: '#64748B',
   },
   subCategoriesWrapper: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 7,
     paddingTop: 10,
   },
   subCategoryPill: {
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: 9,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
   },
   subCategoryPillText: {
     fontFamily: fonts.medium,

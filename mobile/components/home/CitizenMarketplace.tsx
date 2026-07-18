@@ -14,6 +14,7 @@ interface CitizenMarketplaceProps {
   setIsProductDetailModalVisible: (visible: boolean) => void;
   isAuthenticated: boolean;
   onAuthRequired: () => void;
+  onSamplePress?: () => void;
 }
 
 export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
@@ -25,6 +26,7 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
   setIsProductDetailModalVisible,
   isAuthenticated,
   onAuthRequired,
+  onSamplePress,
 }) => {
   const hasRealProducts = Array.isArray(marketplaceProducts) && marketplaceProducts.length > 0;
   const displayProducts = hasRealProducts ? marketplaceProducts : SAMPLE_MARKETPLACE_PRODUCTS;
@@ -34,17 +36,9 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
       <View style={styles.headerBlock}>
         <View style={styles.headingRow}>
           <View style={styles.headingCopy}>
-            <Text style={styles.eyebrow}>GÜVENLİ EKİPMAN ALIŞVERİŞİ</Text>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Pazar Yeri & İkinci El</Text>
-            <Text style={styles.sectionSubtitle}>Ustalardan ve vatandaşlardan yakındaki ürünleri keşfedin.</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]} maxFontSizeMultiplier={1.2}>Pazar Yeri & İkinci El</Text>
+            <Text style={styles.sectionSubtitle}>Yakınınızdaki uygun ekipman ve ikinci el ürünleri keşfedin.</Text>
           </View>
-          <View style={styles.listingCountPill}>
-            <Text style={styles.listingCountValue}>{hasRealProducts ? displayProducts.filter(product => !product.isSold).length : '—'}</Text>
-            <Text style={styles.listingCountLabel}>{hasRealProducts ? 'aktif ilan' : 'örnekler'}</Text>
-          </View>
-        </View>
-
-        <View style={styles.headerActionsRow}>
           <TouchableOpacity
             onPress={() => {
               if (!isAuthenticated) {
@@ -56,10 +50,12 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
             style={styles.seeAllButton}
             activeOpacity={0.7}
           >
-            <Ionicons name="grid-outline" size={14} color={colors.primary} />
-            <Text style={[styles.seeAllText, { color: colors.primary }]}>Tüm ilanlar</Text>
+            <Text style={[styles.seeAllText, { color: colors.primary }]}>Tümü</Text>
+            <Ionicons name="chevron-forward" size={14} color={colors.primary} />
           </TouchableOpacity>
+        </View>
 
+        <View style={styles.headerActionsRow}>
           <TouchableOpacity
             style={styles.addProductBtn}
             activeOpacity={0.8}
@@ -112,7 +108,10 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
               ]}
               activeOpacity={0.9}
               onPress={() => {
-                if (prod.isSample) return;
+                if (prod.isSample) {
+                  onSamplePress?.();
+                  return;
+                }
                 if (!isAuthenticated) {
                   onAuthRequired();
                   return;
@@ -185,7 +184,7 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
               {/* Lower Part: Descriptions & Info */}
               <View style={styles.marketDetailsContainer}>
                 <View>
-                  <Text style={[styles.marketProductTitle, { color: colors.text }]} numberOfLines={1}>
+                  <Text style={[styles.marketProductTitle, { color: colors.text }]} numberOfLines={1} maxFontSizeMultiplier={1.15}>
                     {prod.title}
                   </Text>
                   <Text style={[styles.marketProductDesc, { color: colors.textSecondary }]} numberOfLines={2}>
@@ -226,7 +225,8 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
 const styles = StyleSheet.create({
   section: {
     paddingHorizontal: 16,
-    marginVertical: 14,
+    marginTop: 18,
+    marginBottom: 20,
     width: '100%',
   },
   headerBlock: {
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   },
   headingRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
   },
   headingCopy: {
@@ -273,15 +273,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 11,
+    marginTop: 9,
   },
   seeAllButton: {
-    height: 34,
-    paddingHorizontal: 11,
+    height: 32,
+    paddingHorizontal: 10,
     borderRadius: 11,
     borderWidth: 1,
-    borderColor: '#DDE7EA',
-    backgroundColor: '#FFFFFF',
+    borderColor: '#CCFBF1',
+    backgroundColor: '#ECFDF5',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,

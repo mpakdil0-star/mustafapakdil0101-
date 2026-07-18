@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { fonts } from '../../constants/typography';
@@ -59,10 +59,11 @@ const SHORT_DESCRIPTIONS: Record<string, string> = {
   'guvenlik-kamera': 'Kamera ve alarm kurulumu',
 };
 
-const CategoryCard = ({ category, index, onPress }: {
+const CategoryCard = ({ category, index, onPress, width }: {
   category: ServiceCategory;
   index: number;
   onPress: () => void;
+  width: number;
 }) => {
   const entrance = useRef(new Animated.Value(0)).current;
 
@@ -77,7 +78,7 @@ const CategoryCard = ({ category, index, onPress }: {
 
   return (
     <Animated.View style={{ opacity: entrance, transform: [{ translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }}>
-      <TouchableOpacity style={styles.categoryCard} onPress={onPress} activeOpacity={0.86}>
+      <TouchableOpacity style={[styles.categoryCard, { width }]} onPress={onPress} activeOpacity={0.86}>
         <View style={[styles.imageShell, { backgroundColor: `${category.colors[0]}12`, borderColor: `${category.colors[0]}25` }]}>
           {CATEGORY_IMAGES[category.id] ? (
             <Image source={CATEGORY_IMAGES[category.id]} style={styles.categoryImage} resizeMode="contain" />
@@ -86,8 +87,8 @@ const CategoryCard = ({ category, index, onPress }: {
           )}
         </View>
         <View style={styles.cardCopy}>
-          <Text style={styles.categoryTitle} numberOfLines={1}>{PROFESSIONAL_NAMES[category.id] || category.name}</Text>
-          <Text style={styles.categoryDescription} numberOfLines={1}>{SHORT_DESCRIPTIONS[category.id] || category.description}</Text>
+          <Text style={styles.categoryTitle} numberOfLines={1} maxFontSizeMultiplier={1.2}>{PROFESSIONAL_NAMES[category.id] || category.name}</Text>
+          <Text style={styles.categoryDescription} numberOfLines={1} maxFontSizeMultiplier={1.15}>{SHORT_DESCRIPTIONS[category.id] || category.description}</Text>
         </View>
         <View style={styles.arrowButton}>
           <Ionicons name="chevron-forward" size={13} color="#94A3B8" />
@@ -104,8 +105,13 @@ interface CitizenExploreCategoriesProps {
 
 export const CitizenExploreCategories = ({ colors, handleActionWithAuth }: CitizenExploreCategoriesProps) => {
   const router = useRouter();
-  const firstRow = SERVICE_CATEGORIES.filter((_, index) => index % 2 === 0);
-  const secondRow = SERVICE_CATEGORIES.filter((_, index) => index % 2 !== 0);
+  const { width: screenWidth } = useWindowDimensions();
+  const [activePage, setActivePage] = useState(0);
+  const categoryPages = Array.from(
+    { length: Math.ceil(SERVICE_CATEGORIES.length / 4) },
+    (_, pageIndex) => SERVICE_CATEGORIES.slice(pageIndex * 4, pageIndex * 4 + 4),
+  );
+  const cardWidth = Math.max(148, (screenWidth - 40) / 2);
 
   const openCategory = (id: string) => handleActionWithAuth('/jobs/create', { serviceCategory: id });
 
@@ -113,56 +119,78 @@ export const CitizenExploreCategories = ({ colors, handleActionWithAuth }: Citiz
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <View style={styles.headerCopy}>
-          <View style={styles.eyebrowRow}>
-            <View style={styles.eyebrowLine} />
-            <Text style={styles.eyebrow}>HİZMETLER</Text>
-          </View>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>İhtiyacınıza uygun uzmanı bulun</Text>
-          <Text style={styles.sectionSubtitle}>Kategoriyi seçin, ihtiyacınızı anlatın ve bölgenizdeki ustalardan teklif alın.</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]} maxFontSizeMultiplier={1.2}>Hizmetler</Text>
+          <Text style={styles.sectionSubtitle}>İhtiyacınıza uygun hizmeti seçin.</Text>
         </View>
-        <TouchableOpacity style={styles.seeAllButton} onPress={() => router.push('/categories')} activeOpacity={0.8}>
-          <Text style={styles.seeAllText}>Tümü</Text>
-          <Ionicons name="grid-outline" size={14} color="#0F766E" />
+        <TouchableOpacity style={styles.viewAllButton} onPress={() => router.push('/categories')} activeOpacity={0.75}>
+          <Text style={[styles.viewAllText, { color: colors.primary }]}>Tümü</Text>
+          <Ionicons name="chevron-forward" size={14} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.rows}>
-          <View style={styles.row}>
-            {firstRow.map((category, index) => (
-              <CategoryCard key={category.id} category={category} index={index} onPress={() => openCategory(category.id)} />
-            ))}
+      <ScrollView
+        horizontal
+        pagingEnabled
+        decelerationRate="fast"
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={(event) => {
+          const nextPage = Math.round(event.nativeEvent.contentOffset.x / screenWidth);
+          setActivePage(Math.max(0, Math.min(categoryPages.length - 1, nextPage)));
+        }}
+      >
+        {categoryPages.map((page, pageIndex) => (
+          <View key={`service-page-${pageIndex}`} style={[styles.page, { width: screenWidth }]}>
+            <View style={styles.grid}>
+              {page.map((category, index) => (
+                <CategoryCard
+                  key={category.id}
+                  category={category}
+                  index={(pageIndex * 4) + index}
+                  width={cardWidth}
+                  onPress={() => openCategory(category.id)}
+                />
+              ))}
+            </View>
           </View>
-          <View style={styles.row}>
-            {secondRow.map((category, index) => (
-              <CategoryCard key={category.id} category={category} index={index + firstRow.length} onPress={() => openCategory(category.id)} />
-            ))}
-          </View>
-        </View>
+        ))}
       </ScrollView>
+
+      {categoryPages.length > 1 && (
+        <View style={styles.pagination}>
+          {categoryPages.map((_, index) => (
+            <View
+              key={`service-dot-${index}`}
+              style={[
+                styles.paginationDot,
+                index === activePage && [styles.paginationDotActive, { backgroundColor: colors.primary }],
+              ]}
+            />
+          ))}
+        </View>
+      )}
+
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { width: '100%', marginTop: 16, marginBottom: 12 },
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 16, marginBottom: 11 },
+  container: { width: '100%', marginTop: 14, marginBottom: 8 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginBottom: 9 },
   headerCopy: { flex: 1, paddingRight: 12 },
-  eyebrowRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
-  eyebrowLine: { width: 18, height: 3, borderRadius: 2, backgroundColor: '#0D9488', marginRight: 7 },
-  eyebrow: { color: '#0F766E', fontFamily: fonts.extraBold, fontSize: 9.5, letterSpacing: 1.2 },
-  sectionTitle: { fontFamily: fonts.extraBold, fontSize: 17, lineHeight: 22, letterSpacing: -0.3 },
-  sectionSubtitle: { color: '#64748B', fontFamily: fonts.regular, fontSize: 10.8, lineHeight: 15, marginTop: 3 },
-  seeAllButton: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, height: 32, borderRadius: 11, backgroundColor: '#ECFDF5', borderWidth: 1, borderColor: '#CCFBF1', gap: 5, marginTop: 2 },
-  seeAllText: { color: '#0F766E', fontFamily: fonts.bold, fontSize: 11.5 },
-  scrollContent: { paddingHorizontal: 16, paddingBottom: 7 },
-  rows: { gap: 8 },
-  row: { flexDirection: 'row', gap: 8 },
-  categoryCard: { width: 218, height: 68, borderRadius: 16, backgroundColor: '#FFFFFF', paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E8EEF3', shadowColor: '#0F172A', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.035, shadowRadius: 8, elevation: 1 },
-  imageShell: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginRight: 10, overflow: 'hidden' },
-  categoryImage: { width: 29, height: 29 },
+  sectionTitle: { fontFamily: fonts.extraBold, fontSize: 16.5, lineHeight: 21, letterSpacing: -0.25 },
+  sectionSubtitle: { color: '#64748B', fontFamily: fonts.regular, fontSize: 10.5, lineHeight: 14, marginTop: 1 },
+  viewAllButton: { height: 32, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', gap: 2 },
+  viewAllText: { fontFamily: fonts.bold, fontSize: 11 },
+  page: { paddingBottom: 1 },
+  grid: { paddingHorizontal: 16, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pagination: { height: 18, marginTop: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 },
+  paginationDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#CBD5E1' },
+  paginationDotActive: { width: 17 },
+  categoryCard: { height: 64, borderRadius: 15, backgroundColor: '#FFFFFF', paddingHorizontal: 9, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E8EEF3', shadowColor: '#0F172A', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 7, elevation: 1 },
+  imageShell: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginRight: 8, overflow: 'hidden' },
+  categoryImage: { width: 26, height: 26 },
   cardCopy: { flex: 1, justifyContent: 'center' },
-  categoryTitle: { color: '#0F172A', fontFamily: fonts.bold, fontSize: 12.8, lineHeight: 16 },
-  categoryDescription: { color: '#64748B', fontFamily: fonts.regular, fontSize: 9.8, lineHeight: 13, marginTop: 2 },
-  arrowButton: { width: 22, height: 22, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#F1F5F9' },
+  categoryTitle: { color: '#0F172A', fontFamily: fonts.bold, fontSize: 12.5, lineHeight: 16 },
+  categoryDescription: { color: '#64748B', fontFamily: fonts.regular, fontSize: 9.5, lineHeight: 13, marginTop: 1 },
+  arrowButton: { width: 20, height: 20, borderRadius: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#F1F5F9' },
 });

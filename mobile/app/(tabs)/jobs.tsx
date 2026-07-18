@@ -221,6 +221,13 @@ export default function JobsScreen() {
     });
   }, [activeTab, jobs, myJobs, citizenSubTab, isElectrician, sortBy]);
 
+  // A bid may outlive a deleted/hidden job post. Do not let such legacy rows
+  // crash the whole list while React Native is rendering the bids tab.
+  const visibleMyBids = useMemo(
+    () => (myBids as any[]).filter((bid) => Boolean(bid?.id && bid?.jobPost?.id)),
+    [myBids]
+  );
+
   const renderEmptyState = () => {
     if (isGuest && activeTab === 'my') {
       return (
@@ -402,8 +409,8 @@ export default function JobsScreen() {
       )}
 
       <FlatList
-        data={activeTab === 'bids' ? (myBids as any[]) : (filteredJobs as any[])}
-        keyExtractor={(item) => item.id}
+        data={activeTab === 'bids' ? visibleMyBids : (filteredJobs as any[])}
+        keyExtractor={(item, index) => String(item?.id || `job-row-${index}`)}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isLoading || isLoadingBids} onRefresh={() => activeTab === 'all' ? loadJobs() : activeTab === 'bids' ? loadMyBids() : loadMyJobs()} />}
@@ -412,6 +419,7 @@ export default function JobsScreen() {
           if (activeTab === 'bids') {
             const bid = item as any;
             const job = bid.jobPost;
+            if (!job?.id) return null;
             const isPendingConfirm = job?.status === 'PENDING_CONFIRMATION';
             const isCompleted = job?.status === 'COMPLETED';
 

@@ -1,10 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity, Image } from 'react-native';
+import { Animated, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { fonts } from '../../constants/typography';
 import { getFileUrl } from '../../constants/api';
-import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 
 interface CitizenHeaderProps {
   user: any;
@@ -26,138 +25,73 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
   onSearchPress,
 }) => {
   const router = useRouter();
-
   const displayFullName = isAuthenticated ? (user?.fullName || 'Vatandaş') : 'Misafir';
 
   return (
     <View style={styles.container}>
-      {/* Mutlak Konumlanmış Geri Butonu (Misafir için) */}
-      {!isAuthenticated && (
-        <TouchableOpacity
-          style={styles.backButtonAbsolute}
-          onPress={() => router.canGoBack() ? router.back() : router.replace('/(auth)/welcome')}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-      )}
-
-      {/* Başlık Düzeni (Centered Header) */}
-      <View style={styles.centeredHeader}>
-        <Text style={styles.headerTitleMain}>HOŞGELDİN</Text>
-        <Text style={styles.headerSubtitleSub}>
-          {displayFullName}
-        </Text>
-      </View>
-
-      {/* Profil Avatarı & Bildirim İkonu Alanı */}
-      <View style={styles.profileRow}>
-        {/* Sol Sütun Boşluk / Sürgülü Ayar (Simetri) */}
-        <View style={styles.symmetricalLeftCol} />
-
-        {/* Ortalanmış dairesel bir avatar (Etrafında gold/white border) */}
-        <TouchableOpacity
-          style={[styles.centeredAvatarContainer, { borderColor: 'rgba(255, 255, 255, 0.35)' }]}
-          activeOpacity={0.8}
-          onPress={() => handleActionWithAuth('/profile')}
-        >
-          {isAuthenticated && user?.profileImageUrl ? (
-            <Image
-              source={{ uri: getFileUrl(user.profileImageUrl) || '' }}
-              style={styles.centeredAvatarImage}
-            />
-          ) : (
-            <View style={styles.centeredAvatarPlaceholder}>
-              <Ionicons name="person" size={32} color="rgba(255, 255, 255, 0.85)" />
-            </View>
-          )}
-        </TouchableOpacity>
-
-        {/* Bildirim zili avatarın sağ tarafında simetrik duracak */}
-        <View style={styles.symmetricalRightCol}>
+      <View style={styles.topRow}>
+        {!isAuthenticated ? (
           <TouchableOpacity
-            style={styles.notificationButton}
-            activeOpacity={0.7}
-            onPress={() => handleActionWithAuth('/profile/notifications')}
+            style={styles.iconButton}
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/(auth)/welcome'))}
+            activeOpacity={0.75}
           >
-            <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
-            {isAuthenticated && unreadCount > 0 && (
-              <Animated.View style={[styles.notificationBadge, { transform: [{ scale: badgePulseAnim }], borderColor: colors.primary || '#0D9488' }]}>
-                <Text style={styles.notificationBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-              </Animated.View>
+            <Ionicons name="arrow-back" size={21} color="#FFFFFF" />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.avatarButton}
+            activeOpacity={0.8}
+            onPress={() => handleActionWithAuth('/profile')}
+          >
+            {user?.profileImageUrl ? (
+              <Image source={{ uri: getFileUrl(user.profileImageUrl) || '' }} style={styles.avatarImage} />
+            ) : (
+              <Ionicons name="person" size={21} color="rgba(255,255,255,0.9)" />
             )}
           </TouchableOpacity>
+        )}
+
+        <View style={styles.greetingBlock}>
+          <Text style={styles.greetingLabel} maxFontSizeMultiplier={1.25}>Hoş geldiniz</Text>
+          <Text style={styles.greetingName} numberOfLines={1} maxFontSizeMultiplier={1.2}>{displayFullName}</Text>
         </View>
+
+        <TouchableOpacity
+          style={styles.iconButton}
+          activeOpacity={0.75}
+          onPress={() => handleActionWithAuth('/profile/notifications')}
+        >
+          <Ionicons name="notifications-outline" size={21} color="#FFFFFF" />
+          {isAuthenticated && unreadCount > 0 && (
+            <Animated.View
+              style={[
+                styles.notificationBadge,
+                { transform: [{ scale: badgePulseAnim }], borderColor: colors.primary || '#0D9488' },
+              ]}
+            >
+              <Text style={styles.notificationBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+            </Animated.View>
+          )}
+        </TouchableOpacity>
       </View>
 
-      {/* Full-Width Glassmorphic Search Bar with Integrated AI Trigger */}
-      <View style={styles.headerFullSearchBarContainer}>
-        <TouchableOpacity
-          style={styles.headerFullSearchInputArea}
-          activeOpacity={0.7}
-          onPress={onSearchPress}
-        >
-          <Ionicons name="search-outline" size={18} color="rgba(255, 255, 255, 0.85)" />
-          <Text style={styles.headerFullSearchPlaceholder} numberOfLines={1}>Hizmet ara veya Yapay Zekaya sor...</Text>
+      <View style={styles.searchRow}>
+        <TouchableOpacity style={styles.searchButton} activeOpacity={0.78} onPress={onSearchPress}>
+          <Ionicons name="search-outline" size={19} color="rgba(255,255,255,0.88)" />
+          <Text style={styles.searchPlaceholder} numberOfLines={1} maxFontSizeMultiplier={1.2}>Hangi hizmete ihtiyacınız var?</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.seeAllPillInsideSearch, { backgroundColor: 'rgba(255, 255, 255, 0.18)', borderColor: 'rgba(255, 255, 255, 0.25)', marginRight: 6 }]}
-          activeOpacity={0.7}
-          onPress={() => handleActionWithAuth('/electricians')}
-        >
-          <Text style={styles.seeAllPillText}>Tüm Ustalar</Text>
-          <Ionicons name="arrow-forward" size={11} color="#FFFFFF" style={{ marginLeft: 3 }} />
-        </TouchableOpacity>
-
-        {/* Separator line */}
-        <View style={styles.searchBarVerticalSeparator} />
-
-        {/* AI Sparkles Trigger Button */}
-        <TouchableOpacity
-          style={styles.searchBarAiIconBtn}
-          activeOpacity={0.8}
+          style={styles.aiButton}
+          activeOpacity={0.82}
+          accessibilityLabel="Yapay zekâ asistanını aç"
           onPress={() => router.push({ pathname: '/ai-assistant', params: { role: 'CITIZEN' } })}
         >
-          <Ionicons name="sparkles" size={14} color="#2DD4BF" style={{ marginRight: 4 }} />
-          <Text style={styles.searchBarAiText}>AI</Text>
+          <Ionicons name="sparkles" size={18} color="#5EEAD4" />
+          <Text style={styles.aiText} maxFontSizeMultiplier={1.15}>AI</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Neon-Glass Quick Search Pills / Category Capsules */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.quickPillsContainer}
-      >
-        {[
-          { emoji: '⚡', label: 'Elektrik', color: '#FBBF24', id: 'elektrik' },
-          { emoji: '🔑', label: 'Çilingir', color: '#60A5FA', id: 'cilingir' },
-          { emoji: '❄️', label: 'Klima', color: '#34D399', id: 'klima' },
-          { emoji: '🔧', label: 'Beyaz Eşya', color: '#A78BFA', id: 'beyaz-esya' },
-          { emoji: '🚿', label: 'Su/Tesisat', color: '#38BDF8', id: 'tesisat' },
-          { emoji: '🧹', label: 'Temizlik', color: '#C084FC', id: 'temizlik' },
-          { emoji: '🚚', label: 'Nakliyat', color: '#FB923C', id: 'nakliyat' },
-          { emoji: '🎨', label: 'Boya Badana', color: '#F472B6', id: 'boya-badana' },
-          { emoji: '🛋️', label: 'Koltuk/Halı', color: '#34D399', id: 'koltuk-hali' },
-          { emoji: '🔩', label: 'Mobilya', color: '#C084FC', id: 'mobilya-montaj' },
-          { emoji: '📦', label: 'Küçük Nakliye', color: '#FACC15', id: 'kucuk-nakliye' },
-          { emoji: '🔥', label: 'Kombi', color: '#F87171', id: 'kombi-servis' },
-          { emoji: '🛗', label: 'Asansör', color: '#64748B', id: 'asansor' },
-          { emoji: '🐛', label: 'İlaçlama', color: '#22D3EE', id: 'bocek-ilaclama' },
-          { emoji: '📹', label: 'Güvenlik', color: '#818CF8', id: 'guvenlik-kamera' },
-        ].map((pill) => (
-          <TouchableOpacity
-            key={pill.id}
-            style={styles.quickPillButton}
-            activeOpacity={0.8}
-            onPress={() => handleActionWithAuth('/jobs/create', { serviceCategory: pill.id })}
-          >
-            <Text style={styles.quickPillEmoji}>{pill.emoji}</Text>
-            <Text style={styles.quickPillText}>{pill.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
     </View>
   );
 };
@@ -165,90 +99,51 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    paddingHorizontal: 2,
   },
-  backButtonAbsolute: {
-    position: 'absolute',
-    left: 0,
-    top: 4,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  centeredHeader: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-    marginBottom: 12,
-  },
-  headerTitleMain: {
-    fontFamily: fonts.extraBold,
-    fontSize: 18,
-    color: '#FFFFFF',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
-  headerSubtitleSub: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.75)',
-    marginTop: 1,
-  },
-  profileRow: {
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
+    minHeight: 52,
+    marginBottom: 14,
   },
-  symmetricalLeftCol: {
-    flex: 1,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  symmetricalRightCol: {
-    flex: 1,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    paddingLeft: 22,
-  },
-  centeredAvatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 2,
+  avatarButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.13)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.35)',
     alignItems: 'center',
-    shadowColor: '#FFFFFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    justifyContent: 'center',
   },
-  centeredAvatarImage: {
+  avatarImage: {
     width: '100%',
     height: '100%',
   },
-  centeredAvatarPlaceholder: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+  greetingBlock: {
+    flex: 1,
+    paddingHorizontal: 12,
   },
-  notificationButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  greetingLabel: {
+    color: 'rgba(255,255,255,0.7)',
+    fontFamily: fonts.medium,
+    fontSize: 11.5,
+    marginBottom: 1,
+  },
+  greetingName: {
+    color: '#FFFFFF',
+    fontFamily: fonts.extraBold,
+    fontSize: 18,
+    letterSpacing: -0.2,
+  },
+  iconButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: 'rgba(255,255,255,0.22)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -256,105 +151,59 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -4,
     right: -4,
-    backgroundColor: '#EF4444',
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
+    minWidth: 17,
+    height: 17,
+    borderRadius: 9,
     paddingHorizontal: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#EF4444',
     borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   notificationBadgeText: {
     color: '#FFFFFF',
-    fontSize: 8,
     fontFamily: fonts.bold,
+    fontSize: 8,
   },
-  headerFullSearchBarContainer: {
+  searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(255, 255, 255, 0.16)',
-    borderRadius: 14,
-    height: 48,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    width: '100%',
-    borderWidth: 1.2,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    gap: 9,
   },
-  headerFullSearchInputArea: {
+  searchButton: {
     flex: 1,
+    height: 48,
+    borderRadius: 15,
+    paddingHorizontal: 15,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    height: '100%',
+    gap: 9,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
   },
-  headerFullSearchPlaceholder: {
+  searchPlaceholder: {
+    flex: 1,
+    color: 'rgba(255,255,255,0.84)',
     fontFamily: fonts.medium,
     fontSize: 12.5,
-    color: 'rgba(255, 255, 255, 0.8)',
-    flex: 1,
   },
-  seeAllPillInsideSearch: {
+  aiButton: {
+    width: 58,
+    height: 48,
+    borderRadius: 15,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 18,
-    borderWidth: 1.2,
-  },
-  seeAllPillText: {
-    fontFamily: fonts.bold,
-    fontSize: 10.5,
-    color: '#FFFFFF',
-    letterSpacing: 0.2,
-  },
-  quickPillsContainer: {
-    paddingVertical: 2,
-    gap: 8,
-  },
-  quickPillButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.22)',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    gap: 5,
-  },
-  quickPillEmoji: {
-    fontSize: 13,
-  },
-  quickPillText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.95)',
-    letterSpacing: 0.2,
-  },
-  searchBarVerticalSeparator: {
-    width: 1,
-    height: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
-    marginHorizontal: 8,
-  },
-  searchBarAiIconBtn: {
-    flexDirection: 'row',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 8,
-    backgroundColor: 'rgba(45, 212, 191, 0.14)',
-    borderWidth: 1,
-    borderColor: 'rgba(45, 212, 191, 0.28)',
     justifyContent: 'center',
-    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(13,148,136,0.24)',
+    borderWidth: 1,
+    borderColor: 'rgba(94,234,212,0.35)',
   },
-  searchBarAiText: {
-    fontFamily: fonts.bold,
-    fontSize: 10,
-    color: '#2DD4BF',
-    letterSpacing: 0.2,
+  aiText: {
+    color: '#CCFBF1',
+    fontFamily: fonts.extraBold,
+    fontSize: 11,
+    letterSpacing: 0.3,
   },
 });

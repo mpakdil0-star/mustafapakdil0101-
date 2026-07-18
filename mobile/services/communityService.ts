@@ -61,10 +61,23 @@ export const communityService = {
     return this.forum();
   },
   async comment(postId:string,text:string){ const u=await actor(); const {error}=await supabase.from('forum_comments').insert({forum_post_id:postId,text:text.trim(),usta_id:u.id,usta_name:u.full_name}); if(error) throw error; return this.forum(); },
-  async deleteForum(id:string){ const {error}=await supabase.from('forum_posts').delete().eq('id',id); if(error) throw error; },
+  async deleteForum(id:string){
+    const u=await actor();
+    const {data,error}=await supabase.from('forum_posts').delete().eq('id',id).eq('usta_id',u.id).select('id,image_url').maybeSingle();
+    if(error) throw error;
+    if(!data) throw new Error('CONTENT_NOT_FOUND_OR_NOT_OWNER');
+    const imagePath=data.image_url?storagePathFromPublicUrl(data.image_url):null;
+    if(imagePath) await removeUploadedImages([imagePath]);
+  },
   async jobs(){ const {data,error}=await supabase.from('job_sharing_posts').select('*').order('created_at',{ascending:false}); if(error) throw error; return (data??[]).map(mapJob); },
-  async createJob(input:{title:string;description:string}){ const u=await actor(); const {error}=await supabase.from('job_sharing_posts').insert({title:input.title.trim(),description:input.description.trim(),usta_id:u.id,usta_name:u.full_name,usta_city:u.city||'İstanbul',usta_avatar:u.profile_image_url}); if(error) throw error; return this.jobs(); },
-  async deleteJob(id:string){ const {error}=await supabase.from('job_sharing_posts').delete().eq('id',id); if(error) throw error; return this.jobs(); },
+  async createJob(input:{title:string;description:string}){ const u=await actor(); const {error}=await supabase.from('job_sharing_posts').insert({title:input.title.trim(),description:input.description.trim(),usta_id:u.id,usta_name:u.full_name,usta_city:u.city||'Konum belirtilmedi',usta_avatar:u.profile_image_url}); if(error) throw error; return this.jobs(); },
+  async deleteJob(id:string){
+    const u=await actor();
+    const {data,error}=await supabase.from('job_sharing_posts').delete().eq('id',id).eq('usta_id',u.id).select('id').maybeSingle();
+    if(error) throw error;
+    if(!data) throw new Error('CONTENT_NOT_FOUND_OR_NOT_OWNER');
+    return this.jobs();
+  },
   async showcase(){ const {data,error}=await supabase.from('showcase_items').select('*').order('created_at',{ascending:false}); if(error) throw error; return (data??[]).map(mapShowcase); },
   async createShowcase(input:{title:string;description:string;images:string[]}){
     const u=await actor();

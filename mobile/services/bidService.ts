@@ -61,8 +61,11 @@ const publicJob = (row: any) => row ? ({
   id: row.id,
   title: row.title,
   description: row.description,
+  category: row.category,
+  urgencyLevel: row.urgency_level,
   status: row.status,
   location: row.location,
+  createdAt: row.created_at,
   citizen: row.citizen_name ? {
     id: row.citizen_id || '',
     fullName: row.citizen_name,
@@ -72,12 +75,14 @@ const publicJob = (row: any) => row ? ({
 
 const enrichBids = async (rows: any[]) => {
   if (!rows.length) return [];
-  const electricianIds = [...new Set(rows.map((row) => row.electrician_id))];
-  const jobIds = [...new Set(rows.map((row) => row.job_post_id))];
-  const [{ data: electricians }, { data: jobs }] = await Promise.all([
+  const electricianIds = [...new Set(rows.map((row) => row.electrician_id).filter(Boolean))];
+  const jobIds = [...new Set(rows.map((row) => row.job_post_id).filter(Boolean))];
+  const [{ data: electricians, error: electricianError }, { data: jobs, error: jobError }] = await Promise.all([
     supabase.from('public_electricians').select('*').in('id', electricianIds),
     supabase.from('public_job_posts').select('*').in('id', jobIds),
   ]);
+  if (electricianError) throw electricianError;
+  if (jobError) throw jobError;
   const electricianMap = new Map((electricians || []).map((row: any) => [row.id, publicElectrician(row)]));
   const jobMap = new Map((jobs || []).map((row: any) => [row.id, publicJob(row)]));
   return rows.map((row) => mapBid({
@@ -195,4 +200,3 @@ export const bidService = {
     return () => { void supabase.removeChannel(channel); };
   },
 };
-
