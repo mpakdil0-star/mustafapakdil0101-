@@ -6,7 +6,7 @@ import { Provider, useSelector } from 'react-redux';
 import { store } from '../store/store';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { InteractionManager, View, Text, Platform, StyleSheet, TouchableOpacity, AppState, Image } from 'react-native';
+import { InteractionManager, View, Text, Platform, StyleSheet, TouchableOpacity, AppState } from 'react-native';
 import { RootState } from '../store/store';
 import { useFonts } from 'expo-font';
 import { fontFiles, fonts } from '../constants/typography';
@@ -25,6 +25,7 @@ import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getNotificationTargetPath } from '../utils/notificationNavigation';
+import { AppLaunchSplash } from '../components/common/AppLaunchSplash';
 // TODO: Uncomment after running: npx expo install expo-network
 // import { OfflineBanner } from '../components/common/OfflineBanner';
 
@@ -1071,34 +1072,15 @@ function RootLayoutNav() {
   }, [unreadCount, isAuthenticated]);
 
   const [fontsLoaded] = useFonts(fontFiles);
-  const [showFullScreenSplash, setShowFullScreenSplash] = useState(true);
+  const [splashAnimationDone, setSplashAnimationDone] = useState(false);
+  const handleSplashComplete = useCallback(() => setSplashAnimationDone(true), []);
 
   useEffect(() => {
-    let transitionTimer: ReturnType<typeof setTimeout> | undefined;
-    if (fontsLoaded && isNavigationReady) {
-      SplashScreen.hideAsync()
-        .catch(() => undefined)
-        .finally(() => {
-          transitionTimer = setTimeout(() => setShowFullScreenSplash(false), 350);
-        });
-    }
-    return () => {
-      if (transitionTimer) clearTimeout(transitionTimer);
-    };
-  }, [fontsLoaded, isNavigationReady]);
+    SplashScreen.hideAsync().catch(() => undefined);
+  }, []);
 
-  if (!fontsLoaded || !isNavigationReady || showFullScreenSplash) {
-    return (
-      <View style={styles.fullScreenSplash}>
-        <StatusBar hidden />
-        <Image
-          source={require('../assets/images/splash.png')}
-          style={styles.fullScreenSplashImage}
-          resizeMode="contain"
-          fadeDuration={0}
-        />
-      </View>
-    );
+  if (!fontsLoaded || !isNavigationReady || !splashAnimationDone) {
+    return <AppLaunchSplash onComplete={handleSplashComplete} />;
   }
 
   return (
@@ -1158,16 +1140,6 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  fullScreenSplash: {
-    flex: 1,
-    backgroundColor: '#071321',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fullScreenSplashImage: {
-    width: '94%',
-    aspectRatio: 1,
-  },
   impersonationBanner: {
     position: 'absolute',
     left: 6,
