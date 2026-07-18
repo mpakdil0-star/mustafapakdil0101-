@@ -38,7 +38,6 @@ export default function CalendarScreen() {
   const [eventTime, setEventTime] = useState('');
   const [hasReminder, setHasReminder] = useState(false);
   const [amount, setAmount] = useState('');
-  const [addToLedger, setAddToLedger] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
 
@@ -51,9 +50,14 @@ export default function CalendarScreen() {
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
-    const data = await calendarService.getEvents(currentMonth + 1, currentYear);
-    setEvents(data);
-    setLoading(false);
+    try {
+      const data = await calendarService.getEvents(currentMonth + 1, currentYear);
+      setEvents(data);
+    } catch {
+      Alert.alert('Bağlantı Hatası', 'Takvim kayıtları alınamadı. Lütfen tekrar deneyin.');
+    } finally {
+      setLoading(false);
+    }
   }, [currentMonth, currentYear]);
 
   useFocusEffect(useCallback(() => { loadEvents(); }, [loadEvents]));
@@ -83,12 +87,18 @@ export default function CalendarScreen() {
   };
 
   const prevMonth = () => {
-    if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1); }
-    else setCurrentMonth(m => m - 1);
+    const target = new Date(currentYear, currentMonth - 1, 1);
+    setCurrentMonth(target.getMonth());
+    setCurrentYear(target.getFullYear());
+    setSelectedDate(target);
+    setShowAllEvents(false);
   };
   const nextMonth = () => {
-    if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1); }
-    else setCurrentMonth(m => m + 1);
+    const target = new Date(currentYear, currentMonth + 1, 1);
+    setCurrentMonth(target.getMonth());
+    setCurrentYear(target.getFullYear());
+    setSelectedDate(target);
+    setShowAllEvents(false);
   };
 
   // FIX #1 & #3: Tap on day only SELECTS, doesn't open modal
@@ -99,7 +109,8 @@ export default function CalendarScreen() {
   const openAddModal = () => {
     if (!selectedDate) return;
     setEditingEvent(null);
-    setTitle(''); setNote(''); setEventTime(''); setHasReminder(false); setAmount(''); setAddToLedger(false);
+    setTitle(''); setNote(''); setEventTime(''); setHasReminder(false); setAmount('');
+    setSelectedTime(new Date());
     setShowModal(true);
   };
 
@@ -109,9 +120,14 @@ export default function CalendarScreen() {
     setTitle(event.title);
     setNote(event.note || '');
     setEventTime(event.eventTime || '');
+    if (event.eventTime) {
+      const [hours, minutes] = event.eventTime.split(':').map(Number);
+      const time = new Date();
+      time.setHours(hours, minutes, 0, 0);
+      setSelectedTime(time);
+    }
     setHasReminder(event.hasReminder);
-    setAmount(event.amount ? String(event.amount) : '');
-    setAddToLedger(false);
+    setAmount(event.amount != null ? String(event.amount) : '');
     setShowModal(true);
   };
 
@@ -148,6 +164,12 @@ export default function CalendarScreen() {
     if (!selectedDate) return;
     if (hasReminder && !eventTime) { Alert.alert('Uyarı', 'Hatırlatıcı için saat seçiniz.'); return; }
 
+    const parsedAmount = amount.trim() ? Number(amount.replace(',', '.')) : null;
+    if (parsedAmount !== null && (!Number.isFinite(parsedAmount) || parsedAmount <= 0)) {
+      Alert.alert('Uyarı', 'Ücret sıfırdan büyük geçerli bir tutar olmalıdır.');
+      return;
+    }
+
     setSaving(true);
     try {
       let reminderAt: string | undefined;
@@ -155,6 +177,11 @@ export default function CalendarScreen() {
         const [h, m] = eventTime.split(':').map(Number);
         const rd = new Date(selectedDate);
         rd.setHours(h, m, 0, 0);
+        if (rd.getTime() <= Date.now()) {
+          Alert.alert('Geçmiş Tarih', 'Hatırlatıcı tarihi ve saati gelecekte olmalıdır.');
+          setSaving(false);
+          return;
+        }
         reminderAt = rd.toISOString();
       }
 
@@ -163,13 +190,13 @@ export default function CalendarScreen() {
           title: title.trim(), note: note.trim() || undefined,
           eventDate: selectedDate.toISOString(), eventTime: eventTime || undefined,
           hasReminder, reminderAt: reminderAt ?? null,
-        } as any);
+          amount: parsedAmount,
+        });
       } else {
         await calendarService.createEvent({
           title: title.trim(), note: note.trim() || undefined,
           eventDate: selectedDate.toISOString(), eventTime: eventTime || undefined,
-          hasReminder, reminderAt, amount: amount ? Number(amount) : undefined,
-          addToLedger,
+          hasReminder, reminderAt, amount: parsedAmount,
         });
       }
 
@@ -199,11 +226,26 @@ export default function CalendarScreen() {
   };
 
   const handleComplete = async (event: CalendarEvent) => {
-    try {
-      await calendarService.completeEvent(event.id, !!event.amount);
-      // FIX #3: Reload events immediately after complete
-      await loadEvents();
-    } catch { Alert.alert('Hata', 'Güncellenemedi.'); }
+    const complete = async (addToLedger: boolean) => {
+      try {
+        await calendarService.completeEvent(event.id, addToLedger);
+        await loadEvents();
+      } catch { Alert.alert('Hata', 'Kayıt tamamlanamadı.'); }
+    };
+
+    if (event.amount) {
+      Alert.alert(
+        'İşi Tamamla',
+        `${Number(event.amount).toLocaleString('tr-TR')} TL tutarındaki bu işi alacak olarak hesap defterine eklemek ister misiniz?`,
+        [
+          { text: 'Vazgeç', style: 'cancel' },
+          { text: 'Sadece Tamamla', onPress: () => void complete(false) },
+          { text: 'Tamamla ve Deftere Ekle', onPress: () => void complete(true) },
+        ],
+      );
+      return;
+    }
+    await complete(false);
   };
 
   // Calendar grid
@@ -370,15 +412,17 @@ export default function CalendarScreen() {
                     <View style={[styles.divider, { backgroundColor: colors.border }]} />
                     <View style={styles.eventActions}>
                       {!isCompleted && (
-                        <TouchableOpacity onPress={() => handleComplete(event)} style={styles.actionBtn} activeOpacity={0.7}>
-                          <Ionicons name="checkmark-circle-outline" size={18} color="#10B981" />
-                          <Text style={[styles.actionText, { color: '#10B981' }]}>Tamamla</Text>
-                        </TouchableOpacity>
+                        <>
+                          <TouchableOpacity onPress={() => handleComplete(event)} style={styles.actionBtn} activeOpacity={0.7}>
+                            <Ionicons name="checkmark-circle-outline" size={18} color="#10B981" />
+                            <Text style={[styles.actionText, { color: '#10B981' }]}>Tamamla</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={() => openEditModal(event)} style={styles.actionBtn} activeOpacity={0.7}>
+                            <Ionicons name="create-outline" size={18} color="#3B82F6" />
+                            <Text style={[styles.actionText, { color: '#3B82F6' }]}>Düzenle</Text>
+                          </TouchableOpacity>
+                        </>
                       )}
-                      <TouchableOpacity onPress={() => openEditModal(event)} style={styles.actionBtn} activeOpacity={0.7}>
-                        <Ionicons name="create-outline" size={18} color="#3B82F6" />
-                        <Text style={[styles.actionText, { color: '#3B82F6' }]}>Düzenle</Text>
-                      </TouchableOpacity>
                       <TouchableOpacity onPress={() => handleDelete(event)} style={styles.actionBtn} activeOpacity={0.7}>
                         <Ionicons name="trash-outline" size={18} color="#EF4444" />
                         <Text style={[styles.actionText, { color: '#EF4444' }]}>Sil</Text>
@@ -484,36 +528,20 @@ export default function CalendarScreen() {
                 </View>
               )}
 
-              {!editingEvent && (
-                <>
-                  <Text style={[styles.label, { color: colors.textSecondary }]}>Ücret (İsteğe Bağlı)</Text>
-                  <View style={[styles.modalInputWrapper, { borderColor: colors.primary + '25', backgroundColor: colors.backgroundLight }]}>
-                    <Ionicons name="cash-outline" size={18} color={colors.primary} style={styles.modalInputIcon} />
-                    <TextInput 
-                      style={[styles.modalInput, { color: colors.text }]} 
-                      value={amount} 
-                      onChangeText={setAmount} 
-                      placeholder="Teklif ücretini girin ₺" 
-                      placeholderTextColor={staticColors.textLight} 
-                      keyboardType="decimal-pad" 
-                    />
-                  </View>
-
-                  {amount.length > 0 && (
-                    <View style={styles.switchRow}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.switchLabel, { color: colors.text }]}>Hesap Defterine Ekle</Text>
-                        <Text style={[styles.switchDesc, { color: colors.textSecondary }]}>Alacak olarak deftere kaydet</Text>
-                      </View>
-                      <Switch 
-                        value={addToLedger} 
-                        onValueChange={setAddToLedger} 
-                        trackColor={{ true: colors.primary }} 
-                        thumbColor={addToLedger ? '#FFF' : '#F1F5F9'} 
-                      />
-                    </View>
-                  )}
-                </>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Ücret (İsteğe Bağlı)</Text>
+              <View style={[styles.modalInputWrapper, { borderColor: colors.primary + '25', backgroundColor: colors.backgroundLight }]}>
+                <Ionicons name="cash-outline" size={18} color={colors.primary} style={styles.modalInputIcon} />
+                <TextInput
+                  style={[styles.modalInput, { color: colors.text }]}
+                  value={amount}
+                  onChangeText={setAmount}
+                  placeholder="İş ücretini girin ₺"
+                  placeholderTextColor={staticColors.textLight}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+              {amount.length > 0 && (
+                <Text style={[styles.switchDesc, { color: colors.textSecondary, marginBottom: 8 }]}>İşi tamamlarken deftere eklemek isteyip istemediğiniz sorulur.</Text>
               )}
             </ScrollView>
 

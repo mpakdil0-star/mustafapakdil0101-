@@ -321,11 +321,9 @@ export default function QuickCreateScreen() {
             const result = await ImagePicker.launchCameraAsync({
                 allowsEditing: false,
                 quality: 0.4,
-                base64: true,
             });
             if (!result.canceled && result.assets?.[0]) {
-                const asset = result.assets[0];
-                setImages([...images, asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri]);
+                setImages(current => [...current, result.assets[0].uri]);
             }
         } catch (error) {
             showAlert('Hata', 'Fotoğraf çekilemedi', 'error');
@@ -342,11 +340,9 @@ export default function QuickCreateScreen() {
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: false,
                 quality: 0.4,
-                base64: true,
             });
             if (!result.canceled && result.assets?.[0]) {
-                const asset = result.assets[0];
-                setImages([...images, asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri]);
+                setImages(current => [...current, result.assets[0].uri]);
             }
         } catch (error) {
             showAlert('Hata', 'Fotoğraf seçilemedi', 'error');

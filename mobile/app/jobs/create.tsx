@@ -449,16 +449,11 @@ export default function CreateJobScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
         quality: 0.4,
-        base64: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        if (asset.base64) {
-          setImages([...images, `data:image/jpeg;base64,${asset.base64}`]);
-        } else if (asset.uri) {
-          setImages([...images, asset.uri]);
-        }
+        if (asset.uri) setImages(current => [...current, asset.uri]);
       }
     } catch (error) {
       showAlert('Hata', 'Fotoğraf seçilirken bir hata oluştu', 'error');
@@ -481,16 +476,11 @@ export default function CreateJobScreen() {
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: false,
         quality: 0.4,
-        base64: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        if (asset.base64) {
-          setImages([...images, `data:image/jpeg;base64,${asset.base64}`]);
-        } else if (asset.uri) {
-          setImages([...images, asset.uri]);
-        }
+        if (asset.uri) setImages(current => [...current, asset.uri]);
       }
     } catch (error) {
       showAlert('Hata', 'Fotoğraf çekilirken bir hata oluştu', 'error');

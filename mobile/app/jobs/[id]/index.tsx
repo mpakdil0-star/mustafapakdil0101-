@@ -234,12 +234,28 @@ export default function JobDetailScreen() {
   const hasBidOnJob = isElectrician && (jobBids.some(b => b.electricianId === user?.id) || myBids.some(b => b.jobPostId === id));
   const isUrgent = jobData?.urgencyLevel === 'HIGH';
 
-  const handleCall = (phone?: string) => {
-    console.log('handleCall triggered with phone:', phone, typeof phone);
-    if (phone && phone !== 'null' && phone.trim() !== '') {
-      Linking.openURL(`tel:${phone}`);
-    } else {
-      showAlert('Bilgi', `Bu kullanıcının telefon numarası sistemde kayıtlı değil veya gizli. (Debug: ${typeof phone === 'string' ? `"${phone}"` : String(phone)})`, 'info');
+  const handleCall = async (knownPhone?: string) => {
+    try {
+      let phone = knownPhone?.trim();
+      if (!phone || phone === 'null') {
+        const contact = await jobService.getParticipantContact(jobData.id);
+        phone = contact.phone?.trim();
+      }
+
+      if (!phone || phone === 'null') {
+        showAlert('Bilgi', 'Bu kullanıcının telefon numarası sistemde kayıtlı değil.', 'info');
+        return;
+      }
+
+      const callUrl = `tel:${phone}`;
+      const supported = await Linking.canOpenURL(callUrl);
+      if (!supported) {
+        showAlert('Arama Yapılamadı', 'Bu cihaz telefon araması başlatmayı desteklemiyor.', 'info');
+        return;
+      }
+      await Linking.openURL(callUrl);
+    } catch (callError: any) {
+      showAlert('Arama Yapılamadı', callError?.message || 'İletişim bilgisi alınamadı. Lütfen tekrar deneyin.', 'error');
     }
   };
 

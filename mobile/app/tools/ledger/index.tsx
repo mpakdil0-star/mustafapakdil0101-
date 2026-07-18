@@ -21,8 +21,10 @@ export default function LedgerScreen() {
   const [summary, setSummary] = useState<LedgerSummary>({ pendingReceivables: 0, pendingPayables: 0, totalReceived: 0, totalPaid: 0, netBalance: 0 });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'receivable' | 'payable'>('receivable');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'paid'>('all');
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<LedgerEntry | null>(null);
 
   // Form
   const [personName, setPersonName] = useState('');
@@ -66,29 +68,60 @@ export default function LedgerScreen() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [entriesData, summaryData] = await Promise.all([
-      ledgerService.getEntries(),
-      ledgerService.getSummary(),
-    ]);
-    setEntries(entriesData);
-    setSummary(summaryData);
-    setLoading(false);
+    try {
+      const [entriesData, summaryData] = await Promise.all([
+        ledgerService.getEntries(),
+        ledgerService.getSummary(),
+      ]);
+      setEntries(entriesData);
+      setSummary(summaryData);
+    } catch {
+      Alert.alert('Bağlantı Hatası', 'Hesap defteri kayıtları alınamadı. Lütfen tekrar deneyin.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
-  const filteredEntries = entries.filter(e => e.type === activeTab);
+  const filteredEntries = entries.filter(entry => (
+    entry.type === activeTab && (statusFilter === 'all' || entry.status === statusFilter)
+  ));
 
   const openAddModal = () => {
+    setEditingEntry(null);
     setPersonName(''); setAmount(''); setEntryType(activeTab); setEntryNote('');
     setEventTime(''); setHasReminder(false);
     setSelectedDate(new Date());
     setShowModal(true);
   };
 
+  const openEditModal = (entry: LedgerEntry) => {
+    setEditingEntry(entry);
+    setPersonName(entry.personName);
+    setAmount(String(entry.amount));
+    setEntryType(entry.type);
+    setEntryNote(entry.note || '');
+    const date = entry.dueDate ? new Date(entry.dueDate) : new Date();
+    setSelectedDate(date);
+    setEventTime(entry.eventTime || '');
+    setHasReminder(Boolean(entry.hasReminder));
+    if (entry.eventTime) {
+      const [hours, minutes] = entry.eventTime.split(':').map(Number);
+      const time = new Date();
+      time.setHours(hours, minutes, 0, 0);
+      setSelectedTime(time);
+    }
+    setShowModal(true);
+  };
+
   const handleSave = async () => {
     if (!personName.trim()) { Alert.alert('Uyarı', 'Kişi adı giriniz.'); return; }
-    if (!amount.trim() || isNaN(Number(amount))) { Alert.alert('Uyarı', 'Geçerli bir tutar giriniz.'); return; }
+    const parsedAmount = Number(amount.replace(',', '.'));
+    if (!amount.trim() || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      Alert.alert('Uyarı', 'Sıfırdan büyük geçerli bir tutar giriniz.');
+      return;
+    }
     if (hasReminder && !eventTime) { Alert.alert('Uyarı', 'Hatırlatıcı için saat seçiniz.'); return; }
 
     setSaving(true);
@@ -98,31 +131,49 @@ export default function LedgerScreen() {
         const [h, m] = eventTime.split(':').map(Number);
         const rd = new Date(selectedDate);
         rd.setHours(h, m, 0, 0);
+        if (rd.getTime() <= Date.now()) {
+          Alert.alert('Geçmiş Tarih', 'Hatırlatıcı tarihi ve saati gelecekte olmalıdır.');
+          setSaving(false);
+          return;
+        }
         reminderAt = rd.toISOString();
       }
 
-      await ledgerService.createEntry({
+      const values = {
         personName: personName.trim(),
-        amount: Number(amount),
+        amount: parsedAmount,
         type: entryType,
         note: entryNote.trim() || undefined,
         eventTime: eventTime || undefined,
         dueDate: selectedDate.toISOString(),
-        hasReminder: hasReminder,
-        reminderAt: reminderAt,
-      });
+        hasReminder,
+        reminderAt: reminderAt ?? null,
+      };
+
+      if (editingEntry) await ledgerService.updateEntry(editingEntry.id, values);
+      else await ledgerService.createEntry(values);
 
       setShowModal(false);
-      loadData();
-    } catch { Alert.alert('Hata', 'Kayıt eklenemedi.'); }
+      await loadData();
+    } catch { Alert.alert('Hata', editingEntry ? 'Kayıt güncellenemedi.' : 'Kayıt eklenemedi.'); }
     finally { setSaving(false); }
   };
 
   const handleTogglePaid = async (entry: LedgerEntry) => {
-    try {
-      await ledgerService.togglePaid(entry.id);
-      loadData();
-    } catch { Alert.alert('Hata', 'Güncellenemedi.'); }
+    const nextLabel = entry.status === 'paid' ? 'bekliyor' : 'ödendi';
+    Alert.alert(
+      'Durumu Güncelle',
+      `Bu kayıt “${nextLabel}” olarak işaretlensin mi?`,
+      [
+        { text: 'Vazgeç', style: 'cancel' },
+        { text: 'Güncelle', onPress: async () => {
+          try {
+            await ledgerService.togglePaid(entry.id);
+            await loadData();
+          } catch { Alert.alert('Hata', 'Kayıt güncellenemedi.'); }
+        } },
+      ],
+    );
   };
 
   const handleDelete = (entry: LedgerEntry) => {
@@ -135,7 +186,7 @@ export default function LedgerScreen() {
     ]);
   };
 
-  const formatCurrency = (n: number) => '₺' + n.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const formatCurrency = (n: number) => '₺' + n.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -146,7 +197,7 @@ export default function LedgerScreen() {
           <LinearGradient colors={['#10B981', '#059669']} style={[styles.summaryCard, { shadowColor: '#10B981' }]}>
             <View style={styles.summaryCardHeader}>
               <Ionicons name="arrow-down-circle-outline" size={20} color="rgba(255,255,255,0.85)" />
-              <Text style={styles.summaryLabel}>Toplam Alacak</Text>
+              <Text style={styles.summaryLabel}>Bekleyen Alacak</Text>
             </View>
             <Text style={styles.summaryValue}>{formatCurrency(summary.pendingReceivables)}</Text>
           </LinearGradient>
@@ -154,11 +205,28 @@ export default function LedgerScreen() {
           <LinearGradient colors={['#EF4444', '#B91C1C']} style={[styles.summaryCard, { shadowColor: '#EF4444' }]}>
             <View style={styles.summaryCardHeader}>
               <Ionicons name="arrow-up-circle-outline" size={20} color="rgba(255,255,255,0.85)" />
-              <Text style={styles.summaryLabel}>Toplam Borç</Text>
+              <Text style={styles.summaryLabel}>Bekleyen Borç</Text>
             </View>
             <Text style={styles.summaryValue}>{formatCurrency(summary.pendingPayables)}</Text>
           </LinearGradient>
         </View>
+
+        <Card style={styles.balanceCard} variant="outlined">
+          <View style={styles.balanceItem}>
+            <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Bekleyen Net</Text>
+            <Text style={[styles.balanceValue, { color: summary.netBalance >= 0 ? '#059669' : '#DC2626' }]}>{formatCurrency(summary.netBalance)}</Text>
+          </View>
+          <View style={[styles.balanceDivider, { backgroundColor: colors.border }]} />
+          <View style={styles.balanceItem}>
+            <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Tahsil Edilen</Text>
+            <Text style={[styles.balanceValue, { color: '#059669' }]}>{formatCurrency(summary.totalReceived)}</Text>
+          </View>
+          <View style={[styles.balanceDivider, { backgroundColor: colors.border }]} />
+          <View style={styles.balanceItem}>
+            <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Ödenen</Text>
+            <Text style={[styles.balanceValue, { color: '#DC2626' }]}>{formatCurrency(summary.totalPaid)}</Text>
+          </View>
+        </Card>
 
         {/* Tabs */}
         <View style={styles.tabRow}>
@@ -188,6 +256,24 @@ export default function LedgerScreen() {
             <Ionicons name="arrow-up-circle" size={18} color={activeTab === 'payable' ? colors.primaryDark : staticColors.textLight} />
             <Text style={[styles.tabText, activeTab === 'payable' && [styles.tabTextActive, { color: colors.primaryDark }]]}>Ödemelerim</Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.filterRow}>
+          {(['all', 'pending', 'paid'] as const).map(filterValue => (
+            <TouchableOpacity
+              key={filterValue}
+              onPress={() => setStatusFilter(filterValue)}
+              style={[
+                styles.filterChip,
+                { borderColor: statusFilter === filterValue ? colors.primary : colors.border },
+                statusFilter === filterValue && { backgroundColor: colors.primary + '12' },
+              ]}
+            >
+              <Text style={[styles.filterChipText, { color: statusFilter === filterValue ? colors.primary : colors.textSecondary }]}>
+                {filterValue === 'all' ? 'Tümü' : filterValue === 'pending' ? 'Bekleyen' : 'Ödendi'}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* Entries List */}
@@ -243,10 +329,16 @@ export default function LedgerScreen() {
                     <Text style={[styles.entryNote, { color: colors.textSecondary }]}>{entry.note}</Text>
                   </View>
                 )}
-                <TouchableOpacity onPress={() => handleDelete(entry)} style={styles.deleteRow} activeOpacity={0.7}>
-                  <Ionicons name="trash-outline" size={16} color="#EF4444" />
-                  <Text style={styles.deleteText}>Kaydı Sil</Text>
-                </TouchableOpacity>
+                <View style={styles.entryActions}>
+                  <TouchableOpacity onPress={() => openEditModal(entry)} style={styles.entryActionButton} activeOpacity={0.7}>
+                    <Ionicons name="create-outline" size={16} color={colors.primary} />
+                    <Text style={[styles.entryActionText, { color: colors.primary }]}>Düzenle</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDelete(entry)} style={styles.entryActionButton} activeOpacity={0.7}>
+                    <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                    <Text style={[styles.entryActionText, { color: '#EF4444' }]}>Sil</Text>
+                  </TouchableOpacity>
+                </View>
               </Card>
             );
           })
@@ -271,7 +363,7 @@ export default function LedgerScreen() {
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Yeni Kayıt</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{editingEntry ? 'Kaydı Düzenle' : 'Yeni Kayıt'}</Text>
               <TouchableOpacity onPress={() => setShowModal(false)}>
                 <Ionicons name="close" size={24} color={colors.textSecondary} />
               </TouchableOpacity>
@@ -432,7 +524,7 @@ export default function LedgerScreen() {
                 {saving ? <ActivityIndicator color="#FFF" /> : (
                   <>
                     <Ionicons name="checkmark" size={20} color="#FFF" />
-                    <Text style={styles.saveBtnText}>Kaydet</Text>
+                    <Text style={styles.saveBtnText}>{editingEntry ? 'Güncelle' : 'Kaydet'}</Text>
                   </>
                 )}
               </LinearGradient>
@@ -465,6 +557,11 @@ const styles = StyleSheet.create({
   },
   summaryLabel: { fontFamily: fonts.bold, fontSize: 11, color: 'rgba(255,255,255,0.85)' },
   summaryValue: { fontFamily: fonts.extraBold, fontSize: 20, color: '#FFF' },
+  balanceCard: { flexDirection: 'row', padding: 14, marginBottom: spacing.md, alignItems: 'center' },
+  balanceItem: { flex: 1, alignItems: 'center', gap: 4 },
+  balanceLabel: { fontFamily: fonts.medium, fontSize: 10, textAlign: 'center' },
+  balanceValue: { fontFamily: fonts.extraBold, fontSize: 13 },
+  balanceDivider: { width: 1, height: 32 },
   tabRow: { flexDirection: 'row', gap: 10, marginBottom: spacing.md },
   tab: { 
     flex: 1, 
@@ -478,6 +575,9 @@ const styles = StyleSheet.create({
   },
   tabText: { fontFamily: fonts.bold, fontSize: 13, color: staticColors.textSecondary },
   tabTextActive: { fontFamily: fonts.bold },
+  filterRow: { flexDirection: 'row', gap: 8, marginBottom: spacing.md },
+  filterChip: { flex: 1, borderWidth: 1, borderRadius: 12, paddingVertical: 8, alignItems: 'center' },
+  filterChipText: { fontFamily: fonts.bold, fontSize: 11 },
   emptyCard: { padding: 40, alignItems: 'center', backgroundColor: 'transparent' },
   emptyIconContainer: {
     width: 60,
@@ -517,16 +617,18 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   entryNote: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 18 },
-  deleteRow: { 
+  entryActions: {
     flexDirection: 'row', 
     alignItems: 'center', 
-    gap: 4, 
+    justifyContent: 'flex-end',
+    gap: 16,
     marginTop: 12, 
     paddingTop: 10, 
     borderTopWidth: 1.5, 
     borderTopColor: '#F1F5F9' 
   },
-  deleteText: { fontFamily: fonts.bold, fontSize: 12, color: '#EF4444' },
+  entryActionButton: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2 },
+  entryActionText: { fontFamily: fonts.bold, fontSize: 12 },
   fab: { 
     position: 'absolute', 
     bottom: 90, 

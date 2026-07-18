@@ -51,6 +51,8 @@ export interface Job {
   cancelledAt?: string | null;
   viewCount: number;
   bidCount: number;
+  hasTimedBids?: boolean;
+  earliestBidExpiresAt?: string | null;
   createdAt: string;
   updatedAt: string;
   hasReview?: boolean;
@@ -60,6 +62,12 @@ export interface Job {
     profileImageUrl?: string | null;
     phone?: string | null;
   };
+}
+
+export interface JobParticipantContact {
+  userId: string;
+  fullName: string;
+  phone?: string | null;
 }
 
 const mapJob = (row: any): Job => ({
@@ -83,6 +91,8 @@ const mapJob = (row: any): Job => ({
   cancelledAt: row.cancelled_at,
   viewCount: row.view_count || 0,
   bidCount: row.bid_count || 0,
+  hasTimedBids: Boolean(row.has_timed_bids),
+  earliestBidExpiresAt: row.earliest_bid_expires_at || null,
   createdAt: row.created_at,
   updatedAt: row.updated_at || row.created_at,
   hasReview: Boolean(row.has_review),
@@ -93,12 +103,96 @@ const mapJob = (row: any): Job => ({
   } : undefined,
 });
 
+const enrichJobsWithBidTiming = async (jobs: Job[]) => {
+  if (!jobs.length) return jobs;
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) return jobs;
+
+  const { data, error } = await supabase
+    .from('bids')
+    .select('job_post_id,expires_at,status')
+    .in('job_post_id', jobs.map(job => job.id))
+    .eq('status', 'PENDING')
+    .not('expires_at', 'is', null);
+
+  if (error) {
+    console.warn('İlan teklif süreleri alınamadı:', error.message);
+    return jobs;
+  }
+
+  const expirationsByJob = new Map<string, string[]>();
+  for (const bid of data || []) {
+    if (!bid.expires_at) continue;
+    const current = expirationsByJob.get(bid.job_post_id) || [];
+    current.push(bid.expires_at);
+    expirationsByJob.set(bid.job_post_id, current);
+  }
+
+  const now = Date.now();
+  return jobs.map(job => {
+    const expirations = expirationsByJob.get(job.id) || [];
+    if (!expirations.length) return job;
+
+    const validExpirations = expirations
+      .map(value => ({ value, timestamp: new Date(value).getTime() }))
+      .filter(item => Number.isFinite(item.timestamp));
+    if (!validExpirations.length) return job;
+
+    const future = validExpirations.filter(item => item.timestamp > now);
+    const selected = future.length
+      ? future.reduce((earliest, item) => item.timestamp < earliest.timestamp ? item : earliest)
+      : validExpirations.reduce((latest, item) => item.timestamp > latest.timestamp ? item : latest);
+
+    return {
+      ...job,
+      hasTimedBids: true,
+      earliestBidExpiresAt: selected.value,
+    };
+  });
+};
+
 const extensionFor = (uri: string, mime?: string) => {
   const extension = uri.split('?')[0].split('.').pop()?.toLowerCase();
   if (extension && ['jpg', 'jpeg', 'png', 'webp'].includes(extension)) return extension;
   if (mime === 'image/png') return 'png';
   if (mime === 'image/webp') return 'webp';
   return 'jpg';
+};
+
+const readJobImage = async (uri: string) => {
+  const dataUri = uri.match(/^data:([^;,]+)?;base64,(.+)$/s);
+  if (dataUri) {
+    const contentType = dataUri[1] || 'image/jpeg';
+    const encoded = dataUri[2].replace(/\s/g, '');
+    const decoded = atob(encoded);
+    const bytes = new Uint8Array(decoded.length);
+    for (let index = 0; index < decoded.length; index += 1) {
+      bytes[index] = decoded.charCodeAt(index);
+    }
+    return { fileData: bytes.buffer, contentType };
+  }
+
+  try {
+    const file = new File(uri);
+    return {
+      fileData: await file.arrayBuffer(),
+      contentType: file.type || undefined,
+    };
+  } catch (fileError) {
+    // Bazı Android galeri sağlayıcıları content:// URI döndürür. Bu URI'ler
+    // expo-file-system tarafından açılamazsa fetch üzerinden ikinci kez denenir.
+    try {
+      const response = await fetch(uri);
+      if (!response.ok) throw new Error(`Dosya okunamadı (${response.status}).`);
+      return {
+        fileData: await response.arrayBuffer(),
+        contentType: response.headers.get('content-type') || undefined,
+      };
+    } catch {
+      throw fileError;
+    }
+  }
 };
 
 const uploadJobImages = async (userId: string, jobId: string, uris: string[]) => {
@@ -112,9 +206,7 @@ const uploadJobImages = async (userId: string, jobId: string, uris: string[]) =>
     let fileData: ArrayBuffer;
     let contentType: string | undefined;
     try {
-      const file = new File(uri);
-      fileData = await file.arrayBuffer();
-      contentType = file.type || undefined;
+      ({ fileData, contentType } = await readJobImage(uri));
     } catch (error) {
       console.warn('İlan görseli yerel dosyadan okunamadı:', error);
       throw new Error(`Seçilen ${index + 1}. fotoğraf okunamadı. Lütfen fotoğrafı yeniden seçin.`);
@@ -171,6 +263,23 @@ const writableJobData = (data: Partial<CreateJobData>) => {
 };
 
 export const jobService = {
+  async getParticipantContact(jobId: string): Promise<JobParticipantContact> {
+    assertSupabaseConfigured();
+    const { data, error } = await supabase.rpc('get_job_participant_contact', {
+      p_job_id: jobId,
+    });
+    if (error) {
+      if (error.message.includes('CONTACT_NOT_AVAILABLE')) {
+        throw new Error('İletişim bilgileri teklif kabul edildikten sonra görüntülenebilir.');
+      }
+      if (error.message.includes('FORBIDDEN')) {
+        throw new Error('Bu kullanıcının iletişim bilgilerini görüntüleme yetkiniz bulunmuyor.');
+      }
+      throw error;
+    }
+    return data as JobParticipantContact;
+  },
+
   async createJob(data: CreateJobData) {
     try {
       assertSupabaseConfigured();
@@ -240,8 +349,9 @@ export const jobService = {
       .order('created_at', { ascending: false })
       .range(from, from + limit - 1);
     if (error) throw error;
+    const jobs = await enrichJobsWithBidTiming((data || []).map(mapJob));
     return {
-      jobs: (data || []).map(mapJob),
+      jobs,
       pagination: { page, limit, total: count || 0, totalPages: Math.ceil((count || 0) / limit) },
     };
   },
