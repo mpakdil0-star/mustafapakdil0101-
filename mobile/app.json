@@ -2,14 +2,12 @@
   "expo": {
     "name": "işbitir",
     "slug": "elektrikciler",
-    "version": "1.6.15",
+    "version": "1.6.16",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#071321"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -26,10 +24,10 @@
       }
     },
     "android": {
-      "versionCode": 165,
+      "versionCode": 166,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000000"
+        "backgroundColor": "#071321"
       },
       "package": "com.mpakdil.isbitir",
       "googleServicesFile": "./google-services.json",

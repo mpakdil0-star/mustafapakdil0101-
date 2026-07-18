@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { fonts } from '../../constants/typography';
 import { SERVICE_CATEGORIES, ServiceCategory } from '../../constants/serviceCategories';
@@ -79,9 +78,6 @@ const CategoryCard = ({ category, index, onPress }: {
   return (
     <Animated.View style={{ opacity: entrance, transform: [{ translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }}>
       <TouchableOpacity style={styles.categoryCard} onPress={onPress} activeOpacity={0.86}>
-        <View style={styles.cardAccent}>
-          <LinearGradient colors={category.colors} style={StyleSheet.absoluteFill} />
-        </View>
         <View style={[styles.imageShell, { backgroundColor: `${category.colors[0]}12`, borderColor: `${category.colors[0]}25` }]}>
           {CATEGORY_IMAGES[category.id] ? (
             <Image source={CATEGORY_IMAGES[category.id]} style={styles.categoryImage} resizeMode="contain" />
@@ -89,13 +85,12 @@ const CategoryCard = ({ category, index, onPress }: {
             <Ionicons name={category.icon as any} size={25} color={category.colors[1]} />
           )}
         </View>
-        <Text style={styles.categoryTitle} numberOfLines={1}>{PROFESSIONAL_NAMES[category.id] || category.name}</Text>
-        <Text style={styles.categoryDescription} numberOfLines={2}>{SHORT_DESCRIPTIONS[category.id] || category.description}</Text>
-        <View style={styles.cardFooter}>
-          <Text style={[styles.exploreText, { color: category.colors[1] }]}>Hizmetleri gör</Text>
-          <View style={[styles.arrowButton, { backgroundColor: `${category.colors[0]}14` }]}>
-            <Ionicons name="arrow-forward" size={13} color={category.colors[1]} />
-          </View>
+        <View style={styles.cardCopy}>
+          <Text style={styles.categoryTitle} numberOfLines={1}>{PROFESSIONAL_NAMES[category.id] || category.name}</Text>
+          <Text style={styles.categoryDescription} numberOfLines={1}>{SHORT_DESCRIPTIONS[category.id] || category.description}</Text>
+        </View>
+        <View style={styles.arrowButton}>
+          <Ionicons name="chevron-forward" size={13} color="#94A3B8" />
         </View>
       </TouchableOpacity>
     </Animated.View>
@@ -131,21 +126,6 @@ export const CitizenExploreCategories = ({ colors, handleActionWithAuth }: Citiz
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.guidedBanner} onPress={() => handleActionWithAuth('/ai-assistant', { role: 'CITIZEN' })} activeOpacity={0.9}>
-        <LinearGradient colors={['#083C3A', '#0F766E', '#0D9488']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.guidedGradient}>
-          <View style={styles.guidedIcon}>
-            <Ionicons name="sparkles" size={20} color="#99F6E4" />
-          </View>
-          <View style={styles.guidedCopy}>
-            <Text style={styles.guidedTitle}>Hangi hizmeti seçmeliyim?</Text>
-            <Text style={styles.guidedSubtitle}>Sorunu anlatın, AI asistan doğru kategoriyi önersin.</Text>
-          </View>
-          <View style={styles.guidedArrow}>
-            <Ionicons name="chevron-forward" size={17} color="#FFFFFF" />
-          </View>
-        </LinearGradient>
-      </TouchableOpacity>
-
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.rows}>
           <View style={styles.row}>
@@ -165,33 +145,24 @@ export const CitizenExploreCategories = ({ colors, handleActionWithAuth }: Citiz
 };
 
 const styles = StyleSheet.create({
-  container: { width: '100%', marginTop: 18, marginBottom: 14 },
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 16, marginBottom: 13 },
+  container: { width: '100%', marginTop: 16, marginBottom: 12 },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 16, marginBottom: 11 },
   headerCopy: { flex: 1, paddingRight: 12 },
   eyebrowRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
   eyebrowLine: { width: 18, height: 3, borderRadius: 2, backgroundColor: '#0D9488', marginRight: 7 },
   eyebrow: { color: '#0F766E', fontFamily: fonts.extraBold, fontSize: 9.5, letterSpacing: 1.2 },
-  sectionTitle: { fontFamily: fonts.extraBold, fontSize: 18, lineHeight: 23, letterSpacing: -0.35 },
-  sectionSubtitle: { color: '#64748B', fontFamily: fonts.regular, fontSize: 11.5, lineHeight: 16, marginTop: 4 },
-  seeAllButton: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, height: 34, borderRadius: 12, backgroundColor: '#ECFDF5', borderWidth: 1, borderColor: '#CCFBF1', gap: 5, marginTop: 2 },
+  sectionTitle: { fontFamily: fonts.extraBold, fontSize: 17, lineHeight: 22, letterSpacing: -0.3 },
+  sectionSubtitle: { color: '#64748B', fontFamily: fonts.regular, fontSize: 10.8, lineHeight: 15, marginTop: 3 },
+  seeAllButton: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, height: 32, borderRadius: 11, backgroundColor: '#ECFDF5', borderWidth: 1, borderColor: '#CCFBF1', gap: 5, marginTop: 2 },
   seeAllText: { color: '#0F766E', fontFamily: fonts.bold, fontSize: 11.5 },
-  guidedBanner: { marginHorizontal: 16, marginBottom: 13, borderRadius: 17, overflow: 'hidden', elevation: 3, shadowColor: '#0F766E', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.18, shadowRadius: 10 },
-  guidedGradient: { minHeight: 76, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12 },
-  guidedIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(153,246,228,0.22)' },
-  guidedCopy: { flex: 1, marginHorizontal: 11 },
-  guidedTitle: { color: '#FFFFFF', fontFamily: fonts.bold, fontSize: 13.5 },
-  guidedSubtitle: { color: 'rgba(255,255,255,0.7)', fontFamily: fonts.regular, fontSize: 10.5, lineHeight: 15, marginTop: 2 },
-  guidedArrow: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)' },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 7 },
-  rows: { gap: 10 },
-  row: { flexDirection: 'row', gap: 10 },
-  categoryCard: { width: 172, minHeight: 136, borderRadius: 18, backgroundColor: '#FFFFFF', padding: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#E8EEF3', shadowColor: '#0F172A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 },
-  cardAccent: { position: 'absolute', top: 0, left: 0, right: 0, height: 3, overflow: 'hidden' },
-  imageShell: { width: 45, height: 45, borderRadius: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginBottom: 9 },
-  categoryImage: { width: 35, height: 35 },
-  categoryTitle: { color: '#0F172A', fontFamily: fonts.bold, fontSize: 13.5, lineHeight: 17 },
-  categoryDescription: { color: '#64748B', fontFamily: fonts.regular, fontSize: 10.3, lineHeight: 14, marginTop: 3, minHeight: 28 },
-  cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
-  exploreText: { fontFamily: fonts.bold, fontSize: 9.8 },
-  arrowButton: { width: 25, height: 25, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  rows: { gap: 8 },
+  row: { flexDirection: 'row', gap: 8 },
+  categoryCard: { width: 218, height: 68, borderRadius: 16, backgroundColor: '#FFFFFF', paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E8EEF3', shadowColor: '#0F172A', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.035, shadowRadius: 8, elevation: 1 },
+  imageShell: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginRight: 10, overflow: 'hidden' },
+  categoryImage: { width: 29, height: 29 },
+  cardCopy: { flex: 1, justifyContent: 'center' },
+  categoryTitle: { color: '#0F172A', fontFamily: fonts.bold, fontSize: 12.8, lineHeight: 16 },
+  categoryDescription: { color: '#64748B', fontFamily: fonts.regular, fontSize: 9.8, lineHeight: 13, marginTop: 2 },
+  arrowButton: { width: 22, height: 22, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#F1F5F9' },
 });

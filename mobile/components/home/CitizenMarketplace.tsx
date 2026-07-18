@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fonts } from '../../constants/typography';
-import { colors as staticColors } from '../../constants/colors';
+import { SAMPLE_MARKETPLACE_PRODUCTS } from '../../constants/sampleContent';
 
 interface CitizenMarketplaceProps {
   marketplaceProducts: any[];
@@ -26,26 +26,26 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
   isAuthenticated,
   onAuthRequired,
 }) => {
-  const displayProducts = marketplaceProducts;
+  const hasRealProducts = Array.isArray(marketplaceProducts) && marketplaceProducts.length > 0;
+  const displayProducts = hasRealProducts ? marketplaceProducts : SAMPLE_MARKETPLACE_PRODUCTS;
 
   return (
     <View style={styles.section}>
-      {/* Header Container */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        {/* Left Typography Column */}
-        <View style={{ flex: 1, paddingRight: 12 }}>
-          <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 16.5, marginBottom: 3 }]} numberOfLines={1}>
-            PAZAR YERİ & İKİNCİ EL
-          </Text>
-          <Text style={styles.sectionSubtitle}>
-            Ustalar ve vatandaşlar arası malzeme satışı
-          </Text>
+      <View style={styles.headerBlock}>
+        <View style={styles.headingRow}>
+          <View style={styles.headingCopy}>
+            <Text style={styles.eyebrow}>GÜVENLİ EKİPMAN ALIŞVERİŞİ</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Pazar Yeri & İkinci El</Text>
+            <Text style={styles.sectionSubtitle}>Ustalardan ve vatandaşlardan yakındaki ürünleri keşfedin.</Text>
+          </View>
+          <View style={styles.listingCountPill}>
+            <Text style={styles.listingCountValue}>{hasRealProducts ? displayProducts.filter(product => !product.isSold).length : '—'}</Text>
+            <Text style={styles.listingCountLabel}>{hasRealProducts ? 'aktif ilan' : 'örnekler'}</Text>
+          </View>
         </View>
 
-        {/* Right Actions Column */}
-        <View style={{ alignItems: 'flex-end', justifyContent: 'center', gap: 6 }}>
-          {/* Tümünü Gör Button */}
-          <TouchableOpacity 
+        <View style={styles.headerActionsRow}>
+          <TouchableOpacity
             onPress={() => {
               if (!isAuthenticated) {
                 onAuthRequired();
@@ -53,16 +53,13 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
               }
               setIsAllProductsModalVisible(true);
             }}
-            style={{ paddingVertical: 2, paddingHorizontal: 4 }}
+            style={styles.seeAllButton}
             activeOpacity={0.7}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-              <Text style={{ fontSize: 11.5, fontFamily: fonts.bold, color: colors.primary }}>Tümünü Gör</Text>
-              <Ionicons name="chevron-forward" size={11} color={colors.primary} />
-            </View>
+            <Ionicons name="grid-outline" size={14} color={colors.primary} />
+            <Text style={[styles.seeAllText, { color: colors.primary }]}>Tüm ilanlar</Text>
           </TouchableOpacity>
 
-          {/* İlan Ekle Button */}
           <TouchableOpacity
             style={styles.addProductBtn}
             activeOpacity={0.8}
@@ -80,8 +77,8 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
               end={{ x: 1, y: 0 }}
               style={styles.addProductBtnGradient}
             >
-              <Ionicons name="add" size={12} color="#FFF" style={{ marginRight: 1 }} />
-              <Text style={styles.addProductBtnText}>İlan Ekle</Text>
+              <Ionicons name="add-circle-outline" size={15} color="#FFF" />
+              <Text style={styles.addProductBtnText}>Ürün ilanı ver</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -115,6 +112,7 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
               ]}
               activeOpacity={0.9}
               onPress={() => {
+                if (prod.isSample) return;
                 if (!isAuthenticated) {
                   onAuthRequired();
                   return;
@@ -123,6 +121,12 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
                 setIsProductDetailModalVisible(true);
               }}
             >
+              {prod.isSample && (
+                <View style={styles.sampleProductBadge}>
+                  <Ionicons name="sparkles" size={10} color="#0F766E" />
+                  <Text style={styles.sampleProductBadgeText}>ÖRNEK</Text>
+                </View>
+              )}
               {prod.isSold && (
                 <View style={styles.soldOverlay}>
                   <View style={styles.soldBadge}>
@@ -191,11 +195,14 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
 
                 <View style={styles.marketCardFooter}>
                   <View style={[styles.marketPricePill, { backgroundColor: 'rgba(16, 185, 129, 0.08)', borderColor: 'rgba(16, 185, 129, 0.18)' }]}>
-                    <Text style={[styles.marketPriceValue, { color: '#059669' }]}>₺{prod.price}</Text>
+                    <Text style={[styles.marketPriceValue, { color: '#059669' }]}>₺{Number(prod.price || 0).toLocaleString('tr-TR')}</Text>
                   </View>
                   
                   <View style={{ alignItems: 'flex-end', flex: 1, marginLeft: 8 }}>
-                    <Text style={styles.marketDateText}>{prod.date}</Text>
+                    <View style={styles.marketLocationRow}>
+                      <Ionicons name="location-outline" size={10} color="#94A3B8" />
+                      <Text style={styles.marketDateText} numberOfLines={1}>{prod.location || 'Konum yok'}</Text>
+                    </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 2 }}>
                       <Ionicons name="person-circle-outline" size={11} color="#94A3B8" />
                       <Text 
@@ -219,8 +226,69 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
 const styles = StyleSheet.create({
   section: {
     paddingHorizontal: 16,
-    marginVertical: 12,
+    marginVertical: 14,
     width: '100%',
+  },
+  headerBlock: {
+    marginBottom: 12,
+  },
+  headingRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  headingCopy: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  eyebrow: {
+    color: '#0F766E',
+    fontFamily: fonts.extraBold,
+    fontSize: 9,
+    letterSpacing: 1,
+    marginBottom: 5,
+  },
+  listingCountPill: {
+    minWidth: 62,
+    borderRadius: 14,
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#CCFBF1',
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+    alignItems: 'center',
+  },
+  listingCountValue: {
+    color: '#047857',
+    fontFamily: fonts.extraBold,
+    fontSize: 15,
+    lineHeight: 17,
+  },
+  listingCountLabel: {
+    color: '#0F766E',
+    fontFamily: fonts.medium,
+    fontSize: 8.5,
+  },
+  headerActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 11,
+  },
+  seeAllButton: {
+    height: 34,
+    paddingHorizontal: 11,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: '#DDE7EA',
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  seeAllText: {
+    fontFamily: fonts.bold,
+    fontSize: 10.5,
   },
   emptyCard: {
     width: 260,
@@ -243,13 +311,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   sectionTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    letterSpacing: 0.5,
+    fontFamily: fonts.extraBold,
+    fontSize: 18,
+    letterSpacing: -0.3,
   },
   sectionSubtitle: {
     fontFamily: fonts.medium,
-    fontSize: 12,
+    fontSize: 11,
+    lineHeight: 16,
     color: '#64748B',
   },
   addProductBtn: {
@@ -260,7 +329,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    height: 34,
     gap: 4,
   },
   addProductBtnText: {
@@ -273,8 +342,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   marketCard: {
-    width: 215,
-    height: 245,
+    width: 205,
+    height: 232,
     borderRadius: 18,
     overflow: 'hidden',
     marginRight: 12,
@@ -298,6 +367,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
   },
+  sampleProductBadge: {
+    position: 'absolute',
+    left: 9,
+    bottom: 9,
+    zIndex: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.94)',
+    borderWidth: 1,
+    borderColor: '#CCFBF1',
+  },
+  sampleProductBadgeText: {
+    color: '#0F766E',
+    fontFamily: fonts.extraBold,
+    fontSize: 8,
+    letterSpacing: 0.4,
+  },
   soldBadge: {
     borderWidth: 2,
     borderColor: '#10B981',
@@ -314,7 +404,7 @@ const styles = StyleSheet.create({
   },
   marketImageContainer: {
     width: '100%',
-    height: 120,
+    height: 112,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -377,5 +467,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontSize: 10,
     color: '#94A3B8',
+    maxWidth: 80,
+  },
+  marketLocationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
   },
 });

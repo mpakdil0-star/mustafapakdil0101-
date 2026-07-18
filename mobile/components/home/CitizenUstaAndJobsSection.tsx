@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -89,6 +89,22 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
           </Text>
         </TouchableOpacity>
       </View>
+
+      {activeHomeTab === 'ustalar' && (
+        <View style={styles.featuredIntroRow}>
+          <View style={[styles.featuredIntroIcon, { backgroundColor: colors.primary + '12' }]}>
+            <Ionicons name="shield-checkmark-outline" size={17} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.featuredIntroTitle, { color: colors.text }]}>Bölgenizde güven veren ustalar</Text>
+            <Text style={[styles.featuredIntroText, { color: colors.textSecondary }]}>Profil, hizmet bölgesi ve müşteri değerlendirmelerini karşılaştırın.</Text>
+          </View>
+          <TouchableOpacity onPress={() => router.push('/electricians')} activeOpacity={0.7} style={styles.featuredIntroAction}>
+            <Text style={[styles.featuredIntroActionText, { color: colors.primary }]}>Tümü</Text>
+            <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {activeHomeTab === 'ilanlar' ? (
         isLoadingRecentJobs ? (
@@ -210,6 +226,7 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
                   }
                 ]}
               >
+                <View style={[styles.featuredUstaAccent, { backgroundColor: colors.primary }]} />
                 {/* Top Row: Avatar + Info + Rating */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                   <View style={[styles.featuredUstaAvatarBorder, { borderColor: colors.primary }]}>
@@ -234,6 +251,25 @@ export const CitizenUstaAndJobsSection: React.FC<CitizenUstaAndJobsSectionProps>
                   <View style={styles.featuredUstaRatingBadge}>
                     <Ionicons name="star" size={11} color="#D97706" />
                     <Text style={styles.featuredUstaRatingText}>{Number(elec.electricianProfile?.ratingAverage || 0).toFixed(1)}</Text>
+                  </View>
+                </View>
+                <View style={styles.featuredUstaMetricsRow}>
+                  <View style={styles.featuredUstaMetric}>
+                    <Ionicons name="star" size={13} color="#D97706" />
+                    <Text style={styles.featuredUstaMetricValue}>{Number(elec.electricianProfile?.ratingAverage || 0).toFixed(1)}</Text>
+                    <Text style={styles.featuredUstaMetricLabel}>puan</Text>
+                  </View>
+                  <View style={styles.featuredUstaMetricDivider} />
+                  <View style={styles.featuredUstaMetric}>
+                    <Ionicons name="chatbubble-ellipses-outline" size={13} color="#0F766E" />
+                    <Text style={styles.featuredUstaMetricValue}>{elec.electricianProfile?.totalReviews || 0}</Text>
+                    <Text style={styles.featuredUstaMetricLabel}>yorum</Text>
+                  </View>
+                  <View style={styles.featuredUstaMetricDivider} />
+                  <View style={styles.featuredUstaMetric}>
+                    <Ionicons name="checkmark-done-outline" size={14} color="#059669" />
+                    <Text style={styles.featuredUstaMetricValue}>{elec.electricianProfile?.completedJobs || elec.completedJobs || 0}</Text>
+                    <Text style={styles.featuredUstaMetricLabel}>iş</Text>
                   </View>
                 </View>
                 
@@ -338,6 +374,40 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.3,
+  },
+  featuredIntroRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    marginBottom: 8,
+    paddingHorizontal: 2,
+  },
+  featuredIntroIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featuredIntroTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 12.5,
+  },
+  featuredIntroText: {
+    fontFamily: fonts.medium,
+    fontSize: 9.5,
+    lineHeight: 13,
+    marginTop: 1,
+  },
+  featuredIntroAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    height: 30,
+  },
+  featuredIntroActionText: {
+    fontFamily: fonts.bold,
+    fontSize: 10.5,
   },
   seeAllUstaEndCard: {
     width: 155,
@@ -469,7 +539,7 @@ const styles = StyleSheet.create({
     color: '#047857',
   },
   featuredUstaCard: {
-    width: 280,
+    width: 296,
     backgroundColor: staticColors.white,
     borderRadius: 20,
     padding: 16,
@@ -478,6 +548,14 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 4,
     borderWidth: 1,
+    overflow: 'hidden',
+  },
+  featuredUstaAccent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
   },
   featuredUstaAvatarBorder: {
     width: 56,
@@ -519,6 +597,38 @@ const styles = StyleSheet.create({
   featuredUstaSkillText: {
     fontFamily: fonts.bold,
     fontSize: 10.5,
+  },
+  featuredUstaMetricsRow: {
+    height: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingHorizontal: 7,
+    marginBottom: 12,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#EEF2F6',
+  },
+  featuredUstaMetric: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  featuredUstaMetricValue: {
+    color: '#1E293B',
+    fontFamily: fonts.extraBold,
+    fontSize: 11.5,
+  },
+  featuredUstaMetricLabel: {
+    color: '#94A3B8',
+    fontFamily: fonts.medium,
+    fontSize: 8.5,
+  },
+  featuredUstaMetricDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: '#E2E8F0',
   },
   featuredUstaProfileBtn: {
     borderRadius: 12,

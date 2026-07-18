@@ -36,6 +36,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CountdownTimer } from '../../components/common/CountdownTimer';
 import * as ImagePicker from 'expo-image-picker';
 
+const getMarketplaceErrorMessage = (error: any) => {
+  const message = String(error?.message || error || '');
+  const normalized = message.toLowerCase();
+  if (message.includes('MARKETPLACE_IMAGE_TOO_LARGE') || normalized.includes('maximum allowed size')) return 'Seçilen fotoğraflardan biri 10 MB sınırını aşıyor.';
+  if (message.includes('EMPTY_MARKETPLACE_IMAGE')) return 'Seçilen fotoğraf okunamadı. Lütfen yeniden seçin.';
+  if (message.includes('UNSUPPORTED_MARKETPLACE_IMAGE') || normalized.includes('mime type')) return 'Bu fotoğraf biçimi desteklenmiyor. JPG, PNG veya WebP kullanın.';
+  if (normalized.includes('row-level security') || error?.code === '42501') return 'Oturum doğrulanamadı. Çıkış yapıp tekrar giriş yapın.';
+  if (normalized.includes('network request failed') || normalized.includes('fetch failed')) return 'İlan Supabase’e kaydedilemedi. İnternet bağlantınızı kontrol edin.';
+  return message || 'İşlem tamamlanamadı. Lütfen tekrar deneyin.';
+};
+
 
 // --- Premium Service Category Component ---
 const ServiceCategoryItem = ({ cat, index, onPress, styles, colors }: any) => {
@@ -275,58 +286,23 @@ export default function HomeScreen() {
   // AsyncStorage key for marketplace persistence
   const MARKETPLACE_STORAGE_KEY = 'marketplace_products_v1';
 
-  // Load marketplace products: AsyncStorage first, then try backend sync with smart local preservation
+  // Supabase is the source of truth. AsyncStorage is only a read-only offline snapshot.
   const fetchMarketplaceProducts = useCallback(async () => {
     try {
-      let localProducts: any[] = [];
-
-      // 1. Load from AsyncStorage (instant, always works)
-      const stored = await AsyncStorage.getItem(MARKETPLACE_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          localProducts = parsed;
-          setMarketplaceProducts(localProducts);
-        }
-      }
-
-      // 2. Try backend sync silently (optional — won't error if 404)
-      try {
-        const response = { data: { success: true, data: await marketplaceService.list() } };
-        if (response.data?.success && Array.isArray(response.data.data)) {
-          const backendProducts = response.data.data;
-
-          // SMART SYNC: Keep all locally created listings flagged with isLocal or matching user ID
-          const myLocalProducts = localProducts.filter(
-            p => p.isLocal === true || p.sellerId === user?.id || p.sellerId === 'mock-current-user'
-          );
-
-          // Merge backend products with user's local products to avoid duplicates
-          const merged = [...myLocalProducts];
-          backendProducts.forEach((bProd: any) => {
-            // If the backend product belongs to the user, ensure it is flagged as isLocal
-            const isMyProduct = bProd.sellerId === user?.id || bProd.sellerId === 'mock-current-user';
-            const mergedProd = isMyProduct ? { ...bProd, isLocal: true } : bProd;
-
-            const existingIdx = merged.findIndex(mProd => mProd.id === mergedProd.id);
-            if (existingIdx === -1) {
-              merged.push(mergedProd);
-            } else if (isMyProduct) {
-              // Ensure the local flag is set/preserved in the local array
-              merged[existingIdx] = { ...merged[existingIdx], isLocal: true };
-            }
-          });
-
-          setMarketplaceProducts(merged);
-          await AsyncStorage.setItem(MARKETPLACE_STORAGE_KEY, JSON.stringify(merged));
-        }
-      } catch (_backendErr) {
-        // Backend doesn't support marketplace yet — silently ignore
-      }
+      const products = await marketplaceService.list();
+      setMarketplaceProducts(products);
+      await AsyncStorage.setItem(MARKETPLACE_STORAGE_KEY, JSON.stringify(products));
     } catch (error) {
-      console.log('Marketplace load error:', error);
+      console.warn('Pazar yeri Supabase verisi yüklenemedi:', error);
+      try {
+        const stored = await AsyncStorage.getItem(MARKETPLACE_STORAGE_KEY);
+        const cached = stored ? JSON.parse(stored) : [];
+        if (Array.isArray(cached)) setMarketplaceProducts(cached.filter(item => !item?.isLocal));
+      } catch (_cacheError) {
+        setMarketplaceProducts([]);
+      }
     }
-  }, [user]);
+  }, []);
 
   // Save marketplace products to AsyncStorage
   const saveMarketplaceToStorage = async (products: any[]) => {
@@ -405,15 +381,11 @@ export default function HomeScreen() {
         allowsMultipleSelection: true,
         selectionLimit: remainingCount,
         quality: 0.6,
-        base64: true,
+        base64: false,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const newImages = result.assets.map(asset => 
-          asset.base64 
-            ? `data:image/jpeg;base64,${asset.base64}` 
-            : asset.uri
-        );
+        const newImages = result.assets.map(asset => asset.uri).filter(Boolean);
         setNewProdImages(prev => {
           const combined = [...prev, ...newImages];
           return combined.slice(0, 5);
@@ -441,14 +413,11 @@ export default function HomeScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         quality: 0.6,
-        base64: true,
+        base64: false,
       });
 
       if (!result.canceled && result.assets?.[0]) {
-        const base64Str = result.assets[0].base64 
-          ? `data:image/jpeg;base64,${result.assets[0].base64}` 
-          : result.assets[0].uri;
-        setNewProdImages(prev => [...prev, base64Str]);
+        setNewProdImages(prev => [...prev, result.assets[0].uri]);
       }
     } catch (error) {
       Alert.alert('Hata', 'Fotoğraf çekilirken bir hata oluştu.');
@@ -498,72 +467,51 @@ export default function HomeScreen() {
   };
 
   const handleAddProduct = async () => {
+    if (isUploadingImage) return;
     if (!newProdTitle.trim() || !newProdPrice.trim() || !newProdDesc.trim() || !newProdLocation.trim()) {
       Alert.alert('Eksik Bilgi', 'Lütfen tüm alanları doldurun.');
       return;
     }
 
+    if (newProdImages.length === 0) {
+      Alert.alert('Fotoğraf Gerekli', 'İkinci el ilanınız için en az bir ürün fotoğrafı ekleyin.');
+      return;
+    }
+
     const priceNum = parseFloat(newProdPrice);
-    if (isNaN(priceNum)) {
-      Alert.alert('Geçersiz Fiyat', 'Lütfen geçerli bir sayı girin.');
+    if (!Number.isFinite(priceNum) || priceNum <= 0) {
+      Alert.alert('Geçersiz Fiyat', 'Lütfen sıfırdan büyük geçerli bir fiyat girin.');
       return;
     }
 
     const userLocation = newProdLocation.trim();
 
-    const newProduct = {
-      id: `prod-${Date.now()}`,
-      title: newProdTitle,
-      price: priceNum,
-      category: newProdCategory,
-      sellerName: user?.fullName ? `${user.fullName} (${isElectrician ? 'Usta' : 'Vatandaş'})` : (isElectrician ? 'Mustafa Yılmaz (Usta)' : 'Ahmet Kaya (Vatandaş)'),
-      sellerId: user?.id || 'mock-current-user',
-      sellerType: isElectrician ? 'ELECTRICIAN' : 'CITIZEN',
-      location: userLocation,
-      desc: newProdDesc,
-      date: 'Bugün',
-      image: newProdImages.length > 0 ? newProdImages[0] : null,
-      images: newProdImages,
-      isLocal: true, // Flag to identify custom local products across logouts
-    };
-
     setIsUploadingImage(true);
-
-    // Add to local state immediately
-    const updatedProducts = [newProduct, ...marketplaceProducts];
-    setMarketplaceProducts(updatedProducts);
-
-    // Save to AsyncStorage for persistence
-    await saveMarketplaceToStorage(updatedProducts);
-
-    // Try backend sync silently (optional)
     try {
-      const response = { data: { success: true, data: await marketplaceService.create({ title: newProduct.title, price: newProduct.price, category: newProduct.category, location: newProduct.location, desc: newProduct.desc, images: newProduct.images }) } };
-      if (response.data?.success && response.data.data) {
-        // Map over the backend response and restore/ensure isLocal flag is set to true for our custom products
-        const mergedData = response.data.data.map((bProd: any) => {
-          const isMatch = bProd.id === newProduct.id || updatedProducts.some(p => p.id === bProd.id && p.isLocal);
-          if (isMatch) {
-            return { ...bProd, isLocal: true };
-          }
-          return bProd;
-        });
-        setMarketplaceProducts(mergedData);
-        await saveMarketplaceToStorage(mergedData);
-      }
-    } catch (_e) {
-      // Backend not available — already saved locally
+      const products = await marketplaceService.create({
+        title: newProdTitle,
+        price: priceNum,
+        category: newProdCategory,
+        location: userLocation,
+        desc: newProdDesc,
+        images: newProdImages,
+      });
+      setMarketplaceProducts(products);
+      await saveMarketplaceToStorage(products);
+      setNewProdTitle('');
+      setNewProdPrice('');
+      setNewProdDesc('');
+      setNewProdLocation('');
+      setNewProdCategory('Kablo');
+      setNewProdImages([]);
+      setIsAddProductModalVisible(false);
+      Alert.alert('İlan Yayında', 'İlanınız Supabase’e kaydedildi ve tüm kullanıcılara açıldı.');
+    } catch (error) {
+      console.warn('Pazar yeri ilanı oluşturulamadı:', error);
+      Alert.alert('İlan Yayınlanamadı', getMarketplaceErrorMessage(error));
+    } finally {
+      setIsUploadingImage(false);
     }
-
-    setIsUploadingImage(false);
-    setNewProdTitle('');
-    setNewProdPrice('');
-    setNewProdDesc('');
-    setNewProdLocation('');
-    setNewProdCategory('Kablo');
-    setNewProdImages([]);
-    setIsAddProductModalVisible(false);
-    Alert.alert('Başarılı', 'İlanınız pazar yerinde başarıyla yayınlandı! 🚀');
   };
 
   const handleDeleteProduct = async (productId: string) => {
@@ -577,23 +525,16 @@ export default function HomeScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // 1. Local state update
+              await marketplaceService.remove(productId);
               const updatedProducts = marketplaceProducts.filter(p => p.id !== productId);
               setMarketplaceProducts(updatedProducts);
               await saveMarketplaceToStorage(updatedProducts);
-              
-              // Close detail modal
               setIsProductDetailModalVisible(false);
               setSelectedProduct(null);
-
-              // 2. Backend sync (skip if mock product)
-              if (!productId.startsWith('mock-')) {
-                await marketplaceService.remove(productId);
-              }
-              
               Alert.alert('Başarılı', 'İlan başarıyla silindi.');
             } catch (error) {
-              console.log('Error deleting product:', error);
+              console.warn('Pazar yeri ilanı silinemedi:', error);
+              Alert.alert('İlan Silinemedi', getMarketplaceErrorMessage(error));
             }
           }
         }
@@ -611,7 +552,7 @@ export default function HomeScreen() {
           text: 'Evet, Satıldı',
           onPress: async () => {
             try {
-              // 1. Local state update
+              await marketplaceService.markSold(productId);
               const updatedProducts = marketplaceProducts.map(p => {
                 if (p.id === productId) {
                   return { ...p, isSold: true };
@@ -620,19 +561,12 @@ export default function HomeScreen() {
               });
               setMarketplaceProducts(updatedProducts);
               await saveMarketplaceToStorage(updatedProducts);
-
-              // Close detail modal or update selectedProduct in modal
               setIsProductDetailModalVisible(false);
               setSelectedProduct(null);
-
-              // 2. Backend sync (skip if mock product)
-              if (!productId.startsWith('mock-')) {
-                await marketplaceService.markSold(productId);
-              }
-
               Alert.alert('Tebrikler 🎉', 'Ürününüz satıldı olarak işaretlendi!');
             } catch (error) {
-              console.log('Error marking product as sold:', error);
+              console.warn('Ürün satıldı olarak işaretlenemedi:', error);
+              Alert.alert('İşlem Tamamlanamadı', getMarketplaceErrorMessage(error));
             }
           }
         }
@@ -2039,7 +1973,7 @@ export default function HomeScreen() {
                     // Count items in this category dynamically
                     const categoryCount = (() => {
                       if (cat === 'Tümü') return displayProducts.length;
-                      return displayProducts.filter(p => p.category.includes(cat) || cat.includes(p.category)).length;
+                      return displayProducts.filter(p => String(p?.category || '').includes(cat) || cat.includes(String(p?.category || ''))).length;
                     })();
 
                     // Map categories to modern outline icons
@@ -2112,10 +2046,12 @@ export default function HomeScreen() {
               >
                 {(() => {
                   const filtered = displayProducts.filter((p) => {
-                    const matchesSearch = p.title.toLowerCase().includes(marketSearchQuery.toLowerCase()) ||
-                      p.desc.toLowerCase().includes(marketSearchQuery.toLowerCase()) ||
-                      p.sellerName.toLowerCase().includes(marketSearchQuery.toLowerCase());
-                    const matchesCat = marketSelectedFilter === '' || p.category.includes(marketSelectedFilter) || marketSelectedFilter.includes(p.category);
+                    const query = marketSearchQuery.toLocaleLowerCase('tr-TR').trim();
+                    const searchable = [p?.title, p?.desc, p?.sellerName, p?.category, p?.location]
+                      .map(value => String(value || '').toLocaleLowerCase('tr-TR'));
+                    const matchesSearch = !query || searchable.some(value => value.includes(query));
+                    const category = String(p?.category || '');
+                    const matchesCat = marketSelectedFilter === '' || category.includes(marketSelectedFilter) || marketSelectedFilter.includes(category);
                     return matchesSearch && matchesCat;
                   });
 
@@ -2199,16 +2135,16 @@ export default function HomeScreen() {
                     // Dynamic theme badge styling
                     let tagBg = '#F1F5F9';
                     let tagText = '#475569';
-                    if (prod.category.includes('Alet')) {
+                    if (String(prod.category || '').includes('Alet')) {
                       tagBg = '#FEF3C7';
                       tagText = '#D97706';
-                    } else if (prod.category.includes('Kablo')) {
+                    } else if (String(prod.category || '').includes('Kablo')) {
                       tagBg = '#ECFDF5';
                       tagText = '#059669';
-                    } else if (prod.category.includes('Şalt')) {
+                    } else if (String(prod.category || '').includes('Şalt')) {
                       tagBg = '#E0F2FE';
                       tagText = '#0284C7';
-                    } else if (prod.category.includes('Diğer')) {
+                    } else if (String(prod.category || '').includes('Diğer')) {
                       tagBg = '#F3E8FF';
                       tagText = '#7C3AED';
                     }

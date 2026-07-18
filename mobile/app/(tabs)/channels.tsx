@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Modal,
   Dimensions,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,13 +22,13 @@ import { useAppSelector } from '../../hooks/redux';
 import { useAppColors } from '../../hooks/useAppColors';
 import { messageService } from '../../services/messageService';
 import { userService } from '../../services/userService';
-import { colors as staticColors } from '../../constants/colors';
 import { fonts } from '../../constants/typography';
 import { communityService } from '../../services/communityService';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { EmptyState } from '../../components/common/EmptyState';
 import { getFileUrl } from '../../constants/api';
 import { CITY_NAMES } from '../../constants/locations';
+import { SAMPLE_SHOWCASE_ITEMS } from '../../constants/sampleContent';
 
 const { width } = Dimensions.get('window');
 
@@ -73,6 +74,18 @@ const getRelativeTime = (dateString: string) => {
   }
 };
 
+const getCommunityErrorMessage = (error: any) => {
+  const message = String(error?.message || error || '');
+  const normalized = message.toLowerCase();
+  if (message.includes('COMMUNITY_IMAGE_TOO_LARGE') || normalized.includes('maximum allowed size')) return 'Seçilen fotoğraflardan biri 10 MB sınırını aşıyor.';
+  if (message.includes('EMPTY_COMMUNITY_IMAGE')) return 'Seçilen fotoğraf okunamadı. Lütfen galeriden yeniden seçin.';
+  if (message.includes('UNSUPPORTED_COMMUNITY_IMAGE') || normalized.includes('mime type')) return 'Bu fotoğraf biçimi desteklenmiyor. JPG, PNG veya WebP kullanın.';
+  if (normalized.includes('row-level security') || error?.code === '42501') return 'Oturum doğrulanamadı. Uygulamadan çıkış yapıp tekrar giriş yapın.';
+  if (normalized.includes('network request failed') || normalized.includes('fetch failed')) return 'Fotoğraf yüklenemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.';
+  if (normalized.includes('bucket') && normalized.includes('not found')) return 'Hüner fotoğraf deposu henüz hazır değil.';
+  return message || 'İşlem tamamlanamadı. Lütfen tekrar deneyin.';
+};
+
 export default function ChannelsScreen() {
   const colors = useAppColors();
   const { user } = useAppSelector((state) => state.auth);
@@ -83,6 +96,8 @@ export default function ChannelsScreen() {
 
   // Loading States
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // 1. Forum States
   const [forumPosts, setForumPosts] = useState<any[]>([]);
@@ -113,7 +128,8 @@ export default function ChannelsScreen() {
   const [isShowcaseDetailModalVisible, setIsShowcaseDetailModalVisible] = useState(false);
   const [showcaseActiveImageIndex, setShowcaseActiveImageIndex] = useState(0);
   const [showFullscreenImage, setShowFullscreenImage] = useState<string | null>(null);
-  const [isStartingChat, setIsStartingChat] = useState(false);
+  const [isStartingChat] = useState(false);
+  const [isPublishingShowcase, setIsPublishingShowcase] = useState(false);
 
   // 4. Service Regions Custom Modal States
   const [isLocationsModalVisible, setIsLocationsModalVisible] = useState(false);
@@ -195,9 +211,11 @@ export default function ChannelsScreen() {
         });
 
         setForumPosts(enriched);
+        setLoadError(null);
       }
     } catch (err) {
       console.log('Error fetching forum posts:', err);
+      setLoadError('Teknik destek akışı şu anda yüklenemedi. Aşağı çekerek tekrar deneyin.');
     }
   };
 
@@ -274,9 +292,11 @@ export default function ChannelsScreen() {
         });
 
         setJobOffers(enriched);
+        setLoadError(null);
       }
     } catch (err) {
       console.log('Error fetching job offers:', err);
+      setLoadError('İş paslama akışı şu anda yüklenemedi. Aşağı çekerek tekrar deneyin.');
     }
   };
 
@@ -313,9 +333,11 @@ export default function ChannelsScreen() {
           };
         });
         setShowcaseItems(enriched);
+        setLoadError(null);
       }
     } catch (err) {
       console.log('Error fetching showcase items:', err);
+      setLoadError('Hüner galerisi şu anda yüklenemedi. Aşağı çekerek tekrar deneyin.');
     }
   };
 
@@ -343,13 +365,11 @@ export default function ChannelsScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.6,
-      base64: true,
+      base64: false,
     });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      const asset = result.assets[0];
-      const imageStr = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
-      if (type === 'forum') setNewPostImage(imageStr);
+      if (type === 'forum') setNewPostImage(result.assets[0].uri);
     }
   };
 
@@ -369,7 +389,7 @@ export default function ChannelsScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: source === 'camera',
         quality: 0.6,
-        base64: true,
+        base64: false,
       };
 
       const result = source === 'camera'
@@ -381,16 +401,15 @@ export default function ChannelsScreen() {
           });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const selected = result.assets.map(asset => 
-          asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri
-        );
+        const selected = result.assets.map(asset => asset.uri).filter(Boolean);
         setNewShowcaseImages(prev => {
           const combined = [...prev, ...selected];
           return combined.slice(0, 5);
         });
       }
     } catch (error) {
-      Alert.alert('Hata', 'Fotoğraf seçilirken bir sorun oluştu.');
+      console.warn('Hüner fotoğrafı seçilemedi:', error);
+      Alert.alert('Fotoğraf Seçilemedi', getCommunityErrorMessage(error));
     }
   };
 
@@ -547,8 +566,14 @@ export default function ChannelsScreen() {
 
   // Handle Add Showcase Gallery Item
   const handleAddShowcaseItem = async () => {
+    if (isPublishingShowcase) return;
     if (!newShowcaseTitle.trim() || newShowcaseImages.length === 0) {
       Alert.alert('Eksik Bilgi', 'Lütfen başlık doldurun ve en az bir görsel seçin.');
+      return;
+    }
+
+    if (newShowcaseTitle.trim().length < 3) {
+      Alert.alert('Başlık Çok Kısa', 'Çalışmanızı anlatan en az 3 karakterlik bir başlık yazın.');
       return;
     }
 
@@ -563,6 +588,7 @@ export default function ChannelsScreen() {
       ustaAvatar: user?.profileImageUrl || null,
     };
 
+    setIsPublishingShowcase(true);
     try {
       const response = { data: { success: true, data: await communityService.createShowcase({ title: newItem.title, description: newItem.description, images: newItem.images }) } };
       if (response.data?.success) {
@@ -574,7 +600,10 @@ export default function ChannelsScreen() {
         Alert.alert('Başarılı', 'Zanaat eseriniz Hüner Galerisinde yayınlandı! 📸');
       }
     } catch (err) {
-      Alert.alert('Hata', 'Fotoğraf yüklenirken bir hata oluştu.');
+      console.warn('Hüner kaydı oluşturulamadı:', err);
+      Alert.alert('Hüner Yayınlanamadı', getCommunityErrorMessage(err));
+    } finally {
+      setIsPublishingShowcase(false);
     }
   };
 
@@ -626,6 +655,59 @@ export default function ChannelsScreen() {
       .replace(/ç/g, 'c');
     return cityNormalized.includes(searchNormalized);
   });
+
+  const channelInfo = activeTab === 'forum'
+    ? {
+        eyebrow: 'USTA TOPLULUĞU',
+        title: 'Teknik bilgi, gerçek tecrübe',
+        description: 'Arızayı paylaşın, sahadaki ustalardan çözüm ve öneri alın.',
+        icon: 'construct' as const,
+        count: forumPosts.length,
+        countLabel: 'teknik soru',
+        actionLabel: 'Yeni soru',
+        gradient: ['#0F766E', '#0D9488'] as [string, string],
+      }
+    : activeTab === 'jobs'
+      ? {
+          eyebrow: 'İŞ AĞI',
+          title: 'İşi doğru ustaya paslayın',
+          description: 'Yoğun olduğunuz işleri hizmet bölgesindeki meslektaşlarla paylaşın.',
+          icon: 'briefcase' as const,
+          count: filteredJobOffers.length,
+          countLabel: 'aktif fırsat',
+          actionLabel: 'İş paylaş',
+          gradient: ['#0369A1', '#0891B2'] as [string, string],
+        }
+      : {
+          eyebrow: 'PROFESYONEL VİTRİN',
+          title: 'İşiniz kalitenizi anlatsın',
+          description: 'Tamamladığınız işleri sergileyin, vatandaşların sizi keşfetmesini sağlayın.',
+          icon: 'images' as const,
+          count: showcaseItems.length,
+          countLabel: 'hüner kaydı',
+          actionLabel: 'Hüner ekle',
+          gradient: ['#047857', '#10B981'] as [string, string],
+        };
+
+  const openActiveChannelComposer = () => {
+    if (activeTab === 'forum') setIsNewPostModalVisible(true);
+    else if (activeTab === 'jobs') setIsNewJobModalVisible(true);
+    else setIsNewShowcaseModalVisible(true);
+  };
+
+  const refreshActiveChannel = async () => {
+    setIsRefreshing(true);
+    setLoadError(null);
+    try {
+      if (activeTab === 'forum') await fetchForumPosts();
+      else if (activeTab === 'jobs') await fetchJobOffers();
+      else await fetchShowcaseItems();
+    } catch (error) {
+      setLoadError(getCommunityErrorMessage(error));
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: '#F8FAFC' }]}>
@@ -687,7 +769,7 @@ export default function ChannelsScreen() {
       />
 
       {/* Tabs */}
-      <View style={{ height: 80, marginTop: 12, marginBottom: 4 }}>
+      <View style={styles.tabsShell}>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
@@ -697,7 +779,6 @@ export default function ChannelsScreen() {
             { id: 'forum', label: 'Teknik Destek', icon: 'construct-outline', activeColor: colors.primary, gradientColors: [colors.primary, colors.primaryDark || '#1E40AF'] },
             { id: 'jobs', label: 'İş Paslama', icon: 'briefcase-outline', activeColor: '#06B6D4', gradientColors: ['#06B6D4', '#0891B2'] },
             { id: 'gallery', label: 'Hünerlerim', icon: 'bulb-outline', activeColor: '#10B981', gradientColors: ['#10B981', '#047857'] },
-            { id: 'materials', label: 'Malzeme', icon: 'document-text-outline', activeColor: '#059669', gradientColors: ['#059669', '#064E3B'] },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             const iconColor = isActive ? '#FFF' : tab.activeColor;
@@ -709,13 +790,7 @@ export default function ChannelsScreen() {
                   styles.tabCardBtn,
                   isActive && [styles.tabCardBtnActive, { shadowColor: tab.activeColor }]
                 ]}
-                onPress={() => {
-                  if (tab.id !== 'materials') {
-                    setActiveTab(tab.id as any);
-                  } else {
-                    Alert.alert('Yakında', 'Malzeme kanalı yakında hizmete girecektir. 🚀');
-                  }
-                }}
+                onPress={() => setActiveTab(tab.id as typeof activeTab)}
                 activeOpacity={0.8}
               >
                 {isActive && (
@@ -737,31 +812,50 @@ export default function ChannelsScreen() {
         </ScrollView>
       </View>
 
+      <View style={styles.channelHeroOuter}>
+        <LinearGradient colors={channelInfo.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.channelHero}>
+          <View style={styles.channelHeroGlow} />
+          <View style={styles.channelHeroTopRow}>
+            <View style={styles.channelHeroIcon}>
+              <Ionicons name={channelInfo.icon} size={21} color="#FFFFFF" />
+            </View>
+            <View style={styles.channelCountPill}>
+              <View style={styles.channelCountDot} />
+              <Text style={styles.channelCountText}>{channelInfo.count} {channelInfo.countLabel}</Text>
+            </View>
+          </View>
+          <Text style={styles.channelEyebrow}>{channelInfo.eyebrow}</Text>
+          <Text style={styles.channelHeroTitle}>{channelInfo.title}</Text>
+          <Text style={styles.channelHeroDescription}>{channelInfo.description}</Text>
+          <TouchableOpacity style={styles.channelHeroAction} onPress={openActiveChannelComposer} activeOpacity={0.86}>
+            <Ionicons name="add-circle" size={17} color="#0F766E" />
+            <Text style={styles.channelHeroActionText}>{channelInfo.actionLabel}</Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      </View>
+
+      {!!loadError && (
+        <TouchableOpacity style={styles.channelErrorBanner} onPress={refreshActiveChannel} activeOpacity={0.8}>
+          <Ionicons name="cloud-offline-outline" size={18} color="#B45309" />
+          <Text style={styles.channelErrorText}>{loadError}</Text>
+          <Ionicons name="refresh" size={17} color="#B45309" />
+        </TouchableOpacity>
+      )}
+
       {/* Main Content ScrollView */}
       {isLoading ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshActiveChannel} tintColor={colors.primary} colors={[colors.primary]} />}
+        >
           {/* ==================== FORUM / SORU-CEVAP AKIŞI ==================== */}
           {activeTab === 'forum' && (
             <View style={{ width: '100%' }}>
-              {forumPosts.length > 0 && (
-                <TouchableOpacity
-                  style={[styles.actionBtn, { overflow: 'hidden', padding: 0 }]}
-                  onPress={() => setIsNewPostModalVisible(true)}
-                >
-                  <LinearGradient
-                    colors={[colors.primary, colors.primaryDark || '#1E40AF']}
-                    style={styles.actionBtnGradient}
-                  >
-                    <Ionicons name="add-circle" size={18} color="#FFF" />
-                    <Text style={styles.actionBtnText}>Yeni Teknik Soru Sor</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              )}
-
               {forumPosts.length === 0 ? (
                 <EmptyState
                   icon="chatbubbles-outline"
@@ -926,18 +1020,6 @@ export default function ChannelsScreen() {
                   <Ionicons name="chevron-down" size={12} color="#0891B2" />
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[styles.miniAddBtn, { overflow: 'hidden', padding: 0 }]}
-                  onPress={() => setIsNewJobModalVisible(true)}
-                >
-                  <LinearGradient
-                    colors={[colors.primary, colors.primaryDark || '#1E40AF']}
-                    style={styles.miniAddBtnGradient}
-                  >
-                    <Ionicons name="add" size={16} color="#FFF" />
-                    <Text style={styles.miniAddBtnText}>İş Pasla</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
               </View>
 
               {filteredJobOffers.length === 0 ? (
@@ -1089,29 +1171,37 @@ export default function ChannelsScreen() {
           {/* ==================== HÜNERLERİM / PHOTO SHOWCASE ==================== */}
           {activeTab === 'gallery' && (
             <View style={{ width: '100%' }}>
-              {showcaseItems.length > 0 && (
-                <TouchableOpacity
-                  style={[styles.actionBtn, { overflow: 'hidden', padding: 0 }]}
-                  onPress={() => setIsNewShowcaseModalVisible(true)}
-                >
-                  <LinearGradient
-                    colors={[colors.primary, colors.primaryDark || '#1E40AF']}
-                    style={styles.actionBtnGradient}
-                  >
-                    <Ionicons name="camera" size={18} color="#FFF" />
-                    <Text style={styles.actionBtnText}>Yeni Hüner Fotoğrafı Yükle</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              )}
-
               {showcaseItems.length === 0 ? (
-                <EmptyState
-                  icon="images-outline"
-                  title="Hüner Bulunamadı"
-                  description="Henüz kimse hüner galerisine bir fotoğraf yüklememiş."
-                  buttonTitle="İlk Fotoğrafı Sen Yükle"
-                  onButtonPress={() => setIsNewShowcaseModalVisible(true)}
-                />
+                <View>
+                  <View style={styles.sampleGalleryIntro}>
+                    <View style={styles.sampleGalleryIcon}>
+                      <Ionicons name="sparkles" size={18} color="#047857" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.sampleGalleryTitle}>Galerinizi çalışmalarınızla canlandırın</Text>
+                      <Text style={styles.sampleGalleryDescription}>Aşağıdaki kartlar yalnızca örnektir. İlk gerçek hüner yayınlandığında otomatik olarak kaybolur.</Text>
+                    </View>
+                    <TouchableOpacity style={styles.sampleGalleryAction} onPress={() => setIsNewShowcaseModalVisible(true)}>
+                      <Ionicons name="add" size={18} color="#FFF" />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.masonryGrid}>
+                    {SAMPLE_SHOWCASE_ITEMS.map((item) => (
+                      <View key={item.id} style={styles.masonryItem}>
+                        <View style={styles.imageWrapper}>
+                          <Image source={item.image} style={styles.masonryImage} />
+                          <View style={styles.sampleOverlayBadge}>
+                            <Text style={styles.sampleOverlayBadgeText}>ÖRNEK</Text>
+                          </View>
+                        </View>
+                        <View style={styles.showcaseCardFooter}>
+                          <Text style={styles.showcaseCardTitle} numberOfLines={1}>{item.title}</Text>
+                          <Text style={styles.sampleGalleryCardHint} numberOfLines={2}>Kendi tamamladığınız işi fotoğraflayıp yayınlayın.</Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                </View>
               ) : (
                 <View style={styles.masonryGrid}>
                   {showcaseItems.map((item) => (
@@ -1558,15 +1648,26 @@ export default function ChannelsScreen() {
               )}
             </View>
             <TouchableOpacity 
-              style={[styles.submitBtn, { marginTop: 20 }]} 
+              style={[styles.submitBtn, { marginTop: 20 }, isPublishingShowcase && { opacity: 0.65 }]}
               onPress={handleAddShowcaseItem}
               activeOpacity={0.85}
+              disabled={isPublishingShowcase}
             >
               <LinearGradient
                 colors={colors.gradientPrimary}
                 style={styles.submitBtnGradient}
               >
-                <Text style={styles.submitBtnText}>Hünerini Vitrine Ekle 📸</Text>
+                {isPublishingShowcase ? (
+                  <>
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <Text style={styles.submitBtnText}>Fotoğraflar yükleniyor...</Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons name="sparkles" size={17} color="#FFFFFF" />
+                    <Text style={styles.submitBtnText}>Hünerini Vitrine Ekle</Text>
+                  </>
+                )}
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -2160,16 +2261,20 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   // Premium tabs styling
+  tabsShell: {
+    height: 70,
+    marginTop: 10,
+  },
   tabScrollView: {
     paddingHorizontal: 16,
-    gap: 8,
+    gap: 9,
     alignItems: 'center',
     height: '100%',
   },
   tabCardBtn: {
-    width: 90,
-    height: 60,
-    borderRadius: 12,
+    width: 108,
+    height: 52,
+    borderRadius: 15,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -2189,6 +2294,125 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontSize: 10,
     textAlign: 'center',
+  },
+  channelHeroOuter: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  channelHero: {
+    minHeight: 190,
+    borderRadius: 24,
+    padding: 18,
+    overflow: 'hidden',
+    shadowColor: '#0F766E',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+  channelHeroGlow: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    right: -55,
+    top: -70,
+  },
+  channelHeroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  channelHeroIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  channelCountPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.13)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  channelCountDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#A7F3D0',
+    marginRight: 6,
+  },
+  channelCountText: {
+    color: '#FFFFFF',
+    fontFamily: fonts.bold,
+    fontSize: 10.5,
+  },
+  channelEyebrow: {
+    color: 'rgba(255,255,255,0.7)',
+    fontFamily: fonts.extraBold,
+    fontSize: 9.5,
+    letterSpacing: 1.1,
+    marginBottom: 4,
+  },
+  channelHeroTitle: {
+    color: '#FFFFFF',
+    fontFamily: fonts.extraBold,
+    fontSize: 20,
+    lineHeight: 25,
+  },
+  channelHeroDescription: {
+    color: 'rgba(255,255,255,0.74)',
+    fontFamily: fonts.regular,
+    fontSize: 11.5,
+    lineHeight: 17,
+    marginTop: 5,
+    paddingRight: 24,
+  },
+  channelHeroAction: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 36,
+    marginTop: 13,
+    gap: 6,
+  },
+  channelHeroActionText: {
+    color: '#0F766E',
+    fontFamily: fonts.bold,
+    fontSize: 11.5,
+  },
+  channelErrorBanner: {
+    marginHorizontal: 16,
+    marginBottom: 10,
+    minHeight: 48,
+    borderRadius: 14,
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+  },
+  channelErrorText: {
+    flex: 1,
+    color: '#92400E',
+    fontFamily: fonts.medium,
+    fontSize: 10.5,
+    lineHeight: 15,
   },
   scrollContent: {
     padding: 12,
@@ -2581,6 +2805,67 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+  },
+  sampleGalleryIntro: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 14,
+    padding: 13,
+    borderRadius: 18,
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#CCFBF1',
+  },
+  sampleGalleryIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  sampleGalleryTitle: {
+    color: '#064E3B',
+    fontFamily: fonts.bold,
+    fontSize: 12.5,
+  },
+  sampleGalleryDescription: {
+    color: '#047857',
+    fontFamily: fonts.medium,
+    fontSize: 9.5,
+    lineHeight: 14,
+    marginTop: 2,
+  },
+  sampleGalleryAction: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#059669',
+  },
+  sampleOverlayBadge: {
+    position: 'absolute',
+    left: 7,
+    top: 7,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.94)',
+  },
+  sampleOverlayBadgeText: {
+    color: '#047857',
+    fontFamily: fonts.extraBold,
+    fontSize: 7.5,
+    letterSpacing: 0.4,
+  },
+  sampleGalleryCardHint: {
+    color: '#64748B',
+    fontFamily: fonts.medium,
+    fontSize: 8.5,
+    lineHeight: 12,
+    marginTop: 4,
   },
   masonryItem: {
     width: (width - 34) / 2,

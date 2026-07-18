@@ -1079,7 +1079,7 @@ function RootLayoutNav() {
       SplashScreen.hideAsync()
         .catch(() => undefined)
         .finally(() => {
-          transitionTimer = setTimeout(() => setShowFullScreenSplash(false), 450);
+          transitionTimer = setTimeout(() => setShowFullScreenSplash(false), 350);
         });
     }
     return () => {
@@ -1094,7 +1094,7 @@ function RootLayoutNav() {
         <Image
           source={require('../assets/images/splash.png')}
           style={styles.fullScreenSplashImage}
-          resizeMode="cover"
+          resizeMode="contain"
           fadeDuration={0}
         />
       </View>
@@ -1161,11 +1161,12 @@ const styles = StyleSheet.create({
   fullScreenSplash: {
     flex: 1,
     backgroundColor: '#071321',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   fullScreenSplashImage: {
-    ...StyleSheet.absoluteFillObject,
-    width: '100%',
-    height: '100%',
+    width: '94%',
+    aspectRatio: 1,
   },
   impersonationBanner: {
     position: 'absolute',

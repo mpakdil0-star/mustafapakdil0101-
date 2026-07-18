@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ImageBackground, 
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fonts } from '../../constants/typography';
-import { colors as staticColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { getFileUrl } from '../../constants/api';
+import { SAMPLE_SHOWCASE_ITEMS } from '../../constants/sampleContent';
 
 interface CitizenReelsShowcaseProps {
   homeShowcaseItems: any[];
@@ -27,10 +27,8 @@ export const CitizenReelsShowcase: React.FC<CitizenReelsShowcaseProps> = ({
   onAuthRequired,
 }) => {
   const [activeReelsIndex, setActiveReelsIndex] = useState(0);
-
-  if (!homeShowcaseItems || homeShowcaseItems.length === 0) {
-    return null;
-  }
+  const hasRealItems = Array.isArray(homeShowcaseItems) && homeShowcaseItems.length > 0;
+  const displayItems = hasRealItems ? homeShowcaseItems : SAMPLE_SHOWCASE_ITEMS;
 
   return (
     <View style={styles.section}>
@@ -56,7 +54,7 @@ export const CitizenReelsShowcase: React.FC<CitizenReelsShowcaseProps> = ({
         }}
       >
         {Array.from({ length: 3 }).map((_, colIndex) => {
-          const colItems = homeShowcaseItems.slice(colIndex * 2, colIndex * 2 + 2);
+          const colItems = displayItems.slice(colIndex * 2, colIndex * 2 + 2);
           if (colItems.length === 0) return null;
           return (
             <View key={colIndex} style={styles.vitrinColumn}>
@@ -65,6 +63,7 @@ export const CitizenReelsShowcase: React.FC<CitizenReelsShowcaseProps> = ({
                   key={item.id}
                   activeOpacity={0.85}
                   onPress={() => {
+                    if (item.isSample) return;
                     if (!isAuthenticated) {
                       onAuthRequired();
                       return;
@@ -74,7 +73,12 @@ export const CitizenReelsShowcase: React.FC<CitizenReelsShowcaseProps> = ({
                     setIsShowcaseDetailModalVisible(true);
                   }}
                   style={styles.vitrinCardSmall}
-                >
+                  >
+                  {item.isSample && (
+                    <View style={styles.sampleCardBadge}>
+                      <Text style={styles.sampleCardBadgeText}>ÖRNEK ÇALIŞMA</Text>
+                    </View>
+                  )}
                   <ImageBackground 
                     source={typeof item.image === 'string' ? { uri: getFileUrl(item.image) || '' } : item.image} 
                     style={styles.vitrinCardBg} 
@@ -179,6 +183,24 @@ const styles = StyleSheet.create({
     elevation: 3,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
+  },
+  sampleCardBadge: {
+    position: 'absolute',
+    top: 9,
+    left: 9,
+    zIndex: 5,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: 7,
+    backgroundColor: 'rgba(255,255,255,0.94)',
+    borderWidth: 1,
+    borderColor: '#CCFBF1',
+  },
+  sampleCardBadgeText: {
+    color: '#0F766E',
+    fontFamily: fonts.extraBold,
+    fontSize: 8,
+    letterSpacing: 0.35,
   },
   vitrinCardBg: {
     flex: 1,
