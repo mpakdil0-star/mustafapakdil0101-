@@ -28,8 +28,6 @@ import { communityService } from '../../services/communityService';
 import { userInsightsService } from '../../services/userInsightsService';
 import locationService from '../../services/locationService';
 import { preferenceService } from '../../services/accountService';
-import HesKabloImage from '../../assets/images/mock_hes_kablo.jpg';
-import SiemensSigortaImage from '../../assets/images/mock_siemens_sigorta.jpg';
 import { messageService } from '../../services/messageService';
 import { AuthGuardModal } from '../../components/common/AuthGuardModal';
 import { JOB_CATEGORIES } from '../../constants/jobCategories';
@@ -175,35 +173,6 @@ const getUstaCategory = (elec: any) => {
   return 'Elektrik';
 };
 
-const defaultProducts = [
-  {
-    id: 'mock-market-1',
-    title: '3x2.5 HES NYM Kablo (50 Metre)',
-    desc: 'İnşaat fazlası rulo, hiç açılmamış ve kullanılmamıştır. Orijinal rulo paketindedir.',
-    price: 1200,
-    category: 'Kablo',
-    sellerName: 'Ahmet Kaya (Vatandaş)',
-    sellerId: 'mock-citizen-1',
-    sellerType: 'CITIZEN',
-    location: 'Kadıköy, İstanbul',
-    date: 'Bugün',
-    image: HesKabloImage,
-  },
-  {
-    id: 'mock-market-2',
-    title: 'Siemens 3 Faz Sigorta Grubu (25A)',
-    desc: 'Sistem panosundan sökülen, çok temiz durumdaki 3 kutuplu Siemens sigortalar.',
-    price: 450,
-    category: 'Şalt Malzemesi',
-    sellerName: 'Mustafa Yılmaz (Usta)',
-    sellerId: 'mock-electrician-1',
-    sellerType: 'ELECTRICIAN',
-    location: 'Üsküdar, İstanbul',
-    date: 'Dün',
-    image: SiemensSigortaImage,
-  }
-];
-
 export default function HomeScreen() {
   const router = useRouter();
   const colors = useAppColors();
@@ -260,7 +229,7 @@ export default function HomeScreen() {
   
   // Marketplace / Pazar Yeri States
   const [marketplaceProducts, setMarketplaceProducts] = useState<any[]>([]);
-  const displayProducts = marketplaceProducts.length > 0 ? marketplaceProducts : defaultProducts;
+  const displayProducts = marketplaceProducts;
   const [isAddProductModalVisible, setIsAddProductModalVisible] = useState(false);
   const [isProductDetailModalVisible, setIsProductDetailModalVisible] = useState(false);
   const [isAllProductsModalVisible, setIsAllProductsModalVisible] = useState(false);
@@ -408,25 +377,11 @@ export default function HomeScreen() {
         });
         setHomeShowcaseItems(Object.values(grouped));
       } else {
-        // Fallback to beautiful mock showcase items if empty or error
-        const mockItems = [
-          { id: 'sc-1', title: 'Pano Kablolama Tesisatı', description: 'Schneider şalt malzemesi ile özenle çekilmiş endüstriyel dağıtım panosu.', image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500', ustaName: 'Ahmet Yılmaz (Usta)', ustaId: 'mock-electrician-1', ustaAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100' },
-          { id: 'sc-2', title: 'Akıllı Ev LED Tasarımları', description: 'Modern mimariye uygun lüks asma tavan aydınlatma ve otomasyon kurulumu.', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500', ustaName: 'Mustafa Kaya (Usta)', ustaId: 'mock-electrician-3', ustaAvatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100' },
-          { id: 'sc-3', title: 'Sigorta Kutusu Revizyonu', description: 'Eski tip panonun sıfır Siemens malzemeleri ile güvenli bir şekilde yenilenmesi.', image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=500', ustaName: 'Bülent Tan (Usta)', ustaId: 'mock-electrician-4', ustaAvatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100' },
-          { id: 'sc-4', title: 'Güvenlik Kamera Altyapısı', description: '4K UltraHD Dahua IP kamera kurulumu ve kablo kanallama işçiliği.', image: 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=500', ustaName: 'Mustafa Yılmaz (Usta)', ustaId: 'mock-electrician-1', ustaAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100' },
-          { id: 'sc-5', title: 'Klima Dezenfekte ve Bakımı', description: 'Antibakteriyel solüsyon ile detaylı klima iç ünite petek temizliği.', image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500', ustaName: 'Tuğçe Klimacı (Usta)', ustaId: 'mock-electrician-2', ustaAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100' },
-          { id: 'sc-6', title: 'Sıfır Daire Kablo Çekimi', description: 'Tüm dairenin tadilat öncesi güvenli NYM kablolama ve borulama işlemi.', image: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=500', ustaName: 'Ahmet Kaya (Usta)', ustaId: 'mock-electrician-5', ustaAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100' }
-        ];
-        const grouped: Record<string, any> = {};
-        mockItems.forEach((item: any) => {
-          if (!grouped[item.ustaId]) {
-            grouped[item.ustaId] = item;
-          }
-        });
-        setHomeShowcaseItems(Object.values(grouped));
+        setHomeShowcaseItems([]);
       }
-    } catch (_err) {
-      // Fallback
+    } catch (err) {
+      console.warn('Vitrin çalışmaları yüklenemedi:', err);
+      setHomeShowcaseItems([]);
     }
   };
 
@@ -523,33 +478,20 @@ export default function HomeScreen() {
     setIsStartingChat(true);
     try {
       // Create or locate the conversation with the EXACT seller of the product
-      let conversation: any = null;
-      try {
-        conversation = await messageService.findOrCreateConversation(sellerId);
-      } catch (innerErr) {
-        console.warn('⚠️ findOrCreateConversation threw, generating local mock:', innerErr);
-      }
-
-      // If the API call returned null or threw, build a local mock conversation
-      if (!conversation || !conversation.id) {
-        const mockId = `mock-conv-${sellerId}-${user?.id || 'guest'}`;
-        conversation = { id: mockId };
-      }
+      const conversation = await messageService.findOrCreateConversation(sellerId);
+      if (!conversation?.id) throw new Error('Konuşma oluşturulamadı.');
       
       setIsProductDetailModalVisible(false);
       router.push({
         pathname: `/messages/${conversation.id}`,
         params: { sellerName: sellerName, sellerId: sellerId }
       });
-    } catch (err) {
-      // Last-resort fallback
-      console.warn('⚠️ handleContactSeller outer catch:', err);
-      const fallbackId = `mock-conv-${sellerId}-fallback`;
-      setIsProductDetailModalVisible(false);
-      router.push({
-        pathname: `/messages/${fallbackId}`,
-        params: { sellerName: sellerName, sellerId: sellerId }
-      });
+    } catch (err: any) {
+      console.warn('Satıcı ile konuşma başlatılamadı:', err);
+      Alert.alert(
+        'Mesajlaşma Başlatılamadı',
+        err?.message || 'Konuşma oluşturulamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } finally {
       setIsStartingChat(false);
     }
@@ -733,9 +675,6 @@ export default function HomeScreen() {
   // NEW: Badge Pulse Animation
   const badgePulseAnim = useRef(new Animated.Value(1)).current;
   const initializationRef = useRef(false);
-  const mockExpire1 = useRef(new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()).current;
-  const mockExpire2 = useRef(new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString()).current;
-  const mockExpire3 = useRef(new Date(Date.now() + 10 * 60 * 60 * 1000).toISOString()).current;
 
 
   useEffect(() => {
@@ -1447,9 +1386,6 @@ export default function HomeScreen() {
               recentJobs={recentJobs}
               colors={colors}
               handleActionWithAuth={handleActionWithAuth}
-              mockExpire1={mockExpire1}
-              mockExpire2={mockExpire2}
-              mockExpire3={mockExpire3}
             />
           </>
         )}

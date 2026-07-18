@@ -451,29 +451,19 @@ export default function ChannelsScreen() {
   // Handle Contact Usta (Job Sharing)
   const handleContactUsta = async (ustaId: string, ustaName: string) => {
     try {
-      let conversation = null;
-      try {
-        conversation = await messageService.findOrCreateConversation(ustaId);
-      } catch (innerErr) {
-        console.warn('⚠️ findOrCreateConversation failed:', innerErr);
-      }
-
-      if (!conversation || !conversation.id) {
-        const mockId = `mock-conv-${ustaId}-${user?.id || 'guest'}`;
-        conversation = { id: mockId };
-      }
+      const conversation = await messageService.findOrCreateConversation(ustaId);
+      if (!conversation?.id) throw new Error('Konuşma oluşturulamadı.');
 
       router.push({
         pathname: `/messages/${conversation.id}`,
         params: { sellerName: ustaName, sellerId: ustaId }
       });
-    } catch (err) {
-      console.warn('⚠️ handleContactUsta outer catch:', err);
-      const fallbackId = `mock-conv-${ustaId}-fallback`;
-      router.push({
-        pathname: `/messages/${fallbackId}`,
-        params: { sellerName: ustaName, sellerId: ustaId }
-      });
+    } catch (err: any) {
+      console.warn('Usta ile konuşma başlatılamadı:', err);
+      Alert.alert(
+        'Mesajlaşma Başlatılamadı',
+        err?.message || 'Konuşma oluşturulamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     }
   };
 

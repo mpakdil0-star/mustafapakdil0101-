@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { ActivityIndicator, View, StyleSheet, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Card } from '../../../components/common/Card';
 import { Button } from '../../../components/common/Button';
@@ -9,23 +9,14 @@ import { spacing } from '../../../constants/spacing';
 import { useAppColors } from '../../../hooks/useAppColors';
 import { PremiumHeader } from '../../../components/common/PremiumHeader';
 import { PremiumAlert } from '../../../components/common/PremiumAlert';
-
-// Mock adres verisi (gerçek uygulamada API'den gelecek)
-const MOCK_ADDRESS = {
-    id: '1',
-    title: 'Ev Adresim',
-    city: 'İstanbul',
-    district: 'Kadıköy',
-    neighborhood: 'Caferağa',
-    details: 'Moda Caddesi No:123 D:4',
-};
+import locationService from '../../../services/locationService';
 
 export default function EditAddressScreen() {
     const router = useRouter();
     const { id } = useLocalSearchParams<{ id: string }>();
     const [loading, setLoading] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(true);
     const colors = useAppColors();
-    const [title, setTitle] = useState('');
     const [city, setCity] = useState('');
     const [district, setDistrict] = useState('');
     const [neighborhood, setNeighborhood] = useState('');
@@ -44,29 +35,66 @@ export default function EditAddressScreen() {
     };
 
     useEffect(() => {
-        if (id) {
-            setTitle(MOCK_ADDRESS.title);
-            setCity(MOCK_ADDRESS.city);
-            setDistrict(MOCK_ADDRESS.district);
-            setNeighborhood(MOCK_ADDRESS.neighborhood);
-            setDetails(MOCK_ADDRESS.details);
-        }
+        let cancelled = false;
+        const loadAddress = async () => {
+            if (!id) {
+                showAlert('Hata', 'Düzenlenecek adres bulunamadı.', 'error');
+                setInitialLoading(false);
+                return;
+            }
+            try {
+                const locations = await locationService.getSavedLocations();
+                const selected = locations.find((location: any) => location.id === id);
+                if (!selected) throw new Error('Adres bulunamadı veya silinmiş olabilir.');
+                if (cancelled) return;
+                setCity(selected.city || '');
+                setDistrict(selected.district || '');
+                setNeighborhood(selected.neighborhood || '');
+                setDetails(selected.address || '');
+            } catch (error: any) {
+                if (!cancelled) showAlert('Hata', error?.message || 'Adres bilgileri yüklenemedi.', 'error');
+            } finally {
+                if (!cancelled) setInitialLoading(false);
+            }
+        };
+        void loadAddress();
+        return () => { cancelled = true; };
     }, [id]);
 
-    const handleSave = () => {
-        if (!title || !city || !district || !details) {
+    const handleSave = async () => {
+        if (!id || !city.trim() || !district.trim() || !details.trim()) {
             showAlert('Hata', 'Lütfen zorunlu alanları doldurunuz.', 'error');
             return;
         }
 
         setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
+        try {
+            await locationService.updateSavedLocation(id, {
+                city: city.trim(),
+                district: district.trim(),
+                neighborhood: neighborhood.trim(),
+                address: details.trim(),
+            });
             showAlert('Başarılı', 'Adres başarıyla güncellendi.', 'success', [
                 { text: 'Tamam', onPress: () => router.back() }
             ]);
-        }, 1000);
+        } catch (error: any) {
+            showAlert('Hata', error?.message || 'Adres güncellenemedi. Lütfen tekrar deneyin.', 'error');
+        } finally {
+            setLoading(false);
+        }
     };
+
+    if (initialLoading) {
+        return (
+            <View style={styles.container}>
+                <PremiumHeader title="Adresi Düzenle" showBackButton />
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                </View>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
@@ -78,14 +106,6 @@ export default function EditAddressScreen() {
                 showsVerticalScrollIndicator={false}
             >
                 <Card variant="default" style={[styles.card, { shadowColor: colors.primary }]}>
-                    <Input
-                        label="Adres Başlığı"
-                        value={title}
-                        onChangeText={setTitle}
-                        placeholder="Örn: Ev, İş"
-                        containerStyle={styles.input}
-                    />
-
                     <Input
                         label="İl"
                         value={city}
@@ -146,6 +166,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F8FAFC',
+    },
+    loadingContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     scrollView: {
         flex: 1,

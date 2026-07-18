@@ -14,7 +14,6 @@ import { fonts } from '../../constants/typography';
 import { userService } from '../../services/userService';
 import { getFileUrl } from '../../constants/api';
 import { AuthGuardModal } from '../../components/common/AuthGuardModal';
-import { MOCK_ELECTRICIANS } from '../../data/mockElectricians';
 import favoriteService from '../../services/favoriteService';
 import { ReportButton } from '../../components/common/ReportButton';
 import { communityService } from '../../services/communityService';
@@ -146,79 +145,14 @@ export default function ElectricianDetailScreen() {
                     const showcase = await communityService.showcase();
                     if (Array.isArray(showcase)) {
                         loadedShowcases = showcase.filter((item: any) => {
-                            return item.ustaId === id ||
-                                   item.ustaId === `mock-electrician-${id}` ||
-                                   (id.startsWith('local-mock-') && item.ustaId === `mock-electrician-${id.replace('local-mock-', '')}`);
+                            return item.ustaId === id;
                         });
                     }
                 } catch (scErr) {
                     console.log('Error fetching showcase in detail:', scErr);
                 }
 
-                if (loadedShowcases.length === 0) {
-                    const mockShowcases = [
-                        { id: 'sc-1', title: 'Pano Kablolama Tesisatı', description: 'Schneider şalt malzemesi ile özenle çekilmiş endüstriyel dağıtım panosu.', image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500', images: ['https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500', 'https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=500'], ustaId: 'mock-electrician-1' },
-                        { id: 'sc-2', title: 'Akıllı Ev LED Tasarımları', description: 'Modern mimariye uygun lüks asma tavan aydınlatma ve otomasyon kurulumu.', image: 'https://images.unsplash.com/photo-1565538810844-1e119d81a207?w=500', images: ['https://images.unsplash.com/photo-1565538810844-1e119d81a207?w=500', 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=500'], ustaId: 'mock-electrician-3' },
-                        { id: 'sc-3', title: 'Sigorta Kutusu Revizyonu', description: 'Eski tip panonun sıfır Siemens malzemeleri ile güvenli bir şekilde yenilenmesi.', image: 'https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=500', images: ['https://images.unsplash.com/photo-1621905252507-b354bc25edac?w=500'], ustaId: 'mock-electrician-4' },
-                        { id: 'sc-4', title: 'Güvenlik Kamera Altyapısı', description: '4K UltraHD Dahua IP kamera kurulumu ve kablo kanallama işçiliği.', image: 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=500', images: ['https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=500'], ustaId: 'mock-electrician-1' },
-                        { id: 'sc-5', title: 'Klima Dezenfekte ve Bakımı', description: 'Antibakteriyel solüsyon ile detaylı klima iç ünite petek temizliği.', image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500', images: ['https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500'], ustaId: 'mock-electrician-2' },
-                        { id: 'sc-6', title: 'Sıfır Daire Kablo Çekimi', description: 'Tüm dairenin tadilat öncesi güvenli NYM kablolama ve borulama işlemi.', image: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=500', images: ['https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=500'], ustaId: 'mock-electrician-5' }
-                    ];
-                    loadedShowcases = mockShowcases.filter((item: any) => {
-                        return item.ustaId === id ||
-                               item.ustaId === `mock-electrician-${id}` ||
-                               (id.startsWith('local-mock-') && item.ustaId === `mock-electrician-${id.replace('local-mock-', '')}`);
-                    });
-                }
                 setShowcaseItems(loadedShowcases);
-
-                // MOCK VERI KONTROLÜ
-                // Önce ID'ye göre mock var mı kontrol et
-                let mockItem = MOCK_ELECTRICIANS.find(e => e.id === id);
-
-                // Eğer id 'local-mock-' ile başlıyorsa index üzerinden bul (fallback)
-                if (!mockItem && id.startsWith('local-mock-')) {
-                    const mockIndex = parseInt(id.replace('local-mock-', ''));
-                    mockItem = MOCK_ELECTRICIANS[mockIndex % MOCK_ELECTRICIANS.length];
-                }
-
-                if (mockItem) {
-                    // Mock veriyi backend yapısına benzet
-                    const transformedMock = {
-                        id: mockItem.id, // Use the correct ID
-                        fullName: mockItem.name,
-                        profileImageUrl: mockItem.imageUrl,
-                        isVerified: mockItem.isVerified,
-                        electricianProfile: {
-                            specialties: mockItem.services || [],
-                            ratingAverage: mockItem.rating,
-                            totalReviews: mockItem.reviewCount,
-                            experienceYears: parseInt(mockItem.experience) || 5,
-                            bio: mockItem.about,
-                            responseTimeAvg: mockItem.responseTime,
-                            completedJobsCount: mockItem.completedJobs,
-                            verificationStatus: mockItem.isVerified ? 'VERIFIED' : 'PENDING',
-                            serviceCategory: (mockItem as any).category || 'elektrik',
-                            isAuthorizedEngineer: true,
-                            emoNumber: '45678',
-                            smmNumber: 'SMM-2024-045'
-                        },
-                        locations: [{ city: mockItem.city, district: mockItem.location.split(',')[0] }],
-                        reviewsReceived: mockItem.latestReview ? [{
-                            id: 'mock-review-1',
-                            rating: 5,
-                            comment: mockItem.latestReview.comment,
-                            createdAt: new Date().toISOString(),
-                            reviewer: {
-                                fullName: mockItem.latestReview.user,
-                                profileImageUrl: null
-                            }
-                        }] : []
-                    };
-                    setElectrician(transformedMock);
-                    setIsLoading(false);
-                    return;
-                }
 
                 const response = await userService.getElectricianById(id);
                 if (response.success) {

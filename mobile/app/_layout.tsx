@@ -6,7 +6,7 @@ import { Provider, useSelector } from 'react-redux';
 import { store } from '../store/store';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { InteractionManager, View, Text, Platform, StyleSheet, TouchableOpacity, AppState } from 'react-native';
+import { InteractionManager, View, Text, Platform, StyleSheet, TouchableOpacity, AppState, Image } from 'react-native';
 import { RootState } from '../store/store';
 import { useFonts } from 'expo-font';
 import { fontFiles, fonts } from '../constants/typography';
@@ -925,7 +925,7 @@ function RootLayoutNav() {
       unsubscribeReview();
       appStateSubscription.remove();
     };
-  }, [isAuthenticated, dispatch, router]);
+  }, [isAuthenticated, user?.id, dispatch, router]);
 
   const queueNotificationResponse = useCallback((response: Notifications.NotificationResponse) => {
     const requestId = response.notification.request.identifier;
@@ -1071,15 +1071,34 @@ function RootLayoutNav() {
   }, [unreadCount, isAuthenticated]);
 
   const [fontsLoaded] = useFonts(fontFiles);
+  const [showFullScreenSplash, setShowFullScreenSplash] = useState(true);
 
   useEffect(() => {
+    let transitionTimer: ReturnType<typeof setTimeout> | undefined;
     if (fontsLoaded && isNavigationReady) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync()
+        .catch(() => undefined)
+        .finally(() => {
+          transitionTimer = setTimeout(() => setShowFullScreenSplash(false), 450);
+        });
     }
+    return () => {
+      if (transitionTimer) clearTimeout(transitionTimer);
+    };
   }, [fontsLoaded, isNavigationReady]);
 
-  if (!fontsLoaded) {
-    return null;
+  if (!fontsLoaded || !isNavigationReady || showFullScreenSplash) {
+    return (
+      <View style={styles.fullScreenSplash}>
+        <StatusBar hidden />
+        <Image
+          source={require('../assets/images/splash.png')}
+          style={styles.fullScreenSplashImage}
+          resizeMode="cover"
+          fadeDuration={0}
+        />
+      </View>
+    );
   }
 
   return (
@@ -1139,6 +1158,15 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
+  fullScreenSplash: {
+    flex: 1,
+    backgroundColor: '#071321',
+  },
+  fullScreenSplashImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
   impersonationBanner: {
     position: 'absolute',
     left: 6,

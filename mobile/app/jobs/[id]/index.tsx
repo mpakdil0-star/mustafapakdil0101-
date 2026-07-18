@@ -247,13 +247,15 @@ export default function JobDetailScreen() {
         return;
       }
 
-      const callUrl = `tel:${phone}`;
-      const supported = await Linking.canOpenURL(callUrl);
-      if (!supported) {
-        showAlert('Arama Yapılamadı', 'Bu cihaz telefon araması başlatmayı desteklemiyor.', 'info');
+      const dialNumber = phone.replace(/[^\d+]/g, '');
+      if (!dialNumber) {
+        showAlert('Arama Yapılamadı', 'Telefon numarası geçerli bir biçimde değil.', 'info');
         return;
       }
-      await Linking.openURL(callUrl);
+      // Android 11+ cihazlarda canOpenURL('tel:') paket görünürlüğü nedeniyle
+      // fiziksel telefonda bile false dönebilir. Dialer'ı doğrudan açıp gerçek
+      // başarısızlığı openURL üzerinden yakalamak daha güvenilirdir.
+      await Linking.openURL(`tel:${dialNumber}`);
     } catch (callError: any) {
       showAlert('Arama Yapılamadı', callError?.message || 'İletişim bilgisi alınamadı. Lütfen tekrar deneyin.', 'error');
     }
@@ -281,23 +283,17 @@ export default function JobDetailScreen() {
       }
 
       // Mevcut konuşma yoksa, yeni konuşma oluştur
-      let newConversation: any = null;
-      try {
-        newConversation = await messageService.findOrCreateConversation(receiverId, id);
-      } catch (createErr) {
-        console.warn('⚠️ findOrCreateConversation threw in jobs, generating local mock:', createErr);
-      }
-
-      if (!newConversation || !newConversation.id) {
-        newConversation = { id: `mock-conv-${id}-${receiverId}-local` };
-      }
+      const newConversation = await messageService.findOrCreateConversation(receiverId, id);
+      if (!newConversation?.id) throw new Error('Konuşma oluşturulamadı.');
       
       router.push(`/messages/${newConversation.id}`);
-    } catch (error) {
-      // Last-resort fallback — navigate with generated mock id
-      console.warn('⚠️ handleMessagePress outer catch:', error);
-      const fallbackId = `mock-conv-${id}-${receiverId}-fallback`;
-      router.push(`/messages/${fallbackId}`);
+    } catch (error: any) {
+      console.warn('Mesajlaşma başlatılamadı:', error);
+      showAlert(
+        'Mesajlaşma Başlatılamadı',
+        error?.message || 'Konuşma oluşturulamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+        'error',
+      );
     }
   };
 

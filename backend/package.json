@@ -8,8 +8,8 @@
   },
   "scripts": {
     "dev": "node scripts/kill-port.js && nodemon",
-    "build": "rm -rf dist && prisma generate && tsc",
-    "start": "npx prisma db push --accept-data-loss && node dist/server.js",
+    "build": "node scripts/clean-dist.js && prisma generate && tsc",
+    "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
@@ -28,8 +28,10 @@
     "test:supabase:edge": "node scripts/test-supabase-edge-functions.js",
     "test:supabase:push-cron": "node scripts/test-supabase-push-cron.js",
     "test:supabase": "npm run test:supabase:rls && npm run test:supabase:storage && npm run test:supabase:core && npm run test:supabase:realtime && npm run test:supabase:edge && npm run test:supabase:push-cron",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck",
     "seed": "ts-node scripts/seedTestData.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run verify"
   },
   "keywords": [],
   "author": "",
@@ -42,7 +44,6 @@
     "@types/express": "^5.0.6",
     "@types/morgan": "^1.9.10",
     "@types/node": "^25.3.0",
-    "aws-sdk": "^2.1692.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",

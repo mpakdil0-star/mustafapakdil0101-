@@ -197,30 +197,40 @@ const readJobImage = async (uri: string) => {
 
 const uploadJobImages = async (userId: string, jobId: string, uris: string[]) => {
   const uploaded: string[] = [];
-  for (let index = 0; index < uris.length; index += 1) {
-    const uri = uris[index];
-    if (uri.startsWith('https://') || uri.startsWith('http://')) {
-      uploaded.push(uri);
-      continue;
+  const uploadedPaths: string[] = [];
+  try {
+    for (let index = 0; index < uris.length; index += 1) {
+      const uri = uris[index];
+      if (uri.startsWith('https://') || uri.startsWith('http://')) {
+        uploaded.push(uri);
+        continue;
+      }
+      let fileData: ArrayBuffer;
+      let contentType: string | undefined;
+      try {
+        ({ fileData, contentType } = await readJobImage(uri));
+      } catch (error) {
+        console.warn('İlan görseli yerel dosyadan okunamadı:', error);
+        throw new Error(`Seçilen ${index + 1}. fotoğraf okunamadı. Lütfen fotoğrafı yeniden seçin.`);
+      }
+      const extension = extensionFor(uri, contentType);
+      const path = `${userId}/${jobId}/${Date.now()}-${index}.${extension}`;
+      const { error } = await supabase.storage.from('job-images').upload(path, fileData, {
+        contentType: contentType || `image/${extension === 'jpg' ? 'jpeg' : extension}`,
+        upsert: false,
+      });
+      if (error) throw error;
+      uploadedPaths.push(path);
+      uploaded.push(supabase.storage.from('job-images').getPublicUrl(path).data.publicUrl);
     }
-    let fileData: ArrayBuffer;
-    let contentType: string | undefined;
-    try {
-      ({ fileData, contentType } = await readJobImage(uri));
-    } catch (error) {
-      console.warn('İlan görseli yerel dosyadan okunamadı:', error);
-      throw new Error(`Seçilen ${index + 1}. fotoğraf okunamadı. Lütfen fotoğrafı yeniden seçin.`);
+    return uploaded;
+  } catch (error) {
+    if (uploadedPaths.length) {
+      const { error: cleanupError } = await supabase.storage.from('job-images').remove(uploadedPaths);
+      if (cleanupError) console.warn('Yarım kalan ilan görselleri temizlenemedi:', cleanupError.message);
     }
-    const extension = extensionFor(uri, contentType);
-    const path = `${userId}/${jobId}/${Date.now()}-${index}.${extension}`;
-    const { error } = await supabase.storage.from('job-images').upload(path, fileData, {
-      contentType: contentType || `image/${extension === 'jpg' ? 'jpeg' : extension}`,
-      upsert: false,
-    });
-    if (error) throw error;
-    uploaded.push(supabase.storage.from('job-images').getPublicUrl(path).data.publicUrl);
+    throw error;
   }
-  return uploaded;
 };
 
 const getJobImageObjectPath = (imageUrl: string) => {

@@ -4,8 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fonts } from '../../constants/typography';
 import { colors as staticColors } from '../../constants/colors';
-import HesKabloImage from '../../assets/images/mock_hes_kablo.jpg';
-import SiemensSigortaImage from '../../assets/images/mock_siemens_sigorta.jpg';
 
 interface CitizenMarketplaceProps {
   marketplaceProducts: any[];
@@ -28,34 +26,7 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
   isAuthenticated,
   onAuthRequired,
 }) => {
-  const displayProducts = marketplaceProducts.length > 0 ? marketplaceProducts : [
-    {
-      id: 'mock-market-1',
-      title: '3x2.5 HES NYM Kablo (50 Metre)',
-      desc: 'İnşaat fazlası rulo, hiç açılmamış ve kullanılmamıştır. Orijinal rulo paketindedir.',
-      price: 1200,
-      category: 'Kablo',
-      sellerName: 'Ahmet Kaya (Vatandaş)',
-      sellerId: 'mock-citizen-1',
-      sellerType: 'CITIZEN',
-      location: 'Kadıköy, İstanbul',
-      date: 'Bugün',
-      image: HesKabloImage,
-    },
-    {
-      id: 'mock-market-2',
-      title: 'Siemens 3 Faz Sigorta Grubu (25A)',
-      desc: 'Sistem panosundan sökülen, çok temiz durumdaki 3 kutuplu Siemens sigortalar.',
-      price: 450,
-      category: 'Şalt Malzemesi',
-      sellerName: 'Mustafa Yılmaz (Usta)',
-      sellerId: 'mock-electrician-1',
-      sellerType: 'ELECTRICIAN',
-      location: 'Üsküdar, İstanbul',
-      date: 'Dün',
-      image: SiemensSigortaImage,
-    }
-  ];
+  const displayProducts = marketplaceProducts;
 
   return (
     <View style={styles.section}>
@@ -121,6 +92,13 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
         showsHorizontalScrollIndicator={false} 
         contentContainerStyle={styles.marketScrollContainer}
       >
+        {displayProducts.length === 0 && (
+          <View style={styles.emptyCard}>
+            <Ionicons name="cube-outline" size={26} color={colors.textSecondary} />
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>Henüz ürün ilanı yok</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>İlk malzeme ilanını siz yayınlayabilirsiniz.</Text>
+          </View>
+        )}
         {displayProducts.map((prod) => {
           const isUsta = prod.sellerType === 'ELECTRICIAN';
           const sellerDisplayName = prod.sellerName ? prod.sellerName.split(' (')[0] : (isUsta ? 'Usta' : 'Vatandaş');
@@ -243,6 +221,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginVertical: 12,
     width: '100%',
+  },
+  emptyCard: {
+    width: 260,
+    minHeight: 150,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  emptyTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    marginTop: 10,
+  },
+  emptyText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    marginTop: 4,
+    textAlign: 'center',
   },
   sectionTitle: {
     fontFamily: fonts.bold,

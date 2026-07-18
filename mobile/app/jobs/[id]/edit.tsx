@@ -26,6 +26,7 @@ import { typography, fonts } from '../../../constants/typography';
 import { useAppColors } from '../../../hooks/useAppColors';
 import { PremiumHeader } from '../../../components/common/PremiumHeader';
 import { jobService } from '../../../services/jobService';
+import locationService from '../../../services/locationService';
 import {
     CITY_NAMES,
     getDistrictsByCity,
@@ -66,6 +67,7 @@ export default function EditJobScreen() {
     const [city, setCity] = useState('İstanbul');
     const [district, setDistrict] = useState('');
     const [neighborhood, setNeighborhood] = useState('');
+    const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
     const [urgencyLevel, setUrgencyLevel] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('MEDIUM');
     const [estimatedBudget, setEstimatedBudget] = useState('');
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -107,6 +109,11 @@ export default function EditJobScreen() {
                 setCity(currentJob.location.city || 'İstanbul');
                 setDistrict(currentJob.location.district || '');
                 setNeighborhood(currentJob.location.neighborhood || '');
+                const latitude = Number(currentJob.location.latitude);
+                const longitude = Number(currentJob.location.longitude);
+                if (Number.isFinite(latitude) && Number.isFinite(longitude) && latitude !== 0 && longitude !== 0) {
+                    setCoords({ latitude, longitude });
+                }
             }
 
             setDataLoaded(true);
@@ -158,6 +165,14 @@ export default function EditJobScreen() {
         setIsSubmitting(true);
 
         try {
+            const geocoded = await locationService.geocode(
+                `${address.trim()}, ${neighborhood.trim()}, ${district.trim()}, ${city.trim()}, Türkiye`,
+            );
+            const resolvedCoords = geocoded || coords;
+            if (!resolvedCoords) {
+                showAlert('Konum Belirlenemedi', 'Adresin harita konumu belirlenemedi. Adresi kontrol edip tekrar deneyin.', 'warning');
+                return;
+            }
             const jobData = {
                 title: title.trim(),
                 description: description.trim(),
@@ -168,8 +183,8 @@ export default function EditJobScreen() {
                     city: city.trim(),
                     district: district.trim(),
                     neighborhood: neighborhood.trim() || undefined,
-                    latitude: 41.0082,
-                    longitude: 28.9784,
+                    latitude: resolvedCoords.latitude,
+                    longitude: resolvedCoords.longitude,
                 },
                 urgencyLevel,
                 estimatedBudget: estimatedBudget ? parseFloat(estimatedBudget) : undefined,

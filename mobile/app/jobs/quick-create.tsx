@@ -390,6 +390,23 @@ export default function QuickCreateScreen() {
         const typeInfo = EMERGENCY_TYPES.find(t => t.id === selectedType);
         const finalTitle = `ACİL: ${selectedSubCategory ? selectedSubCategory.name : typeInfo?.label}`;
         try {
+            const hasSelectedCoordinates = coords
+                && Number.isFinite(coords.latitude)
+                && Number.isFinite(coords.longitude)
+                && Math.abs(coords.latitude) > 0.0001
+                && Math.abs(coords.longitude) > 0.0001;
+            const resolvedCoords = hasSelectedCoordinates
+                ? coords
+                : await locationService.geocode(`${address.trim()}, ${neighborhood.trim()}, ${district.trim()}, ${city.trim()}, Türkiye`);
+            if (!resolvedCoords) {
+                showAlert(
+                    'Konum Belirlenemedi',
+                    'İlanın harita konumu belirlenemedi. Haritadan konum seçip tekrar deneyin.',
+                    'warning',
+                );
+                return;
+            }
+
             let finalDescription = description.trim();
             if (selectedSubCategory?.id === 'elektrik-proje') {
                 const selectedPurpose = PROJECT_PURPOSES.find(p => p.value === projectPurpose)?.label;
@@ -430,8 +447,8 @@ export default function QuickCreateScreen() {
                     city: city.trim(),
                     district: district.trim(),
                     neighborhood: neighborhood?.trim() || '',
-                    latitude: parseFloat((coords?.latitude || 41.0082).toString()),
-                    longitude: parseFloat((coords?.longitude || 28.9784).toString()),
+                    latitude: resolvedCoords.latitude,
+                    longitude: resolvedCoords.longitude,
                 },
                 urgencyLevel: 'HIGH',
                 images: (images && images.length > 0) ? images : undefined,

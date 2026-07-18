@@ -12,7 +12,8 @@
     "start:backend": "cd backend && npm run dev",
     "backend": "cd backend && npm run dev",
     "mobile": "cd mobile && npm start",
-    "install:all": "npm install && cd backend && npm install && cd ../mobile && npm install"
+    "install:all": "npm install && cd backend && npm install && cd ../mobile && npm install",
+    "verify": "npm --prefix mobile run verify && npm --prefix backend run verify"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

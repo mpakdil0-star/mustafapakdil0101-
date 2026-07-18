@@ -277,10 +277,7 @@ export default function CreateJobScreen() {
   const [urgencyLevel, setUrgencyLevel] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('MEDIUM');
   const [estimatedBudget, setEstimatedBudget] = useState('');
   const [images, setImages] = useState<string[]>([]);
-  const [coords, setCoords] = useState<{ latitude: number; longitude: number }>({
-    latitude: 41.0082,
-    longitude: 28.9784,
-  });
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -667,6 +664,23 @@ export default function CreateJobScreen() {
     }
 
     try {
+      const hasSelectedCoordinates = coords
+        && Number.isFinite(coords.latitude)
+        && Number.isFinite(coords.longitude)
+        && Math.abs(coords.latitude) > 0.0001
+        && Math.abs(coords.longitude) > 0.0001;
+      const resolvedCoords = hasSelectedCoordinates
+        ? coords
+        : await locationService.geocode(`${address.trim()}, ${neighborhood.trim()}, ${district.trim()}, ${city.trim()}, Türkiye`);
+      if (!resolvedCoords) {
+        showAlert(
+          'Konum Belirlenemedi',
+          'İlanın harita konumu belirlenemedi. Haritadan konum seçip tekrar deneyin.',
+          'warning',
+        );
+        return;
+      }
+
       let finalDescription = description.trim();
 
       if (isProjectCategory) {
@@ -708,8 +722,8 @@ export default function CreateJobScreen() {
           city: city.trim(),
           district: district.trim(),
           neighborhood: neighborhood.trim() || undefined,
-          latitude: coords.latitude,
-          longitude: coords.longitude,
+          latitude: resolvedCoords.latitude,
+          longitude: resolvedCoords.longitude,
         },
         urgencyLevel,
         estimatedBudget: estimatedBudget ? parseFloat(estimatedBudget) : undefined,
