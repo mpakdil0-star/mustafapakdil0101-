@@ -1,10 +1,9 @@
 import { Server as SocketServer, Socket } from 'socket.io';
 import { Server as HttpServer } from 'http';
-import jwt from 'jsonwebtoken';
-import { config } from '../config/env';
 import prisma, { isDatabaseAvailable } from '../config/database';
 import { mockStore } from '../utils/mockStore';
 import pushNotificationService from './pushNotificationService';
+import { validateSupabaseAccessToken } from './supabaseAuth';
 
 interface AuthenticatedSocket extends Socket {
     userId?: string;
@@ -40,7 +39,7 @@ export const initializeSocketServer = (httpServer: HttpServer): SocketServer => 
                 return next(new Error('Authentication required'));
             }
 
-            const decoded = jwt.verify(token as string, config.jwtSecret) as any;
+            const decoded = await validateSupabaseAccessToken(token as string);
             socket.userId = decoded.id;
             socket.userType = decoded.userType;
 

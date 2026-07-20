@@ -1,4 +1,4 @@
-import api from './api';
+import { supabase } from './supabase';
 
 export interface LegalDocument {
     id: string;
@@ -18,13 +18,17 @@ export interface UserConsentPayload {
 }
 
 export const getLegalDocuments = async (): Promise<LegalDocument[]> => {
-    const response = await api.get('/legal/texts');
-    return response.data.data;
+    const { data, error } = await supabase.from('legal_documents').select('*').eq('isActive', true).order('type');
+    if (error) throw error;
+    return (data ?? []) as LegalDocument[];
 };
 
 export const recordConsent = async (payload: UserConsentPayload) => {
-    const response = await api.post('/legal/consent', payload);
-    return response.data;
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) throw userError ?? new Error('Oturum bulunamadı');
+    const { data, error } = await supabase.from('user_consents').insert({ user_id: user.id, document_type: payload.documentType, document_version: payload.documentVersion, action: payload.action, marketing_allowed: payload.marketingAllowed ?? false }).select().single();
+    if (error) throw error;
+    return data;
 };
 
 export const legalService = {

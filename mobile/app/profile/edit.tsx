@@ -14,7 +14,8 @@ import { useAppColors } from '../../hooks/useAppColors';
 import { spacing } from '../../constants/spacing';
 import { useDispatch } from 'react-redux';
 import { setUser, setDraftProfile, clearDraftProfile } from '../../store/slices/authSlice';
-import api from '../../services/api';
+import userService from '../../services/userService';
+import locationService from '../../services/locationService';
 import { useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { authService } from '../../services/authService';
@@ -165,7 +166,7 @@ const SPECIALTIES_BY_CATEGORY: Record<string, { id: string; label: string; icon:
 };
 
 import { useFocusEffect } from 'expo-router';
-import { API_ENDPOINTS, getFileUrl } from '../../constants/api';
+import { getFileUrl } from '../../constants/api';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
@@ -370,8 +371,7 @@ export default function EditProfileScreen() {
                 if (user) {
                     try {
                         setLocationsLoading(true);
-                        const response = await api.get(`${API_ENDPOINTS.LOCATIONS}?t=${Date.now()}`);
-                        setLocations(response.data.data || []);
+                        setLocations(await locationService.getSavedLocations());
                     } catch (error) {
                         console.error('Failed to fetch locations:', error);
                     } finally {
@@ -483,7 +483,7 @@ export default function EditProfileScreen() {
         try {
             setLoading(true);
 
-            const response = await api.put('/users/profile', {
+            const updatedUser = await userService.updateProfile({
                 fullName,
                 email,
                 phone: phoneNumber,
@@ -491,9 +491,9 @@ export default function EditProfileScreen() {
                 specialties: selectedExpertise,
             });
 
-            if (response.data.success) {
+            if (updatedUser) {
                 // Update local redux state
-                dispatch(setUser(response.data.data.user || response.data.data));
+                dispatch(setUser(updatedUser));
 
                 // Clear draft on success
                 dispatch(clearDraftProfile());
@@ -511,7 +511,7 @@ export default function EditProfileScreen() {
 
                 setShowSuccessModal(true);
             } else {
-                throw new Error(response.data.message || 'Bir hata oluştu');
+                throw new Error('Profil güncellenemedi');
             }
         } catch (error: any) {
             console.error('Profile update error:', error);

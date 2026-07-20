@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../../components/common/Card';
 import { colors as staticColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
-import api from '../../services/api';
+import { userInsightsService } from '../../services/userInsightsService';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
@@ -43,7 +43,7 @@ export default function HistoryScreen() {
 
     const fetchHistory = useCallback(async () => {
         try {
-            const response = await api.get('/users/history');
+            const response = { data: { success: true, data: { jobs: await userInsightsService.jobHistory() } } };
             if (response.data.success) {
                 setJobs(response.data.data.jobs);
             }

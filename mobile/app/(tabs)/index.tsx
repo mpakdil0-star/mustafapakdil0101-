@@ -19,11 +19,15 @@ import { ElectricianHeader } from '../../components/home/ElectricianHeader';
 import { ElectricianTools } from '../../components/home/ElectricianTools';
 import { ElectricianRecentJobs } from '../../components/home/ElectricianRecentJobs';
 import { LinearGradient } from 'expo-linear-gradient';
-import api from '../../services/api';
 import { authService } from '../../services/authService';
-import { API_ENDPOINTS, getFileUrl } from '../../constants/api';
+import { getFileUrl } from '../../constants/api';
 import { jobService } from '../../services/jobService';
 import { userService } from '../../services/userService';
+import { marketplaceService } from '../../services/marketplaceService';
+import { communityService } from '../../services/communityService';
+import { userInsightsService } from '../../services/userInsightsService';
+import locationService from '../../services/locationService';
+import { preferenceService } from '../../services/accountService';
 import HesKabloImage from '../../assets/images/mock_hes_kablo.jpg';
 import SiemensSigortaImage from '../../assets/images/mock_siemens_sigorta.jpg';
 import { messageService } from '../../services/messageService';
@@ -319,7 +323,7 @@ export default function HomeScreen() {
 
       // 2. Try backend sync silently (optional — won't error if 404)
       try {
-        const response = await api.get(API_ENDPOINTS.MARKETPLACE);
+        const response = { data: { success: true, data: await marketplaceService.list() } };
         if (response.data?.success && Array.isArray(response.data.data)) {
           const backendProducts = response.data.data;
 
@@ -366,7 +370,7 @@ export default function HomeScreen() {
 
   const fetchHomeShowcase = async () => {
     try {
-      const response = await api.get('/showcase');
+      const response = { data: { success: true, data: await communityService.showcase() } };
       if (response.data?.success && Array.isArray(response.data.data) && response.data.data.length > 0) {
         // Build a map of electrician avatars to backfill missing ones (e.g. for items uploaded before the avatar change)
         let electriciansMap: Record<string, { profileImageUrl?: string; ratingAverage?: number; ratingCount?: number; city?: string }> = {};
@@ -592,7 +596,7 @@ export default function HomeScreen() {
 
     // Try backend sync silently (optional)
     try {
-      const response = await api.post(API_ENDPOINTS.MARKETPLACE, newProduct);
+      const response = { data: { success: true, data: await marketplaceService.create({ title: newProduct.title, price: newProduct.price, category: newProduct.category, location: newProduct.location, desc: newProduct.desc, images: newProduct.images }) } };
       if (response.data?.success && response.data.data) {
         // Map over the backend response and restore/ensure isLocal flag is set to true for our custom products
         const mergedData = response.data.data.map((bProd: any) => {
@@ -642,7 +646,7 @@ export default function HomeScreen() {
 
               // 2. Backend sync (skip if mock product)
               if (!productId.startsWith('mock-')) {
-                await api.delete(`${API_ENDPOINTS.MARKETPLACE}/${productId}`);
+                await marketplaceService.remove(productId);
               }
               
               Alert.alert('Başarılı', 'İlan başarıyla silindi.');
@@ -681,7 +685,7 @@ export default function HomeScreen() {
 
               // 2. Backend sync (skip if mock product)
               if (!productId.startsWith('mock-')) {
-                await api.put(`${API_ENDPOINTS.MARKETPLACE}/${productId}`);
+                await marketplaceService.markSold(productId);
               }
 
               Alert.alert('Tebrikler 🎉', 'Ürününüz satıldı olarak işaretlendi!');
@@ -959,7 +963,7 @@ export default function HomeScreen() {
   const fetchStats = useCallback(async () => {
     if (!isAuthenticated || !isElectrician) return;
     try {
-      const response = await api.get('/users/stats');
+      const response = { data: { success: true, data: await userInsightsService.electricianStats() } };
       if (response.data.success) {
         setStats(response.data.data);
       }
@@ -1021,7 +1025,7 @@ export default function HomeScreen() {
       const refreshStatus = async () => {
         try {
           const [locRes, verRes] = await Promise.all([
-            api.get(`${API_ENDPOINTS.LOCATIONS}?t=${Date.now()}`),
+            Promise.resolve({ data: { success: true, data: await locationService.getSavedLocations() } }),
             isElectrician
               ? authService.getVerificationStatus().catch(() => ({ data: { status: null } }))
               : Promise.resolve({ data: { status: null } } as any)
@@ -1067,7 +1071,7 @@ export default function HomeScreen() {
           
           const fetchLocations = async () => {
             try {
-              const response = await api.get(`${API_ENDPOINTS.LOCATIONS}?t=${Date.now()}`);
+              const response = { data: { success: true, data: await locationService.getSavedLocations() } };
               if (response.data.success && response.data.data.length > 0) {
                 const locations = response.data.data;
                 setUserLocations(locations);
@@ -1150,7 +1154,10 @@ export default function HomeScreen() {
             setShowPushBanner(false);
             if (!user?.isImpersonated) {
               await authService.registerPushToken();
-              try { await api.put('/users/notification-preferences', { pushEnabled: true }); } catch (e) { }
+              try {
+                const currentPreferences = await preferenceService.get<Record<string, boolean>>();
+                await preferenceService.update({ ...(currentPreferences || {}), pushEnabled: true });
+              } catch (e) { }
             }
           }
         } catch (e) {

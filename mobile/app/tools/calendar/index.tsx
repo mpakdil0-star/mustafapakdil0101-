@@ -14,7 +14,6 @@ import { spacing } from '../../../constants/spacing';
 import { fonts } from '../../../constants/typography';
 import { useAppColors } from '../../../hooks/useAppColors';
 import { calendarService, CalendarEvent } from '../../../services/calendarService';
-import { scheduleReminder, cancelReminder } from '../../../services/reminderService';
 
 const DAYS = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 const MONTHS = [
@@ -147,6 +146,7 @@ export default function CalendarScreen() {
   const handleSave = async () => {
     if (!title.trim()) { Alert.alert('Uyarı', 'Başlık giriniz.'); return; }
     if (!selectedDate) return;
+    if (hasReminder && !eventTime) { Alert.alert('Uyarı', 'Hatırlatıcı için saat seçiniz.'); return; }
 
     setSaving(true);
     try {
@@ -161,7 +161,8 @@ export default function CalendarScreen() {
       if (editingEvent) {
         await calendarService.updateEvent(editingEvent.id, {
           title: title.trim(), note: note.trim() || undefined,
-          eventTime: eventTime || undefined, hasReminder, reminderAt,
+          eventDate: selectedDate.toISOString(), eventTime: eventTime || undefined,
+          hasReminder, reminderAt: reminderAt ?? null,
         } as any);
       } else {
         await calendarService.createEvent({
@@ -170,11 +171,6 @@ export default function CalendarScreen() {
           hasReminder, reminderAt, amount: amount ? Number(amount) : undefined,
           addToLedger,
         });
-      }
-
-      // Schedule local notification if reminder is set
-      if (hasReminder && reminderAt) {
-        await scheduleReminder(title.trim(), note.trim() || 'Hatırlatma', new Date(reminderAt));
       }
 
       setShowModal(false);

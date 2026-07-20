@@ -80,6 +80,7 @@ model User {
   city                 String? // User's city for location-based filtering
   profileImageUrl      String?   @map("profile_image_url")
   isVerified           Boolean   @default(false) @map("is_verified")
+  isClaimed            Boolean   @default(true) @map("is_claimed")
   isActive             Boolean   @default(true) @map("is_active")
   isBanned             Boolean   @default(false) @map("is_banned")
   banReason            String?   @map("ban_reason")

@@ -43,7 +43,7 @@ export const createBid = createAsyncThunk(
     try {
       return await bidService.createBid(data);
     } catch (error: any) {
-      // Backend error response formatını ilet: { error: { message: "..." }, success: false }
+      // Servis hata gövdesi varsa olduğu gibi ilet; yoksa standart hata objesi dön.
       if (error.response && error.response.data) {
         return rejectWithValue(error.response.data);
       }

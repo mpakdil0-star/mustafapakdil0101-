@@ -26,8 +26,7 @@ import { colors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
-import { API_BASE_URL } from '../../constants/api';
-import api from '../../services/api';
+import { authService } from '../../services/authService';
 import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
 import { LEGAL_TEXTS } from '../../constants/legalTexts';
 
@@ -145,7 +144,8 @@ export default function RegisterScreen() {
 
   const sendVerificationCode = async (emailAddr: string, name: string) => {
     try {
-      const resp = await api.post('/auth/send-verification', { email: emailAddr, fullName: name });
+      await authService.resendVerification(emailAddr);
+      const resp = { data: {} as { mockCode?: string } };
       const data = resp.data;
       if (data.mockCode) {
         setMockCode(data.mockCode); 
@@ -173,7 +173,8 @@ export default function RegisterScreen() {
     setVerifyError('');
 
     try {
-      const resp = await api.post('/auth/verify-email', { email: registeredEmail, code: verifyCode });
+      throw new Error('Supabase doğrulaması için e-postadaki güvenli bağlantıyı açın.');
+      const resp = { data: { success: false, error: { message: 'E-postadaki doğrulama bağlantısını açın.' } } };
       const data = resp.data;
       if (data.success) {
         setEmailVerifyModal(false);
@@ -211,7 +212,19 @@ export default function RegisterScreen() {
     } catch (err: any) {
       console.error('Google registration error:', err);
       if (err !== 'CANCELLED') {
-        showAlert('Google Kayıt Hatası', typeof err === 'string' ? err : 'Google ile kayıt yapılırken bir hata oluştu.', 'error');
+        if (err?.code === 'ACCOUNT_ALREADY_EXISTS') {
+          showAlert(
+            'Hesap Zaten Kayıtlı',
+            'Bu Google hesabı zaten kayıtlı. Giriş ekranına yönlendirileceksiniz.',
+            'info',
+            [{ text: 'Giriş Yap', variant: 'primary', onPress: () => {
+              setAlertConfig(prev => ({ ...prev, visible: false }));
+              router.replace('/(auth)/login');
+            }}],
+          );
+        } else {
+          showAlert('Google Kayıt Hatası', typeof err === 'string' ? err : 'Google ile kayıt yapılırken bir hata oluştu.', 'error');
+        }
       }
     } finally {
       setSocialLoading(null);
@@ -264,11 +277,15 @@ export default function RegisterScreen() {
 
       setRegisteredEmail(email);
       setRegisteredFullName(fullName);
-      setVerifyCode('');
-      await sendVerificationCode(email, fullName);
+      showAlert(
+        'E-postanızı Doğrulayın',
+        'Supabase doğrulama bağlantısını e-posta adresinize gönderdik. Bağlantıya dokunduktan sonra giriş yapabilirsiniz.',
+        'success',
+        [{ text: 'Girişe Dön', onPress: () => router.replace('/(auth)/login') }]
+      );
     } catch (err: any) {
-      const errorMessage = typeof err === 'string' 
-        ? err 
+      const errorMessage = typeof err === 'string'
+        ? err
         : (err?.message || (err && typeof err === 'object' ? JSON.stringify(err) : 'Kayıt yapılırken bir hata oluştu.'));
       showAlert('Kayıt Hatası', errorMessage, 'error');
     }

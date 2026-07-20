@@ -32,12 +32,11 @@ import { colors as staticColors } from '../../../constants/colors';
 import { spacing } from '../../../constants/spacing';
 import { fonts } from '../../../constants/typography';
 import { useAppColors } from '../../../hooks/useAppColors';
-import { API_BASE_URL, getFileUrl } from '../../../constants/api';
+import { getFileUrl } from '../../../constants/api';
 import { jobService } from '../../../services/jobService';
 import { PremiumHeader } from '../../../components/common/PremiumHeader';
 import { StatusStepper } from '../../../components/common/StatusStepper';
 import { AuthGuardModal } from '../../../components/common/AuthGuardModal';
-import { socketService } from '../../../services/socketService';
 import { CountdownTimer } from '../../../components/common/CountdownTimer';
 export default function JobDetailScreen() {
   const router = useRouter();
@@ -155,14 +154,12 @@ export default function JobDetailScreen() {
       dispatch(fetchJobBids(id));
     }
 
-    // Subscribe to socket notifications for this job
-    const unsub = socketService.onBidNotification((data) => {
-      if (data.jobPostId === id) {
-        console.log('⚡ Real-time update:', data.type);
-        dispatch(fetchJobById(id));
-        dispatch(fetchJobBids(id));
-      }
-    });
+    const unsub = id
+      ? bidService.subscribeToJobBids(id, () => {
+          dispatch(fetchJobById(id));
+          dispatch(fetchJobBids(id));
+        })
+      : () => undefined;
 
     return () => {
       unsub();

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Slot, useRouter, useSegments, SplashScreen, useGlobalSearchParams } from 'expo-router';
+import { Slot, useRouter, useSegments, usePathname, SplashScreen, useGlobalSearchParams } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { StatusBar } from 'expo-status-bar';
 import { Provider, useSelector } from 'react-redux';
 import { store } from '../store/store';
@@ -14,12 +15,16 @@ import { authService } from '../services/authService';
 import { PremiumAlert } from '../components/common/PremiumAlert';
 import { useAppDispatch } from '../hooks/redux';
 import { addNotification, fetchNotifications, incrementUnreadCount, fetchUnreadCount } from '../store/slices/notificationSlice';
-import { getMe, setRequiredLegalVersion, logout, stopImpersonation } from '../store/slices/authSlice';
+import { clearSession, getMe, initializeAuth, setRequiredLegalVersion, logout, stopImpersonation } from '../store/slices/authSlice';
+import { supabase } from '../services/supabase';
+import { notificationService } from '../services/notificationService';
+import { preferenceService } from '../services/accountService';
 import LegalUpdateModal from '../components/legal/LegalUpdateModal';
 import { Alert } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getNotificationTargetPath } from '../utils/notificationNavigation';
 // TODO: Uncomment after running: npx expo install expo-network
 // import { OfflineBanner } from '../components/common/OfflineBanner';
 
@@ -38,14 +43,14 @@ Notifications.setNotificationHandler({
 // Prevent splash from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
-
 function RootLayoutNav() {
   const router = useRouter();
   const segments = useSegments();
+  const pathname = usePathname();
   const params = useGlobalSearchParams();
   const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
-  const { isAuthenticated, user, isLoading, requiredLegalVersion } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, isInitialized, user, isLoading, requiredLegalVersion } = useSelector((state: RootState) => state.auth);
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [isNavigationReady, setIsNavigationReady] = useState(false);
   const [hasCheckedProfile, setHasCheckedProfile] = useState(false);
@@ -61,6 +66,11 @@ function RootLayoutNav() {
   }>({ visible: false, title: '', message: '' });
 
   const [pendingNotificationPath, setPendingNotificationPath] = useState<string | null>(null);
+  const [hasResolvedInitialNotification, setHasResolvedInitialNotification] = useState(false);
+  const handledNotificationResponseIds = useRef(new Set<string>());
+  const hasCheckedInitialNotification = useRef(false);
+  const notificationNavigationInFlight = useRef<string | null>(null);
+  const notificationNavigationWatchdog = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showAlert = (title: string, message: string, type: any = 'info', buttons?: any[]) => {
     setAlertConfig({ visible: true, title, message, type, buttons });
@@ -70,7 +80,7 @@ function RootLayoutNav() {
   useEffect(() => {
     const runMigration = async () => {
       try {
-        const CURRENT_APP_VERSION = '1.5.6';
+        const CURRENT_APP_VERSION = '1.6.11';
         const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
         const lastRunVersion = await AsyncStorage.getItem('last_run_app_version');
 
@@ -78,16 +88,15 @@ function RootLayoutNav() {
           console.log(`🧹 [Migration] Upgrading app version from ${lastRunVersion || 'none'} to ${CURRENT_APP_VERSION}...`);
           
           // 1. Clear secure store tokens to prevent stale/conflicting auth sessions
-          const { apiService } = await import('../services/api');
-          await apiService.clearTokens();
+          const SecureStore = await import('expo-secure-store');
+          await Promise.all(['auth_token', 'refresh_token', 'admin_token_fallback', 'admin_refresh_fallback']
+            .map(key => SecureStore.deleteItemAsync(key)));
           
           // 2. Clear old marketplace cache key
           await AsyncStorage.removeItem('marketplace_products_v1');
           
-          // 3. Clear redux auth state
-          dispatch(logout());
-          
-          // 4. Save new run version
+          // 3. Save new run version. Supabase session storage is deliberately
+          // preserved; only legacy Express JWT tokens are removed above.
           await AsyncStorage.setItem('last_run_app_version', CURRENT_APP_VERSION);
           
           console.log('✅ [Migration] Clean slate migration completed successfully.');
@@ -99,6 +108,95 @@ function RootLayoutNav() {
 
     runMigration();
   }, [dispatch]);
+
+  // Restore the persisted Supabase session and keep Redux synchronized with
+  // Auth events. The callback schedules Redux work outside Supabase's lock.
+  useEffect(() => {
+    dispatch(initializeAuth());
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      setTimeout(() => {
+        if (event === 'SIGNED_OUT') {
+          dispatch(clearSession());
+        } else if (event === 'PASSWORD_RECOVERY') {
+          router.replace('/(auth)/forgot-password?recovery=1');
+          dispatch(initializeAuth());
+        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+          dispatch(initializeAuth());
+        }
+      }, 0);
+    });
+
+    const handleUrl = async (url: string | null) => {
+      if (!url) return;
+      try {
+        const handled = await authService.handleAuthUrl(url);
+        if (handled) dispatch(initializeAuth());
+      } catch (error) {
+        console.warn('[Auth] Deep link işlenemedi:', error);
+      }
+    };
+
+    Linking.getInitialURL().then(handleUrl);
+    const linkSubscription = Linking.addEventListener('url', ({ url }) => handleUrl(url));
+
+    return () => {
+      authListener.subscription.unsubscribe();
+      linkSubscription.remove();
+    };
+  }, [dispatch, router]);
+
+  // Supabase access tokens can remain locally usable for a short time after
+  // an administrator deletes the underlying Auth user. Listen for the
+  // server-side revocation event and immediately return the device to guest
+  // mode instead of waiting for token expiry or an app restart.
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id || user.isImpersonated) return;
+
+    let handled = false;
+    const revokeLocalSession = async () => {
+      if (handled) return;
+      handled = true;
+      try {
+        await supabase.auth.signOut({ scope: 'local' });
+      } catch {
+        // Redux and navigation must still be cleared if local sign-out fails.
+      }
+      dispatch(clearSession());
+      router.replace('/welcome');
+      Alert.alert('Oturum sonlandırıldı', 'Hesabınız yönetici tarafından silindi.');
+    };
+
+    const channel = supabase
+      .channel(`account-revocation:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'account_revocations',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => { void revokeLocalSession(); },
+      )
+      .subscribe();
+
+    // Covers a deletion that happened while the device was offline or while
+    // the Realtime channel was still connecting.
+    supabase
+      .from('account_revocations')
+      .select('id')
+      .eq('user_id', user.id)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) void revokeLocalSession();
+      });
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [isAuthenticated, user?.id, user?.isImpersonated, dispatch, router]);
 
   useEffect(() => {
     const interaction = InteractionManager.runAfterInteractions(() => {
@@ -125,7 +223,9 @@ function RootLayoutNav() {
   }, []);
 
   useEffect(() => {
-    if (!isNavigationReady) return;
+    if (!isNavigationReady || !isInitialized || !hasResolvedInitialNotification) return;
+    let authRedirectTimer: ReturnType<typeof setTimeout> | null = null;
+    let navigationCancelled = false;
 
     const checkOnboarding = async () => {
       try {
@@ -157,25 +257,25 @@ function RootLayoutNav() {
       const currentPath = segments.join('/');
       const isInsideProfileGroup = segments[0] === 'profile';
       const isWelcome = segments[0] === 'welcome' || segments.includes('welcome') || currentPath === 'welcome';
+      const isPasswordRecovery = segments.includes('forgot-password') && params.recovery === '1';
 
 
 
       // 1. Check onboarding first
       if (!isOnboarding) {
         const redirectedToOnboarding = await checkOnboarding();
-        if (redirectedToOnboarding) return;
+        if (redirectedToOnboarding || navigationCancelled) return;
       }
 
       if (!segments.length) return;
 
       if (isAuthenticated) {
-        // Socket connection (centralized)
-        socketService.connect();
-
+        if (isPasswordRecovery) return;
         // 2. Auth-based redirection logic
         // Use a small delay instead of InteractionManager to ensure state stability 
         // after native social login modals close.
-        setTimeout(async () => {
+        authRedirectTimer = setTimeout(async () => {
+          if (navigationCancelled) return;
           try {
             console.log('🔄 [RootNav] Logic Start - Path:', currentPath, 'Auth:', isAuthenticated, 'UserType:', user?.userType, 'Verified:', user?.isVerified);
             // Re-check state inside interactions to ensure accuracy
@@ -341,7 +441,11 @@ function RootLayoutNav() {
     };
 
     runNavigationLogic();
-  }, [isAuthenticated, user?.id, user?.userType, segments, isNavigationReady, params.mandatory]);
+    return () => {
+      navigationCancelled = true;
+      if (authRedirectTimer) clearTimeout(authRedirectTimer);
+    };
+  }, [isAuthenticated, isInitialized, user?.id, user?.userType, segments, isNavigationReady, params.mandatory, pendingNotificationPath, hasResolvedInitialNotification]);
 
   // Ref to track if we've already done the initial data fetch for this session
   const initialDataFetched = useRef(false);
@@ -377,6 +481,19 @@ function RootLayoutNav() {
       });
     }
   }, [isAuthenticated, dispatch]);
+
+  // Supabase Realtime is the source of truth for in-app notifications.
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return;
+    return notificationService.subscribe(user.id, (notification, event) => {
+      if (event === 'DELETE') {
+        dispatch(fetchNotifications());
+        dispatch(fetchUnreadCount());
+        return;
+      }
+      dispatch(addNotification(notification));
+    });
+  }, [isAuthenticated, user?.id, dispatch]);
 
   // Legal Version Check
   useEffect(() => {
@@ -485,6 +602,8 @@ function RootLayoutNav() {
                   if (requestedStatus === 'granted') {
                     // Permission granted! Register the push token immediately
                     await authService.registerPushToken();
+                    const currentPreferences = await preferenceService.get<Record<string, unknown>>().catch(() => ({}));
+                    await preferenceService.update({ ...currentPreferences, push: true, pushEnabled: true });
                     await AsyncStorage.setItem('push_activated', 'true');
                   }
                   // If denied, the home screen banner will handle fallback
@@ -513,6 +632,12 @@ function RootLayoutNav() {
     const handleAppStateForPush = async (nextAppState: string) => {
       if (nextAppState === 'active' && !user?.isImpersonated) {
         try {
+          // An administrator may have permanently removed this account while
+          // the app was in the background. Supabase access tokens can remain
+          // locally cached for a short time, so verify that the public profile
+          // still exists before doing any authenticated foreground work.
+          await authService.getMe();
+
           const { Platform } = await import('react-native');
           const Constants = (await import('expo-constants')).default;
           if (Platform.OS === 'android' && Constants.appOwnership === 'expo') return;
@@ -525,6 +650,18 @@ function RootLayoutNav() {
             await authService.registerPushToken();
           }
         } catch (e) {
+          const message = e instanceof Error ? e.message : String(e);
+          const accountNoLongerExists =
+            message.includes('Supabase kullanıcı profili bulunamadı') ||
+            message.includes('User from sub claim in JWT does not exist') ||
+            message.includes('Oturum bulunamadı');
+
+          if (accountNoLongerExists) {
+            console.warn('[Auth] Hesap artık mevcut değil; yerel oturum kapatılıyor.');
+            await supabase.auth.signOut({ scope: 'local' });
+            dispatch(clearSession());
+            return;
+          }
           console.warn('🔄 [PushKeepAlive] Token refresh failed (non-blocking):', e);
         }
       }
@@ -727,61 +864,89 @@ function RootLayoutNav() {
     };
   }, [isAuthenticated, dispatch, router]);
 
+  const queueNotificationResponse = useCallback((response: Notifications.NotificationResponse) => {
+    const requestId = response.notification.request.identifier;
+    if (requestId && handledNotificationResponseIds.current.has(requestId)) return;
+    if (requestId) handledNotificationResponseIds.current.add(requestId);
+
+    const data = response.notification.request.content.data as Record<string, unknown>;
+    const targetPath = getNotificationTargetPath(data) ?? (isAuthenticated ? '/profile/notifications' : '/welcome');
+    console.log('[DEEP LINK] Notification navigation queued:', targetPath);
+    notificationNavigationInFlight.current = null;
+    setPendingNotificationPath(targetPath);
+  }, [isAuthenticated]);
+
   // Deferred Deep Linking when user gets authenticated
   useEffect(() => {
-    if (isAuthenticated && pendingNotificationPath && isNavigationReady) {
+    const isPublicPath = pendingNotificationPath === '/welcome';
+    if (pendingNotificationPath && isInitialized && isNavigationReady && (isAuthenticated || isPublicPath)) {
+      if (notificationNavigationInFlight.current === pendingNotificationPath) return;
       console.log('🚀 [RootNav] Navigating to deferred notification path:', pendingNotificationPath);
-      // Small delay to ensure state and navigation is fully mounted
-      setTimeout(() => {
-        router.push(pendingNotificationPath as any);
-        setPendingNotificationPath(null);
-      }, 500);
+      const targetPath = pendingNotificationPath;
+      notificationNavigationInFlight.current = targetPath;
+      let cancelled = false;
+      const interaction = InteractionManager.runAfterInteractions(() => {
+        requestAnimationFrame(() => {
+          if (cancelled) return;
+          try {
+            router.push(targetPath as any);
+            if (notificationNavigationWatchdog.current) {
+              clearTimeout(notificationNavigationWatchdog.current);
+            }
+            // Safety valve: a malformed/removed destination must not lock all
+            // standard navigation forever. Normal success clears much earlier
+            // in the pathname confirmation effect below.
+            notificationNavigationWatchdog.current = setTimeout(() => {
+              notificationNavigationInFlight.current = null;
+              setPendingNotificationPath(current => current === targetPath ? null : current);
+            }, 10_000);
+          } catch (error) {
+            notificationNavigationInFlight.current = null;
+            setPendingNotificationPath(current => current === targetPath ? null : current);
+            console.error('[DEEP LINK] Navigation failed:', error);
+          }
+        });
+      });
+      return () => {
+        cancelled = true;
+        interaction.cancel();
+      };
     }
-  }, [isAuthenticated, pendingNotificationPath, isNavigationReady]);
+  }, [isAuthenticated, isInitialized, pendingNotificationPath, isNavigationReady, router]);
+
+  // Keep the normal home redirect paused until Expo Router confirms that the
+  // notification destination is actually visible. This removes the intermittent
+  // cold-start race seen on slower devices or connections.
+  useEffect(() => {
+    if (!pendingNotificationPath || notificationNavigationInFlight.current !== pendingNotificationPath) return;
+
+    const expectedPath = pendingNotificationPath.split(/[?#]/, 1)[0].replace(/\/$/, '') || '/';
+    const currentPath = pathname.replace(/\/$/, '') || '/';
+    if (currentPath !== expectedPath) return;
+
+    if (notificationNavigationWatchdog.current) {
+      clearTimeout(notificationNavigationWatchdog.current);
+      notificationNavigationWatchdog.current = null;
+    }
+    const confirmationTimer = setTimeout(() => {
+      notificationNavigationInFlight.current = null;
+      setPendingNotificationPath(current => current === pendingNotificationPath ? null : current);
+    }, 300);
+
+    return () => clearTimeout(confirmationTimer);
+  }, [pathname, pendingNotificationPath]);
+
+  useEffect(() => () => {
+    if (notificationNavigationWatchdog.current) {
+      clearTimeout(notificationNavigationWatchdog.current);
+    }
+  }, []);
 
   // PUSH NOTIFICATION TAP HANDLER (Deep Linking for background/closed app)
   useEffect(() => {
     // Handle notification tap when app is in background or closed
     const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('🔔 [DEEP LINK] Push notification tapped:', JSON.stringify(response.notification.request.content.data));
-
-      const data = response.notification.request.content.data as any;
-
-      // Route based on notification data
-      let targetPath: string | null = null;
-      if (data?.type === 'calendar_reminder') {
-        targetPath = '/tools/calendar';
-      } else if (data?.conversationId) {
-        targetPath = `/messages/${data.conversationId}`;
-      } else if (data?.ticketId || data?.type === 'support_ticket_updated' || data?.type === 'support_reply' || data?.type === 'support_status') {
-        targetPath = `/profile/support`;
-      } else if (data?.jobId) {
-        targetPath = `/jobs/${data.jobId}`;
-      } else if (data?.type === 'new_review') {
-        targetPath = '/(tabs)/profile';
-      }
-
-      if (targetPath) {
-        setPendingNotificationPath(targetPath);
-        
-        // If already authenticated or if it is a public path (like jobs), navigate immediately.
-        // Otherwise, defer the navigation until the Redux store rehydrates/authenticates.
-        const isPublicPath = targetPath.startsWith('/jobs/');
-        if (isAuthenticated || isPublicPath) {
-          console.log('🚀 [DEEP LINK] Navigating immediately to target path:', targetPath);
-          router.push(targetPath as any);
-          // Clear pending path after a short delay
-          setTimeout(() => setPendingNotificationPath(null), 2000);
-        } else {
-          console.log('⏳ [DEEP LINK] Deferring protected navigation until authenticated:', targetPath);
-        }
-      } else {
-        if (isAuthenticated) {
-          router.push('/profile/notifications');
-        } else {
-          router.push('/welcome');
-        }
-      }
+      queueNotificationResponse(response);
     });
 
     // Sync native badge when push received in foreground
@@ -790,56 +955,38 @@ function RootLayoutNav() {
       
       // We rely on socket notifications + Redux for the UI badge.
       // If socket is disconnected, we might want to manually fetch.
-      if (!socketService.getConnectionStatus()) {
-        dispatch(fetchUnreadCount());
-      }
+      dispatch(fetchUnreadCount());
     });
 
     // Also check for initial notification (app was opened from killed state via notification)
     const checkInitialNotification = async () => {
-      const lastNotification = await Notifications.getLastNotificationResponseAsync();
-      if (lastNotification) {
-        console.log('🔔 [DEEP LINK] App opened from notification:', JSON.stringify(lastNotification.notification.request.content.data));
-
-        const data = lastNotification.notification.request.content.data as any;
-
-        // Small delay to ensure navigation is ready
-        setTimeout(() => {
-          let targetPath: string | null = null;
-          if (data?.type === 'calendar_reminder') {
-            targetPath = '/tools/calendar';
-          } else if (data?.conversationId) {
-            targetPath = `/messages/${data.conversationId}`;
-          } else if (data?.jobId) {
-            targetPath = `/jobs/${data.jobId}`;
-          } else if (data?.type === 'new_review') {
-            targetPath = '/(tabs)/profile';
-          }
-
-          if (targetPath) {
-            setPendingNotificationPath(targetPath);
-            const isPublicPath = targetPath.startsWith('/jobs/');
-            if (isAuthenticated || isPublicPath) {
-              console.log('🚀 [DEEP LINK] Navigating immediately to initial target path:', targetPath);
-              router.push(targetPath as any);
-              setTimeout(() => setPendingNotificationPath(null), 2500);
-            } else {
-              console.log('⏳ [DEEP LINK] Initial target path deferred:', targetPath);
-            }
-          }
-        }, 1200);
+      if (hasCheckedInitialNotification.current) {
+        setHasResolvedInitialNotification(true);
+        return;
+      }
+      hasCheckedInitialNotification.current = true;
+      try {
+        const lastNotification = await Notifications.getLastNotificationResponseAsync();
+        if (lastNotification) {
+          queueNotificationResponse(lastNotification);
+          await Notifications.clearLastNotificationResponseAsync();
+        }
+      } finally {
+        // Do not let the normal auth redirect send the user to the home page
+        // before a cold-start notification response has been inspected.
+        setHasResolvedInitialNotification(true);
       }
     };
 
     if (isNavigationReady) {
-      checkInitialNotification();
+      checkInitialNotification().catch(error => console.error('[DEEP LINK] Initial notification check failed:', error));
     }
 
     return () => {
       responseSubscription.remove();
       receivedSubscription.remove();
     };
-  }, [router, isNavigationReady, isAuthenticated, dispatch]);
+  }, [router, isNavigationReady, isAuthenticated, dispatch, queueNotificationResponse]);
 
   // Sycn native App icon badge with Redux unreadCount
   const { unreadCount } = useSelector((state: RootState) => state.notifications);

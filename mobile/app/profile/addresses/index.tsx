@@ -9,8 +9,7 @@ import { colors as staticColors } from '../../../constants/colors';
 import { spacing } from '../../../constants/spacing';
 import { typography, fonts } from '../../../constants/typography';
 import { useAppColors } from '../../../hooks/useAppColors';
-import apiClient from '../../../services/api';
-import { API_ENDPOINTS } from '../../../constants/api';
+import locationService from '../../../services/locationService';
 import { PremiumHeader } from '../../../components/common/PremiumHeader';
 import { PremiumAlert } from '../../../components/common/PremiumAlert';
 
@@ -44,13 +43,7 @@ export default function AddressesScreen() {
                 setLoading(true);
             }
             
-            const response = await apiClient.get(`${API_ENDPOINTS.LOCATIONS}?t=${Date.now()}`, {
-                headers: {
-                    'Cache-Control': 'no-cache',
-                    'Pragma': 'no-cache'
-                }
-            });
-            setLocations(response.data.data || []);
+            setLocations(await locationService.getSavedLocations());
         } catch (error) {
             console.error('Failed to fetch locations:', error);
         } finally {
@@ -82,7 +75,7 @@ export default function AddressesScreen() {
                     onPress: async () => {
                         try {
                             setAlertConfig(prev => ({ ...prev, visible: false }));
-                            await apiClient.delete(`${API_ENDPOINTS.LOCATIONS}/${id}`);
+                            await locationService.deleteSavedLocation(id);
                             fetchLocations();
                         } catch (error) {
                             console.error('Failed to delete location:', error);

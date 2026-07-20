@@ -23,7 +23,7 @@ import { messageService } from '../../services/messageService';
 import { userService } from '../../services/userService';
 import { colors as staticColors } from '../../constants/colors';
 import { fonts } from '../../constants/typography';
-import api from '../../services/api';
+import { communityService } from '../../services/communityService';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { EmptyState } from '../../components/common/EmptyState';
 import { getFileUrl } from '../../constants/api';
@@ -134,7 +134,7 @@ export default function ChannelsScreen() {
   // Fetch Forum Posts
   const fetchForumPosts = async () => {
     try {
-      const response = await api.get('/community/forum');
+      const response = { data: { success: true, data: await communityService.forum() } };
       if (response.data?.success) {
         // Enrich items with real electrician data
         let electriciansMap: Record<string, any> = {};
@@ -204,7 +204,7 @@ export default function ChannelsScreen() {
   // Fetch Job Offers
   const fetchJobOffers = async () => {
     try {
-      const response = await api.get('/community/jobs');
+      const response = { data: { success: true, data: await communityService.jobs() } };
       if (response.data?.success) {
         // Enrich items with real electrician data
         let electriciansMap: Record<string, any> = {};
@@ -282,7 +282,7 @@ export default function ChannelsScreen() {
 
   const fetchShowcaseItems = async () => {
     try {
-      const response = await api.get('/showcase');
+      const response = { data: { success: true, data: await communityService.showcase() } };
       if (response.data?.success) {
         // Enrich items with real electrician data
         let electriciansMap: Record<string, any> = {};
@@ -411,7 +411,7 @@ export default function ChannelsScreen() {
     };
 
     try {
-      const response = await api.post('/community/forum', newPost);
+      const response = { data: { success: true, data: await communityService.createForum(newPost) } };
       if (response.data?.success) {
         setForumPosts(response.data.data);
         setIsNewPostModalVisible(false);
@@ -436,7 +436,7 @@ export default function ChannelsScreen() {
     };
 
     try {
-      const response = await api.post(`/community/forum/${selectedPost.id}/comment`, newComment);
+      const response = { data: { success: true, data: await communityService.comment(selectedPost.id, newComment.text) } };
       if (response.data?.success) {
         setForumPosts(response.data.data);
         const updatedPost = response.data.data.find((p: any) => p.id === selectedPost.id);
@@ -483,7 +483,7 @@ export default function ChannelsScreen() {
     setConfirmModalDesc('Bu iş paslama ilanınızı silmek ve yayından kaldırmak istediğinize emin misiniz?');
     setConfirmModalAction(() => async () => {
       try {
-        const response = await api.delete(`/community/jobs/${itemId}`);
+        const response = { data: { success: true, data: await communityService.deleteJob(itemId) } };
         if (response.data?.success) {
           setJobOffers(response.data.data);
           Alert.alert('Başarılı', 'İş paslama ilanınız başarıyla iptal edildi.');
@@ -502,7 +502,8 @@ export default function ChannelsScreen() {
     setConfirmModalDesc('Bu teknik destek sorunuzu silmek istediğinize emin misiniz?');
     setConfirmModalAction(() => async () => {
       try {
-        const response = await api.delete(`/community/forum/${postId}`);
+        await communityService.deleteForum(postId);
+        const response = { data: { success: true } };
         if (response.data?.success) {
           await fetchForumPosts();
           Alert.alert('Başarılı', 'Sorunuz başarıyla silindi.');
@@ -533,7 +534,7 @@ export default function ChannelsScreen() {
     };
 
     try {
-      const response = await api.post('/community/jobs', newJob);
+      const response = { data: { success: true, data: await communityService.createJob(newJob) } };
       if (response.data?.success) {
         // İlanı hemen göstermek için şehir filtresini kullanıcının şehrine ayarla
         const userCity = user?.city || 'İstanbul';
@@ -573,7 +574,7 @@ export default function ChannelsScreen() {
     };
 
     try {
-      const response = await api.post('/showcase', newItem);
+      const response = { data: { success: true, data: await communityService.createShowcase({ title: newItem.title, description: newItem.description, images: newItem.images }) } };
       if (response.data?.success) {
         setShowcaseItems(response.data.data);
         setIsNewShowcaseModalVisible(false);
@@ -593,7 +594,7 @@ export default function ChannelsScreen() {
     setConfirmModalDesc('Bu çalışmanızı galerinizden kaldırmak istediğinize emin misiniz?');
     setConfirmModalAction(() => async () => {
       try {
-        const response = await api.delete(`/showcase/${itemId}`);
+        const response = { data: { success: true, data: await communityService.deleteShowcase(itemId) } };
         if (response.data?.success) {
           setShowcaseItems(response.data.data);
           Alert.alert('Başarılı', 'Çalışmanız galeriden silindi.');

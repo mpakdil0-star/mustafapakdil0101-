@@ -11,6 +11,8 @@ import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
 import { LinearGradient } from 'expo-linear-gradient';
 import { formatRelativeTime } from '../../utils/date';
+import { bidService } from '../../services/bidService';
+import { getNotificationTargetPath } from '../../utils/notificationNavigation';
 
 export default function NotificationsScreen() {
     const router = useRouter();
@@ -29,6 +31,12 @@ export default function NotificationsScreen() {
     const handleNotificationPress = async (notification: any) => {
         if (!notification.isRead) {
             dispatch(markNotificationAsRead(notification.id));
+        }
+
+        const directTarget = getNotificationTargetPath(notification);
+        if (directTarget) {
+            router.push(directTarget as any);
+            return;
         }
 
         const type = notification.type.toUpperCase();
@@ -57,10 +65,9 @@ export default function NotificationsScreen() {
             // For BID notifications, we need to get the job ID from the bid
             // Since we don't have it in the notification, we'll fetch it
             try {
-                const { default: api } = await import('../../services/api');
-                const response = await api.get(`/bids/${relatedId}`);
-                if (response.data.success && (response.data.data.bid?.jobPostId || response.data.data.jobPostId)) {
-                    router.push(`/jobs/${response.data.data.bid?.jobPostId || response.data.data.jobPostId}`);
+                const bid = await bidService.getBidById(relatedId);
+                if (bid?.jobPostId) {
+                    router.push(`/jobs/${bid.jobPostId}`);
                 } else {
                     console.warn('[Notifications] Could not get job ID from bid');
                 }

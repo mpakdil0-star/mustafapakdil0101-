@@ -45,10 +45,15 @@ fastlane/test_output
 # Bundle artifact
 *.jsbundle
 
+# Local EAS signing credentials (contains plaintext passwords)
+credentials.json
+credentials/
+
 # Expo
 .expo/
 dist/
 web-build/
+artifacts/
 
 # Native folders (let EAS Prebuild generate them)
 android/

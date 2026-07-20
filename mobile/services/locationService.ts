@@ -1,6 +1,7 @@
 import * as Location from 'expo-location';
 import { Platform } from 'react-native';
 import { CITY_NAMES, TURKISH_CITIES } from '../constants/locations';
+import { supabase } from './supabase';
 
 export interface LocationData {
     latitude: number;
@@ -12,6 +13,44 @@ export interface LocationData {
 }
 
 export const locationService = {
+    async getSavedLocations() {
+        const { data: authData } = await supabase.auth.getUser();
+        if (!authData.user) return [];
+        const { data, error } = await supabase.from('locations').select('*')
+            .eq('user_id', authData.user.id)
+            .eq('is_active', true)
+            .order('is_default', { ascending: false })
+            .order('created_at', { ascending: true });
+        if (error) throw error;
+        return (data || []).map((row: any) => ({
+            id: row.id,
+            userId: row.user_id,
+            address: row.address,
+            city: row.city,
+            district: row.district,
+            neighborhood: row.neighborhood,
+            postalCode: row.postal_code,
+            latitude: Number(row.latitude),
+            longitude: Number(row.longitude),
+            isDefault: row.is_default,
+            isActive: row.is_active,
+            createdAt: row.created_at,
+        }));
+    },
+
+    async addSavedLocation(input: any) {
+        const { data: authData } = await supabase.auth.getUser();
+        if (!authData.user) throw new Error('Oturum bulunamadı.');
+        const { data, error } = await supabase.from('locations').insert({ user_id: authData.user.id, address: input.address || input.details || `${input.city} - ${input.district}`, city: input.city, district: input.district, neighborhood: input.neighborhood || '', postal_code: input.postalCode || null, latitude: input.latitude ?? 0, longitude: input.longitude ?? 0, is_default: !!input.isDefault }).select().single();
+        if (error) throw error; return data;
+    },
+    async updateSavedLocation(id: string, input: any) {
+        const values: any = {};
+        for (const [a,b] of Object.entries({address:'address',city:'city',district:'district',neighborhood:'neighborhood',postalCode:'postal_code',latitude:'latitude',longitude:'longitude',isDefault:'is_default'})) if (input[a] !== undefined) values[b] = input[a];
+        const { data, error } = await supabase.from('locations').update(values).eq('id', id).select().single(); if (error) throw error; return data;
+    },
+    async deleteSavedLocation(id: string) { const { error } = await supabase.from('locations').delete().eq('id', id); if (error) throw error; },
+
     /**
      * Request foreground location permissions
      */

@@ -2,9 +2,9 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { authService, RegisterData, LoginData } from '../../services/authService';
 import {
   signInWithGoogle,
-  googleLoginToBackend,
+  googleLoginWithSupabase,
   signInWithApple,
-  appleLoginToBackend,
+  appleLoginWithSupabase,
   configureGoogleSignIn,
 } from '../../services/socialAuthService';
 import Analytics from '../../services/analyticsService';
@@ -46,6 +46,7 @@ interface AuthState {
     specialties?: string[];
   } | null;
   requiredLegalVersion: string | null;
+  isInitialized: boolean;
 }
 
 const initialState: AuthState = {
@@ -57,12 +58,26 @@ const initialState: AuthState = {
   guestRole: null,
   draftProfile: null,
   requiredLegalVersion: null,
+  isInitialized: false,
 };
 
 const handleAuthError = (error: any, defaultMessage: string) => {
-  // Get status code from axios error
+  // Supabase ve olası eski servis hataları için ortak ayrıştırma
   const statusCode = error?.response?.status;
   const serverMessage = error?.response?.data?.error?.message || error?.response?.data?.message;
+  const supabaseMessage = typeof error?.message === 'string' ? error.message : '';
+
+  const supabaseErrorMessages: Record<string, string> = {
+    'Invalid login credentials': 'E-posta veya şifre hatalı.',
+    'Email not confirmed': 'Giriş yapmadan önce e-posta adresinizi doğrulayın.',
+    'User already registered': 'Bu e-posta adresi zaten kayıtlı.',
+    'Password should be at least 6 characters': 'Şifre en az 6 karakter olmalıdır.',
+    'Signup requires a valid password': 'Geçerli bir şifre girin.',
+  };
+
+  if (supabaseErrorMessages[supabaseMessage]) {
+    return supabaseErrorMessages[supabaseMessage];
+  }
 
   // Debug log
   console.log('🔍 Auth Error Debug:', { statusCode, serverMessage, fullError: error?.response?.data });
@@ -101,7 +116,7 @@ const handleAuthError = (error: any, defaultMessage: string) => {
     return 'İnternet bağlantınızı kontrol edin.';
   }
 
-  return serverMessage || defaultMessage;
+  return serverMessage || supabaseMessage || defaultMessage;
 };
 
 
@@ -139,6 +154,20 @@ export const getMe = createAsyncThunk(
   }
 );
 
+export const initializeAuth = createAsyncThunk(
+  'auth/initialize',
+  async (_, { rejectWithValue }) => {
+    try {
+      const session = await authService.getSession();
+      if (!session) return null;
+      const user = await authService.getMe();
+      return { user, accessToken: session.access_token };
+    } catch (error: any) {
+      return rejectWithValue(error?.message || 'Oturum başlatılamadı');
+    }
+  }
+);
+
 export const logout = createAsyncThunk(
   'auth/logout',
   async () => {
@@ -150,7 +179,7 @@ export const stopImpersonation = createAsyncThunk(
   'auth/stopImpersonation',
   async (_, { dispatch, rejectWithValue }) => {
     try {
-      const { apiService } = await import('../../services/api');
+      const apiService = { restoreAdminFallback: async () => false };
       const restored = await apiService.restoreAdminFallback();
       if (restored) {
         // Fetch original admin user data
@@ -177,8 +206,8 @@ export const googleLogin = createAsyncThunk(
       // 1. Google popup aç ve ID token al
       const idToken = await signInWithGoogle();
 
-      // 2. Backend'e gönder
-      const result = await googleLoginToBackend(
+      // 2. Supabase Auth'a gönder
+      const result = await googleLoginWithSupabase(
         idToken,
         params?.userType,
         params?.serviceCategory
@@ -197,7 +226,13 @@ export const googleLogin = createAsyncThunk(
       if (error.message === 'DEVELOPER_ERROR') {
         return rejectWithValue('SHA-1 sertifika hatası: Lütfen Google Cloud Console\'da SHA-1 parmak izinizi kaydedin.');
       }
-      // Backend 404 döndüyse (kullanıcı bulunamadı)
+      if (error?.code === 'USER_NOT_FOUND') {
+        return rejectWithValue({ code: 'USER_NOT_FOUND', email: error.email, wasDeleted: Boolean(error.wasDeleted) });
+      }
+      if (error?.code === 'ACCOUNT_ALREADY_EXISTS') {
+        return rejectWithValue({ code: 'ACCOUNT_ALREADY_EXISTS', email: error.email });
+      }
+      // Eski servis katmanından kalan kullanıcı bulunamadı yanıtı
       if (error?.response?.status === 404) {
         const email = error?.response?.data?.error?.email;
         return rejectWithValue({ code: 'USER_NOT_FOUND', email });
@@ -215,8 +250,8 @@ export const appleLogin = createAsyncThunk(
       // 1. Apple popup aç ve identity token + isim al
       const { identityToken, fullName } = await signInWithApple();
 
-      // 2. Backend'e gönder
-      const result = await appleLoginToBackend(
+      // 2. Supabase Auth'a gönder
+      const result = await appleLoginWithSupabase(
         identityToken,
         fullName,
         params?.userType,
@@ -230,16 +265,7 @@ export const appleLogin = createAsyncThunk(
       if (error?.message === 'CANCELLED') {
         return rejectWithValue('CANCELLED');
       }
-      // Network hatası (sunucu uyuyor veya internet yok)
-      if (!error?.response && (
-        error?.message?.includes('Network') ||
-        error?.message?.includes('timeout') ||
-        error?.message?.includes('bağlanılamadı') ||
-        error?.code === 'ECONNABORTED'
-      )) {
-        return rejectWithValue('Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.');
-      }
-      // Backend 404 döndüyse (kullanıcı bulunamadı)
+      // Eski servis katmanından kalan kullanıcı bulunamadı yanıtı
       if (error?.response?.status === 404) {
         const email = error?.response?.data?.error?.email;
         return rejectWithValue({ code: 'USER_NOT_FOUND', email });
@@ -306,6 +332,14 @@ const authSlice = createSlice({
     setRequiredLegalVersion: (state, action: PayloadAction<string | null>) => {
       state.requiredLegalVersion = action.payload;
     },
+    clearSession: (state) => {
+      state.user = null;
+      state.token = null;
+      state.isAuthenticated = false;
+      state.isInitialized = true;
+      state.error = null;
+      state.requiredLegalVersion = null;
+    },
     // Admin impersonation: kullanıcı ve token'ı aynı anda set et
     impersonateLogin: (state, action: PayloadAction<{ user: User; accessToken: string }>) => {
       state.user = action.payload.user;
@@ -324,6 +358,7 @@ const authSlice = createSlice({
 
     const handleAuthFulfilled = (state: AuthState, action: any) => {
       state.isLoading = false;
+      state.isInitialized = true;
       state.user = action.payload.user;
       state.token = action.payload.accessToken;
       state.isAuthenticated = true;
@@ -353,11 +388,47 @@ const authSlice = createSlice({
 
     builder
       .addCase(register.pending, handleAuthPending)
-      .addCase(register.fulfilled, handleAuthFulfilled)
+      .addCase(register.fulfilled, (state, action: any) => {
+        state.isLoading = false;
+        state.isInitialized = true;
+        if (action.payload.pendingVerification) {
+          state.user = null;
+          state.token = null;
+          state.isAuthenticated = false;
+          state.error = null;
+          return;
+        }
+        handleAuthFulfilled(state, action);
+      })
       .addCase(register.rejected, handleAuthRejected)
       .addCase(login.pending, handleAuthPending)
       .addCase(login.fulfilled, handleAuthFulfilled)
       .addCase(login.rejected, handleAuthRejected)
+      .addCase(initializeAuth.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(initializeAuth.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isInitialized = true;
+        if (action.payload) {
+          state.user = action.payload.user;
+          state.token = action.payload.accessToken;
+          state.isAuthenticated = true;
+          state.error = null;
+        } else {
+          state.user = null;
+          state.token = null;
+          state.isAuthenticated = false;
+        }
+      })
+      .addCase(initializeAuth.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isInitialized = true;
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        state.error = action.payload as string;
+      })
       // Google Login
       .addCase(googleLogin.pending, handleAuthPending)
       .addCase(googleLogin.fulfilled, handleAuthFulfilled)
@@ -406,6 +477,7 @@ const authSlice = createSlice({
         state.error = null;
         state.requiredLegalVersion = null;
         state.guestRole = null;
+        state.isInitialized = true;
       })
       .addCase(logout.rejected, (state) => {
         // Clear state anyway even if server request fails
@@ -415,6 +487,7 @@ const authSlice = createSlice({
         state.error = null;
         state.requiredLegalVersion = null;
         state.guestRole = null;
+        state.isInitialized = true;
       })
       .addCase(stopImpersonation.fulfilled, (state, action) => {
         if (action.payload) {
@@ -435,6 +508,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, setUser, setGuestRole, updateCreditBalance, setDraftProfile, clearDraftProfile, setRequiredLegalVersion, impersonateLogin } = authSlice.actions;
+export const { clearError, setUser, setGuestRole, updateCreditBalance, setDraftProfile, clearDraftProfile, setRequiredLegalVersion, clearSession, impersonateLogin } = authSlice.actions;
 export default authSlice.reducer;
 

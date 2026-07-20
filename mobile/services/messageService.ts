@@ -1,49 +1,42 @@
-import apiClient from './api';
-import { API_ENDPOINTS } from '../constants/api';
+import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { assertSupabaseConfigured, supabase } from './supabase';
 
 export interface Message {
   id: string;
   conversationId: string;
   senderId: string;
   receiverId: string;
+  recipientId: string;
   content: string;
   read: boolean;
+  isRead: boolean;
+  messageType: 'TEXT' | 'IMAGE' | 'FILE' | 'LOCATION' | 'SYSTEM';
+  mediaUrl?: string | null;
+  fileName?: string | null;
   createdAt: string;
-  sender?: {
-    id: string;
-    fullName: string;
-    profileImageUrl?: string | null;
-  };
-  receiver?: {
-    id: string;
-    fullName: string;
-    profileImageUrl?: string | null;
-  };
+  sender?: UserCard;
+  receiver?: UserCard;
+}
+
+interface UserCard {
+  id: string;
+  fullName: string;
+  profileImageUrl: string | null;
+  userType?: string;
 }
 
 export interface Conversation {
   id: string;
   participant1Id?: string;
   participant2Id?: string;
+  jobPostId?: string | null;
   lastMessage?: Message;
   unreadCount: number;
   createdAt: string;
   updatedAt: string;
-  participant1?: {
-    id: string;
-    fullName: string;
-    profileImageUrl?: string | null;
-  };
-  participant2?: {
-    id: string;
-    fullName: string;
-    profileImageUrl?: string | null;
-  };
-  otherUser?: {
-    id: string;
-    fullName: string;
-    profileImageUrl?: string | null;
-  };
+  participant1?: UserCard;
+  participant2?: UserCard;
+  otherUser?: UserCard;
 }
 
 export interface CreateMessageData {
@@ -53,129 +46,188 @@ export interface CreateMessageData {
   bidId?: string;
 }
 
+const mapCard = (row: any): UserCard => ({
+  id: row.id,
+  fullName: row.full_name,
+  profileImageUrl: row.profile_image_url ?? null,
+  userType: row.user_type,
+});
+
+const mapMessage = (row: any, cards?: Map<string, UserCard>): Message => ({
+  id: row.id,
+  conversationId: row.conversation_id,
+  senderId: row.sender_id,
+  receiverId: row.recipient_id,
+  recipientId: row.recipient_id,
+  content: row.content,
+  read: Boolean(row.is_read),
+  isRead: Boolean(row.is_read),
+  messageType: row.message_type || 'TEXT',
+  mediaUrl: row.media_url,
+  fileName: row.file_name,
+  createdAt: row.created_at,
+  sender: cards?.get(row.sender_id),
+  receiver: cards?.get(row.recipient_id),
+});
+
+const getCards = async (ids: string[]) => {
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (!unique.length) return new Map<string, UserCard>();
+  const { data, error } = await supabase.from('user_cards').select('*').in('id', unique);
+  if (error) throw error;
+  return new Map((data || []).map((row: any) => [row.id, mapCard(row)]));
+};
+
+const currentUserId = async () => {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) throw error || new Error('Oturum bulunamadı.');
+  return data.user.id;
+};
+
+const mapConversations = async (rows: any[], userId: string) => {
+  const cards = await getCards(rows.flatMap((row) => [row.participant_1_id, row.participant_2_id]));
+  return rows.map((row): Conversation => {
+    const otherId = row.participant_1_id === userId ? row.participant_2_id : row.participant_1_id;
+    const unreadCount = row.participant_1_id === userId
+      ? row.unread_count_participant_1
+      : row.unread_count_participant_2;
+    return {
+      id: row.id,
+      participant1Id: row.participant_1_id,
+      participant2Id: row.participant_2_id,
+      jobPostId: row.job_post_id,
+      unreadCount: unreadCount || 0,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      participant1: cards.get(row.participant_1_id),
+      participant2: cards.get(row.participant_2_id),
+      otherUser: cards.get(otherId),
+      lastMessage: row.last_message_at ? ({
+        id: `preview-${row.id}`,
+        conversationId: row.id,
+        senderId: '', receiverId: '', recipientId: '',
+        content: row.last_message_preview || '',
+        read: unreadCount === 0, isRead: unreadCount === 0,
+        messageType: 'TEXT', createdAt: row.last_message_at,
+      }) : undefined,
+    };
+  });
+};
+
+const uploadAttachment = async (conversationId: string, uri: string) => {
+  const response = await fetch(uri);
+  if (!response.ok) throw new Error('Mesaj eki okunamadı.');
+  const mime = response.headers.get('content-type') || 'application/octet-stream';
+  const rawExtension = uri.split('?')[0].split('.').pop()?.toLowerCase();
+  const extension = rawExtension && rawExtension.length <= 5 ? rawExtension : mime.includes('pdf') ? 'pdf' : 'jpg';
+  const path = `${conversationId}/${Date.now()}.${extension}`;
+  const { error } = await supabase.storage.from('message-attachments').upload(
+    path, await response.arrayBuffer(), { contentType: mime, upsert: false }
+  );
+  if (error) throw error;
+  return { path, mime };
+};
+
 export const messageService = {
   async getConversations() {
-    try {
-      const response = await apiClient.get(API_ENDPOINTS.CONVERSATIONS || '/conversations');
-      return response.data.data?.conversations || [];
-    } catch (error: any) {
-      // Backend endpoint henüz hazır değilse boş liste döndür
-      if (error?.response?.status === 404) {
-        return [];
-      }
-      throw error;
-    }
+    assertSupabaseConfigured();
+    const userId = await currentUserId();
+    const { data, error } = await supabase.from('conversations').select('*')
+      .or(`participant_1_id.eq.${userId},participant_2_id.eq.${userId}`)
+      .order('last_message_at', { ascending: false, nullsFirst: false });
+    if (error) throw error;
+    return mapConversations(data || [], userId);
   },
 
   async getConversation(conversationId: string) {
     if (!conversationId) return null;
-    const response = await apiClient.get(API_ENDPOINTS.CONVERSATION_DETAIL(conversationId));
-    return response.data.data?.conversation;
+    const userId = await currentUserId();
+    const { data, error } = await supabase.from('conversations').select('*').eq('id', conversationId).single();
+    if (error) throw error;
+    return (await mapConversations([data], userId))[0];
   },
 
   async findConversation(recipientId: string, jobId?: string) {
-    try {
-      const response = await apiClient.get(`${API_ENDPOINTS.CONVERSATIONS}/find`, {
-        params: { recipientId, jobId }
-      });
-      return response.data.data?.conversation;
-    } catch (error: any) {
-      if (error.response?.status === 404) return null;
-      throw error;
-    }
+    const userId = await currentUserId();
+    const { data, error } = await supabase.from('conversations').select('*')
+      .or(`participant_1_id.eq.${userId},participant_2_id.eq.${userId}`);
+    if (error) throw error;
+    const row = (data || []).find((item: any) =>
+      [item.participant_1_id, item.participant_2_id].includes(recipientId)
+      && (item.job_post_id || null) === (jobId || null)
+    );
+    return row ? (await mapConversations([row], userId))[0] : null;
   },
 
-  async findOrCreateConversation(recipientId: string, jobId?: string): Promise<Conversation | null> {
-    try {
-      // Önce mevcut konuşmayı ara
-      const existing = await this.findConversation(recipientId, jobId);
-      if (existing) {
-        return existing;
-      }
-
-      // Bulunamadıysa yeni konuşma oluştur
-      const createRes = await apiClient.post(API_ENDPOINTS.CONVERSATIONS, {
-        recipientId: recipientId,
-        jobPostId: jobId
-      });
-      return createRes.data.data?.conversation || null;
-    } catch (error: any) {
-      console.warn('⚠️ findOrCreateConversation failed, falling back to client-side mock conversation:', error.message || error);
-      
-      // Generate a mock conversation ID so that the app remains functional offline / during free-tier wakeups
-      const mockId = jobId 
-        ? `mock-conv-${jobId}-${recipientId}-current` 
-        : `mock-conv-${recipientId}-current`;
-        
-      return {
-        id: mockId,
-        participant1Id: 'current',
-        participant2Id: recipientId,
-        unreadCount: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        otherUser: {
-          id: recipientId,
-          fullName: recipientId.includes('electrician') 
-            ? 'Mustafa Yılmaz (Usta)' 
-            : (recipientId.includes('citizen') ? 'Ahmet Kaya (Vatandaş)' : 'İletişim Kurulan Kullanıcı'),
-          profileImageUrl: null
-        }
-      };
-    }
+  async findOrCreateConversation(recipientId: string, jobId?: string): Promise<Conversation> {
+    const { data, error } = await supabase.rpc('find_or_create_conversation', {
+      recipient_id: recipientId,
+      job_id: jobId || null,
+    });
+    if (error) throw error;
+    const userId = await currentUserId();
+    return (await mapConversations([data], userId))[0];
   },
 
   async getMessages(conversationId: string) {
     if (!conversationId) return [];
-    const response = await apiClient.get(API_ENDPOINTS.MESSAGES(conversationId));
-    return response.data.data?.messages || [];
+    const { data, error } = await supabase.from('messages').select('*')
+      .eq('conversation_id', conversationId)
+      .eq('is_deleted', false)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    const cards = await getCards((data || []).flatMap((row: any) => [row.sender_id, row.recipient_id]));
+    return (data || []).map((row: any) => mapMessage(row, cards));
   },
 
   async sendMessage(data: CreateMessageData) {
-    // Mesaj gönderme endpointi güncellendi: /conversations/:id/messages
-    // Ancak yeni konuşma başlatırken conversationId olmayabilir.
-    // Bu durumda backend'e özel bir endpoint gerekebilir veya /conversations post edilip sonra mesaj atılır.
-    // Şimdilik existing /messages endpointi varsa onu kullanalım, yoksa conversatin create edip atalım.
+    const conversation = await this.findOrCreateConversation(data.receiverId, data.jobId);
+    return this.sendMessageToConversation(conversation.id, data.content);
+  },
 
-    // Backend'de POST /conversations/:id/messages var.
-    // Eğer conversationId yoksa önce oluşturup sonra mesaj atmalıyız.
-
-    // NOTE: Backend'de genel bir POST /messages endpointi olmayabilir.
-    // createConversation -> sendMessage akışı daha doğru.
-
-    // Geçici olarak create logic'i buraya ekleyelim:
-    let convId = '';
-
-    try {
-      const existing = await messageService.findConversation(data.receiverId, data.jobId);
-      if (existing) {
-        convId = existing.id;
-      } else {
-        // Create new
-        const createRes = await apiClient.post(API_ENDPOINTS.CONVERSATIONS, {
-          recipientId: data.receiverId,
-          jobPostId: data.jobId
-        });
-        convId = createRes.data.data.conversation.id;
-      }
-
-      const response = await apiClient.post(
-        apiClient.defaults.baseURL + `conversations/${convId}/messages`,
-        { content: data.content }
-      );
-      return response.data.data?.message;
-
-    } catch (e) {
-      console.error("Message send failed:", e);
-      throw e;
+  async sendMessageToConversation(conversationId: string, content: string, attachmentUri?: string) {
+    let attachment: { path: string; mime: string } | null = null;
+    if (attachmentUri) attachment = await uploadAttachment(conversationId, attachmentUri);
+    const messageType = attachment ? (attachment.mime === 'application/pdf' ? 'FILE' : 'IMAGE') : 'TEXT';
+    const { data, error } = await supabase.rpc('send_message', {
+      conversation_id: conversationId,
+      message_content: content,
+      message_type: messageType,
+      media_url: attachment?.path || null,
+      file_name: attachment?.path.split('/').pop() || null,
+      file_size: null,
+    });
+    if (error) {
+      if (attachment) await supabase.storage.from('message-attachments').remove([attachment.path]);
+      throw error;
     }
+    const cards = await getCards([data.sender_id, data.recipient_id]);
+    return mapMessage(data, cards);
   },
 
   async markAsRead(conversationId: string) {
-    const response = await apiClient.put(
-      API_ENDPOINTS.MARK_CONVERSATION_READ(conversationId)
-    );
-    return response.data.data;
+    const { error } = await supabase.rpc('mark_conversation_read', { conversation_id: conversationId });
+    if (error) throw error;
+    return { success: true };
+  },
+
+  subscribeToConversation(conversationId: string, onChange: (message: Message, event: string) => void) {
+    const channel = supabase.channel(`conversation:${conversationId}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}`,
+      }, async (payload: RealtimePostgresChangesPayload<any>) => {
+        const row = payload.new && Object.keys(payload.new).length ? payload.new : payload.old;
+        if (!row) return;
+        const cards = await getCards([row.sender_id, row.recipient_id]);
+        onChange(mapMessage(row, cards), payload.eventType);
+      }).subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  },
+
+  subscribeToConversationList(userId: string, onChange: () => void) {
+    const channel = supabase.channel(`conversation-list:${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, onChange)
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
   },
 };
-

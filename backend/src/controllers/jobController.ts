@@ -114,30 +114,12 @@ export const createJobController = async (
 
     const { images = [], ...restBody } = req.body;
 
-    // Process images: base64 to file
-    // Process images: base64 to Cloudinary
-    const processedImages: string[] = [];
-    if (images && images.length > 0) {
-      const cloudinary = require('../config/cloudinary').default;
-
-      for (const img of images) {
-        if (img.startsWith('data:image')) {
-          try {
-            const result = await cloudinary.uploader.upload(img, {
-              folder: 'jobs',
-              resource_type: 'image'
-            });
-            processedImages.push(result.secure_url);
-          } catch (err) {
-            console.error('Error uploading job image to Cloudinary:', err);
-            // Fallback or skip? For now, maybe skip or push original if it's not too huge (but it is huge)
-            // Better to skip or log error. pushing original might fail database constraints if too long.
-          }
-        } else {
-          processedImages.push(img);
-        }
-      }
-    }
+    // Supabase Storage migration:
+    // Client now uploads job images directly to Supabase Storage and sends public URLs here.
+    // Backend no longer performs any Cloudinary upload.
+    const processedImages: string[] = Array.isArray(images)
+      ? images.filter((img: unknown): img is string => typeof img === 'string' && img.trim().length > 0)
+      : [];
 
     const jobData = {
       ...restBody,

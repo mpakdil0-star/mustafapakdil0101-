@@ -16,7 +16,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../services/api';
+import locationService from '../../services/locationService';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { createJob, clearError, fetchJobs, fetchMyJobs } from '../../store/slices/jobSlice';
@@ -334,9 +334,9 @@ export default function CreateJobScreen() {
 
       // 2. Kayıtlı adreslerden daha detaylı doldur
       try {
-        const response = await api.get('/locations');
-        if (response.data.success && response.data.data.length > 0) {
-          const loc = response.data.data[0];
+        const savedLocations = await locationService.getSavedLocations();
+        if (savedLocations.length > 0) {
+          const loc = savedLocations[0];
           if (loc.city) setCity(loc.city);
           if (loc.district) setDistrict(loc.district);
           if (loc.neighborhood) setNeighborhood(loc.neighborhood);

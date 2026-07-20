@@ -17,7 +17,7 @@ import { spacing } from '../../constants/spacing';
 import { useAppColors } from '../../hooks/useAppColors';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { Button } from '../../components/common/Button';
-import api from '../../services/api';
+import { safetyService } from '../../services/accountService';
 
 interface ReportReason {
     value: string;
@@ -63,7 +63,7 @@ export default function ReportScreen() {
         setIsSubmitting(true);
 
         try {
-            await api.post('/reports', {
+            await safetyService.report({
                 reportedId: userId,
                 jobId: jobId || null,
                 reason: selectedReason,
@@ -73,7 +73,7 @@ export default function ReportScreen() {
             // Eğer engelleme seçilmişse engelle
             if (blockUser) {
                 try {
-                    await api.post('/blocks/toggle', { blockedId: userId });
+                    await safetyService.toggleBlock(userId);
                 } catch (blockErr) {
                     console.error('⚠️ Block failed during report:', blockErr);
                     // Ana rapor başarılı olduğu için blok hatası kritik değil, sadece logla

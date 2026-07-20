@@ -49,7 +49,19 @@ fastlane/test_output
 .expo/
 dist/
 web-build/
+artifacts/
 
 # Native folders (let EAS Prebuild generate them)
 android/
 ios/
+
+# Local copies, credentials and machine-only configuration
+android_cop_/
+.git/
+*.jks
+.env
+.env.*
+!.env.example
+tsc_output.txt
+build_workaround.ps1
+fix_images.js

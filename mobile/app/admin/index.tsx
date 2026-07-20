@@ -8,7 +8,7 @@ import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
 import { LinearGradient } from 'expo-linear-gradient';
-import api from '../../services/api';
+import { adminService } from '../../services/adminService';
 
 export default function AdminDashboardScreen() {
     const router = useRouter();
@@ -21,7 +21,7 @@ export default function AdminDashboardScreen() {
 
     const fetchStats = async () => {
         try {
-            const response = await api.get('/admin/dashboard-stats');
+            const response = { data: { success: true, data: await adminService.dashboardStats() } };
             if (response.data.success) {
                 setStats(response.data.data);
             }

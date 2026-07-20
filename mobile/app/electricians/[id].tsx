@@ -17,7 +17,7 @@ import { AuthGuardModal } from '../../components/common/AuthGuardModal';
 import { MOCK_ELECTRICIANS } from '../../data/mockElectricians';
 import favoriteService from '../../services/favoriteService';
 import { ReportButton } from '../../components/common/ReportButton';
-import api from '../../services/api';
+import { communityService } from '../../services/communityService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -143,9 +143,9 @@ export default function ElectricianDetailScreen() {
                 // Vitrin / Hüner verilerini çek
                 let loadedShowcases: any[] = [];
                 try {
-                    const scRes = await api.get('/showcase');
-                    if (scRes.data?.success && Array.isArray(scRes.data.data)) {
-                        loadedShowcases = scRes.data.data.filter((item: any) => {
+                    const showcase = await communityService.showcase();
+                    if (Array.isArray(showcase)) {
+                        loadedShowcases = showcase.filter((item: any) => {
                             return item.ustaId === id ||
                                    item.ustaId === `mock-electrician-${id}` ||
                                    (id.startsWith('local-mock-') && item.ustaId === `mock-electrician-${id.replace('local-mock-', '')}`);

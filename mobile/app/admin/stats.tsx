@@ -7,7 +7,7 @@ import { colors as staticColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
-import api from '../../services/api';
+import { adminService } from '../../services/adminService';
 
 const { width } = Dimensions.get('window');
 
@@ -59,7 +59,7 @@ export default function AdminStatsScreen() {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/admin/detailed-stats?city=${selectedCity}`);
+      const response = { data: { success: true, data: await adminService.detailedStats(selectedCity) } };
       if (response.data.success) {
         setData(response.data.data);
       }

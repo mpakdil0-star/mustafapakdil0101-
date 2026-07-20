@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Elektrikçiler Platform - Mobil Uygulama ve Backend",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "concurrently -n \"BACKEND,MOBILE\" -c \"blue,green\" --raw \"npm:backend\" \"npm:mobile\"",
     "start:mobile": "cd mobile && npm start",
@@ -17,6 +20,7 @@
   "dependencies": {
     "jpeg-js": "^0.4.4",
     "node-forge": "^1.3.3",
-    "pngjs": "^7.0.0"
+    "pngjs": "^7.0.0",
+    "xlsx": "^0.18.5"
   }
 }

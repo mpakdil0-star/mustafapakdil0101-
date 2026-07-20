@@ -17,6 +17,13 @@ const adminMiddleware = (req: Request, res: Response, next: any) => {
     next();
 };
 
+const deprecatedRoute = (endpoint: string) => (_req: Request, res: Response) => {
+    return res.status(410).json({
+        success: false,
+        message: `Legacy endpoint '${endpoint}' has been retired. Use Supabase Auth/session data instead.`,
+    });
+};
+
 // GET /admin/users - Get all users
 router.get('/users', authenticate, adminMiddleware, adminController.getAllUsers);
 
@@ -63,8 +70,8 @@ router.get('/jobs', authenticate, adminMiddleware, adminController.getAllJobs);
 
 router.delete('/jobs/:id', authenticate, adminMiddleware, adminController.deleteJob);
 
-// POST /admin/impersonate/:userId - Admin olarak başka bir hesaba geçici giriş yap
-router.post('/impersonate/:userId', authenticate, adminMiddleware, adminController.impersonateUser);
+// POST /admin/impersonate/:userId - Retired
+router.post('/impersonate/:userId', deprecatedRoute('POST /admin/impersonate/:userId'));
 
 // POST /admin/notifications/bulk - Bulk Push Notifications
 router.post('/notifications/bulk', authenticate, adminMiddleware, adminController.sendBulkPushNotifications);

@@ -1,43 +1,26 @@
-import { Router } from 'express';
-import {
-  registerController,
-  loginController,
-  logoutController,
-  refreshTokenController,
-  meController,
-  forgotPasswordController,
-  resetPasswordController,
-  sendEmailVerificationController,
-  verifyEmailController,
-  debugActivateController,
-} from '../controllers/authController';
-import { googleLoginController } from '../controllers/googleAuthController';
-import { appleLoginController } from '../controllers/appleAuthController';
-import { authenticate } from '../middleware/auth';
-import { authLimiter, registerLimiter } from '../middleware/rateLimiter';
-import {
-  validate,
-  registerValidation,
-  loginValidation,
-  refreshTokenValidation,
-  forgotPasswordValidation,
-  resetPasswordValidation,
-} from '../validators';
+import { Router, Request, Response } from 'express';
 
 const router = Router();
 
-router.post('/register', registerLimiter, validate(registerValidation), registerController);
-router.post('/login', authLimiter, validate(loginValidation), loginController);
-router.post('/logout', authenticate, logoutController);
-router.post('/refresh-token', validate(refreshTokenValidation), refreshTokenController);
-router.get('/me', authenticate, meController);
-router.post('/forgot-password', authLimiter, validate(forgotPasswordValidation), forgotPasswordController);
-router.post('/reset-password', authLimiter, validate(resetPasswordValidation), resetPasswordController);
-router.post('/google', authLimiter, googleLoginController);
-router.post('/apple', authLimiter, appleLoginController);
-router.post('/send-verification', authLimiter, sendEmailVerificationController);
-router.post('/verify-email', authLimiter, verifyEmailController);
-router.post('/debug-activate', debugActivateController);
+const deprecatedAuth = (endpoint: string) => (_req: Request, res: Response) => {
+  return res.status(410).json({
+    success: false,
+    message: `Legacy auth endpoint '${endpoint}' has been retired. Use Supabase Auth from the mobile app instead.`,
+  });
+};
+
+router.post('/register', deprecatedAuth('POST /auth/register'));
+router.post('/login', deprecatedAuth('POST /auth/login'));
+router.post('/logout', deprecatedAuth('POST /auth/logout'));
+router.post('/refresh-token', deprecatedAuth('POST /auth/refresh-token'));
+router.get('/me', deprecatedAuth('GET /auth/me'));
+router.post('/forgot-password', deprecatedAuth('POST /auth/forgot-password'));
+router.post('/reset-password', deprecatedAuth('POST /auth/reset-password'));
+router.post('/google', deprecatedAuth('POST /auth/google'));
+router.post('/apple', deprecatedAuth('POST /auth/apple'));
+router.post('/send-verification', deprecatedAuth('POST /auth/send-verification'));
+router.post('/verify-email', deprecatedAuth('POST /auth/verify-email'));
+router.post('/debug-activate', deprecatedAuth('POST /auth/debug-activate'));
 
 export default router;
 

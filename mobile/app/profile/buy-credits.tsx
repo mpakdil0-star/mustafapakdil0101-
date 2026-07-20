@@ -20,7 +20,7 @@ import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
-import api from '../../services/api';
+import { paymentService } from '../../services/paymentService';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { getMe, updateCreditBalance } from '../../store/slices/authSlice';
 
@@ -83,6 +83,37 @@ const PACKAGE_INFO: Record<string, { name: string; credits: number; color: strin
 
 const getPerCredit = (pkg: CreditPackage) => {
     return (pkg.price / pkg.credits).toFixed(1);
+};
+
+const getPurchaseIdentity = (purchase: any) => {
+    const productId = String(
+        purchase?.productId
+        ?? purchase?.productIdentifier
+        ?? purchase?.sku
+        ?? ''
+    ).trim();
+
+    let purchaseToken = purchase?.purchaseToken
+        ?? purchase?.purchaseTokenAndroid
+        ?? purchase?.token
+        ?? null;
+
+    // Some Android/OpenIAP bridges expose the native BillingClient payload
+    // before the unified purchaseToken field is populated.
+    if (!purchaseToken && typeof purchase?.dataAndroid === 'string') {
+        try {
+            const nativePurchase = JSON.parse(purchase.dataAndroid);
+            purchaseToken = nativePurchase?.purchaseToken ?? nativePurchase?.token ?? null;
+        } catch {
+            // Ignore malformed optional native payload and report the missing
+            // token through the normal recoverable purchase flow below.
+        }
+    }
+
+    return {
+        productId,
+        purchaseToken: typeof purchaseToken === 'string' ? purchaseToken.trim() : '',
+    };
 };
 
 export default function BuyCreditsScreen() {
@@ -193,7 +224,7 @@ export default function BuyCreditsScreen() {
     /**
      * 🔄 KURTARMA FONKSİYONU: Askıda kalan (tüketilmemiş) ödemeleri temizler
      * Bu fonksiyon setupIAP'tan bağımsızdır — sonsuz döngü riski YOKTUR.
-     * Backend başarısız olsa bile client-side finishTransaction MUTLAKA çağrılır.
+     * Sunucu krediyi doğrulamadıkça işlem tüketilmez; daha sonra yeniden denenebilir.
      */
     const recoverPendingPurchases = async () => {
         if (!ExpoIap || isExpoGo) return;
@@ -214,27 +245,26 @@ export default function BuyCreditsScreen() {
 
             for (const p of available) {
                 try {
-                    console.log(`🔄 [RECOVERY] Kurtarma: ${p.productId} (Token: ${p.purchaseToken?.substring(0, 10)}...)`);
+                    const { productId, purchaseToken } = getPurchaseIdentity(p);
+                    let verifiedByServer = false;
+                    console.log(`🔄 [RECOVERY] Kurtarma: ${productId || 'unknown-product'}`);
                     
                     // Backend'e doğrulat (kredi ekleyecek veya mükerrer diyecek)
                     try {
-                        await api.post('/payments/verify-purchase', {
-                            productId: p.productId,
-                            purchaseToken: p.purchaseToken,
-                            packageName: 'com.isbitir.app',
-                        });
-                        console.log(`✨ [RECOVERY] Sunucu onayladı: ${p.productId}`);
+                        const response = await paymentService.verifyPurchase(productId, purchaseToken);
+                        verifiedByServer = response?.success === true;
+                        console.log(`✨ [RECOVERY] Sunucu onayladı: ${productId}`);
                     } catch (verifyError: any) {
-                        console.warn(`⚠️ [RECOVERY] Backend hatası (önemsiz, consume devam edecek): ${verifyError.response?.data?.message || verifyError.message}`);
+                        console.warn(`⚠️ [RECOVERY] Sunucu doğrulaması bekliyor: ${verifyError.code || verifyError.response?.data?.error || verifyError.message}`);
                     }
 
-                    // 🔑 KRİTİK: Backend başarılı OLSA DA OLMASA DA ürünü tüket!
-                    // Bu, "already owned" döngüsünü kıran en önemli adımdır.
-                    await ExpoIap.finishTransaction({ purchase: p, isConsumable: true });
-                    console.log(`🗑️ [RECOVERY] finishTransaction başarılı: ${p.productId}`);
+                    // Tüketim güvenli sunucu tarafından yapılır. Sunucu tüketimi geçici
+                    // olarak başaramazsa satın alma Google Play'de kalır ve sonraki
+                    // açılışta tekrar doğrulanır.
+                    if (!verifiedByServer) continue;
                     recoveredAny = true;
                 } catch (error: any) {
-                    console.error(`❌ [RECOVERY] Kurtarma hatası (${p.productId}):`, error.message);
+                    console.error(`❌ [RECOVERY] Kurtarma hatası (${getPurchaseIdentity(p).productId}):`, error.message);
                 }
             }
 
@@ -261,7 +291,8 @@ export default function BuyCreditsScreen() {
 
         // Başarılı Satın Alma Dinleyicisi
         purchaseUpdateSubscription.current = ExpoIap?.purchaseUpdatedListener(async (purchase: any) => {
-            console.log('🎉 Satın alma işlemi güncellendi:', purchase.productId);
+            const { productId, purchaseToken } = getPurchaseIdentity(purchase);
+            console.log('🎉 Satın alma işlemi güncellendi:', productId || 'unknown-product');
             if (isProcessingRef.current) {
                 console.log('⏳ Zaten bir işlem devam ediyor, listener atlanıyor.');
                 return;
@@ -276,16 +307,12 @@ export default function BuyCreditsScreen() {
 
                 // 1. Backend'e doğrulat
                 try {
-                    const response = await api.post('/payments/verify-purchase', {
-                        productId: purchase.productId,
-                        purchaseToken: purchase.purchaseToken,
-                        packageName: 'com.isbitir.app',
-                    });
+                    const response = await paymentService.verifyPurchase(productId, purchaseToken);
 
-                    if (response.data.success) {
+                    if (response.success) {
                         backendSuccess = true;
-                        newBalance = response.data.data?.newBalance ?? null;
-                        alreadyProcessed = response.data.data?.alreadyProcessed === true;
+                        newBalance = response.data?.newBalance ?? null;
+                        alreadyProcessed = response.data?.alreadyProcessed === true;
                     }
                 } catch (verifyError: any) {
                     const errorMsg = verifyError.response?.data?.message || verifyError.message || '';
@@ -297,16 +324,21 @@ export default function BuyCreditsScreen() {
                     }
                 }
 
-                // 2. 🔑 KRİTİK: Backend ne dönerse dönsün, ürünü mutlaka tüket!
-                // Bu, "already owned" hatasını kalıcı olarak çözen adımdır.
-                try {
-                    await ExpoIap.finishTransaction({ purchase, isConsumable: true });
-                    console.log('✅ finishTransaction başarılı:', purchase.productId);
-                } catch (finishError: any) {
-                    console.warn('⚠️ finishTransaction hatası (önemsiz):', finishError.message);
+                // 2. Sunucu onayı yoksa ürünü tüketme; token kurtarma için kalsın.
+                if (!backendSuccess) {
+                    const missingPurchaseData = !productId || !purchaseToken;
+                    setAlertConfig({
+                        visible: true,
+                        type: 'error',
+                        title: 'İşlem Beklemede',
+                        message: missingPurchaseData
+                            ? 'Google Play işlem bilgisi henüz uygulamaya tam ulaşmadı. Satın alma tüketilmedi; bu sayfaya tekrar girdiğinizde sistem işlemi otomatik olarak yeniden kontrol edecek.'
+                            : 'Ödemeniz Google Play tarafından alındı ancak henüz sunucu tarafından doğrulanamadı. Satın alma tüketilmedi; bağlantı veya sunucu düzeldiğinde bu sayfaya tekrar girerek güvenle tamamlayabilirsiniz.'
+                    });
+                    return;
                 }
 
-                // 3. UI güncelle
+                // 3. UI güncelle. Google Play tüketimi sunucu tarafından yapılır.
                 if (typeof newBalance === 'number') {
                     dispatch(updateCreditBalance(newBalance));
                 }
@@ -388,7 +420,7 @@ export default function BuyCreditsScreen() {
     // Backend'den fallback paketleri yükle (Google Play bağlantısı yoksa)
     const loadFallbackPackages = async () => {
         try {
-            const response = await api.get('/payments/packages');
+            const response = { data: { success: true, data: paymentService.packages() } };
             if (response.data.success) {
                 const pkgs = response.data.data.map((p: any) => {
                     const info = PACKAGE_INFO[p.id] || { color: '#94A3B8' };
@@ -470,7 +502,9 @@ export default function BuyCreditsScreen() {
                 // Sonuç purchaseUpdatedListener'da işlenecek
             } else {
                 // Fallback: eski yöntem (test modu)
-                const response = await api.post('/payments/purchase', { packageId: selectedPkg });
+                throw new Error('Google Play bağlantısı kurulamadı; doğrulanmamış kredi yükleme kapalıdır.');
+                // Unreachable compatibility value; legacy UI block below will be removed after store QA.
+                const response = { data: { success: false, data: { newBalance: 0 } } };
 
                 if (response.data.success) {
                     const newBalance = response.data.data.newBalance;

@@ -4,8 +4,8 @@ import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import api from '../../services/api';
-import { API_ENDPOINTS, getFileUrl } from '../../constants/api';
+import { getFileUrl } from '../../constants/api';
+import locationService from '../../services/locationService';
 import { Card } from '../../components/common/Card';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { Button } from '../../components/common/Button';
@@ -125,7 +125,7 @@ export default function ElectriciansListScreen() {
 
     const loadUserLocations = async () => {
         try {
-            const response = await api.get(API_ENDPOINTS.LOCATIONS);
+            const response = { data: { success: true, data: await locationService.getSavedLocations() } };
             if (response.data.success) {
                 const locations = response.data.data;
                 setUserLocations(locations);

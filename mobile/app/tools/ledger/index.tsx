@@ -14,7 +14,6 @@ import { spacing } from '../../../constants/spacing';
 import { fonts } from '../../../constants/typography';
 import { useAppColors } from '../../../hooks/useAppColors';
 import { ledgerService, LedgerEntry, LedgerSummary } from '../../../services/ledgerService';
-import { scheduleReminder } from '../../../services/reminderService';
 
 export default function LedgerScreen() {
   const colors = useAppColors();
@@ -90,6 +89,7 @@ export default function LedgerScreen() {
   const handleSave = async () => {
     if (!personName.trim()) { Alert.alert('Uyarı', 'Kişi adı giriniz.'); return; }
     if (!amount.trim() || isNaN(Number(amount))) { Alert.alert('Uyarı', 'Geçerli bir tutar giriniz.'); return; }
+    if (hasReminder && !eventTime) { Alert.alert('Uyarı', 'Hatırlatıcı için saat seçiniz.'); return; }
 
     setSaving(true);
     try {
@@ -109,15 +109,8 @@ export default function LedgerScreen() {
         eventTime: eventTime || undefined,
         dueDate: selectedDate.toISOString(),
         hasReminder: hasReminder,
+        reminderAt: reminderAt,
       });
-
-      if (hasReminder && reminderAt) {
-        await scheduleReminder(
-          `Hesap Defteri: ${personName}`, 
-          `${entryType === 'receivable' ? 'Alacak' : 'Borç'}: ${amount} TL`, 
-          new Date(reminderAt)
-        );
-      }
 
       setShowModal(false);
       loadData();

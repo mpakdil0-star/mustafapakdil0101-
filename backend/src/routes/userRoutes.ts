@@ -1,9 +1,6 @@
 import express from 'express';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-import { uploadAvatar, uploadAvatarBase64, removeAvatar, getElectricianStats, changePassword, updateProfile, getVerificationStatus, submitVerification, updatePushToken, getElectricians, getElectricianById, deleteAccount } from '../controllers/userController';
-import { meController } from '../controllers/authController';
+import { Request, Response } from 'express';
+import { changePassword, updateProfile, getVerificationStatus, submitVerification, updatePushToken, getElectricians, getElectricianById, deleteAccount } from '../controllers/userController';
 import { getJobHistory } from '../controllers/historyController';
 import { getNotificationPreferences, updateNotificationPreferences } from '../controllers/notificationPreferencesController';
 import { authenticate, optionalAuthenticate, authorize } from '../middleware/auth';
@@ -11,14 +8,19 @@ import { validate, updateProfileValidation, changePasswordValidation, updatePush
 
 const router = express.Router();
 
-import { upload } from '../middleware/upload';
+const deprecatedRoute = (endpoint: string) => (_req: Request, res: Response) => {
+  return res.status(410).json({
+    success: false,
+    message: `Legacy endpoint '${endpoint}' has been retired. Use Supabase Auth/session data instead.`,
+  });
+};
 
 // Routes
-router.get('/me', authenticate, meController);
-router.post('/avatar', authenticate, upload.single('image'), uploadAvatar);
-router.post('/avatar/base64', authenticate, uploadAvatarBase64);
-router.delete('/avatar', authenticate, removeAvatar);
-router.get('/stats', authenticate, getElectricianStats);
+router.get('/me', deprecatedRoute('GET /users/me'));
+router.post('/avatar', deprecatedRoute('POST /users/avatar'));
+router.post('/avatar/base64', deprecatedRoute('POST /users/avatar/base64'));
+router.delete('/avatar', deprecatedRoute('DELETE /users/avatar'));
+router.get('/stats', deprecatedRoute('GET /users/stats'));
 router.put('/password', authenticate, validate(changePasswordValidation), changePassword);
 router.put('/profile', authenticate, validate(updateProfileValidation), updateProfile);
 router.delete('/', authenticate, deleteAccount);

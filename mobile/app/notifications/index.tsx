@@ -11,7 +11,7 @@ import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { colors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
-import api from '../../services/api';
+import { getNotificationTargetPath } from '../../utils/notificationNavigation';
 
 // Timeline Component for Visualizing History
 const TimelineItem = ({ item, index, isLast, onPress }: { item: any; index: number; isLast: boolean; onPress: () => void }) => {
@@ -117,12 +117,8 @@ export default function NotificationsScreen() {
             dispatch(markNotificationAsRead(notification.id));
         }
 
-        // Navigate based on type
-        if (notification.type === 'JOB_OFFER' || notification.type === 'JOB_UPDATE') {
-            router.push(`/jobs/${notification.relatedId}`);
-        } else if (notification.type === 'MESSAGE') {
-            router.push(`/messages/${notification.relatedId}`); // conversationId
-        }
+        const targetPath = getNotificationTargetPath(notification);
+        if (targetPath) router.push(targetPath as any);
     };
 
     const renderEmpty = () => (

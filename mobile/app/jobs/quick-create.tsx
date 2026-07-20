@@ -18,7 +18,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../services/api';
 import locationService from '../../services/locationService';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { createJob, fetchJobs, fetchMyJobs } from '../../store/slices/jobSlice';
@@ -288,10 +287,10 @@ export default function QuickCreateScreen() {
                 if (user.district) setDistrict(user.district);
             }
             try {
-                const response = await api.get('/locations');
-                if (response.data.success && response.data.data.length > 0) {
-                    setSavedAddresses(response.data.data);
-                    const first = response.data.data[0];
+                const locations = await locationService.getSavedLocations();
+                if (locations.length > 0) {
+                    setSavedAddresses(locations);
+                    const first = locations[0];
                     if (first) {
                         setCity(first.city);
                         setDistrict(first.district || '');

@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { fonts } from '../../constants/typography';
 import { spacing } from '../../constants/spacing';
-import api from '../../services/api';
+import { adminService } from '../../services/adminService';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
@@ -61,7 +61,7 @@ export default function AdminReportsScreen() {
     const fetchReports = useCallback(async () => {
         try {
             console.log('📡 [REPORTS] Fetching all reports...');
-            const response = await api.get('/reports/admin/all');
+            const response = { data: { success: true, data: await adminService.reports(), message: '' } };
 
             if (response.data.success) {
                 console.log(`✅ [REPORTS] Successfully fetched ${response.data.data?.length || 0} reports`);
@@ -99,11 +99,7 @@ export default function AdminReportsScreen() {
         setProcessing(true);
 
         try {
-            await api.patch(`/reports/admin/${selectedReport.id}`, {
-                status,
-                adminNotes: adminNote,
-                banUser
-            });
+            await adminService.processReport(selectedReport.id, status, adminNote, banUser);
 
             Alert.alert('Başarılı', 'Şikayet durumu güncellendi.');
             setSelectedReport(null);

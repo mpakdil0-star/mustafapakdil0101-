@@ -10,7 +10,7 @@ import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
-import api from '../../services/api';
+import { preferenceService } from '../../services/accountService';
 import { authService } from '../../services/authService';
 
 const NOTIFICATION_PREFS_KEY = 'notification_preferences';
@@ -100,7 +100,7 @@ export default function NotificationsScreen() {
                     const updatedPrefs = { ...preferences, pushEnabled: true };
                     setPreferences(updatedPrefs);
                     await SecureStore.setItemAsync(NOTIFICATION_PREFS_KEY, JSON.stringify(updatedPrefs));
-                    try { await api.put('/users/notification-preferences', updatedPrefs); } catch { }
+                    try { await preferenceService.update(updatedPrefs); } catch { }
                 }
             }
 
@@ -161,9 +161,9 @@ export default function NotificationsScreen() {
 
             // Then, try to sync from API
             try {
-                const response = await api.get('/users/notification-preferences');
-                if (response.data.success && response.data.data) {
-                    prefs = response.data.data;
+                const remotePrefs = await preferenceService.get<NotificationPreferences>();
+                if (remotePrefs) {
+                    prefs = remotePrefs;
                     // Update local storage with server data
                     await SecureStore.setItemAsync(NOTIFICATION_PREFS_KEY, JSON.stringify(prefs));
                 }
@@ -216,7 +216,7 @@ export default function NotificationsScreen() {
                         console.log('🛡️ [IMPERSONATION] Skipping push token clear');
                     } else {
                         try {
-                            await api.post('/users/push-token', { pushToken: null });
+                            await preferenceService.clearPushTokens();
                             console.log('✅ Push token cleared on backend');
                         } catch (e) {
                             console.warn('Could not clear push token on backend:', e);
@@ -256,6 +256,10 @@ export default function NotificationsScreen() {
                         }
                     } catch (e) {
                         console.warn('Could not re-register push token:', e);
+                        Alert.alert(
+                            'Push Token Hatası',
+                            e instanceof Error ? e.message : 'Push token oluşturulamadı.'
+                        );
                     }
                 }
             }
@@ -263,7 +267,7 @@ export default function NotificationsScreen() {
 
             // Sync preferences to backend
             try {
-                await api.put('/users/notification-preferences', newPreferences);
+                await preferenceService.update(newPreferences);
             } catch (apiError) {
                 console.log('API sync failed, preferences saved locally');
             }
@@ -342,7 +346,7 @@ export default function NotificationsScreen() {
                                             const updatedPrefs = { ...preferences, pushEnabled: true };
                                             setPreferences(updatedPrefs);
                                             await SecureStore.setItemAsync(NOTIFICATION_PREFS_KEY, JSON.stringify(updatedPrefs));
-                                            try { await api.put('/users/notification-preferences', updatedPrefs); } catch { }
+                                            try { await preferenceService.update(updatedPrefs); } catch { }
                                         }
                                     }
                                 } else {

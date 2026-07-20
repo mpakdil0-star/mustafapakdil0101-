@@ -7,7 +7,7 @@ import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../services/api';
+import { adminService } from '../../services/adminService';
 
 export default function AdminJobsScreen() {
     const router = useRouter();
@@ -29,7 +29,8 @@ export default function AdminJobsScreen() {
         try {
             if (pageNum === 1 && !shouldRefresh) setLoading(true); // Only show initial loader
             const limit = 20;
-            const response = await api.get(`/admin/jobs?page=${pageNum}&limit=${limit}`);
+            const result = await adminService.jobs(pageNum, limit);
+            const response = { data: { success: true, data: result.data, pagination: { hasMore: result.hasMore } } };
 
             if (response.data.success) {
                 const newJobs = response.data.data;
@@ -84,7 +85,8 @@ export default function AdminJobsScreen() {
                     onPress: async () => {
                         setDeletingId(jobId);
                         try {
-                            const response = await api.delete(`/admin/jobs/${jobId}`);
+                            await adminService.deleteJob(jobId);
+                            const response = { data: { success: true } };
                             if (response.data.success) {
                                 Alert.alert('Başarılı', 'İlan silindi');
                                 // Refresh list to remove deleted item accurately

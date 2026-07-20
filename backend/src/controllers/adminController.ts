@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+﻿import { Request, Response, NextFunction } from 'express';
 // V2.1: Admin Soft-Delete Fix - 24.04.2026
 import prisma, { isDatabaseAvailable } from '../config/database';
 import { mockStorage, getAllMockUsers } from '../utils/mockStorage';
@@ -6,125 +6,26 @@ import { notifyUser } from '../server';
 import pushNotificationService from '../services/pushNotificationService';
 import { jobStoreById, deleteMockJob, loadMockJobs } from './jobController';
 import { mockTransactionStorage } from '../utils/mockStorage';
-import jwt from 'jsonwebtoken';
-import { config } from '../config/env';
-
-// Master admin e-posta adresi — sadece bu hesap impersonate işlemi yapabilir
-const MASTER_ADMIN_EMAIL = 'mpakdil0@gmail.com';
 
 /**
- * Admin olarak başka bir kullanıcının hesabına geçici giriş yap (Impersonation)
+ * Admin olarak baÅŸka bir kullanÄ±cÄ±nÄ±n hesabÄ±na geÃ§ici giriÅŸ yap (Impersonation)
  * SADECE master admin (mpakdil0@gmail.com) kullanabilir.
  */
-export const impersonateUser = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const adminUser = (req as any).user;
-
-        // Güvenlik: Sadece master admin bu işlemi yapabilir
-        if (adminUser.email !== MASTER_ADMIN_EMAIL) {
-            return res.status(403).json({
-                success: false,
-                error: { message: 'Bu işlem yalnızca baş yönetici tarafından kullanılabilir.' }
-            });
-        }
-
-        const { userId } = req.params;
-
-        if (!userId) {
-            return res.status(400).json({
-                success: false,
-                error: { message: 'Kullanıcı ID gereklidir.' }
-            });
-        }
-
-        let targetUser: any = null;
-
-        // DB'den kullanıcıyı bul
-        if (isDatabaseAvailable && !userId.startsWith('mock-')) {
-            targetUser = await prisma.user.findUnique({
-                where: { id: userId },
-                include: {
-                    electricianProfile: true,
-                    locations: true
-                }
-            });
-        } else {
-            // Mock storage'dan bul — getFullUser ile electricianProfile nesnesi de oluşturulur
-            const storedUser = mockStorage.get(userId);
-            if (storedUser) {
-                const userType = storedUser.userType ||
-                    (userId.endsWith('-ELECTRICIAN') ? 'ELECTRICIAN' :
-                     userId.endsWith('-ADMIN') ? 'ADMIN' : 'CITIZEN');
-                targetUser = { ...mockStorage.getFullUser(userId, userType) };
-            }
-        }
-
-        if (!targetUser) {
-            return res.status(404).json({
-                success: false,
-                error: { message: 'Kullanıcı bulunamadı.' }
-            });
-        }
-
-        // Kendi hesabına bürünmeye çalışıyor mu?
-        if (targetUser.id === adminUser.id) {
-            return res.status(400).json({
-                success: false,
-                error: { message: 'Kendi hesabınıza bürünemezsiniz.' }
-            });
-        }
-
-        // 4 saatlik geçici token üret (isImpersonated flag ile)
-        const impersonatedToken = jwt.sign(
-            {
-                id: targetUser.id,
-                email: targetUser.email,
-                userType: targetUser.userType,
-                isImpersonated: true,
-                impersonatedBy: adminUser.email,
-            },
-            config.jwtSecret,
-            { expiresIn: '4h' } as any
-        );
-
-        console.log(`🔐 [IMPERSONATION] Admin ${adminUser.email} → User ${targetUser.email} (${targetUser.userType})`);
-
-        return res.json({
-            success: true,
-            data: {
-                accessToken: impersonatedToken,
-                user: {
-                    id: targetUser.id,
-                    email: targetUser.email,
-                    fullName: targetUser.fullName,
-                    userType: targetUser.userType,
-                    isVerified: targetUser.isVerified || false,
-                    phone: targetUser.phone,
-                    city: targetUser.city,
-                    district: targetUser.district,
-                    profileImageUrl: targetUser.profileImageUrl,
-                    electricianProfile: targetUser.electricianProfile,
-                    locations: targetUser.locations
-                },
-                isImpersonated: true,
-                impersonatedBy: adminUser.email,
-                expiresIn: '4 saat'
-            }
-        });
-    } catch (error) {
-        console.error('Error in impersonateUser:', error);
-        next(error);
-    }
+export const impersonateUser = async (_req: Request, res: Response, _next: NextFunction) => {
+    return res.status(410).json({
+        success: false,
+        error: { message: 'Bu impersonation akışı retire edildi. Supabase session ve admin araçları kullanın.' }
+    });
 };
 
 const hasValidDocument = (docs: any): boolean => {
     if (!docs) return false;
-    
+
     const isValidUrl = (url: any): boolean => {
         if (typeof url !== 'string') return false;
         const trimmed = url.trim().toLowerCase();
-        // Temel kontroller: Çok kısa olmayacak, 'null'/'undefined' metni olmayacak ve bir uzantısı (.jpg, .png vb.) olacak
-        return trimmed.length > 5 && 
+        // Temel kontroller: Ã‡ok kÄ±sa olmayacak, 'null'/'undefined' metni olmayacak ve bir uzantÄ±sÄ± (.jpg, .png vb.) olacak
+        return trimmed.length > 5 &&
                !['null', 'undefined', 'none', '[object object]'].includes(trimmed) &&
                (trimmed.includes('.') || trimmed.startsWith('/uploads/'));
     };
@@ -157,7 +58,7 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
         if (user.userType !== 'ADMIN') {
             return res.status(403).json({
                 success: false,
-                error: { message: 'Bu işlem için admin yetkisi gereklidir' },
+                error: { message: 'Bu iÅŸlem iÃ§in admin yetkisi gereklidir' },
             });
         }
 
@@ -167,11 +68,11 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
             const emo = u.emoNumber || u.emo_number || u.electricianProfile?.emoNumber || u.electricianProfile?.emo_number;
             const smm = u.smmNumber || u.smm_number || u.electricianProfile?.smmNumber || u.electricianProfile?.smm_number;
             const license = u.licenseNumber || u.license_number || u.electricianProfile?.licenseNumber || u.electricianProfile?.license_number;
-            
+
             // Normalize documents - prioritize nested verificationDocuments object
             const rawDocs = u.verificationDocuments || u.electricianProfile?.verificationDocuments;
             const docs = {
-                documentType: rawDocs?.documentType || u.documentType || u.electricianProfile?.documentType || 'BELİRTİLMEMİŞ',
+                documentType: rawDocs?.documentType || u.documentType || u.electricianProfile?.documentType || 'BELÄ°RTÄ°LMEMÄ°Å',
                 documentUrl: rawDocs?.documentUrl || u.documentUrl || u.electricianProfile?.documentUrl || '',
                 submittedAt: rawDocs?.submittedAt || u.submittedAt || u.electricianProfile?.submittedAt || new Date().toISOString()
             };
@@ -179,7 +80,7 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
             // User mapping
             const userData = {
                 id: u.user?.id || u.id || u.userId,
-                fullName: u.user?.fullName || u.fullName || 'İsimsiz Kullanıcı',
+                fullName: u.user?.fullName || u.fullName || 'Ä°simsiz KullanÄ±cÄ±',
                 email: u.user?.email || u.email || 'Email yok',
                 phone: u.user?.phone || u.phone || 'Telefon yok',
             };
@@ -188,9 +89,9 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
                 userId: u.userId || u.id,
                 verificationStatus: u.verificationStatus || u.verification_status || 'PENDING',
                 serviceCategory: u.serviceCategory || u.electricianProfile?.serviceCategory || 'elektrik',
-                licenseNumber: license || 'Girilmemiş',
-                emoNumber: emo || 'Girilmemiş',
-                smmNumber: smm || 'Girilmemiş',
+                licenseNumber: license || 'GirilmemiÅŸ',
+                emoNumber: emo || 'GirilmemiÅŸ',
+                smmNumber: smm || 'GirilmemiÅŸ',
                 verificationDocuments: docs,
                 user: userData
             };
@@ -200,7 +101,7 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
         if (!isDatabaseAvailable || user.id.startsWith('mock-')) {
             const allUsers = mockStorage.getAllUsers();
             const requests = allUsers
-                .filter((u: any) => u.userType === 'ELECTRICIAN' && 
+                .filter((u: any) => u.userType === 'ELECTRICIAN' &&
                        (u.verificationStatus === 'PENDING' || u.verificationStatus === 'NONE' || !u.verificationStatus))
                 .map(mapToVerificationRequest)
                 .filter((r: any) => hasValidDocument(r.verificationDocuments));
@@ -227,7 +128,7 @@ export const getAllVerifications = async (req: Request, res: Response, next: Nex
             const requests = allUsers
                 .filter((u: any) => u.userType === 'ELECTRICIAN' && u.verificationStatus === 'PENDING')
                 .map(mapToVerificationRequest);
-            
+
             return res.json({ success: true, data: requests });
         }
     } catch (error) {
@@ -248,31 +149,31 @@ export const processVerification = async (req: Request, res: Response, next: Nex
         if (adminUser.userType !== 'ADMIN') {
             return res.status(403).json({
                 success: false,
-                error: { message: 'Bu işlem için admin yetkisi gereklidir' },
+                error: { message: 'Bu iÅŸlem iÃ§in admin yetkisi gereklidir' },
             });
         }
 
         if (!['VERIFIED', 'REJECTED'].includes(status)) {
             return res.status(400).json({
                 success: false,
-                error: { message: 'Geçersiz durum. VERIFIED veya REJECTED olmalı.' },
+                error: { message: 'GeÃ§ersiz durum. VERIFIED veya REJECTED olmalÄ±.' },
             });
         }
 
         // FAST PATH: Mock processing for test users
         if (!isDatabaseAvailable || adminUser.id.startsWith('mock-')) {
-            console.warn('⚠️ processVerification: DB down, updating mockStorage');
+            console.warn('âš ï¸ processVerification: DB down, updating mockStorage');
 
             const userStore = mockStorage.get(targetUserId);
             const isEngineer = userStore?.documentType === 'YETKILI_MUHENDIS' && status === 'VERIFIED';
 
             let newSpecialties = [...(userStore?.specialties || [])];
             if (isEngineer) {
-                if (!newSpecialties.includes('Yetkili Mühendis')) {
-                    newSpecialties.unshift('Yetkili Mühendis');
+                if (!newSpecialties.includes('Yetkili MÃ¼hendis')) {
+                    newSpecialties.unshift('Yetkili MÃ¼hendis');
                 }
-                if (!newSpecialties.includes('Elektrik Proje Çizimi')) {
-                    newSpecialties.push('Elektrik Proje Çizimi');
+                if (!newSpecialties.includes('Elektrik Proje Ã‡izimi')) {
+                    newSpecialties.push('Elektrik Proje Ã‡izimi');
                 }
             }
 
@@ -286,12 +187,12 @@ export const processVerification = async (req: Request, res: Response, next: Nex
             // Award 5 bonus credits for first-time verification as promised
             if (status === 'VERIFIED') {
                 mockStorage.addCredits(targetUserId, 5);
-                console.log(`🎁 5 credits awarded to ${targetUserId} upon verification`);
+                console.log(`ğŸ 5 credits awarded to ${targetUserId} upon verification`);
             }
 
             return res.json({
                 success: true,
-                message: `Başvuru ${status === 'VERIFIED' ? 'onaylandı' : 'reddedildi'} (Test Modu).`,
+                message: `BaÅŸvuru ${status === 'VERIFIED' ? 'onaylandÄ±' : 'reddedildi'} (Test Modu).`,
                 data: { userId: targetUserId, verificationStatus: status }
             });
         }
@@ -304,7 +205,7 @@ export const processVerification = async (req: Request, res: Response, next: Nex
             if (!currentProfile) {
                 return res.status(404).json({
                     success: false,
-                    error: { message: 'Kullanıcı profili bulunamadı' },
+                    error: { message: 'KullanÄ±cÄ± profili bulunamadÄ±' },
                 });
             }
 
@@ -313,11 +214,11 @@ export const processVerification = async (req: Request, res: Response, next: Nex
 
             let newSpecialties = [...(currentProfile.specialties || [])];
             if (isEngineer) {
-                if (!newSpecialties.includes('Yetkili Mühendis')) {
-                    newSpecialties.unshift('Yetkili Mühendis');
+                if (!newSpecialties.includes('Yetkili MÃ¼hendis')) {
+                    newSpecialties.unshift('Yetkili MÃ¼hendis');
                 }
-                if (!newSpecialties.includes('Elektrik Proje Çizimi')) {
-                    newSpecialties.push('Elektrik Proje Çizimi');
+                if (!newSpecialties.includes('Elektrik Proje Ã‡izimi')) {
+                    newSpecialties.push('Elektrik Proje Ã‡izimi');
                 }
             }
 
@@ -346,10 +247,10 @@ export const processVerification = async (req: Request, res: Response, next: Nex
             }
 
             // --- NOTIFICATION LOGIC ---
-            const notificationTitle = status === 'VERIFIED' ? 'Üyeliğiniz Onaylandı! 🎉' : 'Belge Onay Hatası ❌';
+            const notificationTitle = status === 'VERIFIED' ? 'ÃœyeliÄŸiniz OnaylandÄ±! ğŸ‰' : 'Belge Onay HatasÄ± âŒ';
             const notificationMessage = status === 'VERIFIED'
-                ? 'Tebrikler, belgeleriniz onaylandı! Artık "Onaylı Usta" rozeti ile daha fazla iş alabilirsiniz.'
-                : (reason || 'Yüklediğiniz belgeler uygun görülmedi. Lütfen eksiklikleri giderip tekrar yükleyin.');
+                ? 'Tebrikler, belgeleriniz onaylandÄ±! ArtÄ±k "OnaylÄ± Usta" rozeti ile daha fazla iÅŸ alabilirsiniz.'
+                : (reason || 'YÃ¼klediÄŸiniz belgeler uygun gÃ¶rÃ¼lmedi. LÃ¼tfen eksiklikleri giderip tekrar yÃ¼kleyin.');
 
             try {
                 // 1. In-App Socket Notification
@@ -388,7 +289,7 @@ export const processVerification = async (req: Request, res: Response, next: Nex
                         });
                     }
                 } else {
-                    console.log(`📡 Mock notification triggered for user ${targetUserId}: ${notificationTitle}`);
+                    console.log(`ğŸ“¡ Mock notification triggered for user ${targetUserId}: ${notificationTitle}`);
                 }
             } catch (notifErr) {
                 console.error('Notification trigger error in processVerification:', notifErr);
@@ -396,14 +297,14 @@ export const processVerification = async (req: Request, res: Response, next: Nex
 
             res.json({
                 success: true,
-                message: `Başvuru ${status === 'VERIFIED' ? 'onaylandı' : 'reddedildi'}.`,
+                message: `BaÅŸvuru ${status === 'VERIFIED' ? 'onaylandÄ±' : 'reddedildi'}.`,
                 data: updatedProfile,
             });
         } catch (dbErr: any) {
             console.error('Database error in processVerification:', dbErr.message);
             res.json({
                 success: true,
-                message: `Başvuru ${status === 'VERIFIED' ? 'onaylandı' : 'reddedildi'} (Simüle Edildi).`,
+                message: `BaÅŸvuru ${status === 'VERIFIED' ? 'onaylandÄ±' : 'reddedildi'} (SimÃ¼le Edildi).`,
                 data: { userId: targetUserId, verificationStatus: status }
             });
         }
@@ -416,7 +317,7 @@ export const processVerification = async (req: Request, res: Response, next: Nex
 // Imports moved to top
 // Imports moved to top
 export const getDashboardStats = async (req: Request, res: Response, next: NextFunction) => {
-    console.log('📊 getDashboardStats called');
+    console.log('ğŸ“Š getDashboardStats called');
     try {
         const user = (req as any).user;
         if (user.userType !== 'ADMIN') throw new Error('Unauthorized');
@@ -485,7 +386,7 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
 
         // Also count mock-only users for consistent stats with getAllUsers merge
         const allMockUsers = mockStorage.getAllUsers();
-        // We need DB emails to deduplicate — fetch them efficiently
+        // We need DB emails to deduplicate â€” fetch them efficiently
         let mockOnlyCount = 0;
         let mockOnlyElectricians = 0;
         let mockOnlyCitizens = 0;
@@ -525,7 +426,7 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
  * Admin ONLY
  */
 export const getAllJobs = async (req: Request, res: Response, next: NextFunction) => {
-    console.log('📋 getAllJobs called');
+    console.log('ğŸ“‹ getAllJobs called');
     try {
         const user = (req as any).user;
         if (user.userType !== 'ADMIN') throw new Error('Unauthorized');
@@ -606,20 +507,20 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
         const user = (req as any).user;
         if (user.userType !== 'ADMIN') throw new Error('Unauthorized');
 
-        const { 
-            search, 
-            userType: filterType, 
-            city, 
-            district, 
+        const {
+            search,
+            userType: filterType,
+            city,
+            district,
             serviceCategory,
-            page = '1', 
-            limit = '20' 
+            page = '1',
+            limit = '20'
         } = req.query;
         const pageNum = parseInt(page as string, 10);
         const limitNum = parseInt(limit as string, 10);
         const skip = (pageNum - 1) * limitNum;
 
-        // DB Implementation — wrapped in try/catch so DB failures fall through to mock
+        // DB Implementation â€” wrapped in try/catch so DB failures fall through to mock
         if (isDatabaseAvailable) {
             try {
             const whereClause: any = { deletedAt: null };
@@ -638,7 +539,7 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
                 ];
             }
 
-            // Advanced filtering — city uses AND with nested OR to avoid clashing with search OR
+            // Advanced filtering â€” city uses AND with nested OR to avoid clashing with search OR
             if (city) {
                 const cityStr = String(city);
                 whereClause.AND = whereClause.AND || [];
@@ -689,7 +590,7 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
                 let mappedFullName = u.fullName;
                 if (u.email === 'mpakdil0@gmail.com') {
                     mappedUserType = 'ADMIN' as any;
-                    mappedFullName = 'Yönetici';
+                    mappedFullName = 'YÃ¶netici';
                 }
 
                 return {
@@ -713,7 +614,7 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
                 };
             });
 
-            // ── Merge mock storage users that are missing from DB ──
+            // â”€â”€ Merge mock storage users that are missing from DB â”€â”€
             // Users registered during DB outages live only in mock storage.
             // We merge them so admins can always see every registered user.
             const allMockUsers = mockStorage.getAllUsers();
@@ -740,7 +641,7 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
 
                     return {
                         id: mu.id,
-                        fullName: mu.fullName || 'İsimsiz Kullanıcı',
+                        fullName: mu.fullName || 'Ä°simsiz KullanÄ±cÄ±',
                         email: mu.email || '',
                         phone: mu.phone || '',
                         userType: derivedUserType,
@@ -789,7 +690,7 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
             const mergedTotal = totalUsers + missingMockUsers.length;
 
             if (missingMockUsers.length > 0) {
-                console.log(`📎 Admin getAllUsers: Merged ${missingMockUsers.length} mock user(s) not found in DB`);
+                console.log(`ğŸ“ Admin getAllUsers: Merged ${missingMockUsers.length} mock user(s) not found in DB`);
             }
 
             return res.json({
@@ -805,7 +706,7 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
                 }
             });
             } catch (dbError: any) {
-                console.warn('⚠️ getAllUsers DB query failed, falling back to mock storage:', dbError.message);
+                console.warn('âš ï¸ getAllUsers DB query failed, falling back to mock storage:', dbError.message);
                 // Fall through to mock implementation below
             }
         }
@@ -823,10 +724,10 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
             if (data.email === 'mpakdil0@gmail.com') {
                 derivedUserType = 'ADMIN';
             }
-            
+
             return {
                 id,
-                fullName: data.fullName || 'İsimsiz Kullanıcı',
+                fullName: data.fullName || 'Ä°simsiz KullanÄ±cÄ±',
                 email: data.email || '',
                 phone: data.phone || '',
                 userType: derivedUserType,
@@ -882,24 +783,24 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
         const idStr = String(req.params.id);
 
         if (isDatabaseAvailable && !idStr.startsWith('mock-')) {
-            console.log(`🚀 [ADMIN DELETE V2] Attempting soft-delete for job: ${idStr}`);
+            console.log(`ğŸš€ [ADMIN DELETE V2] Attempting soft-delete for job: ${idStr}`);
             try {
-                // Sadece silindi olarak işaretle, status güncellemesi yapma (daha garanti)
-                await prisma.jobPost.update({ 
+                // Sadece silindi olarak iÅŸaretle, status gÃ¼ncellemesi yapma (daha garanti)
+                await prisma.jobPost.update({
                     where: { id: idStr },
                     data: { deletedAt: new Date() }
                 });
-                console.log(`🗑️ Admin soft-deleted job: ${idStr}`);
+                console.log(`ğŸ—‘ï¸ Admin soft-deleted job: ${idStr}`);
 
                 if (jobStoreById.has(idStr)) deleteMockJob(idStr);
-                return res.json({ success: true, message: 'İlan silindi' });
+                return res.json({ success: true, message: 'Ä°lan silindi' });
             } catch (dbError: any) {
                 console.error('DB delete error:', dbError);
-                if (deleteMockJob(idStr)) return res.json({ success: true, message: 'İlan silindi (Mock)' });
-                
-                return res.status(500).json({ 
-                    success: false, 
-                    message: 'Veritabanı hatası: ' + dbError.message 
+                if (deleteMockJob(idStr)) return res.json({ success: true, message: 'Ä°lan silindi (Mock)' });
+
+                return res.status(500).json({
+                    success: false,
+                    message: 'VeritabanÄ± hatasÄ±: ' + dbError.message
                 });
             }
         }
@@ -908,9 +809,9 @@ export const deleteJob = async (req: Request, res: Response, next: NextFunction)
         const success = deleteMockJob(idStr);
 
         if (success) {
-            res.json({ success: true, message: 'İlan silindi' });
+            res.json({ success: true, message: 'Ä°lan silindi' });
         } else {
-            res.status(404).json({ success: false, message: 'İlan bulunamadı' });
+            res.status(404).json({ success: false, message: 'Ä°lan bulunamadÄ±' });
         }
     } catch (error) {
         next(error);
@@ -930,9 +831,9 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
         const serviceCategory = req.query.serviceCategory as string | undefined;
 
         let districtStats: Record<string, number> = {};
-        let availableCities: string[] = ['Adana', 'Ankara', 'İstanbul', 'İzmir', 'Bursa']; // Defaults
+        let availableCities: string[] = ['Adana', 'Ankara', 'Ä°stanbul', 'Ä°zmir', 'Bursa']; // Defaults
 
-        // ── Try real database first ─────────────────────────────────────
+        // â”€â”€ Try real database first â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (isDatabaseAvailable) {
             try {
                 // Fetch dynamic city list from both users and locations
@@ -947,7 +848,7 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                         distinct: ['city']
                     })
                 ]);
-                
+
                 const allCityNames = new Set([
                     ...userCities.map((c: any) => c.city?.trim()),
                     ...locationCities.map((l: any) => l.city?.trim())
@@ -957,7 +858,7 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                     .filter(Boolean)
                     .map(c => c!.charAt(0).toUpperCase() + c!.slice(1).toLowerCase())
                     .sort();
-                
+
                 // If "Aksaray" is in list but user sent "aksaray", normalize
                 const normalizedSearchCity = city ? (city.charAt(0).toUpperCase() + city.slice(1).toLowerCase()) : undefined;
 
@@ -1005,22 +906,22 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                     where: { userType: 'CITIZEN' as any, ...cityFilter, deletedAt: null, isActive: true },
                     include: { locations: true }
                 });
-                
+
                 citizens.forEach((u: any) => {
                     // Check user's main city first
                     if (normalizedSearchCity && u.city?.toLowerCase().trim() === normalizedSearchCity.toLowerCase()) {
-                        const district = u.district || 'Belirtilmemiş';
+                        const district = u.district || 'BelirtilmemiÅŸ';
                         districtStats[district] = (districtStats[district] || 0) + 1;
                     }
-                    
+
                     // Then check locations
-                    const relevantLocs = u.locations.filter((l: any) => 
+                    const relevantLocs = u.locations.filter((l: any) =>
                         !normalizedSearchCity || l.city.toLowerCase().trim() === normalizedSearchCity.toLowerCase()
                     );
-                    
+
                     if (relevantLocs.length > 0) {
                         relevantLocs.forEach((l: any) => {
-                            const d = l.district || 'Belirtilmemiş';
+                            const d = l.district || 'BelirtilmemiÅŸ';
                             districtStats[d] = (districtStats[d] || 0) + 1;
                         });
                     } else if (normalizedSearchCity && (!u.city || u.city.toLowerCase().trim() !== normalizedSearchCity.toLowerCase())) {
@@ -1028,7 +929,7 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                         // (Shouldn't happen with cityFilter logic, but safety first)
                     } else if (!normalizedSearchCity) {
                         // Global view
-                        const d = u.district || 'Belirtilmemiş';
+                        const d = u.district || 'BelirtilmemiÅŸ';
                         districtStats[d] = (districtStats[d] || 0) + 1;
                     }
                 });
@@ -1036,29 +937,29 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                 // 4. Live Data (Last 24h)
                 const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
                 const [activeUstalar, activeCitizens] = await Promise.all([
-                    prisma.user.count({ 
-                        where: { userType: 'ELECTRICIAN' as any, ...cityFilter, deletedAt: null, isActive: true, lastSeenAt: { gte: last24h } } 
+                    prisma.user.count({
+                        where: { userType: 'ELECTRICIAN' as any, ...cityFilter, deletedAt: null, isActive: true, lastSeenAt: { gte: last24h } }
                     }),
-                    prisma.user.count({ 
-                        where: { userType: 'CITIZEN' as any, ...cityFilter, deletedAt: null, isActive: true, lastSeenAt: { gte: last24h } } 
+                    prisma.user.count({
+                        where: { userType: 'CITIZEN' as any, ...cityFilter, deletedAt: null, isActive: true, lastSeenAt: { gte: last24h } }
                     }),
                 ]);
 
                 // 5. Heatmap: Jobs vs Masters per District
                 const allOpenJobs = await prisma.jobPost.findMany({
-                    where: { 
-                        status: 'OPEN' as any, 
+                    where: {
+                        status: 'OPEN' as any,
                         deletedAt: null,
-                        ...(serviceCategory ? { serviceCategory } : {}) 
+                        ...(serviceCategory ? { serviceCategory } : {})
                     }
                 });
 
-                const jobsInCity = normalizedSearchCity 
+                const jobsInCity = normalizedSearchCity
                     ? allOpenJobs.filter((j: any) => (j.location as any).city?.trim().toLowerCase() === normalizedSearchCity.toLowerCase())
                     : allOpenJobs;
 
                 const mastersInCity = await prisma.electricianProfile.findMany({
-                    where: { 
+                    where: {
                         user: { deletedAt: null, isActive: true, ...cityFilter },
                         ...(serviceCategory ? { serviceCategory } : {})
                     },
@@ -1075,7 +976,7 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
 
                 let heatmap = allDistricts.map(d => {
                     const jobCount = jobsInCity.filter((j: any) => (j.location as any).district?.trim() === d).length;
-                    const masterCount = mastersInCity.filter((m: any) => m.user.locations.some((l: any) => 
+                    const masterCount = mastersInCity.filter((m: any) => m.user.locations.some((l: any) =>
                         l.district?.trim() === d && (!normalizedSearchCity || l.city.trim().toLowerCase() === normalizedSearchCity.toLowerCase())
                     )).length;
 
@@ -1098,17 +999,17 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
                     }
                 });
             } catch (dbErr: any) {
-                console.warn('⚠️ getDetailedStats DB failed, falling back to mock:', dbErr.message);
+                console.warn('âš ï¸ getDetailedStats DB failed, falling back to mock:', dbErr.message);
             }
         }
 
-        // ── Fallback: Improved Mock Using mockStorage ──────────────
+        // â”€â”€ Fallback: Improved Mock Using mockStorage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         const allUsers = mockStorage.getAllUsers();
         let filteredUsers = allUsers.filter(u => u.isActive !== false);
 
         if (city && city !== 'ALL') {
-             filteredUsers = filteredUsers.filter((u: any) => 
-                u.city?.toLowerCase() === city.toLowerCase() || 
+             filteredUsers = filteredUsers.filter((u: any) =>
+                u.city?.toLowerCase() === city.toLowerCase() ||
                 (u.locations as any[])?.some(l => l.city?.toLowerCase() === city.toLowerCase())
             );
         }
@@ -1119,7 +1020,7 @@ export const getDetailedStats = async (req: Request, res: Response, next: NextFu
 
         const mDistrictStats: Record<string, number> = {};
         filteredUsers.filter(u => u.userType === 'CITIZEN').forEach((u: any) => {
-            const d = u.district || 'Belirtilmemiş';
+            const d = u.district || 'BelirtilmemiÅŸ';
             mDistrictStats[d] = (mDistrictStats[d] || 0) + 1;
         });
 
@@ -1153,11 +1054,11 @@ export const getUserDetails = async (req: Request, res: Response, next: NextFunc
             });
             if (user) return res.json({ success: true, data: user });
         }
-        
+
         const mockUser = mockStorage.getFullUser(idStr);
         if (mockUser) return res.json({ success: true, data: mockUser });
-        
-        res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı' });
+
+        res.status(404).json({ success: false, message: 'KullanÄ±cÄ± bulunamadÄ±' });
     } catch (error) {
         next(error);
     }
@@ -1171,10 +1072,10 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
     try {
         const idStr = String(req.params.id);
         const updates = req.body;
-        
+
         if (isDatabaseAvailable && !idStr.startsWith('mock-')) {
             const { creditBalance, ...userUpdates } = updates;
-            
+
             // If updating credit balance, it belongs to ElectricianProfile
             if (creditBalance !== undefined) {
                 await prisma.electricianProfile.update({
@@ -1196,10 +1097,10 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
                     include: { electricianProfile: true }
                 });
             }
-            
+
             return res.json({ success: true, data: updatedUser });
         }
-        
+
         const updatedMock = mockStorage.updateProfile(idStr, updates);
         res.json({ success: true, data: updatedMock });
     } catch (error) {
@@ -1208,14 +1109,14 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
 };
 
 /**
- * Toplu Push Bildirimi Gönderme
+ * Toplu Push Bildirimi GÃ¶nderme
  */
 export const sendBulkPushNotifications = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { userIds, title, body } = req.body;
 
         if (!title || !body) {
-            return res.status(400).json({ success: false, error: { message: 'Başlık ve içerik gereklidir.' } });
+            return res.status(400).json({ success: false, error: { message: 'BaÅŸlÄ±k ve iÃ§erik gereklidir.' } });
         }
 
         let targets: { id: string, pushToken: string | null }[] = [];
@@ -1238,26 +1139,26 @@ export const sendBulkPushNotifications = async (req: Request, res: Response, nex
         } else {
             // Mock mode
             const allUsers = Object.values(getAllMockUsers() as any);
-            const filteredUsers = userIds === 'ALL' 
-                ? allUsers 
+            const filteredUsers = userIds === 'ALL'
+                ? allUsers
                 : allUsers.filter((u: any) => Array.isArray(userIds) && userIds.includes(u.id));
 
             targets = filteredUsers.map((u: any) => ({ id: u.id, pushToken: u.pushToken || null }));
         }
 
         if (targets.length === 0) {
-            return res.status(400).json({ success: false, error: { message: 'Bildirim gönderilecek kullanıcı bulunamadı.' } });
+            return res.status(400).json({ success: false, error: { message: 'Bildirim gÃ¶nderilecek kullanÄ±cÄ± bulunamadÄ±.' } });
         }
 
         const adminId = (req as any).user.id;
 
-        // Her kullanıcı için işlem yap
+        // Her kullanÄ±cÄ± iÃ§in iÅŸlem yap
         for (const target of targets) {
             try {
                 let convId: string | undefined = undefined;
 
                 if (isDatabaseAvailable && !target.id.startsWith('mock-')) {
-                    // 1. Konuşma bul veya oluştur
+                    // 1. KonuÅŸma bul veya oluÅŸtur
                     let conv = await prisma.conversation.findFirst({
                         where: {
                             OR: [
@@ -1278,7 +1179,7 @@ export const sendBulkPushNotifications = async (req: Request, res: Response, nex
                     }
                     convId = conv.id;
 
-                    // 2. Mesajı kaydet
+                    // 2. MesajÄ± kaydet
                     await prisma.message.create({
                         data: {
                             conversationId: conv.id,
@@ -1289,7 +1190,7 @@ export const sendBulkPushNotifications = async (req: Request, res: Response, nex
                         }
                     });
 
-                    // 3. Konuşmayı güncelle (preview ve unread count)
+                    // 3. KonuÅŸmayÄ± gÃ¼ncelle (preview ve unread count)
                     const isPart1 = conv.participant1Id === target.id;
                     await prisma.conversation.update({
                         where: { id: conv.id },
@@ -1301,13 +1202,13 @@ export const sendBulkPushNotifications = async (req: Request, res: Response, nex
                     });
                 }
 
-                // 4. Push bildirimi gönder
+                // 4. Push bildirimi gÃ¶nder
                 if (target.pushToken) {
                     await pushNotificationService.sendNotification({
                         to: target.pushToken,
                         title: title,
                         body: body,
-                        data: { 
+                        data: {
                             type: 'bulk_admin_campaign',
                             conversationId: convId
                         }
@@ -1320,17 +1221,17 @@ export const sendBulkPushNotifications = async (req: Request, res: Response, nex
 
         return res.json({
             success: true,
-            data: { message: `${targets.length} kullanıcıya mesaj ve bildirim işlemi tamamlandı.` }
+            data: { message: `${targets.length} kullanÄ±cÄ±ya mesaj ve bildirim iÅŸlemi tamamlandÄ±.` }
         });
 
     } catch (error: any) {
         console.error('Bulk push error:', error);
-        return res.status(500).json({ success: false, error: { message: 'Bildirimler gönderilirken sunucu hatası oluştu.' } });
+        return res.status(500).json({ success: false, error: { message: 'Bildirimler gÃ¶nderilirken sunucu hatasÄ± oluÅŸtu.' } });
     }
 };
 
 /**
- * Kullanıcı Silme
+ * KullanÄ±cÄ± Silme
  */
 export const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -1344,21 +1245,21 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
             });
 
             if (!userToDelete) {
-                return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' });
+                return res.status(404).json({ success: false, message: 'KullanÄ±cÄ± bulunamadÄ±.' });
             }
 
             // Anonymize and soft-delete
             await prisma.user.update({
                 where: { id },
-                data: { 
+                data: {
                     email: `del_${Date.now()}_${userToDelete.email}`, // Free the original email
                     phone: null, // Free the phone number
                     deletedAt: new Date(),
                     isActive: false
                 }
             });
-            console.log(`🗑️ User ${id} anonymized and deleted by admin.`);
-            return res.json({ success: true, message: 'Kullanıcı başarıyla silindi ve e-posta adresi boşa çıkartıldı.' });
+            console.log(`ğŸ—‘ï¸ User ${id} anonymized and deleted by admin.`);
+            return res.json({ success: true, message: 'KullanÄ±cÄ± baÅŸarÄ±yla silindi ve e-posta adresi boÅŸa Ã§Ä±kartÄ±ldÄ±.' });
         }
 
         // Mock mode hard delete
@@ -1367,11 +1268,9 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
         // for the requested action.
         (mockStorage as any).saveToDisk();
 
-        return res.json({ success: true, message: 'Kullanıcı silindi.' });
+        return res.json({ success: true, message: 'KullanÄ±cÄ± silindi.' });
     } catch (error: any) {
         console.error('Delete user error:', error);
-        res.status(500).json({ success: false, message: 'Kullanıcı silinemedi.', error: error.message });
+        res.status(500).json({ success: false, message: 'KullanÄ±cÄ± silinemedi.', error: error.message });
     }
 };
-
-

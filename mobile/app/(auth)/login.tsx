@@ -96,10 +96,10 @@ export default function LoginScreen() {
     try {
       await dispatch(login({ email, password })).unwrap();
     } catch (err: any) {
-      const errorMessage = typeof err === 'string' 
-        ? err 
+      const errorMessage = typeof err === 'string'
+        ? err
         : (err?.message || (err && typeof err === 'object' ? JSON.stringify(err) : 'Giriş yapılamadı'));
-        
+
       const isUserNotFound =
         (typeof errorMessage === 'string' && (
           errorMessage.toLowerCase().includes('bulunamadı') ||
@@ -114,13 +114,13 @@ export default function LoginScreen() {
           'info',
           [
             { text: 'Vazgeç', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },
-            { 
-              text: 'Kayıt Ol', 
-              variant: 'primary', 
+            {
+              text: 'Kayıt Ol',
+              variant: 'primary',
               onPress: () => {
                 setAlertConfig(prev => ({ ...prev, visible: false }));
                 router.push({ pathname: '/(auth)/role-select', params: { redirectTo } });
-              } 
+              }
             }
           ]
         );
@@ -137,9 +137,12 @@ export default function LoginScreen() {
     } catch (err: any) {
       if (err !== 'CANCELLED') {
         if (err?.code === 'USER_NOT_FOUND') {
+          const wasDeleted = Boolean(err?.wasDeleted);
           showAlert(
-            'Hesap Bulunamadı',
-            'Bu Google hesabı ile kayıtlı kullanıcı bulunamadı. Kayıt olmak ister misiniz?',
+            wasDeleted ? 'Hesap Daha Önce Silinmiş' : 'Hesap Bulunamadı',
+            wasDeleted
+              ? 'Bu Google hesabına ait önceki kayıt silinmiş. Yeni bir hesap oluşturmak ister misiniz?'
+              : 'Bu Google hesabı ile kayıtlı kullanıcı bulunamadı. Kayıt olmak ister misiniz?',
             'info',
             [
               { text: 'Vazgeç', variant: 'ghost', onPress: () => setAlertConfig(prev => ({ ...prev, visible: false })) },

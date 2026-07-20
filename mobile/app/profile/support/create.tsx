@@ -8,7 +8,7 @@ import { colors as staticColors } from '../../../constants/colors';
 import { spacing } from '../../../constants/spacing';
 import { fonts } from '../../../constants/typography';
 import { useAppColors } from '../../../hooks/useAppColors';
-import api from '../../../services/api';
+import { supportService } from '../../../services/accountService';
 
 const TICKET_TYPES = [
     { id: 'complaint', label: 'Şikayet' },
@@ -41,20 +41,18 @@ export default function CreateSupportTicketScreen() {
 
         setLoading(true);
         try {
-            const response = await api.post('/support', {
+            await supportService.create({
                 subject,
                 description,
                 ticketType: selectedType,
                 priority: selectedPriority
             });
 
-            if (response.data.success) {
                 Alert.alert(
                     'Başarılı',
                     'Destek talebiniz oluşturuldu. Ekibimiz en kısa sürede size dönüş yapacaktır.',
                     [{ text: 'Tamam', onPress: () => router.replace('/profile/support') }]
                 );
-            }
         } catch (error) {
             console.error('Create ticket error:', error);
             Alert.alert('Hata', 'Talep oluşturulurken bir sorun oluştu.');

@@ -7,7 +7,7 @@ import { spacing } from '../../../constants/spacing';
 import { fonts } from '../../../constants/typography';
 import { useAppColors } from '../../../hooks/useAppColors';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../../services/api';
+import { adminService } from '../../../services/adminService';
 
 export default function AdminTicketDetailScreen() {
     const { id } = useLocalSearchParams();
@@ -28,7 +28,7 @@ export default function AdminTicketDetailScreen() {
         try {
             // Re-using the public endpoint, or we should use admin-specific if needed. 
             // Controller's getTicketDetail allows admin to see any ticket.
-            const response = await api.get(`/support/${id}`);
+            const response = { data: { success: true, data: await adminService.supportTicket(String(id)) } };
             if (response.data.success) {
                 setTicket(response.data.data);
             }
@@ -52,7 +52,8 @@ export default function AdminTicketDetailScreen() {
         try {
             // Admin sending message via the same endpoint
             // Our backend addTicketMessage checks if user is ADMIN to allow posting to any ticket
-            const response = await api.post(`/support/${id}/message`, { text: newMessage });
+            await adminService.manageSupport(String(id), undefined, newMessage);
+            const response = { data: { success: true } };
             if (response.data.success) {
                 setNewMessage('');
                 fetchTicket();
@@ -66,10 +67,8 @@ export default function AdminTicketDetailScreen() {
 
     const handleUpdateStatus = async (status: string) => {
         try {
-            const response = await api.put(`/support/${id}/status`, {
-                status,
-                replyMessage: replyNote.trim() || undefined
-            });
+            await adminService.manageSupport(String(id), status, replyNote);
+            const response = { data: { success: true } };
             if (response.data.success) {
                 Alert.alert('Başarılı', 'Durum güncellendi');
                 setModalVisible(false);

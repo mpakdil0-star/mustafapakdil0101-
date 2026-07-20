@@ -1,7 +1,8 @@
-import apiClient from './api';
-import { API_ENDPOINTS } from '../constants/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
-import { apiService } from './api';
+import * as Linking from 'expo-linking';
+import { Platform } from 'react-native';
+import { assertSupabaseConfigured, supabase } from './supabase';
 
 export interface RegisterData {
   email: string;
@@ -9,8 +10,8 @@ export interface RegisterData {
   fullName: string;
   phone?: string;
   userType: 'CITIZEN' | 'ELECTRICIAN';
-  location?: any;
-  serviceCategory?: string; // Ana hizmet kategorisi
+  location?: unknown;
+  serviceCategory?: string;
   acceptedLegalVersion?: string;
   marketingAllowed?: boolean;
 }
@@ -21,265 +22,374 @@ export interface LoginData {
 }
 
 export interface AuthResponse {
-  user: {
-    id: string;
-    email: string;
-    fullName: string;
-    userType: string;
-  };
+  user: any;
   accessToken: string;
   refreshToken: string;
+  pendingVerification?: boolean;
+  currentLegalVersion?: string | null;
 }
 
-// Mock authentication for testing (database olmadan test için)
-// Backend zaten mock data döndürdüğü için MOCK_MODE kapatıldı
-const MOCK_MODE = false; // Backend mock mode aktif, burada kapatıyoruz
+const PROFILE_SELECT = `
+  *,
+  electrician_profiles (*)
+`;
 
-const createMockResponse = (data: LoginData | RegisterData, fullName?: string): AuthResponse => ({
-  user: {
-    id: 'mock-user-id',
-    email: data.email,
-    fullName: fullName || data.email.split('@')[0],
-    userType: 'userType' in data ? data.userType : 'CITIZEN',
-  },
-  accessToken: 'mock-access-token',
-  refreshToken: 'mock-refresh-token',
-});
+const mapProfile = (row: any) => {
+  if (!row) throw new Error('Kullanıcı profili bulunamadı.');
+  const electrician = Array.isArray(row.electrician_profiles)
+    ? row.electrician_profiles[0]
+    : row.electrician_profiles;
 
-const mockAuth = {
-  async login(data: LoginData): Promise<AuthResponse> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return createMockResponse(data);
-  },
-
-  async register(data: RegisterData): Promise<AuthResponse> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return createMockResponse(data, data.fullName);
-  },
+  return {
+    id: row.id,
+    email: row.email,
+    phone: row.phone ?? undefined,
+    fullName: row.full_name,
+    userType: row.user_type,
+    city: row.city ?? undefined,
+    profileImageUrl: row.profile_image_url ?? undefined,
+    isVerified: Boolean(row.is_verified),
+    isClaimed: Boolean(row.is_claimed),
+    acceptedLegalVersion: row.accepted_legal_version ?? undefined,
+    marketingAllowed: Boolean(row.marketing_allowed),
+    notificationSettings: row.notification_settings,
+    electricianProfile: electrician ? {
+      id: electrician.id,
+      companyName: electrician.company_name,
+      bio: electrician.bio,
+      experienceYears: electrician.experience_years,
+      specialties: electrician.specialties || [],
+      creditBalance: Number(electrician.credit_balance || 0),
+      isAvailable: electrician.is_available,
+      serviceCategory: electrician.service_category,
+      verificationStatus: electrician.verification_status,
+      licenseVerified: electrician.license_verified,
+      ratingAverage: Number(electrician.rating_average || 0),
+      totalReviews: electrician.total_reviews || 0,
+    } : undefined,
+  };
 };
 
-const handleAuthResponse = async (response: AuthResponse) => {
-  await apiService.setTokens(response.accessToken, response.refreshToken);
-  return response;
+const getProfile = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('users')
+    .select(PROFILE_SELECT)
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    throw new Error(
+      error.code === 'PGRST116'
+        ? 'Supabase kullanıcı profili bulunamadı. Veri migrasyonu veya profil trigger’ı kontrol edilmeli.'
+        : error.message
+    );
+  }
+  return mapProfile(data);
+};
+
+const buildAuthResponse = async (session: any, fallbackUser?: any): Promise<AuthResponse> => {
+  const authUser = session?.user || fallbackUser;
+  if (!authUser) throw new Error('Oturum kullanıcı bilgisi alınamadı.');
+
+  const profile = session ? await getProfile(authUser.id) : {
+    id: authUser.id,
+    email: authUser.email,
+    fullName: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Kullanıcı',
+    userType: authUser.user_metadata?.user_type || 'CITIZEN',
+    isVerified: false,
+  };
+
+  return {
+    user: profile,
+    accessToken: session?.access_token || '',
+    refreshToken: session?.refresh_token || '',
+    pendingVerification: !session,
+  };
+};
+
+const getFileExtension = (uri: string, mimeType?: string) => {
+  const uriExtension = uri.split('?')[0].split('.').pop()?.toLowerCase();
+  if (uriExtension && ['jpg', 'jpeg', 'png', 'webp'].includes(uriExtension)) return uriExtension;
+  if (mimeType === 'image/png') return 'png';
+  if (mimeType === 'image/webp') return 'webp';
+  return 'jpg';
+};
+
+const uploadAvatarUri = async (uri: string, mimeType?: string) => {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw userError || new Error('Oturum bulunamadı.');
+
+  const response = await fetch(uri);
+  const fileData = await response.arrayBuffer();
+  const extension = getFileExtension(uri, mimeType);
+  const path = `${userData.user.id}/avatar.${extension}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(path, fileData, {
+      contentType: mimeType || `image/${extension === 'jpg' ? 'jpeg' : extension}`,
+      upsert: true,
+    });
+  if (uploadError) throw uploadError;
+
+  const { data: publicUrl } = supabase.storage.from('avatars').getPublicUrl(path);
+  const profileImageUrl = `${publicUrl.publicUrl}?v=${Date.now()}`;
+  const { error: updateError } = await supabase
+    .from('users')
+    .update({ profile_image_url: profileImageUrl })
+    .eq('id', userData.user.id);
+  if (updateError) throw updateError;
+
+  return getProfile(userData.user.id);
+};
+
+const createDeviceId = async () => {
+  const key = 'supabase_push_device_id';
+  const existing = await AsyncStorage.getItem(key);
+  if (existing) return existing;
+  const value = `${Platform.OS}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  await AsyncStorage.setItem(key, value);
+  return value;
 };
 
 export const authService = {
   async register(data: RegisterData): Promise<AuthResponse> {
-    if (MOCK_MODE) {
-      return handleAuthResponse(await mockAuth.register(data));
-    }
+    assertSupabaseConfigured();
+    const normalizedEmail = data.email.trim().toLowerCase();
+    const { data: registrationStatus, error: registrationStatusError } = await supabase.functions.invoke(
+      'account-registration-status',
+      { body: { action: 'prepare_email_registration', email: normalizedEmail } },
+    );
+    if (registrationStatusError) throw registrationStatusError;
+    if (registrationStatus?.alreadyRegistered) throw new Error('Bu e-posta adresi zaten kayıtlı. Lütfen giriş yapın.');
 
-    try {
-      const response = await apiClient.post(API_ENDPOINTS.REGISTER, data);
-      return handleAuthResponse(response.data.data);
-    } catch (error: any) {
-      // Re-throw to preserve axios error structure for proper status code handling
-      throw error;
-    }
+    const { data: authData, error } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password: data.password,
+      options: {
+        emailRedirectTo: Linking.createURL('/(auth)/login', { queryParams: { verified: '1' } }),
+        data: {
+          full_name: data.fullName.trim(),
+          phone: data.phone?.trim() || null,
+          user_type: data.userType,
+          service_category: data.serviceCategory || null,
+          accepted_legal_version: data.acceptedLegalVersion || null,
+          marketing_allowed: Boolean(data.marketingAllowed),
+        },
+      },
+    });
+    if (error) throw error;
+    return buildAuthResponse(authData.session, authData.user);
   },
 
   async login(data: LoginData): Promise<AuthResponse> {
-    if (MOCK_MODE) {
-      return handleAuthResponse(await mockAuth.login(data));
-    }
-
-    try {
-      const response = await apiClient.post(API_ENDPOINTS.LOGIN, data);
-      return handleAuthResponse(response.data.data);
-    } catch (error: any) {
-      // 503 database hatası - mock mode'a geç
-      if (error.response?.status === 503 && error.response?.data?.error?.message?.includes('Database')) {
-        return handleAuthResponse(await mockAuth.login(data));
-      }
-
-      // Re-throw to preserve axios error structure for proper status code handling
-      throw error;
-    }
+    assertSupabaseConfigured();
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
+      email: data.email.trim().toLowerCase(),
+      password: data.password,
+    });
+    if (error) throw error;
+    return buildAuthResponse(authData.session);
   },
 
   async getMe() {
-    if (MOCK_MODE) {
-      const token = await apiService.getToken();
-      if (token === 'mock-access-token') {
-        return {
-          id: 'mock-user-id',
-          email: 'test@example.com',
-          fullName: 'Test User',
-          userType: 'CITIZEN',
-          isVerified: true,
-        };
-      }
-    }
+    assertSupabaseConfigured();
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) throw error || new Error('Oturum bulunamadı.');
+    return getProfile(data.user.id);
+  },
 
-    const response = await apiClient.get(API_ENDPOINTS.ME);
-    return response.data.data.user;
+  async getSession() {
+    assertSupabaseConfigured();
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    return data.session;
   },
 
   async uploadAvatar(formData: FormData) {
-    // Important: Don't set Content-Type header for React Native
-    // React Native will automatically set it with proper boundary
-    const response = await apiClient.post(API_ENDPOINTS.UPLOAD_AVATAR, formData);
-    return response.data.data;
+    const parts = (formData as any)?._parts || [];
+    const imagePart = parts.find(([key]: [string]) => key === 'image')?.[1];
+    if (!imagePart?.uri) throw new Error('Yüklenecek görsel bulunamadı.');
+    return uploadAvatarUri(imagePart.uri, imagePart.type);
   },
 
   async uploadAvatarBase64(base64Image: string) {
-    const response = await apiClient.post(API_ENDPOINTS.UPLOAD_AVATAR_BASE64, {
-      image: base64Image,
-    });
-    return response.data.data;
+    return uploadAvatarUri(base64Image, base64Image.match(/^data:([^;]+);/)?.[1]);
   },
 
   async removeAvatar() {
-    const response = await apiClient.delete(API_ENDPOINTS.UPLOAD_AVATAR);
-    return response.data.data;
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) throw new Error('Oturum bulunamadı.');
+
+    const { data: files, error: listError } = await supabase.storage
+      .from('avatars')
+      .list(data.user.id);
+    if (listError) throw listError;
+    if (files?.length) {
+      const { error: removeError } = await supabase.storage
+        .from('avatars')
+        .remove(files.map((file) => `${data.user!.id}/${file.name}`));
+      if (removeError) throw removeError;
+    }
+    const { error } = await supabase.from('users').update({ profile_image_url: null }).eq('id', data.user.id);
+    if (error) throw error;
+    return getProfile(data.user.id);
   },
 
   async logout() {
     try {
-      // 1. Notify backend only if we have a token
-      const token = await apiService.getToken();
-      if (token) {
-        await apiClient.post('/auth/logout');
+      const deviceId = await AsyncStorage.getItem('supabase_push_device_id');
+      const { data } = await supabase.auth.getUser();
+      if (deviceId && data.user) {
+        await supabase.from('push_tokens').update({ is_active: false }).eq('user_id', data.user.id).eq('device_id', deviceId);
       }
-    } catch (error) {
-      if ((error as any).response?.status !== 401) {
-        console.warn('Backend logout failed:', error);
+    } finally {
+      await supabase.auth.signOut();
+      try {
+        const { signOutGoogle } = require('./socialAuthService');
+        await signOutGoogle();
+      } catch {
+        // Native Google session cleanup is best-effort.
       }
     }
-
-    // 2. Clear Social Auth Sessions (CRITICAL for fixing intermittent Google Login issues)
-    try {
-      // Try to clean up social sessions regardless of environment
-      // The individual services handle their own internal errors/checks
-      const { signOutGoogle } = require('./socialAuthService');
-      await signOutGoogle();
-    } catch (e) {
-      console.log('Social Sign-Out error during logout (silent):', e);
-    }
-
-    // 3. Disconnect socket
-    try {
-      const { socketService } = require('./socketService');
-      socketService.disconnect();
-    } catch (e) {
-      console.warn('Socket disconnect failed during logout:', e);
-    }
-
-    // 4. Clear local tokens
-    await apiService.clearTokens();
-    console.log('✅ Full logout completed (including social sessions)');
   },
 
   async registerPushToken(): Promise<'granted' | 'denied' | 'needs_settings' | undefined> {
-    try {
-      // check if running in Expo Go on Android
-      const { Platform, Linking } = await import('react-native');
-      const Constants = (await import('expo-constants')).default;
-      const isExpoGo = Constants.appOwnership === 'expo';
+    const isExpoGo = Constants.appOwnership === 'expo';
+    if (isExpoGo && Platform.OS === 'android') return;
 
-      if (isExpoGo && Platform.OS === 'android') {
-        return;
-      }
+    const Notifications = await import('expo-notifications');
+    const Device = await import('expo-device');
+    if (!Device.isDevice) return;
 
-      // Lazy load only if NOT in Expo Go Android
-      const Notifications = await import('expo-notifications');
-      const Device = await import('expo-device');
+    const current = await Notifications.getPermissionsAsync();
+    if (current.status !== 'granted' && !current.canAskAgain) return 'needs_settings';
+    const status = current.status === 'granted'
+      ? current.status
+      : (await Notifications.requestPermissionsAsync()).status;
+    if (status !== 'granted') return 'denied';
 
-      if (!Device.isDevice) {
-        console.warn('Push Notification: Must use physical device for Push Notifications');
-        return;
-      }
-
-      const { status: existingStatus, canAskAgain } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-
-      if (existingStatus !== 'granted') {
-        if (!canAskAgain) {
-          // Permission permanently denied – user must go to system settings
-          console.warn('Push Notification: Permission permanently denied, must open system settings');
-          return 'needs_settings';
-        }
-        // Can still ask – show system dialog
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-
-      if (finalStatus !== 'granted') {
-        console.warn('Push Notification: Failed to get push token for push notification!');
-        return 'denied';
-      }
-
-      const token = (await Notifications.getExpoPushTokenAsync({
-        projectId: 'f894540e-3b89-4157-a0e0-5ed3bfd1ad72',
-      })).data;
-
-      console.log('Push Notification: Generated token:', token);
-
-      // Send to backend
-      await apiClient.post('/users/push-token', { pushToken: token });
-
-      if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('default', {
-          name: 'default',
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#FF231F7C',
-        });
-      }
-
-      return 'granted';
-    } catch (error) {
-      console.error('Push Notification Registration Error:', error);
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'Genel Bildirimler',
+        importance: Notifications.AndroidImportance.MAX,
+      });
     }
+
+    const projectId = Constants.easConfig?.projectId
+      || Constants.expoConfig?.extra?.eas?.projectId;
+    if (!projectId) throw new Error('EAS project ID bulunamadı.');
+
+    let token: string;
+    try {
+      token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+    } catch (error: any) {
+      const message = String(error?.message || error || 'UNKNOWN_PUSH_TOKEN_ERROR').slice(0, 500);
+      await supabase.auth.updateUser({
+        data: {
+          push_registration_error: message,
+          push_registration_error_at: new Date().toISOString(),
+        },
+      }).catch(() => {});
+      throw error;
+    }
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) throw new Error('Push token kaydı için oturum bulunamadı.');
+
+    const deviceId = await createDeviceId();
+    const { error } = await supabase.from('push_tokens').upsert({
+      user_id: authData.user.id,
+      expo_push_token: token,
+      device_id: deviceId,
+      platform: Platform.OS,
+      is_active: true,
+      last_seen_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,device_id' });
+    if (error) throw error;
+
+    await supabase.auth.updateUser({
+      data: { push_registration_error: null, push_registration_error_at: null },
+    }).catch(() => {});
+    return 'granted';
   },
 
   async forgotPassword(email: string) {
-    if (MOCK_MODE) {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      return { success: true, message: 'Doğrulama kodu e-posta adresinize gönderildi.' };
-    }
-
-    try {
-      const response = await apiClient.post('/auth/forgot-password', { email });
-      return response.data;
-    } catch (error: any) {
-      // Fallback to mock on server error for continuity
-      if (error.response?.status >= 500 || !error.response) {
-        await new Promise(resolve => setTimeout(resolve, 800));
-        return { success: true, message: 'Doğrulama kodu e-posta adresinize gönderildi. (Mock)' };
-      }
-      const message = error.response?.data?.error?.message || error.message || 'Hata oluştu';
-      throw new Error(message);
-    }
+    assertSupabaseConfigured();
+    const redirectTo = Linking.createURL('/(auth)/forgot-password', { queryParams: { recovery: '1' } });
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo });
+    if (error) throw error;
+    return { success: true, message: 'Şifre yenileme bağlantısı e-posta adresinize gönderildi.' };
   },
 
-  async resetPassword(data: any) {
-    if (MOCK_MODE) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      if (data.code === '123456') {
-        return { success: true, message: 'Şifreniz başarıyla yenilendi.' };
-      }
-      throw new Error('Geçersiz doğrulama kodu.');
+  async resetPassword(data: { newPassword: string }) {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      throw new Error('Şifre yenileme bağlantısı geçersiz veya süresi dolmuş. E-postanızdan bağlantıyı tekrar açın.');
+    }
+    const { error } = await supabase.auth.updateUser({ password: data.newPassword });
+    if (error) throw error;
+    await supabase.auth.signOut({ scope: 'local' });
+    return { success: true, message: 'Şifreniz başarıyla yenilendi.' };
+  },
+
+  async changePassword(currentPassword: string, newPassword: string) {
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    const email = userData.user?.email;
+    if (userError || !email) throw userError ?? new Error('E-posta hesabı bulunamadı.');
+    const { error: verifyError } = await supabase.auth.signInWithPassword({ email, password: currentPassword });
+    if (verifyError) throw new Error('Mevcut şifreniz hatalı.');
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+    return { success: true };
+  },
+
+  async deleteAccount() {
+    const { data, error } = await supabase.functions.invoke('delete-account', { body: {} });
+    if (error) throw error;
+    if (!data?.success) throw new Error('Hesap silinemedi.');
+    await supabase.auth.signOut({ scope: 'local' });
+    return { success: true };
+  },
+
+  async resendVerification(email: string) {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email.trim().toLowerCase(),
+      options: { emailRedirectTo: Linking.createURL('/(auth)/login', { queryParams: { verified: '1' } }) },
+    });
+    if (error) throw error;
+  },
+
+  async handleAuthUrl(url: string) {
+    const parsed = Linking.parse(url);
+    const code = typeof parsed.queryParams?.code === 'string' ? parsed.queryParams.code : null;
+    if (code) {
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error) throw error;
+      return true;
     }
 
-    try {
-      const response = await apiClient.post('/auth/reset-password', data);
-      return response.data;
-    } catch (error: any) {
-      // Fallback to mock on server error
-      if (error.response?.status >= 500 || !error.response) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        if (data.code === '123456') {
-          return { success: true, message: 'Şifreniz başarıyla yenilendi. (Mock)' };
-        }
-        throw new Error('Geçersiz doğrulama kodu (Mock).');
-      }
-      const message = error.response?.data?.error?.message || error.message || 'Hata oluştu';
-      throw new Error(message);
+    const fragment = url.includes('#') ? url.split('#')[1] : '';
+    const params = new URLSearchParams(fragment);
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    if (accessToken && refreshToken) {
+      const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      if (error) throw error;
+      return true;
     }
+    return false;
   },
+
   async getVerificationStatus() {
-    return apiClient.get('/users/verification');
+    const user = await this.getMe();
+    if (!user) throw new Error('Kullanıcı profili bulunamadı.');
+    return {
+      status: 200,
+      data: {
+        status: user.electricianProfile?.verificationStatus,
+        data: { verificationStatus: user.electricianProfile?.verificationStatus },
+      },
+    };
   },
 };
-

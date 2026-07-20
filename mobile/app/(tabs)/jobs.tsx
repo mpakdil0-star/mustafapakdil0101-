@@ -15,9 +15,8 @@ import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
 import { AuthGuardModal } from '../../components/common/AuthGuardModal';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
-import api from '../../services/api';
+import locationService from '../../services/locationService';
 import { messageService } from '../../services/messageService';
-import { API_ENDPOINTS } from '../../constants/api';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CITY_NAMES, getDistrictsByCity } from '../../constants/locations';
@@ -85,8 +84,7 @@ export default function JobsScreen() {
       const fetchServiceAreas = async () => {
         if (isElectrician && isAuthenticated && !serviceAreasLoaded) {
           try {
-            const response = await api.get('/locations');
-            const locations = response.data.data || [];
+            const locations = await locationService.getSavedLocations();
 
             if (locations.length > 0) {
               // Get unique city from locations
@@ -99,10 +97,13 @@ export default function JobsScreen() {
                   setSelectedDistricts(districts);
                 }
               }
-              setServiceAreasLoaded(true);
             }
           } catch (error) {
             console.error('Failed to fetch service areas:', error);
+          } finally {
+            // Do not block job discovery when the electrician has no saved
+            // service area yet or when loading locations temporarily fails.
+            setServiceAreasLoaded(true);
           }
         }
       };
@@ -123,7 +124,7 @@ export default function JobsScreen() {
   }, []);
 
   const loadJobs = useCallback(() => {
-    // FIX: Use 'ACTIVE' to fetch both OPEN and BIDDING jobs
+    // ACTIVE is translated to OPEN + BIDDING by jobService.
     const filters: any = { status: 'ACTIVE', limit: 20 };
     // Filter jobs by professional's category (e.g. only show Plumbing jobs to Plumbers)
     if (isElectrician && user?.electricianProfile?.serviceCategory) {
@@ -137,7 +138,7 @@ export default function JobsScreen() {
       filters.radius = selectedRadius;
     }
     dispatch(fetchJobs(filters));
-  }, [dispatch, selectedCity, selectedDistricts, userLocation, selectedRadius]);
+  }, [dispatch, isElectrician, selectedCity, selectedDistricts, userLocation, selectedRadius, user?.electricianProfile?.serviceCategory]);
 
   const loadMyJobs = useCallback(() => {
     dispatch(fetchMyJobs());
@@ -540,11 +541,7 @@ export default function JobsScreen() {
 
                             // 2. Yoksa oluştur
                             if (!conversation) {
-                              const createRes = await api.post(API_ENDPOINTS.CONVERSATIONS || 'conversations', {
-                                recipientId: job.assignedElectricianId,
-                                jobPostId: job.id
-                              });
-                              conversation = createRes.data.data.conversation;
+                              conversation = await messageService.findOrCreateConversation(job.assignedElectricianId, job.id);
                             }
 
                             // 3. Sohbet detayına git

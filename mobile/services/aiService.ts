@@ -1,4 +1,4 @@
-import apiClient from './api';
+import { supabase } from './supabase';
 
 export interface ChatMessage {
   role: 'user' | 'model';
@@ -23,19 +23,16 @@ export interface CostEstimate {
 
 export const aiService = {
   /**
-   * Sends a message to the AI assistant backend.
+   * Sends a message to the AI assistant Edge Function.
    */
   async sendMessage(
     message: string,
     history: ChatMessage[] = [],
     image?: ImageAttachment
   ): Promise<{ text: string; fallback: boolean }> {
-    const response = await apiClient.post('/ai/chat', {
-      message,
-      history,
-      image,
-    });
-    return response.data.data;
+    const { data, error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'chat', message, history, image } });
+    if (error) throw error;
+    return data.data;
   },
 
   /**
@@ -43,8 +40,9 @@ export const aiService = {
    */
   async getCostEstimate(category: string): Promise<CostEstimate> {
     try {
-      const response = await apiClient.get(`/ai/cost-estimate?category=${encodeURIComponent(category)}`);
-      return response.data.data;
+      const { data, error } = await supabase.functions.invoke('ai-assistant', { body: { action: 'cost', category } });
+      if (error) throw error;
+      return data.data;
     } catch {
       return { found: false };
     }

@@ -6,6 +6,9 @@ data/
 
 # Documentation
 *.md
+!docs/SUPABASE_GECIS_MATRISI.md
+!docs/SUPABASE_KURULUM.md
+!supabase/README.md
 *.bat
 *.txt
 
@@ -20,6 +23,26 @@ node_modules/
 /eas.json
 
 # Sensitive files - DO NOT COMMIT
+.tools/
 service-account-key.json
 *.pem
 *.key
+*.jks
+*.keystore
+.env
+*.env
+.env.*
+*.env.*
+!*.env.example
+!**/*.env.example
+
+# Local release artifacts and private project data
+aab-output/
+*.aab
+*.apk
+*.xlsx
+*.xls
+google-services.json
+/read_excel_headers.mjs
+.idea/
+supabase/.temp/

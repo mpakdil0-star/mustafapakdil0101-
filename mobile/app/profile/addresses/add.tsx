@@ -8,8 +8,7 @@ import { colors as staticColors } from '../../../constants/colors';
 import { spacing } from '../../../constants/spacing';
 import { fonts, typography } from '../../../constants/typography';
 import { CITY_NAMES, getDistrictsByCity } from '../../../constants/locations';
-import apiClient from '../../../services/api';
-import { API_ENDPOINTS } from '../../../constants/api';
+import locationService from '../../../services/locationService';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppColors } from '../../../hooks/useAppColors';
@@ -79,7 +78,7 @@ export default function AddAddressScreen() {
         try {
             // Save each district as a separate location
             const promises = selectedDistricts.map(district =>
-                apiClient.post(API_ENDPOINTS.LOCATIONS, {
+                locationService.addSavedLocation({
                     city,
                     district,
                     neighborhood: '',

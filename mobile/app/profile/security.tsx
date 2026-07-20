@@ -11,7 +11,7 @@ import { colors as staticColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
-import api from '../../services/api';
+import { authService } from '../../services/authService';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
 
@@ -55,10 +55,7 @@ export default function SecurityScreen() {
 
         setLoading(true);
         try {
-            await api.put('/users/password', {
-                currentPassword,
-                newPassword
-            });
+            await authService.changePassword(currentPassword, newPassword);
 
             showAlert('Başarılı', 'Şifreniz başarıyla değiştirildi.', 'success', [
                 { text: 'Tamam', onPress: () => router.back() }
@@ -170,7 +167,7 @@ export default function SecurityScreen() {
                                         try {
                                             setAlertConfig(prev => ({ ...prev, visible: false }));
                                             setLoading(true);
-                                            await api.delete('/users');
+                                            await authService.deleteAccount();
                                             showAlert('Başarılı', 'Hesabınız silindi.', 'success');
                                             setTimeout(() => {
                                                 dispatch(logout());

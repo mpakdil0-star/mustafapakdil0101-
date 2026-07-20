@@ -7,7 +7,8 @@ import { colors as staticColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
-import api, { apiService } from '../../services/api';
+import { adminService } from '../../services/adminService';
+import { messageService } from '../../services/messageService';
 import { getFileUrl } from '../../constants/api';
 import { useDispatch } from 'react-redux';
 import { impersonateLogin } from '../../store/slices/authSlice';
@@ -107,11 +108,8 @@ export default function AdminUsersScreen() {
         try {
             const userIdArray = selectedUsers.size > 0 ? Array.from(selectedUsers) : 'ALL';
             
-            const res = await api.post('/admin/notifications/bulk', {
-                userIds: userIdArray,
-                title: bulkNotifTitle,
-                body: bulkNotifBody
-            });
+            const sent = await adminService.bulkNotify(userIdArray === 'ALL' ? null : userIdArray, bulkNotifTitle, bulkNotifBody);
+            const res = { data: { success: true, data: { message: `${sent} kullanıcı için bildirim oluşturuldu.` } } };
 
             if (res.data.success) {
                 Alert.alert('Başarılı', res.data.data.message || 'Bildirimler gönderildi.');
@@ -140,13 +138,14 @@ export default function AdminUsersScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            const res = await api.delete(`/admin/users/${userId}`);
+                            await adminService.deleteUser(userId);
+                            const res = { data: { success: true } };
                             if (res.data.success) {
                                 setUsers(prev => prev.filter(u => u.id !== userId));
-                                Alert.alert('Başarılı', 'Kullanıcı silindi.');
+                                Alert.alert('Başarılı', 'Kullanıcının giriş hesabı ve bağlı verileri kalıcı olarak silindi.');
                             }
                         } catch (error: any) {
-                            const msg = error.response?.data?.message || 'Kullanıcı silinemedi.';
+                            const msg = error.response?.data?.message || error.message || 'Kullanıcı silinemedi.';
                             Alert.alert('Hata', msg);
                         }
                     }
@@ -182,17 +181,15 @@ export default function AdminUsersScreen() {
     const fetchUsers = useCallback(async (resetPage = false) => {
         try {
             const currentPage = resetPage ? 1 : page;
-            const response = await api.get('/admin/users', {
-                params: {
+            const result = await adminService.users({
                     search: searchQuery,
                     userType: filter,
                     city: city,
                     district: district,
                     serviceCategory: category,
-                    page: currentPage,
-                    limit: 20
-                }
+                    page: currentPage, limit: 20
             });
+            const response = { data: { success: true, data: { users: result.users, pagination: { totalPages: result.totalPages } } } };
 
             if (response.data.success) {
                 const { users: fetchedUsers, pagination } = response.data.data;
@@ -243,7 +240,7 @@ export default function AdminUsersScreen() {
 
     const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
         try {
-            await api.put(`/admin/users/${userId}`, { isActive: !currentStatus });
+            await adminService.setUserActive(userId, !currentStatus);
             setUsers(users.map(u =>
                 u.id === userId ? { ...u, isActive: !currentStatus } : u
             ));
@@ -265,9 +262,8 @@ export default function AdminUsersScreen() {
         setMessagingUserId(targetUserId);
         try {
             // Mevcut konuşmayı bul veya yenisini oluştur
-            const response = await api.post('/conversations', {
-                recipientId: targetUserId,
-            });
+            const conversation = await messageService.findOrCreateConversation(targetUserId);
+            const response = { data: { success: true, data: { conversation } } };
 
             if (response.data.success && response.data.data.conversation) {
                 const conversationId = response.data.data.conversation.id;
@@ -296,13 +292,14 @@ export default function AdminUsersScreen() {
                     onPress: async () => {
                         setImpersonatingUserId(targetUser.id);
                         try {
-                            const response = await api.post(`/admin/impersonate/${targetUser.id}`);
+                            throw new Error('Supabase Auth güvenlik modeli nedeniyle kullanıcı hesabına bürünme mobil istemcide devre dışıdır.');
+                            const response: any = { data: { success: false } };
                             if (response.data.success) {
                                 const { accessToken, user } = response.data.data;
                                 // Admin token'ını yedekle
-                                await apiService.saveAdminFallback();
+                                throw new Error('Impersonation Supabase Auth üzerinde desteklenmiyor.');
                                 // Token'ı SecureStore'a kaydet
-                                await apiService.setTokens(accessToken, accessToken); // refresh olarak da aynısını koy (4 saat geçerli)
+                                void accessToken;
                                 // Redux store'u atomik olarak güncelle (user + token birlikte)
                                 dispatch(impersonateLogin({
                                     user: {
@@ -348,10 +345,10 @@ export default function AdminUsersScreen() {
             const currentBalance = user?.creditBalance || 0;
             const newBalance = currentBalance + amount;
 
-            await api.put(`/admin/users/${selectedUserId}`, { creditBalance: newBalance });
+            const confirmedBalance = await adminService.addCredit(selectedUserId, amount);
 
             setUsers(users.map(u =>
-                u.id === selectedUserId ? { ...u, creditBalance: newBalance } : u
+                u.id === selectedUserId ? { ...u, creditBalance: confirmedBalance } : u
             ));
 
             setCreditModalVisible(false);

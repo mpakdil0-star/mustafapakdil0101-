@@ -11,11 +11,9 @@ export const config = {
   // Database
   databaseUrl: process.env.DATABASE_URL || '',
 
-  // JWT
-  jwtSecret: process.env.JWT_SECRET || 'your-secret-key',
-  jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
+  // Supabase Auth
+  supabaseUrl: process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://htsdqvlyyiyawtmuhryi.supabase.co',
+  supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '',
 
   // Redis
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',

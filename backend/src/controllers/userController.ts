@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+﻿import { Request, Response, NextFunction } from 'express';
 import prisma, { isDatabaseAvailable } from '../config/database';
 import { AppError } from '../utils/errors';
 import userService from '../services/userService';
@@ -16,17 +16,17 @@ function serveMockResponse(req: Request, res: Response, city: any, latNum: any, 
     let mockElectricians: any[] = [
         {
             id: 'mock-elec-1',
-            fullName: 'Ahmet Yılmaz',
+            fullName: 'Ahmet YÄ±lmaz',
             profileImageUrl: null,
             isVerified: true,
             electricianProfile: {
-                specialties: ['Tesisat', 'Arıza'],
+                specialties: ['Tesisat', 'ArÄ±za'],
                 ratingAverage: 4.8,
                 totalReviews: 124,
                 experienceYears: 20,
                 isAvailable: true
             },
-            locations: [{ city: 'İstanbul', district: 'Kadıköy', latitude: 40.9901, longitude: 29.0234, isDefault: true }]
+            locations: [{ city: 'Ä°stanbul', district: 'KadÄ±kÃ¶y', latitude: 40.9901, longitude: 29.0234, isDefault: true }]
         },
         {
             id: 'mock-elec-2',
@@ -34,21 +34,21 @@ function serveMockResponse(req: Request, res: Response, city: any, latNum: any, 
             profileImageUrl: null,
             isVerified: true,
             electricianProfile: {
-                specialties: ['Aydınlatma'],
+                specialties: ['AydÄ±nlatma'],
                 ratingAverage: 4.5,
                 totalReviews: 89,
                 experienceYears: 12,
                 isAvailable: true
             },
-            locations: [{ city: 'İstanbul', district: 'Beşiktaş', latitude: 41.0422, longitude: 29.0083, isDefault: true }]
+            locations: [{ city: 'Ä°stanbul', district: 'BeÅŸiktaÅŸ', latitude: 41.0422, longitude: 29.0083, isDefault: true }]
         },
         {
             id: 'mock-elec-adana-1',
-            fullName: 'Mustafa Yıldız',
+            fullName: 'Mustafa YÄ±ldÄ±z',
             profileImageUrl: null,
             isVerified: true,
             electricianProfile: {
-                specialties: ['Tesisat', 'Klima Elektriği'],
+                specialties: ['Tesisat', 'Klima ElektriÄŸi'],
                 ratingAverage: 4.9,
                 totalReviews: 42,
                 experienceYears: 15,
@@ -61,7 +61,7 @@ function serveMockResponse(req: Request, res: Response, city: any, latNum: any, 
 
     // Include all registered electricians from mockStorage
     const allMockUsers = mockStorage.getAllUsers();
-    console.log(`📋 Found ${allMockUsers.length} users in mockStorage`);
+    console.log(`ğŸ“‹ Found ${allMockUsers.length} users in mockStorage`);
 
     for (const user of allMockUsers) {
         // Skip if already in static mocks, not an electrician, or suspended (inactive)
@@ -69,7 +69,7 @@ function serveMockResponse(req: Request, res: Response, city: any, latNum: any, 
             continue;
         }
 
-        console.log(`✅ Adding electrician from mockStorage: ${user.fullName} (${user.id})`);
+        console.log(`âœ… Adding electrician from mockStorage: ${user.fullName} (${user.id})`);
 
         // Get raw data from mockStorage for location info
         const rawData = mockStorage.get(user.id);
@@ -79,11 +79,11 @@ function serveMockResponse(req: Request, res: Response, city: any, latNum: any, 
         const experienceYears = user.electricianProfile?.experienceYears || 0;
 
         // Build locations from raw mockStorage data
-        let userLocations = [{ city: 'Türkiye', district: 'Merkez', latitude: 41.0, longitude: 29.0, isDefault: true }];
+        let userLocations = [{ city: 'TÃ¼rkiye', district: 'Merkez', latitude: 41.0, longitude: 29.0, isDefault: true }];
 
         if (rawData.locations && rawData.locations.length > 0) {
             userLocations = rawData.locations.map((loc: any) => ({
-                city: loc.city || 'Türkiye',
+                city: loc.city || 'TÃ¼rkiye',
                 district: loc.district || 'Merkez',
                 latitude: loc.latitude || 41.0,
                 longitude: loc.longitude || 29.0,
@@ -101,7 +101,7 @@ function serveMockResponse(req: Request, res: Response, city: any, latNum: any, 
 
         mockElectricians.push({
             id: user.id,
-            fullName: user.fullName || 'Elektrikçi',
+            fullName: user.fullName || 'ElektrikÃ§i',
             profileImageUrl: user.profileImageUrl || null,
             isVerified: user.isVerified || false,
             electricianProfile: {
@@ -133,399 +133,6 @@ function serveMockResponse(req: Request, res: Response, city: any, latNum: any, 
     });
 }
 
-// Multer-based upload (for FormData)
-export const uploadAvatar = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        console.log('=== Upload Avatar Request ===');
-        console.log('File:', req.file);
-        console.log('User:', (req as any).user);
-
-        if (!req.file) {
-            console.log('No file uploaded');
-            return next(new AppError('Please upload an image file', 400));
-        }
-
-        const userId = (req as any).user.id;
-        const filePath = (req.file as any).path; // Cloudinary URL
-
-        // Try database update, but don't fail if database is not available
-        let updatedUser: any = null;
-        try {
-            updatedUser = await prisma.user.update({
-                where: { id: userId },
-                data: {
-                    profileImageUrl: filePath,
-                    updatedAt: new Date(),
-                },
-            });
-        } catch (dbError: any) {
-            console.warn('Database update failed, returning mock response:', dbError.message);
-            // Return consistent mock user from storage - use actual user type from JWT
-            const actualUserType = (req as any).user.userType || 'CITIZEN';
-            updatedUser = mockStorage.getFullUser(userId, actualUserType);
-        }
-
-        res.status(200).json({
-            success: true,
-            data: updatedUser,
-        });
-    } catch (error) {
-        console.error("=== Avatar upload error ===");
-        console.error(error);
-        next(error);
-    }
-};
-
-// Base64-based upload (for React Native)
-export const uploadAvatarBase64 = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        console.log('=== Upload Avatar Base64 Request ===');
-        const { image } = req.body;
-        const user = (req as any).user;
-
-        console.log('User:', user);
-        console.log('Image received:', image ? 'Yes (length: ' + image.length + ')' : 'No');
-
-        if (!image) {
-            return next(new AppError('Please provide an image', 400));
-        }
-
-        const userId = user.id;
-
-        // Upload to Cloudinary
-        const cloudinary = require('../config/cloudinary').default;
-        const result = await cloudinary.uploader.upload(image, {
-            folder: 'avatars',
-            public_id: `avatar-${userId}-${Date.now()}`,
-            resource_type: 'image'
-        });
-
-        const fileUrl = result.secure_url;
-
-        // Persist in mock storage
-        const mockData = mockStorage.updateProfile(userId, { profileImageUrl: fileUrl });
-
-        // Try database update, but don't fail if database is not available
-        let updatedUser: any = null;
-        try {
-            updatedUser = await prisma.user.update({
-                where: { id: userId },
-                data: {
-                    profileImageUrl: fileUrl,
-                    updatedAt: new Date(),
-                },
-            });
-            console.log('Database updated');
-        } catch (dbError: any) {
-            // Use actual user type from authenticated request (JWT), not guessed from userId
-            const actualUserType = user.userType || 'CITIZEN';
-            // Return consistent mock user with new profile image from storage
-            updatedUser = mockStorage.getFullUser(userId, actualUserType);
-        }
-
-        console.log('Returning user:', updatedUser);
-        res.status(200).json({
-            success: true,
-            data: updatedUser,
-            message: 'Profil fotoğrafı güncellendi',
-        });
-    } catch (error) {
-        console.error("=== Avatar upload error ===");
-        console.error(error);
-        next(error);
-    }
-};
-
-// Remove Avatar
-export const removeAvatar = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        console.log('=== Remove Avatar Request ===');
-        const user = (req as any).user;
-        const userId = user.id;
-
-        // Try database update
-        let updatedUser: any = null;
-        try {
-            // Get current user to find existing avatar
-            const currentUser = await prisma.user.findUnique({
-                where: { id: userId },
-                select: { profileImageUrl: true },
-            });
-
-            // Delete old avatar from Cloudinary if exists
-            if (currentUser?.profileImageUrl) {
-                const cloudinary = require('../config/cloudinary').default;
-                try {
-                    // Extract public_id from URL
-                    // Example: https://res.cloudinary.com/cloudname/image/upload/v12345/avatars/filename.jpg
-                    const parts = currentUser.profileImageUrl.split('/');
-                    const filename = parts.pop();
-                    const folder = parts.pop();
-                    if (filename && folder === 'avatars') {
-                        const publicId = `${folder}/${filename.split('.')[0]}`;
-                        await cloudinary.uploader.destroy(publicId);
-                        console.log('Deleted old avatar from Cloudinary:', publicId);
-                    }
-                } catch (err) {
-                    console.error('Error deleting from Cloudinary:', err);
-                }
-            }
-
-            // Update database
-            updatedUser = await prisma.user.update({
-                where: { id: userId },
-                data: {
-                    profileImageUrl: null,
-                    updatedAt: new Date(),
-                },
-            });
-            console.log('Database updated, avatar removed');
-        } catch (dbError: any) {
-            console.warn('Database update failed, using mock mode to remove avatar:', dbError.message);
-            // Clear profileImageUrl in mockStorage - use empty string to trigger the !== undefined check
-            const currentStore = mockStorage.get(userId);
-            if (currentStore) {
-                currentStore.profileImageUrl = undefined;
-            }
-            // Force save to disk
-            const fs = require('fs');
-            const path = require('path');
-            const DATA_DIR = path.join(process.cwd(), 'data');
-            const DATA_FILE = path.join(DATA_DIR, 'mock_users.json');
-            try {
-                const { getAllMockUsers } = require('../utils/mockStorage');
-                fs.writeFileSync(DATA_FILE, JSON.stringify(getAllMockUsers(), null, 2), 'utf8');
-                console.log('Mock storage saved to disk after avatar removal');
-            } catch (saveError) {
-                console.error('Failed to save mock storage:', saveError);
-            }
-
-            updatedUser = mockStorage.getFullUser(userId, user.userType);
-            // Ensure profileImageUrl is null in response
-            updatedUser.profileImageUrl = null;
-            console.log('Mock storage updated, avatar removed for user:', userId);
-        }
-
-        res.status(200).json({
-            success: true,
-            data: updatedUser,
-        });
-    } catch (error) {
-        console.error("=== Avatar remove error ===");
-        console.error(error);
-        next(error);
-    }
-};
-export const getElectricianStats = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const userId = (req as any).user.id;
-        const userType = (req as any).user.userType;
-
-        // İstatistikleri gerçek veritabanından çekmeyi dene
-        try {
-            // Temel istatistikler
-            const [
-                totalBids,
-                activeBids,
-                acceptedBids,
-                electricianProfile,
-            ] = await Promise.all([
-                prisma.bid.count({ where: { electricianId: userId } }),
-                prisma.bid.count({ where: { electricianId: userId, status: 'PENDING' } }),
-                prisma.bid.findMany({
-                    where: { electricianId: userId, status: 'ACCEPTED' },
-                    include: {
-                        jobPost: {
-                            select: {
-                                status: true,
-                                category: true,
-                                completedAt: true,
-                            },
-                        },
-                    },
-                }),
-                prisma.electricianProfile.findUnique({
-                    where: { userId },
-                    select: {
-                        ratingAverage: true,
-                        totalReviews: true,
-                        completedJobsCount: true,
-                    },
-                }),
-            ]);
-
-            // Tamamlanan işler
-            const completedJobs = acceptedBids.filter(
-                (bid) => bid.jobPost.status === 'COMPLETED'
-            );
-
-            // Aktif işler
-            const activeJobs = acceptedBids.filter(
-                (bid) => bid.jobPost.status === 'IN_PROGRESS'
-            );
-
-            // Toplam kazanç
-            const totalEarnings = completedJobs.reduce(
-                (sum, bid) => sum + Number(bid.amount),
-                0
-            );
-
-            // Kategori dağılımı
-            const categoryMap = new Map<string, number>();
-            completedJobs.forEach((bid) => {
-                const category = bid.jobPost.category || 'Diğer';
-                categoryMap.set(category, (categoryMap.get(category) || 0) + 1);
-            });
-            const categoryDistribution = Array.from(categoryMap.entries())
-                .map(([category, count]) => ({ category, count }))
-                .sort((a, b) => b.count - a.count)
-                .slice(0, 5);
-
-            // Son 7 gün için günlük kazanç
-            const weeklyEarnings = [];
-            const dayNames = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
-            const today = new Date();
-            for (let i = 6; i >= 0; i--) {
-                const date = new Date(today);
-                date.setDate(date.getDate() - i);
-                const dayStart = new Date(date.setHours(0, 0, 0, 0));
-                const dayEnd = new Date(date.setHours(23, 59, 59, 999));
-
-                const dayJobs = completedJobs.filter((bid) => {
-                    const completedAt = bid.jobPost.completedAt;
-                    if (!completedAt) return false;
-                    return completedAt >= dayStart && completedAt <= dayEnd;
-                });
-
-                const amount = dayJobs.reduce((sum, bid) => sum + Number(bid.amount), 0);
-                weeklyEarnings.push({
-                    day: dayNames[dayStart.getDay()],
-                    amount,
-                });
-            }
-
-            const stats = {
-                totalBids,
-                activeBids,
-                activeJobs: activeJobs.length,
-                completedJobs: completedJobs.length,
-                totalEarnings,
-                rating: electricianProfile?.ratingAverage ? Number(electricianProfile.ratingAverage) : 0,
-                reviewCount: electricianProfile?.totalReviews || 0,
-                weeklyEarnings,
-                categoryDistribution,
-            };
-
-            return res.status(200).json({
-                success: true,
-                data: stats,
-            });
-        } catch (dbError: any) {
-            console.warn('Database query failed, returning mock stats:', dbError.message);
-            // Database bağlantı hatası - mock veriler döndür
-        }
-
-        // Get dynamic mock data
-        // userId is already defined at top of function
-        const reviewStats = mockReviewStorage.getRatingStats(userId);
-        const userData: any = mockStorage.get(userId);
-        const completedJobs = userData?.completedJobsCount || 0;
-
-        // Mock stats (database bağlantısı yoksa) - Use dynamic values where possible
-        // Calculate dynamic stats from userBidsStore
-        let totalBids = 0;
-        let activeBids = 0;
-        let activeJobs = 0;
-        let totalEarnings = 0;
-
-        // Default chart data
-        let weeklyEarnings = [
-            { day: 'Pzt', amount: 0 },
-            { day: 'Sal', amount: 0 },
-            { day: 'Çar', amount: 0 },
-            { day: 'Per', amount: 0 },
-            { day: 'Cum', amount: 0 },
-            { day: 'Cmt', amount: 0 },
-            { day: 'Paz', amount: 0 },
-        ];
-        let categoryMap: Record<string, number> = {};
-
-        try {
-            const { userBidsStore } = require('./bidController');
-            if (userBidsStore && userBidsStore.has(userId)) {
-                const bids = userBidsStore.get(userId) || [];
-                totalBids = bids.length;
-                activeBids = bids.filter((b: any) => b.status === 'PENDING' || b.status === 'OFFERED').length;
-                activeJobs = bids.filter((b: any) => b.status === 'ACCEPTED' && b.jobPost?.status !== 'COMPLETED').length;
-
-                // Process completed jobs for Earnings and Distribution
-                bids.forEach((b: any) => {
-                    const isCompleted = b.status === 'COMPLETED' || b.jobPost?.status === 'COMPLETED';
-                    if (isCompleted) {
-                        const amount = Number(b.amount) || 0;
-                        totalEarnings += amount;
-
-                        // Weekly Earnings
-                        // Use updated date of bid or completed date of job
-                        const dateStr = b.jobPost?.completedAt || b.updatedAt || new Date().toISOString();
-                        const date = new Date(dateStr);
-                        const dayIndex = date.getDay(); // 0(Sun) - 6(Sat)
-
-                        // Map Sun(0)->6, Mon(1)->0...
-                        const arrayIndex = dayIndex === 0 ? 6 : dayIndex - 1;
-                        if (weeklyEarnings[arrayIndex]) {
-                            weeklyEarnings[arrayIndex].amount += amount;
-                        }
-
-                        // Category Distribution
-                        let category = b.jobPost?.categoryId || 'Diğer';
-                        // Infer category from title if missing
-                        if ((!category || category === 'Diğer') && b.jobPost?.title) {
-                            const title = b.jobPost.title.toLowerCase();
-                            if (title.includes('tesisat')) category = 'Tesisat';
-                            else if (title.includes('montaj')) category = 'Montaj';
-                            else if (title.includes('tamir') || title.includes('onarım')) category = 'Arıza Onarım';
-                            else if (title.includes('aydınlatma')) category = 'Aydınlatma';
-                            else if (title.includes('kamera') || title.includes('güvenlik')) category = 'Güvenlik';
-                            else if (title.includes('priz') || title.includes('anahtar')) category = 'Priz/Anahtar';
-                        }
-                        categoryMap[category] = (categoryMap[category] || 0) + 1;
-                    }
-                });
-            }
-        } catch (e) { console.error('Stats Calc Error:', e); }
-
-        const categoryDistribution = Object.keys(categoryMap).length > 0
-            ? Object.keys(categoryMap).map(key => ({ category: key, count: categoryMap[key] }))
-            : [
-                { category: 'Arıza Onarım', count: 0 },
-                { category: 'Tesisat', count: 0 },
-                { category: 'Aydınlatma', count: 0 },
-                { category: 'Priz/Anahtar', count: 0 },
-                { category: 'Diğer', count: 0 },
-            ];
-
-        const mockStats = {
-            totalBids: totalBids,
-            activeBids: activeBids,
-            activeJobs: activeJobs,
-            completedJobs: completedJobs,
-            totalEarnings: totalEarnings,
-            rating: reviewStats.ratingAverage || 0,
-            reviewCount: reviewStats.totalReviews || 0,
-            weeklyEarnings,
-            categoryDistribution,
-        };
-
-        res.status(200).json({
-            success: true,
-            data: mockStats,
-        });
-    } catch (error) {
-        next(error);
-    }
-};
-
 // Change Password
 export const changePassword = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -536,14 +143,14 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
         if (!currentPassword || !newPassword) {
             return res.status(400).json({
                 success: false,
-                error: { message: 'Mevcut şifre ve yeni şifre gereklidir' },
+                error: { message: 'Mevcut ÅŸifre ve yeni ÅŸifre gereklidir' },
             });
         }
 
         if (newPassword.length < 6) {
             return res.status(400).json({
                 success: false,
-                error: { message: 'Yeni şifre en az 6 karakter olmalıdır' },
+                error: { message: 'Yeni ÅŸifre en az 6 karakter olmalÄ±dÄ±r' },
             });
         }
 
@@ -552,25 +159,25 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
 
             res.status(200).json({
                 success: true,
-                message: 'Şifre başarıyla güncellendi',
+                message: 'Åifre baÅŸarÄ±yla gÃ¼ncellendi',
             });
         } catch (dbError: any) {
             console.warn('changePassword error:', dbError.message || dbError);
 
-            // AppError (kullanıcı hatası) ise fırlat
+            // AppError (kullanÄ±cÄ± hatasÄ±) ise fÄ±rlat
             if (dbError.statusCode) {
                 throw dbError;
             }
 
-            // Database bağlantı hatası - mock mode'da şifre kontrolü yap
+            // Database baÄŸlantÄ± hatasÄ± - mock mode'da ÅŸifre kontrolÃ¼ yap
             console.warn('Database not connected, checking password in mock mode');
 
-            const bcrypt = require('bcryptjs'); // Tutarlılık için bcryptjs kullan
+            const bcrypt = require('bcryptjs'); // TutarlÄ±lÄ±k iÃ§in bcryptjs kullan
             const { mockStorage } = require('../utils/mockStorage');
             const mockUser = mockStorage.get(userId);
 
             // Debug log
-            console.log('🔍 Mock Password Change Debug:', {
+            console.log('ğŸ” Mock Password Change Debug:', {
                 userId,
                 hasPasswordHash: !!mockUser.passwordHash,
                 passwordHashType: typeof mockUser.passwordHash,
@@ -580,7 +187,7 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
             if (!mockUser) {
                 return res.status(404).json({
                     success: false,
-                    error: { message: 'Kullanıcı bulunamadı' },
+                    error: { message: 'KullanÄ±cÄ± bulunamadÄ±' },
                 });
             }
 
@@ -588,7 +195,7 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
             if (!mockUser.passwordHash) {
                 return res.status(400).json({
                     success: false,
-                    error: { message: 'Hesap şifresi tanımlı değil. Lütfen yeniden kayıt olun.' },
+                    error: { message: 'Hesap ÅŸifresi tanÄ±mlÄ± deÄŸil. LÃ¼tfen yeniden kayÄ±t olun.' },
                 });
             }
 
@@ -611,7 +218,7 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
             if (!isPasswordValid) {
                 return res.status(400).json({
                     success: false,
-                    error: { message: 'Mevcut şifre yanlış' },
+                    error: { message: 'Mevcut ÅŸifre yanlÄ±ÅŸ' },
                 });
             }
 
@@ -626,7 +233,7 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
 
             res.status(200).json({
                 success: true,
-                message: 'Şifre başarıyla güncellendi',
+                message: 'Åifre baÅŸarÄ±yla gÃ¼ncellendi',
             });
         }
     } catch (error: any) {
@@ -663,10 +270,10 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
             res.status(200).json({
                 success: true,
                 data: { user: updatedUser },
-                message: 'Profil güncellendi',
+                message: 'Profil gÃ¼ncellendi',
             });
         } catch (dbError: any) {
-            // Database bağlantısı yoksa mock başarı döndür
+            // Database baÄŸlantÄ±sÄ± yoksa mock baÅŸarÄ± dÃ¶ndÃ¼r
             console.warn('Database error, simulating profile update:', dbError.message);
 
             const user = (req as any).user;
@@ -702,7 +309,7 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
                 data: {
                     user: mockStorage.getFullUser(userId, user.userType)
                 },
-                message: 'Profil güncellendi (test modu)',
+                message: 'Profil gÃ¼ncellendi (test modu)',
             });
         }
     } catch (error: any) {
@@ -726,7 +333,7 @@ export const getVerificationStatus = async (req: Request, res: Response, next: N
         if (user.userType !== 'ELECTRICIAN') {
             return res.status(403).json({
                 success: false,
-                error: { message: 'Sadece elektrikçiler belge onayı yapabilir' },
+                error: { message: 'Sadece elektrikÃ§iler belge onayÄ± yapabilir' },
             });
         }
 
@@ -758,7 +365,7 @@ export const getVerificationStatus = async (req: Request, res: Response, next: N
             const documents = profile.verificationDocuments as any;
             const hasUploadedDocument = !!(documents?.documentUrl);
 
-            // Eğer belge yüklenmemişse status null döndür (form gösterilsin)
+            // EÄŸer belge yÃ¼klenmemiÅŸse status null dÃ¶ndÃ¼r (form gÃ¶sterilsin)
             const effectiveStatus = hasUploadedDocument ? profile.verificationStatus : null;
 
             res.json({
@@ -784,7 +391,7 @@ export const getVerificationStatus = async (req: Request, res: Response, next: N
                 dbError.code === 'P1001';
 
             if (isConnectionError) {
-                console.warn('⚠️ Database not connected, returning mock verification status');
+                console.warn('âš ï¸ Database not connected, returning mock verification status');
             } else {
                 console.warn('Database error, returning mock verification status:', dbError.message);
             }
@@ -814,7 +421,7 @@ export const submitVerification = async (req: Request, res: Response, next: Next
         const userId = user.id;
         const { documentType, licenseNumber, emoNumber, smmNumber, documentImage } = req.body;
 
-        console.log('🔍 VERIFICATION SUBMIT DEBUG:', {
+        console.log('ğŸ” VERIFICATION SUBMIT DEBUG:', {
             userId,
             documentType,
             licenseNumber,
@@ -827,7 +434,7 @@ export const submitVerification = async (req: Request, res: Response, next: Next
         if (user.userType !== 'ELECTRICIAN') {
             return res.status(403).json({
                 success: false,
-                error: { message: 'Sadece elektrikçiler belge onayı yapabilir' },
+                error: { message: 'Sadece elektrikÃ§iler belge onayÄ± yapabilir' },
             });
         }
 
@@ -835,7 +442,7 @@ export const submitVerification = async (req: Request, res: Response, next: Next
         if (!documentType || (!licenseNumber && documentType !== 'YETKILI_MUHENDIS')) {
             return res.status(400).json({
                 success: false,
-                error: { message: 'Belge türü ve lisans numarası gereklidir' },
+                error: { message: 'Belge tÃ¼rÃ¼ ve lisans numarasÄ± gereklidir' },
             });
         }
 
@@ -896,7 +503,7 @@ export const submitVerification = async (req: Request, res: Response, next: Next
                 success: true,
                 data: {
                     status: 'PENDING',
-                    message: 'Belgeniz onay için gönderildi',
+                    message: 'Belgeniz onay iÃ§in gÃ¶nderildi',
                 },
             });
         } catch (dbError: any) {
@@ -917,7 +524,7 @@ export const submitVerification = async (req: Request, res: Response, next: Next
                 success: true,
                 data: {
                     status: 'PENDING',
-                    message: 'Belgeniz onay için gönderildi (test modu)',
+                    message: 'Belgeniz onay iÃ§in gÃ¶nderildi (test modu)',
                 },
             });
         }
@@ -932,9 +539,9 @@ export const updatePushToken = async (req: Request, res: Response, next: NextFun
         const userId = user.id;
         const { pushToken } = req.body;
 
-        // 🛡️ SECURITY: Admin impersonate modundaysa, kullanıcının gerçek push token'ını bozma
+        // ğŸ›¡ï¸ SECURITY: Admin impersonate modundaysa, kullanÄ±cÄ±nÄ±n gerÃ§ek push token'Ä±nÄ± bozma
         if (user.isImpersonated) {
-            console.log(`🛡️ [IMPERSONATION] Skipping push token update for user ${userId}`);
+            console.log(`ğŸ›¡ï¸ [IMPERSONATION] Skipping push token update for user ${userId}`);
             return res.status(200).json({
                 success: true,
                 message: 'Push token update skipped (Impersonation Mode)',
@@ -943,7 +550,7 @@ export const updatePushToken = async (req: Request, res: Response, next: NextFun
 
         // Allow null/empty to CLEAR the push token (user disabled notifications)
         if (pushToken === null || pushToken === undefined || pushToken === '') {
-            console.log(`\n🔕 CLEARING PUSH TOKEN for user ${userId} (notifications disabled)\n`);
+            console.log(`\nğŸ”• CLEARING PUSH TOKEN for user ${userId} (notifications disabled)\n`);
             try {
                 await prisma.user.update({
                     where: { id: userId },
@@ -963,11 +570,11 @@ export const updatePushToken = async (req: Request, res: Response, next: NextFun
             }
         }
 
-        console.log(`\n🔔 PUSH TOKEN RECEIVED for user ${userId}:`);
+        console.log(`\nğŸ”” PUSH TOKEN RECEIVED for user ${userId}:`);
         console.log(`   Token: ${pushToken}\n`);
 
         try {
-            // 1. Bu token'ı başka hesaplardan temizle (aynı telefon, farklı hesap senaryosu)
+            // 1. Bu token'Ä± baÅŸka hesaplardan temizle (aynÄ± telefon, farklÄ± hesap senaryosu)
             const cleared = await prisma.user.updateMany({
                 where: {
                     pushToken: pushToken,
@@ -977,10 +584,10 @@ export const updatePushToken = async (req: Request, res: Response, next: NextFun
             });
 
             if (cleared.count > 0) {
-                console.log(`🧹 Cleared duplicate push token from ${cleared.count} other account(s) - same device login detected`);
+                console.log(`ğŸ§¹ Cleared duplicate push token from ${cleared.count} other account(s) - same device login detected`);
             }
 
-            // 2. Şimdiki kullanıcıya token'ı ata ve uninstalled flagini kaldır
+            // 2. Åimdiki kullanÄ±cÄ±ya token'Ä± ata ve uninstalled flagini kaldÄ±r
             const currentUser = await prisma.user.findUnique({ where: { id: userId } });
             const userNs = (currentUser?.notificationSettings as any) || {};
             delete userNs.appUninstalled;
@@ -1001,7 +608,7 @@ export const updatePushToken = async (req: Request, res: Response, next: NextFun
             // Save to mock storage so push notifications work in mock mode
             const { mockStorage } = require('../utils/mockStorage');
 
-            // 🧹 Mock modda da token'ı diğer hesaplardan temizle
+            // ğŸ§¹ Mock modda da token'Ä± diÄŸer hesaplardan temizle
             mockStorage.clearPushTokenFromOthers(pushToken, userId);
 
             const mockUser = mockStorage.getUser(userId);
@@ -1011,7 +618,7 @@ export const updatePushToken = async (req: Request, res: Response, next: NextFun
                  delete ns.uninstalledAt;
                  mockStorage.updateProfile(userId, { pushToken, notificationSettings: ns } as any);
             }
-            console.log(`✅ PushToken saved to mockStorage for user ${userId} (cleared from other accounts)`);
+            console.log(`âœ… PushToken saved to mockStorage for user ${userId} (cleared from other accounts)`);
 
             res.status(200).json({
                 success: true,
@@ -1030,7 +637,7 @@ export const getElectricians = async (req: Request, res: Response, next: NextFun
     try {
         const { city, specialty, query, lat, lng, radius } = req.query;
 
-        console.log(`🔍 Fetching electricians with filters: city=${city}, specialty=${specialty}, query=${query}, lat=${lat}, lng=${lng}, radius=${radius}`);
+        console.log(`ğŸ” Fetching electricians with filters: city=${city}, specialty=${specialty}, query=${query}, lat=${lat}, lng=${lng}, radius=${radius}`);
 
         const latNum = lat ? parseFloat(lat as string) : undefined;
         const lngNum = lng ? parseFloat(lng as string) : undefined;
@@ -1135,7 +742,7 @@ export const getElectricians = async (req: Request, res: Response, next: NextFun
             results.sort((a: any, b: any) => (a.distance || 999) - (b.distance || 999));
         }
 
-        // ── Merge mock storage electricians that are missing from DB ──
+        // â”€â”€ Merge mock storage electricians that are missing from DB â”€â”€
         // Users registered during DB outages live only in mock storage.
         // We merge them so they appear in the public electrician listing too.
         try {
@@ -1180,7 +787,7 @@ export const getElectricians = async (req: Request, res: Response, next: NextFun
                     }
                     return {
                         id: mu.id,
-                        fullName: mu.fullName || 'İsimsiz Usta',
+                        fullName: mu.fullName || 'Ä°simsiz Usta',
                         profileImageUrl: mu.profileImageUrl || null,
                         phone: mu.phone || '',
                         isVerified: mu.isVerified || false,
@@ -1212,7 +819,7 @@ export const getElectricians = async (req: Request, res: Response, next: NextFun
                 });
 
             if (mockElectricians.length > 0) {
-                console.log(`📎 getElectricians: Merged ${mockElectricians.length} mock electrician(s) not found in DB`);
+                console.log(`ğŸ“ getElectricians: Merged ${mockElectricians.length} mock electrician(s) not found in DB`);
                 results = [...(results as any[]), ...mockElectricians];
 
                 // Re-sort by distance if coordinates were provided
@@ -1221,7 +828,7 @@ export const getElectricians = async (req: Request, res: Response, next: NextFun
                 }
             }
         } catch (mergeErr) {
-            console.warn('⚠️ Failed to merge mock electricians:', mergeErr);
+            console.warn('âš ï¸ Failed to merge mock electricians:', mergeErr);
         }
 
         res.status(200).json({
@@ -1247,11 +854,11 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
             const isKnownMockUser = !!mockData.fullName || mockData.specialties.length > 0;
 
             // Build locations from mockStorage data
-            let userLocations = [{ city: 'İstanbul', district: 'Merkez', isDefault: true }];
+            let userLocations = [{ city: 'Ä°stanbul', district: 'Merkez', isDefault: true }];
 
             if (mockData.locations && mockData.locations.length > 0) {
                 userLocations = mockData.locations.map((loc: any) => ({
-                    city: loc.city || 'Türkiye',
+                    city: loc.city || 'TÃ¼rkiye',
                     district: loc.district || 'Merkez',
                     isDefault: loc.isDefault ?? true
                 }));
@@ -1264,7 +871,7 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
             }
 
             // Get city from first location
-            const primaryCity = userLocations[0]?.city || 'Türkiye';
+            const primaryCity = userLocations[0]?.city || 'TÃ¼rkiye';
 
             // Get real rating stats from mock reviews
             const reviewStats = mockReviewStorage.getRatingStats(id);
@@ -1276,13 +883,13 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
                 success: true,
                 data: {
                     id: id,
-                    fullName: mockData.fullName || 'Ahmet Yılmaz',
+                    fullName: mockData.fullName || 'Ahmet YÄ±lmaz',
                     profileImageUrl: mockData.profileImageUrl || null,
                     phone: mockData.phone || null,
                     city: primaryCity,
                     isVerified: mockData.isVerified ?? true,
                     electricianProfile: {
-                        specialties: mockData.specialties.length > 0 ? mockData.specialties : ['Tesisat', 'Arıza', 'Aydınlatma', 'Pano'],
+                        specialties: mockData.specialties.length > 0 ? mockData.specialties : ['Tesisat', 'ArÄ±za', 'AydÄ±nlatma', 'Pano'],
                         ratingAverage: reviewStats.ratingAverage || (isKnownMockUser ? 0 : 4.8),
                         totalReviews: reviewStats.totalReviews || (isKnownMockUser ? 0 : 124),
                         experienceYears: mockData.experienceYears || (isKnownMockUser ? 0 : 12),
@@ -1298,7 +905,7 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
                         // Get current reviewer info from mockStorage (for dynamic updates)
                         const reviewerData = mockStorage.get(r.reviewerId);
                         // Check if this is a known user in mockStorage (has fullName set)
-                        const isKnownUser = reviewerData && reviewerData.fullName && reviewerData.fullName !== 'Test Kullanıcısı';
+                        const isKnownUser = reviewerData && reviewerData.fullName && reviewerData.fullName !== 'Test KullanÄ±cÄ±sÄ±';
 
                         return {
                             id: r.id,
@@ -1307,7 +914,7 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
                             createdAt: r.createdAt,
                             reviewer: {
                                 // If user exists in mockStorage, use their current data (even if null)
-                                fullName: isKnownUser ? reviewerData.fullName : (r.reviewerName || 'Müşteri'),
+                                fullName: isKnownUser ? reviewerData.fullName : (r.reviewerName || 'MÃ¼ÅŸteri'),
                                 profileImageUrl: isKnownUser ? (reviewerData.profileImageUrl || null) : (r.reviewerImageUrl || null)
                             }
                         };
@@ -1368,7 +975,7 @@ export const getElectricianById = async (req: Request, res: Response, next: Next
         if (!electrician) {
             return res.status(404).json({
                 success: false,
-                error: { message: 'Usta bulunamadı' }
+                error: { message: 'Usta bulunamadÄ±' }
             });
         }
 
@@ -1396,26 +1003,24 @@ export const deleteAccount = async (req: Request, res: Response, next: NextFunct
 
             res.status(200).json({
                 success: true,
-                message: 'Hesabınız başarıyla silindi (askıya alındı).',
+                message: 'HesabÄ±nÄ±z baÅŸarÄ±yla silindi (askÄ±ya alÄ±ndÄ±).',
             });
         } catch (dbError: any) {
             console.warn('deleteAccount error:', dbError.message || dbError);
 
-            // Database bağlantı hatası - mock başarı döndür (ve isActive=false yap)
+            // Database baÄŸlantÄ± hatasÄ± - mock baÅŸarÄ± dÃ¶ndÃ¼r (ve isActive=false yap)
             console.warn('Database not connected, deactivating account in mock mode');
 
             const { mockStorage } = require('../utils/mockStorage');
-            // Mock veride isActive=false olarak işaretle
+            // Mock veride isActive=false olarak iÅŸaretle
             mockStorage.updateProfile(userId, { isActive: false });
 
             res.status(200).json({
                 success: true,
-                message: 'Hesabınız başarıyla silindi (test modu).',
+                message: 'HesabÄ±nÄ±z baÅŸarÄ±yla silindi (test modu).',
             });
         }
     } catch (error: any) {
         next(error);
     }
 };
-
-

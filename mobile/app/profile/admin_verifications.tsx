@@ -21,7 +21,7 @@ import { colors as staticColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
-import api from '../../services/api';
+import { adminService } from '../../services/adminService';
 import { getFileUrl } from '../../constants/api';
 
 interface VerificationRequest {
@@ -100,7 +100,7 @@ export default function AdminVerificationsScreen() {
 
     const loadRequests = async () => {
         try {
-            const response = await api.get('/admin/verifications');
+            const response = { data: { success: true, data: await adminService.verifications() } };
             if (response.data.success) {
                 setRequests(response.data.data);
             }
@@ -128,11 +128,8 @@ export default function AdminVerificationsScreen() {
                         setAlertConfig(prev => ({ ...prev, visible: false }));
                         setProcessingId(userId);
                         try {
-                            const response = await api.post('/admin/verifications/process', {
-                                targetUserId: userId,
-                                status,
-                                reason: status === 'REJECTED' ? 'Belge uygun bulunmadı.' : undefined
-                            });
+                            await adminService.processVerification(userId, status, status === 'REJECTED' ? 'Belge uygun bulunmadı.' : undefined);
+                            const response = { data: { success: true, message: status === 'VERIFIED' ? 'Başvuru onaylandı.' : 'Başvuru reddedildi.' } };
 
                             if (response.data.success) {
                                 showAlert('Başarılı', response.data.message, 'success');

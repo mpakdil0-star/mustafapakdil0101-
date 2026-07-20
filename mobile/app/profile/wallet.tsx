@@ -20,7 +20,7 @@ import { colors as staticColors } from '../../constants/colors';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
-import api from '../../services/api';
+import { paymentService } from '../../services/paymentService';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { getMe } from '../../store/slices/authSlice';
 import { format, isToday, isYesterday } from 'date-fns';
@@ -54,10 +54,7 @@ export default function WalletScreen() {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/payments/history');
-            if (response.data.success) {
-                setHistory(response.data.data);
-            }
+            setHistory(await paymentService.history() as Transaction[]);
             await dispatch(getMe());
 
             // Start entrance animation

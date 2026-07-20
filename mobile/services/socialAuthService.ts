@@ -3,8 +3,8 @@
  * Google ve Apple ile giriş/kayıt işlemlerini yönetir.
  */
 import { Platform } from 'react-native';
-import apiClient from './api';
-import { apiService } from './api';
+import { authService } from './authService';
+import { assertSupabaseConfigured, supabase } from './supabase';
 
 // ============================================================
 // GOOGLE SIGN-IN
@@ -55,9 +55,14 @@ export const configureGoogleSignIn = async () => {
   try {
     const GS = await getGoogleSignin();
     if (!GS) return;
+
+    const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim();
+    if (!webClientId) {
+      throw new Error('EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID tanımlı değil.');
+    }
     
     await GS.configure({
-      webClientId: '850829107432-722tuskg1qbktela7q5bdj9o4d1jceav.apps.googleusercontent.com',
+      webClientId,
       offlineAccess: true,
       forceCodeForRefreshToken: true,
     });
@@ -229,7 +234,7 @@ export const signInWithApple = async (): Promise<{ identityToken: string; fullNa
 };
 
 // ============================================================
-// BACKEND İLETİŞİM
+// SUPABASE AUTH AKIŞI
 // ============================================================
 
 interface SocialAuthResponse {
@@ -239,78 +244,86 @@ interface SocialAuthResponse {
 }
 
 /**
- * Google token'ını backend'e gönder ve giriş/kayıt yap
+ * Google token'ını Supabase Auth'a aktar ve giriş/kayıt yap
  */
-export const googleLoginToBackend = async (
+export const googleLoginWithSupabase = async (
   idToken: string,
   userType?: 'CITIZEN' | 'ELECTRICIAN',
   serviceCategory?: string
 ): Promise<SocialAuthResponse> => {
-  const response = await apiClient.post('/auth/google', {
-    token: idToken,
-    userType,
-    serviceCategory,
-  });
+  assertSupabaseConfigured();
+  const registrationMode = Boolean(userType);
+  const { data: registrationStatus, error: statusError } = await supabase.functions.invoke(
+    'account-registration-status',
+    {
+      body: {
+        action: registrationMode ? 'prepare_google_registration' : 'check_google_login',
+        idToken,
+      },
+    },
+  );
+  if (statusError) throw statusError;
 
-  const data = response.data.data;
+  if (!registrationMode && !registrationStatus?.registered) {
+    const notFound = new Error('USER_NOT_FOUND') as Error & { code?: string; email?: string; wasDeleted?: boolean };
+    notFound.code = 'USER_NOT_FOUND';
+    notFound.email = registrationStatus?.email;
+    notFound.wasDeleted = Boolean(registrationStatus?.wasDeleted);
+    throw notFound;
+  }
+  if (registrationMode && registrationStatus?.alreadyRegistered) {
+    const exists = new Error('ACCOUNT_ALREADY_EXISTS') as Error & { code?: string; email?: string };
+    exists.code = 'ACCOUNT_ALREADY_EXISTS';
+    exists.email = registrationStatus?.email;
+    throw exists;
+  }
+
+  const { data, error } = await supabase.auth.signInWithIdToken({ provider: 'google', token: idToken });
+  if (error) throw error;
+
+  if (userType) {
+    const { error: profileError } = await supabase.rpc('complete_auth_profile', {
+      requested_user_type: userType,
+      requested_service_category: serviceCategory || null,
+    });
+    if (profileError) throw profileError;
+  }
 
   // Token'ları kaydet
-  await apiService.setTokens(data.accessToken, data.refreshToken);
+  const user = await authService.getMe();
 
-  return data;
+  return { user, accessToken: data.session.access_token, refreshToken: data.session.refresh_token };
 };
 
 /**
- * Apple token'ını backend'e gönder ve giriş/kayıt yap
+ * Apple token'ını Supabase Auth'a aktar ve giriş/kayıt yap
  */
-export const appleLoginToBackend = async (
+export const appleLoginWithSupabase = async (
   identityToken: string,
   fullName: string | null,
   userType?: 'CITIZEN' | 'ELECTRICIAN',
   serviceCategory?: string
 ): Promise<SocialAuthResponse> => {
-  // Render sunucusu uyuyor olabilir - önce uyandır
-  try {
-    await apiClient.get('/', { timeout: 10000 });
-  } catch (_) {
-    // Health check başarısız olsa bile devam et, asıl istek retry yapacak
-    console.log('⏰ Backend uyanıyor, bekleniyor...');
+  assertSupabaseConfigured();
+  const { data, error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token: identityToken });
+  if (error) throw error;
+
+  if (fullName) {
+    const { error: metadataError } = await supabase.auth.updateUser({ data: { full_name: fullName } });
+    if (metadataError) throw metadataError;
   }
 
-  // Retry mekanizması: İlk istek başarısız olursa 1 kez daha dene
-  const maxRetries = 2;
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const response = await apiClient.post('/auth/apple', {
-        identityToken,
-        fullName,
-        userType,
-        serviceCategory,
-      });
-
-      const data = response.data.data;
-
-      // Token'ları kaydet
-      await apiService.setTokens(data.accessToken, data.refreshToken);
-
-      return data;
-    } catch (error: any) {
-      const isNetworkError = !error?.response && (
-        error?.message?.includes('Network') ||
-        error?.message?.includes('timeout') ||
-        error?.code === 'ECONNABORTED'
-      );
-
-      // Son deneme veya network hatası değilse, hatayı fırlat
-      if (attempt === maxRetries || !isNetworkError) {
-        throw error;
-      }
-
-      // Network hatası ve henüz retry hakkımız var - bekleyip tekrar dene
-      console.log(`🔄 Backend yanıt vermedi, tekrar deneniyor (${attempt}/${maxRetries})...`);
-      await new Promise(resolve => setTimeout(resolve, 3000));
-    }
+  if (userType || fullName) {
+    const { error: profileError } = await supabase.rpc('complete_auth_profile', {
+      requested_user_type: userType || 'CITIZEN',
+      requested_full_name: fullName,
+      requested_service_category: serviceCategory || null,
+    });
+    if (profileError) throw profileError;
   }
 
-  throw new Error('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.');
+  // Token'ları kaydet
+  const user = await authService.getMe();
+
+  return { user, accessToken: data.session.access_token, refreshToken: data.session.refresh_token };
 };

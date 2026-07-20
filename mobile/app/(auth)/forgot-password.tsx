@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -10,7 +10,7 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
@@ -23,18 +23,22 @@ import { fonts } from '../../constants/typography';
 
 export default function ForgotPasswordScreen() {
     const router = useRouter();
+    const { recovery } = useLocalSearchParams<{ recovery?: string }>();
     const [step, setStep] = useState<1 | 2>(1); // 1: Email, 2: Reset Form
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     // Form States
     const [email, setEmail] = useState('');
-    const [code, setCode] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
     // Validations
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        if (recovery === '1') setStep(2);
+    }, [recovery]);
 
     const [alertConfig, setAlertConfig] = useState<{
         visible: boolean;
@@ -61,11 +65,10 @@ export default function ForgotPasswordScreen() {
             const response = await authService.forgotPassword(email);
             // Simulate backend sending a code
             showAlert(
-                'Kod Gönderildi',
-                response.message || 'Sıfırlama kodunuz e-posta adresinize gönderildi. (Test Kodu: 123456)',
+                'Bağlantı Gönderildi',
+                response.message || 'Şifre yenileme bağlantısı e-posta adresinize gönderildi.',
                 'success'
             );
-            setStep(2);
         } catch (err: any) {
             const msg = err.message || 'Kod gönderilemedi. Lütfen tekrar deneyin.';
             setError(msg);
@@ -81,7 +84,6 @@ export default function ForgotPasswordScreen() {
         const passErr = validatePassword(newPassword);
         if (passErr) newErrors.newPassword = passErr;
         if (newPassword !== confirmPassword) newErrors.confirmPassword = 'Şifreler eşleşmiyor';
-        if (!code || code.length < 6) newErrors.code = 'Geçerli bir kod giriniz';
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -91,7 +93,7 @@ export default function ForgotPasswordScreen() {
         setIsLoading(true);
         setError(null);
         try {
-            await authService.resetPassword({ email, code, newPassword });
+            await authService.resetPassword({ newPassword });
 
             showAlert(
                 'Başarılı',
@@ -179,7 +181,7 @@ export default function ForgotPasswordScreen() {
                                             <ActivityIndicator size="small" color="#FFFFFF" />
                                         ) : (
                                             <>
-                                                <Text style={styles.submitButtonText}>Kod Gönder</Text>
+                                                <Text style={styles.submitButtonText}>Bağlantı Gönder</Text>
                                                 <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
                                             </>
                                         )}
@@ -189,25 +191,8 @@ export default function ForgotPasswordScreen() {
                         ) : (
                             <>
                                 <View style={styles.emailBadge}>
-                                    <Text style={styles.emailBadgeText}>{email}</Text>
-                                    <TouchableOpacity onPress={() => setStep(1)}>
-                                        <Text style={styles.changeText}>Değiştir</Text>
-                                    </TouchableOpacity>
+                                    <Text style={styles.emailBadgeText}>Güvenli şifre yenileme oturumu</Text>
                                 </View>
-
-                                <Input
-                                    label="Doğrulama Kodu"
-                                    placeholder="123456"
-                                    value={code}
-                                    onChangeText={(t) => { setCode(t); setErrors({}); }}
-                                    keyboardType="number-pad"
-                                    maxLength={6}
-                                    error={errors.code}
-                                    editable={!isLoading}
-                                    labelStyle={{ color: 'rgba(255,255,255,0.95)' }}
-                                    inputContainerStyle={{ backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }}
-                                    style={{ color: colors.white }}
-                                />
 
                                 <Input
                                     label="Yeni Şifre"

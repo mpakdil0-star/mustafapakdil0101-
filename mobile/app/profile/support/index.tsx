@@ -7,7 +7,7 @@ import { colors as staticColors } from '../../../constants/colors';
 import { spacing } from '../../../constants/spacing';
 import { fonts } from '../../../constants/typography';
 import { useAppColors } from '../../../hooks/useAppColors';
-import api from '../../../services/api';
+import { supportService } from '../../../services/accountService';
 
 interface Ticket {
     id: string;
@@ -27,10 +27,7 @@ export default function SupportTicketsScreen() {
 
     const fetchTickets = async () => {
         try {
-            const response = await api.get('/support');
-            if (response.data.success) {
-                setTickets(response.data.data);
-            }
+            setTickets(await supportService.list() as Ticket[]);
         } catch (error) {
             console.error('Fetch tickets error:', error);
         } finally {

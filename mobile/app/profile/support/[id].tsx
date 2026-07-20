@@ -7,7 +7,7 @@ import { spacing } from '../../../constants/spacing';
 import { fonts } from '../../../constants/typography';
 import { useAppColors } from '../../../hooks/useAppColors';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../../services/api';
+import { supportService } from '../../../services/accountService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TicketDetailScreen() {
@@ -23,10 +23,7 @@ export default function TicketDetailScreen() {
 
     const fetchTicket = async () => {
         try {
-            const response = await api.get(`/support/${id}`);
-            if (response.data.success) {
-                setTicket(response.data.data);
-            }
+            setTicket(await supportService.get(String(id)));
         } catch (error) {
             console.error(error);
         } finally {
@@ -44,11 +41,9 @@ export default function TicketDetailScreen() {
         if (!newMessage.trim()) return;
         setSending(true);
         try {
-            const response = await api.post(`/support/${id}/message`, { text: newMessage });
-            if (response.data.success) {
+            await supportService.sendMessage(String(id), newMessage);
                 setNewMessage('');
                 fetchTicket(); // Reload to show new message
-            }
         } catch (error) {
             console.error(error);
         } finally {

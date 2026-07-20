@@ -25,8 +25,7 @@ import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
 import { messageService } from '../../services/messageService';
-import socketService from '../../services/socketService';
-import api from '../../services/api';
+import { supabase } from '../../services/supabase';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -96,20 +95,14 @@ export default function ChatScreen() {
             setLoading(true);
 
             // Konuşma detayını al
-            const convResponse = await api.get(`/conversations/${conversationId}`);
-            if (convResponse.data.success) {
-                const conv = convResponse.data.data.conversation;
-                setOtherUser(conv.otherUser);
-            }
+            const conversation = await messageService.getConversation(conversationId);
+            if (conversation) setOtherUser(conversation.otherUser || null);
 
             // Mesajları al
-            const msgResponse = await api.get(`/conversations/${conversationId}/messages`);
-            if (msgResponse.data.success) {
-                setMessages(msgResponse.data.data.messages || []);
-            }
+            setMessages(await messageService.getMessages(conversationId));
 
             // Mesajları okundu olarak işaretle
-            socketService.markAsRead(conversationId);
+            await messageService.markAsRead(conversationId);
             const messageTypes = ['new_message', 'MESSAGE_RECEIVED'];
             dispatch(markTypeAsRead({ type: messageTypes, relatedId: conversationId }));
 
@@ -182,78 +175,29 @@ export default function ChatScreen() {
         }
     }, [conversationId]);
 
-    // Socket bağlantısı ve event dinleyicileri
+    // Supabase Realtime mesaj ve okundu olayları
     useEffect(() => {
         if (!conversationId) return;
-
-        // Socket'e bağlan ve konuşmaya katıl
-        const connectAndJoin = async () => {
-            const connected = await socketService.connect();
-            if (connected) {
-                socketService.joinConversation(conversationId);
-            }
-        };
-        connectAndJoin();
-
-        // Yeni mesaj dinle
-        const unsubMessage = socketService.onMessage(async (data) => {
-            if (data.message.conversationId === conversationId) {
-                setMessages(prev => {
-                    if (prev.some(m => m.id === data.message.id)) return prev;
-                    if (data.message.senderId === user?.id) {
-                        const tempIndex = prev.findIndex(m => m.id.startsWith('temp-') && m.content === data.message.content);
-                        if (tempIndex !== -1) {
-                            const newMessages = [...prev];
-                            newMessages[tempIndex] = data.message;
-                            return newMessages;
-                        }
-                    }
-                    return [...prev, data.message];
-                });
-
-                // Aktif sohbet olduğu için okundu olarak işaretle
-                socketService.markAsRead(conversationId);
-                const messageTypes = ['new_message', 'MESSAGE_RECEIVED'];
-                dispatch(markTypeAsRead({ type: messageTypes, relatedId: conversationId }));
-                
-                // Bekleyip badge'i temizle
-                await Promise.all([
-                    dispatch(markRelatedNotificationsAsRead({ type: 'new_message', relatedId: conversationId })),
-                    dispatch(markRelatedNotificationsAsRead({ type: 'MESSAGE_RECEIVED', relatedId: conversationId }))
-                ]);
+        const unsubscribe = messageService.subscribeToConversation(conversationId, async (message, event) => {
+            setMessages(prev => {
+                if (event === 'DELETE') return prev.filter(item => item.id !== message.id);
+                const existing = prev.findIndex(item => item.id === message.id);
+                if (existing >= 0) {
+                    const next = [...prev];
+                    next[existing] = message;
+                    return next;
+                }
+                return [...prev.filter(item => !(item.id.startsWith('temp-') && item.content === message.content)), message];
+            });
+            if (message.senderId !== user?.id) {
+                await messageService.markAsRead(conversationId);
+                dispatch(markTypeAsRead({ type: ['new_message', 'MESSAGE_RECEIVED'], relatedId: conversationId }));
                 dispatch(fetchUnreadCount());
             }
         });
 
-        // Typing dinle
-        const unsubTyping = socketService.onTyping((data) => {
-            if (data.conversationId === conversationId && data.userId !== user?.id) {
-                setIsTyping(true);
-            }
-        });
-
-        // Stop typing dinle
-        const unsubStopTyping = socketService.onStopTyping((data) => {
-            if (data.conversationId === conversationId) {
-                setIsTyping(false);
-            }
-        });
-
-        // Okundu bilgisi dinle - tüm mesajları okundu olarak güncelle
-        const unsubRead = socketService.onMessagesRead((data) => {
-            if (data.conversationId === conversationId) {
-                setMessages(prev => prev.map(m =>
-                    m.senderId === user?.id ? { ...m, isRead: true } : m
-                ));
-            }
-        });
-
         return () => {
-            socketService.leaveConversation(conversationId);
-            unsubMessage();
-            unsubTyping();
-            unsubStopTyping();
-            unsubRead();
+            unsubscribe();
         };
     }, [conversationId, user?.id]);
 
@@ -336,37 +280,22 @@ export default function ChatScreen() {
                 return;
             }
 
-            // Socket ile gönder
-            if (socketService.getConnectionStatus()) {
-                socketService.sendMessage(conversationId, messageContent);
-                // Optimistic update - mesajı hemen ekle
-                const tempMessage: Message = {
-                    id: tempId,
-                    conversationId,
-                    senderId: user?.id || '',
-                    content: messageContent,
-                    messageType: 'TEXT',
-                    createdAt: new Date().toISOString(),
-                    sender: {
-                        id: user?.id || '',
-                        fullName: user?.fullName || '',
-                        profileImageUrl: user?.profileImageUrl || null,
-                    },
-                };
-                setMessages(prev => [...prev, tempMessage]);
-            } else {
-                // HTTP fallback
-                const response = await api.post(`/conversations/${conversationId}/messages`, {
-                    content: messageContent,
-                });
-                if (response.data.success) {
-                    setMessages(prev => [...prev, response.data.data.message]);
-                } else {
-                    throw new Error('Mesaj gönderilemedi');
-                }
-            }
-
-            socketService.sendStopTyping(conversationId);
+            const tempMessage: Message = {
+                id: tempId,
+                conversationId,
+                senderId: user?.id || '',
+                content: messageContent,
+                messageType: 'TEXT',
+                createdAt: new Date().toISOString(),
+                sender: {
+                    id: user?.id || '',
+                    fullName: user?.fullName || '',
+                    profileImageUrl: user?.profileImageUrl || null,
+                },
+            };
+            setMessages(prev => [...prev, tempMessage]);
+            const sentMessage = await messageService.sendMessageToConversation(conversationId, messageContent);
+            setMessages(prev => [...prev.filter(item => item.id !== tempId && item.id !== sentMessage.id), sentMessage]);
         } catch (error: any) {
             console.error('Error sending message:', error);
             // Başarısız mesajı listeden kaldır
@@ -405,8 +334,12 @@ export default function ChatScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            const response = await api.post('/blocks/toggle', { blockedId: otherUser?.id });
-                            if (response.data.success) {
+                            const { data: existing } = await supabase.from('blocks').select('id')
+                                .eq('blocked_id', otherUser?.id || '').maybeSingle();
+                            const result = existing
+                                ? await supabase.from('blocks').delete().eq('id', existing.id)
+                                : await supabase.from('blocks').insert({ blocker_id: user?.id, blocked_id: otherUser?.id });
+                            if (!result.error) {
                                 Alert.alert('Başarılı', 'Kullanıcı engellendi.', [
                                     { text: 'Tamam', onPress: () => router.back() }
                                 ]);
@@ -423,34 +356,6 @@ export default function ChatScreen() {
     // Yazıyor bilgisi gönder
     const handleTyping = (text: string) => {
         setNewMessage(text);
-
-        if (!conversationId) return;
-
-        // Typing bildirimi gönder (her 3 saniyede bir göndererek trafiği ve re-render'ı azalt)
-        const now = Date.now();
-        if (text.length > 0) {
-            if (now - lastTypingTimeRef.current > 3000) {
-                socketService.sendTyping(conversationId);
-                lastTypingTimeRef.current = now;
-            }
-
-            // Önceki timeout'u temizle
-            if (typingTimeoutRef.current) {
-                clearTimeout(typingTimeoutRef.current);
-            }
-
-            // 2 saniye sonra yazmayı bıraktı bilgisi gönder
-            typingTimeoutRef.current = setTimeout(() => {
-                socketService.sendStopTyping(conversationId);
-                lastTypingTimeRef.current = 0;
-            }, 2000);
-        } else {
-            if (typingTimeoutRef.current) {
-                clearTimeout(typingTimeoutRef.current);
-            }
-            socketService.sendStopTyping(conversationId);
-            lastTypingTimeRef.current = 0;
-        }
     };
 
     // WhatsApp tarzı okundu tiki bileşeni

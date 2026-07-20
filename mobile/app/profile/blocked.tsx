@@ -17,7 +17,7 @@ import { fonts } from '../../constants/typography';
 import { spacing } from '../../constants/spacing';
 import { useAppColors } from '../../hooks/useAppColors';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
-import api from '../../services/api';
+import { safetyService } from '../../services/accountService';
 import { getFileUrl } from '../../constants/api';
 
 interface BlockedUser {
@@ -36,10 +36,7 @@ export default function BlockedUsersScreen() {
 
     const fetchBlockedUsers = async () => {
         try {
-            const response = await api.get('/blocks');
-            if (response.data.success) {
-                setBlockedUsers(response.data.data);
-            }
+            setBlockedUsers(await safetyService.listBlocked() as BlockedUser[]);
         } catch (error) {
             console.error('🚨 Fetch Blocks Error:', error);
         } finally {
@@ -63,8 +60,8 @@ export default function BlockedUsersScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            const response = await api.post('/blocks/toggle', { blockedId });
-                            if (response.data.success && !response.data.isBlocked) {
+                            const isBlocked = await safetyService.toggleBlock(blockedId);
+                            if (!isBlocked) {
                                 setBlockedUsers(prev => prev.filter(u => u.id !== blockedId));
                             }
                         } catch (error) {

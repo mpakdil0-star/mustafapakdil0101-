@@ -22,9 +22,10 @@ import { colors as staticColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
-import { getFileUrl, API_BASE_URL } from '../../constants/api';
+import { getFileUrl } from '../../constants/api';
 import { useAppSelector } from '../../hooks/redux';
-import api from '../../services/api';
+import { userService } from '../../services/userService';
+import { safetyService } from '../../services/accountService';
 
 export default function ElectricianProfileScreen() {
     const router = useRouter();
@@ -45,8 +46,7 @@ export default function ElectricianProfileScreen() {
     const fetchElectricianProfile = async () => {
         try {
             setIsLoading(true);
-            const response = await fetch(`${API_BASE_URL}users/electricians/${id}`);
-            const data = await response.json();
+            const data = await userService.getElectricianById(id);
 
             if (data.success) {
                 setElectrician(data.data);
@@ -90,8 +90,8 @@ export default function ElectricianProfileScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            const response = await api.post('/blocks/toggle', { blockedId: id });
-                            if (response.data.success) {
+                            const isBlocked = await safetyService.toggleBlock(id);
+                            if (isBlocked) {
                                 RNAlert.alert('Başarılı', 'Kullanıcı engellendi.', [
                                     { text: 'Tamam', onPress: () => router.back() }
                                 ]);

@@ -15,7 +15,6 @@ import { PremiumAlert } from '../../../components/common/PremiumAlert';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import * as SecureStore from 'expo-secure-store';
 import { useAppDispatch, useAppSelector } from '../../../hooks/redux';
 import { fetchJobById, fetchMyJobs } from '../../../store/slices/jobSlice';
 import { Card } from '../../../components/common/Card';
@@ -26,7 +25,7 @@ import { spacing } from '../../../constants/spacing';
 import { typography, fonts } from '../../../constants/typography';
 import { useAppColors } from '../../../hooks/useAppColors';
 import { PremiumHeader } from '../../../components/common/PremiumHeader';
-import { API_BASE_URL } from '../../../constants/api';
+import { jobService } from '../../../services/jobService';
 import {
     CITY_NAMES,
     getDistrictsByCity,
@@ -159,8 +158,6 @@ export default function EditJobScreen() {
         setIsSubmitting(true);
 
         try {
-            const token = await SecureStore.getItemAsync('auth_token');
-
             const jobData = {
                 title: title.trim(),
                 description: description.trim(),
@@ -178,16 +175,8 @@ export default function EditJobScreen() {
                 estimatedBudget: estimatedBudget ? parseFloat(estimatedBudget) : undefined,
             };
 
-            const response = await fetch(`${API_BASE_URL}jobs/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify(jobData),
-            });
-
-            const data = await response.json();
+            await jobService.updateJob(id, jobData);
+            const data = { success: true, error: null as { message?: string } | null };
 
             if (data.success) {
                 showAlert('Başarılı', 'İlan başarıyla güncellendi!', 'success', [

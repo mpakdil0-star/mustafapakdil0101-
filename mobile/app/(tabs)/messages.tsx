@@ -8,7 +8,6 @@ import { spacing } from '../../constants/spacing';
 import { typography, fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
 import { messageService, Conversation } from '../../services/messageService';
-import socketService from '../../services/socketService';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -69,67 +68,10 @@ export default function MessagesScreen() {
 
   useEffect(() => {
     if (!user) return;
-
-    socketService.connect();
-
-    // Yeni mesaj veya bildirim geldiğinde listeyi güncelle
-    const unsubNotification = socketService.onNotification((data) => {
-      console.log('📬 [Messages] Global notification received:', data.type);
-
-      if (data.type === 'new_message' && data.message) {
-        const newMessage = data.message;
-
-        setConversations(prev => {
-          // İlgili konuşmayı bul
-          const convIndex = prev.findIndex(c => c.id === newMessage.conversationId);
-
-          if (convIndex !== -1) {
-            // Konuşma zaten listede var
-            const updatedConversations = [...prev];
-            const targetConv = { ...updatedConversations[convIndex] };
-
-            // Son mesajı ve okunmamış sayısını güncelle
-            targetConv.lastMessage = newMessage;
-
-            // Eğer aktif olarak bu konuşmada değilsek (messages ekranındayız) sayıyı artır
-            // Not: Mesajlarım ekranında olduğumuz için her halükarda artırıyoruz (servis katmanı filter'layabilir)
-            targetConv.unreadCount = (targetConv.unreadCount || 0) + 1;
-
-            // Listeden çıkar ve başa ekle
-            updatedConversations.splice(convIndex, 1);
-            return [targetConv, ...updatedConversations];
-          } else {
-            // Konuşma listede yok (ilk defa mesaj geldi), tüm listeyi yeniden çekmek en güvenlisi
-            loadConversations(false);
-            return prev;
-          }
-        });
-      } else {
-        // Diğer bildirim türleri için listeyi yenile
-        loadConversations(false);
-      }
-    });
-
-    // Karşı taraf mesajları okuduğunda listeyi güncelle
-    const unsubRead = socketService.onMessagesRead((data) => {
-      console.log('📖 [Messages] Messages read event:', data.conversationId);
-      setConversations(prev => {
-        return prev.map(conv => {
-          if (conv.id === data.conversationId) {
-            return {
-              ...conv,
-              unreadCount: 0,
-              lastMessage: conv.lastMessage ? { ...conv.lastMessage, isRead: true } : conv.lastMessage
-            };
-          }
-          return conv;
-        });
-      });
-    });
+    const unsubscribe = messageService.subscribeToConversationList(user.id, () => loadConversations(false));
 
     return () => {
-      unsubNotification();
-      unsubRead();
+      unsubscribe();
     };
   }, [loadConversations]);
 
@@ -152,7 +94,7 @@ export default function MessagesScreen() {
             const messageTypes = ['new_message', 'MESSAGE_RECEIVED'];
                 // Update local Redux state synchronously for instant UI response
             dispatch(markTypeAsRead({ type: messageTypes, relatedId: conversation.id }));
-            socketService.markAsRead(conversation.id);
+            await messageService.markAsRead(conversation.id);
 
             // Wait for backend updates to complete
             await Promise.all([

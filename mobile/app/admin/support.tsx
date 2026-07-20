@@ -7,7 +7,7 @@ import { colors as staticColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
-import api from '../../services/api';
+import { adminService } from '../../services/adminService';
 
 interface Ticket {
     id: string;
@@ -38,10 +38,7 @@ export default function AdminSupportScreen() {
 
     const fetchTickets = async () => {
         try {
-            const response = await api.get('/support/admin/all');
-            if (response.data.success) {
-                setTickets(response.data.data);
-            }
+            setTickets(await adminService.supportTickets() as Ticket[]);
         } catch (error) {
             console.error('Fetch tickets error:', error);
             Alert.alert('Hata', 'Talepler yüklenemedi');

@@ -21,7 +21,7 @@ import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
-import api from '../../services/api';
+import { userInsightsService } from '../../services/userInsightsService';
 import { useAppSelector } from '../../hooks/redux';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -131,7 +131,7 @@ export default function StatisticsScreen() {
 
     const fetchStats = async () => {
         try {
-            const response = await api.get('/users/stats');
+            const response = { data: { success: true, data: await userInsightsService.electricianStats() } };
             if (response.data.success) {
                 setStats(response.data.data);
             }

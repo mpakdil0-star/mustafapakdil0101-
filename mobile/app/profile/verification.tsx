@@ -24,7 +24,7 @@ import { useAppColors } from '../../hooks/useAppColors';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { useAppSelector } from '../../hooks/redux';
-import api from '../../services/api';
+import userService from '../../services/userService';
 
 type DocumentType = 'MYK_BELGESI' | 'ELEKTRIK_USTASI' | 'ODA_KAYIT' | 'YETKILI_MUHENDIS';
 type VerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED' | null;
@@ -104,20 +104,20 @@ export default function VerificationScreen() {
 
     const loadVerificationStatus = async () => {
         try {
-            const response = await api.get('/users/verification');
-            if (response.data.success && response.data.data) {
-                setVerificationData(response.data.data);
-                if (response.data.data.documentType) {
-                    setSelectedType(response.data.data.documentType);
+            const data = await userService.getVerification();
+            if (data) {
+                setVerificationData(data);
+                if (data.documentType) {
+                    setSelectedType(data.documentType);
                 }
-                if (response.data.data.licenseNumber) {
-                    setLicenseNumber(response.data.data.licenseNumber);
+                if (data.licenseNumber) {
+                    setLicenseNumber(data.licenseNumber);
                 }
-                if (response.data.data.emoNumber) {
-                    setEmoNumber(response.data.data.emoNumber);
+                if (data.emoNumber) {
+                    setEmoNumber(data.emoNumber);
                 }
-                if (response.data.data.smmNumber) {
-                    setSmmNumber(response.data.data.smmNumber);
+                if (data.smmNumber) {
+                    setSmmNumber(data.smmNumber);
                 }
             }
         } catch (error) {
@@ -184,7 +184,7 @@ export default function VerificationScreen() {
 
         setIsSubmitting(true);
         try {
-            const response = await api.post('/users/verification', {
+            await userService.submitVerification({
                 documentType: selectedType,
                 licenseNumber: licenseNumber.trim() || 'BELGE_GÖRSELİ',
                 emoNumber: emoNumber.trim(),
@@ -192,9 +192,7 @@ export default function VerificationScreen() {
                 documentImage: documentImage,
             });
 
-            if (response.data.success) {
-                setShowSuccessModal(true);
-            }
+            setShowSuccessModal(true);
         } catch (error: any) {
             console.error('Verification submit error:', error);
             // Show success modal anyway (demo mode)
