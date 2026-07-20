@@ -231,11 +231,18 @@ function RootLayoutNav() {
   }, [user?.isImpersonated, user?.impersonationExpiresAt, dispatch, router]);
 
   useEffect(() => {
-    const interaction = InteractionManager.runAfterInteractions(() => {
+    // Navigation readiness must not wait for visual animations. The launch
+    // splash contains an intentional infinite ambient loop; waiting through
+    // InteractionManager caused a cold-start deadlock on some Android devices.
+    const frame = requestAnimationFrame(() => {
       setIsNavigationReady(true);
     });
+    const fallback = setTimeout(() => setIsNavigationReady(true), 750);
 
-    return () => interaction.cancel();
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(fallback);
+    };
   }, []);
 
   // Helper to check if electrician profile is incomplete
@@ -1078,15 +1085,29 @@ function RootLayoutNav() {
     }
   }, [unreadCount, isAuthenticated]);
 
-  const [fontsLoaded] = useFonts(fontFiles);
+  const [fontsLoaded, fontError] = useFonts(fontFiles);
   const [splashAnimationDone, setSplashAnimationDone] = useState(false);
+  const [startupDeadlineReached, setStartupDeadlineReached] = useState(false);
   const handleSplashComplete = useCallback(() => setSplashAnimationDone(true), []);
 
   useEffect(() => {
     SplashScreen.hideAsync().catch(() => undefined);
   }, []);
 
-  if (!fontsLoaded || !isNavigationReady || !splashAnimationDone) {
+  useEffect(() => {
+    // A corrupt font cache or a paused JS timer must never leave users on the
+    // launch artwork forever. Normal devices finish in 1.75 s; this is only a
+    // final safety valve for abnormal cold starts and in-place updates.
+    const deadline = setTimeout(() => {
+      setStartupDeadlineReached(true);
+      setSplashAnimationDone(true);
+    }, 4000);
+    return () => clearTimeout(deadline);
+  }, []);
+
+  const fontsReady = fontsLoaded || Boolean(fontError) || startupDeadlineReached;
+
+  if (!fontsReady || !isNavigationReady || !splashAnimationDone) {
     return <AppLaunchSplash onComplete={handleSplashComplete} />;
   }
 

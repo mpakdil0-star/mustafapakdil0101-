@@ -1,6 +1,6 @@
 {
   "name": "elektrikciler-mobile",
-  "version": "1.6.20",
+  "version": "1.6.21",
   "main": "expo-router/entry",
   "engines": {
     "node": ">=22"

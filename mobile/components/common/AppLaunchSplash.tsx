@@ -23,12 +23,14 @@ export const AppLaunchSplash: React.FC<AppLaunchSplashProps> = ({ onComplete }) 
           duration: 1250,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
+          isInteraction: false,
         }),
         Animated.timing(ambient, {
           toValue: 0,
           duration: 1250,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
+          isInteraction: false,
         }),
       ]),
     );
@@ -40,6 +42,7 @@ export const AppLaunchSplash: React.FC<AppLaunchSplashProps> = ({ onComplete }) 
         duration: 450,
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
+        isInteraction: false,
       }),
       Animated.sequence([
         Animated.delay(130),
@@ -49,12 +52,14 @@ export const AppLaunchSplash: React.FC<AppLaunchSplashProps> = ({ onComplete }) 
             duration: 520,
             easing: Easing.out(Easing.cubic),
             useNativeDriver: true,
+            isInteraction: false,
           }),
           Animated.timing(brandTranslate, {
             toValue: 0,
             duration: 620,
             easing: Easing.out(Easing.cubic),
             useNativeDriver: true,
+            isInteraction: false,
           }),
         ]),
       ]),
@@ -65,6 +70,7 @@ export const AppLaunchSplash: React.FC<AppLaunchSplashProps> = ({ onComplete }) 
           duration: 1280,
           easing: Easing.inOut(Easing.cubic),
           useNativeDriver: true,
+          isInteraction: false,
         }),
       ]),
     ]).start();
@@ -129,7 +135,7 @@ export const AppLaunchSplash: React.FC<AppLaunchSplashProps> = ({ onComplete }) 
           <View style={styles.orbitPoint} />
         </Animated.View>
         <Animated.View style={{ opacity: brandOpacity, transform: [{ translateY: brandTranslate }] }}>
-          <Text style={styles.wordmark}>işbitir</Text>
+          <Text style={styles.wordmark}>İşBitir</Text>
           <View style={styles.wordmarkUnderline} />
         </Animated.View>
       </View>
