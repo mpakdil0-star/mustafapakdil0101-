@@ -26,6 +26,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getNotificationTargetPath } from '../utils/notificationNavigation';
 import { AppLaunchSplash } from '../components/common/AppLaunchSplash';
+import { hasCompletedOnboarding } from '../utils/onboardingState';
 // TODO: Uncomment after running: npx expo install expo-network
 // import { OfflineBanner } from '../components/common/OfflineBanner';
 
@@ -68,6 +69,7 @@ function RootLayoutNav() {
 
   const [pendingNotificationPath, setPendingNotificationPath] = useState<string | null>(null);
   const [hasResolvedInitialNotification, setHasResolvedInitialNotification] = useState(false);
+  const [hasPassedOnboarding, setHasPassedOnboarding] = useState(false);
   const handledNotificationResponseIds = useRef(new Set<string>());
   const hasCheckedInitialNotification = useRef(false);
   const notificationNavigationInFlight = useRef<string | null>(null);
@@ -268,15 +270,19 @@ function RootLayoutNav() {
 
     const checkOnboarding = async () => {
       try {
-        const { getItemAsync } = await import('expo-secure-store');
-        const hasSeenOnboarding = await getItemAsync('has_seen_onboarding');
+        const hasSeenOnboarding = await hasCompletedOnboarding();
 
         if (!hasSeenOnboarding) {
+          setHasPassedOnboarding(false);
           router.replace('/onboarding');
           return true;
         }
+        setHasPassedOnboarding(true);
         return false;
       } catch (error) {
+        // If device storage is temporarily unavailable, do not show the
+        // first-install experience at an arbitrary later stage.
+        setHasPassedOnboarding(true);
         console.warn('Onboarding check failed:', error);
         return false;
       }
@@ -284,12 +290,6 @@ function RootLayoutNav() {
     const runNavigationLogic = async () => {
       // CRITICAL: Wait until navigation is fully ready before performing any redirects
       if (!isNavigationReady) return;
-
-      // NEW: If we are handling a deep link notification, skip standard redirects to avoid clobbering
-      if (pendingNotificationPath) {
-        console.log('🛑 [RootNav] Skipping standard redirect because notification path is pending:', pendingNotificationPath);
-        return;
-      }
 
       const inAuthGroup = segments.includes('(auth)') || segments.includes('login') || segments.includes('register');
       const isOnboarding = segments[0] === 'onboarding';
@@ -306,7 +306,12 @@ function RootLayoutNav() {
         if (redirectedToOnboarding || navigationCancelled) return;
       }
 
-      if (!segments.length) return;
+      // Notification/deep-link navigation is allowed only after the mandatory
+      // first-install onboarding decision has been resolved.
+      if (pendingNotificationPath) {
+        console.log('🛑 [RootNav] Skipping standard redirect because notification path is pending:', pendingNotificationPath);
+        return;
+      }
 
       if (isAuthenticated) {
         if (isPasswordRecovery) return;
@@ -952,6 +957,7 @@ function RootLayoutNav() {
 
   // Deferred Deep Linking when user gets authenticated
   useEffect(() => {
+    if (!hasPassedOnboarding) return;
     const isPublicPath = pendingNotificationPath === '/welcome';
     if (pendingNotificationPath && isInitialized && isNavigationReady && !isAuthenticated && !isPublicPath) {
       // Keep the notification destination queued until authentication, but do
@@ -997,7 +1003,7 @@ function RootLayoutNav() {
         interaction.cancel();
       };
     }
-  }, [isAuthenticated, isInitialized, pendingNotificationPath, isNavigationReady, pathname, router]);
+  }, [isAuthenticated, isInitialized, pendingNotificationPath, isNavigationReady, pathname, router, hasPassedOnboarding]);
 
   // Keep the normal home redirect paused until Expo Router confirms that the
   // notification destination is actually visible. This removes the intermittent
@@ -1106,15 +1112,15 @@ function RootLayoutNav() {
   }, []);
 
   const fontsReady = fontsLoaded || Boolean(fontError) || startupDeadlineReached;
-
-  if (!fontsReady || !isNavigationReady || !splashAnimationDone) {
-    return <AppLaunchSplash onComplete={handleSplashComplete} />;
-  }
+  const showLaunchSplash = !startupDeadlineReached &&
+    (!fontsReady || !isNavigationReady || !splashAnimationDone);
 
   return (
     <>
       <StatusBar style="dark" />
       <Slot />
+
+      {showLaunchSplash && <AppLaunchSplash onComplete={handleSplashComplete} />}
 
       {user?.isImpersonated && (
         <View style={[styles.impersonationBanner, { top: insets.top + 2 }]}>

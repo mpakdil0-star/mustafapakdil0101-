@@ -150,7 +150,13 @@ export const AppLaunchSplash: React.FC<AppLaunchSplashProps> = ({ onComplete }) 
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, overflow: 'hidden', backgroundColor: '#04111E' },
+  container: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 10000,
+    elevation: 10000,
+    overflow: 'hidden',
+    backgroundColor: '#04111E',
+  },
   ambientOrb: { position: 'absolute', borderRadius: 999 },
   ambientOrbTop: { width: 330, height: 330, top: -105, right: -120 },
   ambientOrbBottom: {
