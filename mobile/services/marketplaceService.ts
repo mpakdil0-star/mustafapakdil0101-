@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { optimizeImage } from '../utils/imageOptimizer';
 
 type UploadedMarketplaceImage = { publicUrl: string; path: string };
 
@@ -24,14 +25,15 @@ const currentSeller = async () => {
   return data;
 };
 
-const upload = async (uri: string, userId: string): Promise<UploadedMarketplaceImage> => {
-  if (!uri || (!uri.startsWith('data:') && !uri.startsWith('file:') && !uri.startsWith('content:'))) {
-    return { publicUrl: uri, path: '' };
+const upload = async (rawUri: string, userId: string): Promise<UploadedMarketplaceImage> => {
+  if (!rawUri || (!rawUri.startsWith('data:') && !rawUri.startsWith('file:') && !rawUri.startsWith('content:'))) {
+    return { publicUrl: rawUri, path: '' };
   }
 
+  const uri = await optimizeImage(rawUri);
   const response = await fetch(uri);
   const mimeFromDataUri = uri.startsWith('data:') ? uri.match(/^data:([^;,]+)/)?.[1] : null;
-  const mime = mimeFromDataUri || response.headers.get('content-type') || 'image/jpeg';
+  const mime = (mimeFromDataUri || response.headers.get('content-type') || 'image/jpeg').toLowerCase();
   if (!mime.startsWith('image/')) throw new Error('UNSUPPORTED_MARKETPLACE_IMAGE');
   const fileData = await response.arrayBuffer();
   if (!fileData.byteLength) throw new Error('EMPTY_MARKETPLACE_IMAGE');

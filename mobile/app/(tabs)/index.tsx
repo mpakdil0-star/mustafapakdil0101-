@@ -630,7 +630,9 @@ export default function HomeScreen() {
       try {
         const hidden = await AsyncStorage.getItem('hide_how_it_works_button');
         if (hidden === 'true') setHideHowItWorks(true);
-      } catch (e) { }
+      } catch (e) {
+        console.warn('[Home] Failed to load hide preference:', e);
+      }
     };
     if (isElectrician) loadHidePreference();
   }, [isElectrician]);
@@ -976,7 +978,9 @@ export default function HomeScreen() {
               }
               await AsyncStorage.removeItem('push_activated');
               setShowPushBanner(true);
-            } catch (e) { }
+            } catch (e) {
+              console.warn('[Home] Failed to check push status:', e);
+            }
           };
           
           await Promise.all([
@@ -1025,7 +1029,9 @@ export default function HomeScreen() {
               try {
                 const currentPreferences = await preferenceService.get<Record<string, boolean>>();
                 await preferenceService.update({ ...(currentPreferences || {}), pushEnabled: true });
-              } catch (e) { }
+              } catch (e) {
+                console.warn('[Home] Failed to update push preference:', e);
+              }
             }
           }
         } catch (e) {
@@ -1215,7 +1221,7 @@ export default function HomeScreen() {
               {/* Theme-Adaptive Glowing Border Wrapper */}
               <Animated.View style={[styles.rgbBorderWrapper, { borderColor: animatedBorderColor, shadowColor: isElectrician ? '#FBBF24' : '#2DD4BF' }]}>
                 <TouchableOpacity
-                  style={[styles.profileHealthCard, { shadowColor: colors.primary, shadowOpacity: 0.35, shadowRadius: 18 }]}
+                  style={[styles.profileHealthCard, { shadowColor: isElectrician ? '#F59E0B' : colors.primary, shadowOpacity: 0.12, shadowRadius: 12, elevation: 3 }]}
                   activeOpacity={0.9}
                   onPress={() => setShowCompletionModal(true)}
                 >
@@ -1423,6 +1429,7 @@ export default function HomeScreen() {
                 style={{ marginTop: 12 }} 
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 32 }}
+                keyboardShouldPersistTaps="handled"
               >
                 {/* Photo Upload Zone */}
                 <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: '#334155', marginTop: 8, marginBottom: 8 }}>

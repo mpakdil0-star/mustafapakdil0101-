@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Slot, useRouter, useSegments, usePathname, SplashScreen, useGlobalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
+import Constants from 'expo-constants';
 import { StatusBar } from 'expo-status-bar';
 import { Provider, useSelector } from 'react-redux';
 import { store } from '../store/store';
@@ -20,6 +21,9 @@ import { supabase } from '../services/supabase';
 import { notificationService } from '../services/notificationService';
 import { preferenceService } from '../services/accountService';
 import LegalUpdateModal from '../components/legal/LegalUpdateModal';
+import { useAppVersionMigration } from '../hooks/useAppVersionMigration';
+import { useAccountRevocation } from '../hooks/useAccountRevocation';
+import { useImpersonationExpiry } from '../hooks/useImpersonationExpiry';
 import { Alert } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
@@ -81,42 +85,21 @@ function RootLayoutNav() {
   };
 
   // NEW: App Version Migration & Cache Cleansing
-  useEffect(() => {
-    const runMigration = async () => {
-      try {
-        const CURRENT_APP_VERSION = '1.6.11';
-        const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-        const lastRunVersion = await AsyncStorage.getItem('last_run_app_version');
-
-        if (lastRunVersion !== CURRENT_APP_VERSION) {
-          console.log(`🧹 [Migration] Upgrading app version from ${lastRunVersion || 'none'} to ${CURRENT_APP_VERSION}...`);
-          
-          // 1. Clear secure store tokens to prevent stale/conflicting auth sessions
-          const SecureStore = await import('expo-secure-store');
-          await Promise.all(['auth_token', 'refresh_token', 'admin_token_fallback', 'admin_refresh_fallback']
-            .map(key => SecureStore.deleteItemAsync(key)));
-          
-          // 2. Clear old marketplace cache key
-          await AsyncStorage.removeItem('marketplace_products_v1');
-          
-          // 3. Save new run version. Supabase session storage is deliberately
-          // preserved; only legacy Express JWT tokens are removed above.
-          await AsyncStorage.setItem('last_run_app_version', CURRENT_APP_VERSION);
-          
-          console.log('✅ [Migration] Clean slate migration completed successfully.');
-        }
-      } catch (err) {
-        console.error('❌ [Migration] Error during version migration:', err);
-      }
-    };
-
-    runMigration();
-  }, [dispatch]);
+  useAppVersionMigration();
 
   // Restore the persisted Supabase session and keep Redux synchronized with
-  // Auth events. The callback schedules Redux work outside Supabase's lock.
+  // Auth events. Concurrency guard prevents duplicate simultaneous initialization on startup.
   useEffect(() => {
-    dispatch(initializeAuth());
+    let isInitializing = false;
+    const triggerInit = () => {
+      if (isInitializing) return;
+      isInitializing = true;
+      dispatch(initializeAuth()).finally(() => {
+        isInitializing = false;
+      });
+    };
+
+    triggerInit();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
       setTimeout(() => {
@@ -124,9 +107,9 @@ function RootLayoutNav() {
           dispatch(clearSession());
         } else if (event === 'PASSWORD_RECOVERY') {
           router.replace('/(auth)/forgot-password?recovery=1');
-          dispatch(initializeAuth());
+          triggerInit();
         } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-          dispatch(initializeAuth());
+          triggerInit();
         }
       }, 0);
     });
@@ -135,7 +118,7 @@ function RootLayoutNav() {
       if (!url) return;
       try {
         const handled = await authService.handleAuthUrl(url);
-        if (handled) dispatch(initializeAuth());
+        if (handled) triggerInit();
       } catch (error) {
         console.warn('[Auth] Deep link işlenemedi:', error);
       }
@@ -150,87 +133,18 @@ function RootLayoutNav() {
     };
   }, [dispatch, router]);
 
-  // Supabase access tokens can remain locally usable for a short time after
-  // an administrator deletes the underlying Auth user. Listen for the
-  // server-side revocation event and immediately return the device to guest
-  // mode instead of waiting for token expiry or an app restart.
-  useEffect(() => {
-    if (!isAuthenticated || !user?.id || user.isImpersonated) return;
+  // Real-time server-side account revocation handling
+  useAccountRevocation({
+    isAuthenticated,
+    userId: user?.id,
+    isImpersonated: user?.isImpersonated,
+  });
 
-    let handled = false;
-    const revokeLocalSession = async (reason = 'ADMIN_DELETED') => {
-      if (handled) return;
-      handled = true;
-      try {
-        await supabase.auth.signOut({ scope: 'local' });
-      } catch {
-        // Redux and navigation must still be cleared if local sign-out fails.
-      }
-      dispatch(clearSession());
-      router.replace('/welcome');
-      Alert.alert(
-        'Oturum sonlandırıldı',
-        reason === 'ADMIN_SUSPENDED'
-          ? 'Hesabınız yönetici tarafından askıya alındı.'
-          : reason === 'ADMIN_BANNED'
-            ? 'Hesabınız bir şikâyet incelemesi sonucunda yönetici tarafından kapatıldı.'
-          : 'Hesabınız yönetici tarafından silindi.'
-      );
-    };
-
-    const channel = supabase
-      .channel(`account-revocation:${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'account_revocations',
-          filter: `user_id=eq.${user.id}`,
-        },
-        payload => { void revokeLocalSession((payload.new as any)?.reason); },
-      )
-      .subscribe();
-
-    // Covers a deletion that happened while the device was offline or while
-    // the Realtime channel was still connecting.
-    supabase
-      .from('account_revocations')
-      .select('id,reason')
-      .eq('user_id', user.id)
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) void revokeLocalSession(data.reason);
-      });
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [isAuthenticated, user?.id, user?.isImpersonated, dispatch, router]);
-
-  useEffect(() => {
-    if (!user?.isImpersonated || !user.impersonationExpiresAt) return;
-    const remaining = new Date(user.impersonationExpiresAt).getTime() - Date.now();
-
-    const restoreAdmin = async () => {
-      try {
-        await dispatch(stopImpersonation()).unwrap();
-        router.replace('/admin/users');
-        Alert.alert('Yönetici moduna dönüldü', 'Süreli kullanıcı oturumu sona erdi.');
-      } catch {
-        Alert.alert('Oturum hatası', 'Yönetici hesabına otomatik dönüş yapılamadı. Lütfen uygulamayı yeniden açın.');
-      }
-    };
-
-    if (remaining <= 0) {
-      void restoreAdmin();
-      return;
-    }
-
-    const expiryTimer = setTimeout(() => { void restoreAdmin(); }, remaining);
-    return () => clearTimeout(expiryTimer);
-  }, [user?.isImpersonated, user?.impersonationExpiresAt, dispatch, router]);
+  // Timed impersonation session automatic expiry handling
+  useImpersonationExpiry({
+    isImpersonated: user?.isImpersonated,
+    impersonationExpiresAt: user?.impersonationExpiresAt,
+  });
 
   useEffect(() => {
     // Navigation readiness must not wait for visual animations. The launch

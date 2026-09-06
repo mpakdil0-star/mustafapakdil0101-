@@ -7,7 +7,9 @@ import {
     TouchableOpacity,
     TextInput,
     ActivityIndicator,
-    Alert
+    Alert,
+    KeyboardAvoidingView,
+    Platform
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -110,104 +112,111 @@ export default function ReportScreen() {
                 showBackButton
             />
 
-            <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.content}
-                showsVerticalScrollIndicator={false}
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
             >
-                {/* Info Card */}
-                <View style={styles.infoCard}>
-                    <Ionicons name="shield-checkmark-outline" size={24} color={appColors.primary} />
-                    <Text style={styles.infoText}>
-                        Şikayetleriniz gizli tutulur ve en kısa sürede ekibimiz tarafından incelenir.
-                    </Text>
-                </View>
-
-                {/* Reason Selection */}
-                <Text style={styles.sectionTitle}>Şikayet Sebebi</Text>
-                <View style={styles.reasonContainer}>
-                    {REPORT_REASONS.map((reason) => (
-                        <TouchableOpacity
-                            key={reason.value}
-                            style={[
-                                styles.reasonItem,
-                                selectedReason === reason.value && {
-                                    borderColor: appColors.primary,
-                                    backgroundColor: appColors.primary + '10'
-                                }
-                            ]}
-                            onPress={() => setSelectedReason(reason.value)}
-                            activeOpacity={0.7}
-                        >
-                            <View style={[
-                                styles.radioOuter,
-                                selectedReason === reason.value && { borderColor: appColors.primary }
-                            ]}>
-                                {selectedReason === reason.value && (
-                                    <View style={[styles.radioInner, { backgroundColor: appColors.primary }]} />
-                                )}
-                            </View>
-                            <Text style={[
-                                styles.reasonText,
-                                selectedReason === reason.value && { color: appColors.primary, fontFamily: fonts.bold }
-                            ]}>
-                                {reason.label}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-
-                {/* Description */}
-                <Text style={styles.sectionTitle}>Açıklama</Text>
-                <TextInput
-                    style={styles.textArea}
-                    placeholder="Şikayetinizi detaylı olarak açıklayın... (en az 20 karakter)"
-                    placeholderTextColor={colors.textLight}
-                    multiline
-                    numberOfLines={4}
-                    value={description}
-                    onChangeText={setDescription}
-                    textAlignVertical="top"
-                />
-                <Text style={styles.charCount}>{description.length}/500</Text>
-
-                {/* Block Option */}
-                <TouchableOpacity
-                    style={[
-                        styles.blockOption,
-                        blockUser && { backgroundColor: '#EF444408', borderColor: '#EF444440' }
-                    ]}
-                    onPress={() => setBlockUser(!blockUser)}
-                    activeOpacity={0.7}
+                <ScrollView
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.content}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
                 >
-                    <View style={[
-                        styles.checkbox,
-                        blockUser && { backgroundColor: '#EF4444', borderColor: '#EF4444' }
-                    ]}>
-                        {blockUser && <Ionicons name="checkmark" size={14} color={colors.white} />}
+                    {/* Info Card */}
+                    <View style={styles.infoCard}>
+                        <Ionicons name="shield-checkmark-outline" size={24} color={appColors.primary} />
+                        <Text style={styles.infoText}>
+                            Şikayetleriniz gizli tutulur ve en kısa sürede ekibimiz tarafından incelenir.
+                        </Text>
                     </View>
-                    <View style={styles.blockOptionTextContainer}>
-                        <Text style={[styles.blockOptionTitle, blockUser && { color: '#EF4444' }]}>Bu kullanıcıyı engelle</Text>
-                        <Text style={styles.blockOptionSub}>Bu kullanıcıyı engellediğinizde birbirinizin ilanlarını ve mesajlarını görmezsiniz.</Text>
-                    </View>
-                </TouchableOpacity>
 
-                {/* Submit Button */}
-                <View style={styles.actionContainer}>
-                    <Button
-                        title={isSubmitting ? 'Gönderiliyor...' : 'Şikayeti Gönder'}
-                        onPress={handleSubmit}
-                        disabled={isSubmitting || !selectedReason || description.length < 20}
-                        style={styles.submitButton}
-                        variant="primary"
+                    {/* Reason Selection */}
+                    <Text style={styles.sectionTitle}>Şikayet Sebebi</Text>
+                    <View style={styles.reasonContainer}>
+                        {REPORT_REASONS.map((reason) => (
+                            <TouchableOpacity
+                                key={reason.value}
+                                style={[
+                                    styles.reasonItem,
+                                    selectedReason === reason.value && {
+                                        borderColor: appColors.primary,
+                                        backgroundColor: appColors.primary + '10'
+                                    }
+                                ]}
+                                onPress={() => setSelectedReason(reason.value)}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[
+                                    styles.radioOuter,
+                                    selectedReason === reason.value && { borderColor: appColors.primary }
+                                ]}>
+                                    {selectedReason === reason.value && (
+                                        <View style={[styles.radioInner, { backgroundColor: appColors.primary }]} />
+                                    )}
+                                </View>
+                                <Text style={[
+                                    styles.reasonText,
+                                    selectedReason === reason.value && { color: appColors.primary, fontFamily: fonts.bold }
+                                ]}>
+                                    {reason.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    {/* Description */}
+                    <Text style={styles.sectionTitle}>Açıklama</Text>
+                    <TextInput
+                        style={styles.textArea}
+                        placeholder="Şikayetinizi detaylı olarak açıklayın... (en az 20 karakter)"
+                        placeholderTextColor={colors.textLight}
+                        multiline
+                        numberOfLines={4}
+                        value={description}
+                        onChangeText={setDescription}
+                        textAlignVertical="top"
                     />
+                    <Text style={styles.charCount}>{description.length}/500</Text>
 
-                    {/* Disclaimer */}
-                    <Text style={styles.disclaimer}>
-                        Yanlış veya kötü niyetli şikayetler hesaba işlem yapılmasına neden olabilir.
-                    </Text>
-                </View>
-            </ScrollView>
+                    {/* Block Option */}
+                    <TouchableOpacity
+                        style={[
+                            styles.blockOption,
+                            blockUser && { backgroundColor: '#EF444408', borderColor: '#EF444440' }
+                        ]}
+                        onPress={() => setBlockUser(!blockUser)}
+                        activeOpacity={0.7}
+                    >
+                        <View style={[
+                            styles.checkbox,
+                            blockUser && { backgroundColor: '#EF4444', borderColor: '#EF4444' }
+                        ]}>
+                            {blockUser && <Ionicons name="checkmark" size={14} color={colors.white} />}
+                        </View>
+                        <View style={styles.blockOptionTextContainer}>
+                            <Text style={[styles.blockOptionTitle, blockUser && { color: '#EF4444' }]}>Bu kullanıcıyı engelle</Text>
+                            <Text style={styles.blockOptionSub}>Bu kullanıcıyı engellediğinizde birbirinizin ilanlarını ve mesajlarını görmezsiniz.</Text>
+                        </View>
+                    </TouchableOpacity>
+
+                    {/* Submit Button */}
+                    <View style={styles.actionContainer}>
+                        <Button
+                            title={isSubmitting ? 'Gönderiliyor...' : 'Şikayeti Gönder'}
+                            onPress={handleSubmit}
+                            disabled={isSubmitting || !selectedReason || description.length < 20}
+                            style={styles.submitButton}
+                            variant="primary"
+                        />
+
+                        {/* Disclaimer */}
+                        <Text style={styles.disclaimer}>
+                            Yanlış veya kötü niyetli şikayetler hesaba işlem yapılmasına neden olabilir.
+                        </Text>
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </View>
     );
 }

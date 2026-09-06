@@ -140,21 +140,26 @@ export const addProduct = async (req: AuthRequest, res: Response, next: NextFunc
 export const deleteProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
+        const user = (req as any).user;
 
         if (isDatabaseAvailable) {
-            try {
-                const marketplaceService = (await import('../services/marketplaceService')).default;
-                await marketplaceService.deleteProduct(id);
-                return res.json({
-                    success: true,
-                    message: 'İlan başarıyla silindi',
-                });
-            } catch (dbError: any) {
-                console.warn('Database error deleting product, falling back to mock:', dbError.message);
-            }
+            const marketplaceService = (await import('../services/marketplaceService')).default;
+            await marketplaceService.deleteProduct(id, user?.id, user?.userType === 'ADMIN');
+            return res.json({
+                success: true,
+                message: 'İlan başarıyla silindi',
+            });
         }
 
         // MOCK/IN-MEMORY MODE
+        const product = inMemoryProducts.find(p => p.id === id);
+        if (product && user && user.userType !== 'ADMIN' && product.sellerId !== user.id) {
+            return res.status(403).json({
+                success: false,
+                message: 'Bu ilanı silme yetkiniz bulunmamaktadır',
+            });
+        }
+
         inMemoryProducts = inMemoryProducts.filter(p => p.id !== id);
         return res.json({
             success: true,

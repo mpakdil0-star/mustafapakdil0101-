@@ -56,8 +56,23 @@ app.use(helmet({
 }));
 
 // CORS
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:8081',
+  'http://localhost:8082',
+  'http://localhost:19006',
+  config.frontendUrl,
+].filter(Boolean);
+
 app.use(cors({
-  origin: true,
+  origin: (origin, callback) => {
+    // Mobile apps and server-to-server requests have no origin header
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  },
   credentials: true,
 }));
 
@@ -88,105 +103,108 @@ app.use('/legal', legalRoutes); // For /legal/kvkk etc.
 app.get('/kvkk', (req, res) => res.redirect('/legal/kvkk'));
 app.get('/terms', (req, res) => res.redirect('/legal/terms'));
 
-app.get('/api/create-dummy-reviews', async (req, res) => {
-  try {
-    const electricians = [
-      { name: 'Ufuk soydan', reviews: [
-        { comment: 'Ufuk bey çok ilgiliydi, sigorta arızamızı hemen çözdü. Teşekkürler.', rating: 5 },
-        { comment: 'Zamanında geldi ve temiz çalıştı. Tavsiye ederim.', rating: 5 },
-        { comment: 'İşinin ehli bir usta. Makul fiyat.', rating: 4 }
-      ]},
-      { name: 'Hasan Yıldırım', reviews: [
-        { comment: 'Avize montajı için çağırdık, çok pratik bir şekilde halletti.', rating: 5 },
-        { comment: 'Kibar ve yardımsever bir usta.', rating: 5 }
-      ]},
-      { name: 'Said Ugan', reviews: [
-        { comment: 'Priz değişikliği ve kablo çekimi yapıldı. Gayet memnun kaldık.', rating: 5 },
-        { comment: 'Hızlı müdahale için teşekkürler.', rating: 4 }
-      ]},
-      { name: 'Mehmet Cebiş', reviews: [
-        { comment: 'Klima bakımını titizlikle yaptı. Artık çok daha iyi soğutuyor.', rating: 5 },
-        { comment: 'Beyaz eşya tamiri konusunda uzman bir usta.', rating: 5 }
-      ]}
-    ];
+// Debug & seed endpoints - strictly disabled in production
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/api/create-dummy-reviews', async (req, res) => {
+    try {
+      const electricians = [
+        { name: 'Ufuk soydan', reviews: [
+          { comment: 'Ufuk bey çok ilgiliydi, sigorta arızamızı hemen çözdü. Teşekkürler.', rating: 5 },
+          { comment: 'Zamanında geldi ve temiz çalıştı. Tavsiye ederim.', rating: 5 },
+          { comment: 'İşinin ehli bir usta. Makul fiyat.', rating: 4 }
+        ]},
+        { name: 'Hasan Yıldırım', reviews: [
+          { comment: 'Avize montajı için çağırdık, çok pratik bir şekilde halletti.', rating: 5 },
+          { comment: 'Kibar ve yardımsever bir usta.', rating: 5 }
+        ]},
+        { name: 'Said Ugan', reviews: [
+          { comment: 'Priz değişikliği ve kablo çekimi yapıldı. Gayet memnun kaldık.', rating: 5 },
+          { comment: 'Hızlı müdahale için teşekkürler.', rating: 4 }
+        ]},
+        { name: 'Mehmet Cebiş', reviews: [
+          { comment: 'Klima bakımını titizlikle yaptı. Artık çok daha iyi soğutuyor.', rating: 5 },
+          { comment: 'Beyaz eşya tamiri konusunda uzman bir usta.', rating: 5 }
+        ]}
+      ];
 
-    // Find a random citizen to be the reviewer
-    const citizen = await prisma.user.findFirst({
-      where: { userType: 'CITIZEN' }
-    });
-
-    if (!citizen) return res.status(404).json({ error: 'No citizen user found for reviews' });
-
-    const results = [];
-    for (const item of electricians) {
-      const user = await prisma.user.findFirst({
-        where: { fullName: { equals: item.name, mode: 'insensitive' } }
+      // Find a random citizen to be the reviewer
+      const citizen = await prisma.user.findFirst({
+        where: { userType: 'CITIZEN' }
       });
 
-      if (!user) {
-        results.push(`❌ ${item.name} not found`);
-        continue;
-      }
+      if (!citizen) return res.status(404).json({ error: 'No citizen user found for reviews' });
 
-      for (const rev of item.reviews) {
-        // 1. Create a dummy job post
-        const job = await prisma.jobPost.create({
-          data: {
-            citizenId: citizen.id,
-            title: `Tamamlanan İş - ${user.fullName}`,
-            description: 'Bu iş otomatik olarak tamamlanmış ve puanlanmıştır.',
-            category: 'Elektrik',
-            location: { city: 'Adana', district: 'Çukurova' },
-            status: 'COMPLETED',
-            assignedElectricianId: user.id,
-            completedAt: new Date()
-          }
+      const results = [];
+      for (const item of electricians) {
+        const user = await prisma.user.findFirst({
+          where: { fullName: { equals: item.name, mode: 'insensitive' } }
         });
 
-        // 2. Create the review
-        await prisma.review.create({
-          data: {
-            jobPostId: job.id,
-            reviewerId: citizen.id,
-            reviewedId: user.id,
-            rating: rev.rating,
-            comment: rev.comment,
-            isVisible: true
-          }
-        });
-      }
-
-      // 3. Update electrician profile counts
-      const avgRating = item.reviews.reduce((acc, r) => acc + r.rating, 0) / item.reviews.length;
-      await prisma.electricianProfile.update({
-        where: { userId: user.id },
-        data: {
-          ratingAverage: avgRating,
-          totalReviews: item.reviews.length,
-          completedJobsCount: item.reviews.length
+        if (!user) {
+          results.push(`❌ ${item.name} not found`);
+          continue;
         }
-      });
 
-      results.push(`✅ ${item.name} reviews created (${item.reviews.length})`);
+        for (const rev of item.reviews) {
+          // 1. Create a dummy job post
+          const job = await prisma.jobPost.create({
+            data: {
+              citizenId: citizen.id,
+              title: `Tamamlanan İş - ${user.fullName}`,
+              description: 'Bu iş otomatik olarak tamamlanmış ve puanlanmıştır.',
+              category: 'Elektrik',
+              location: { city: 'Adana', district: 'Çukurova' },
+              status: 'COMPLETED',
+              assignedElectricianId: user.id,
+              completedAt: new Date()
+            }
+          });
+
+          // 2. Create the review
+          await prisma.review.create({
+            data: {
+              jobPostId: job.id,
+              reviewerId: citizen.id,
+              reviewedId: user.id,
+              rating: rev.rating,
+              comment: rev.comment,
+              isVisible: true
+            }
+          });
+        }
+
+        // 3. Update electrician profile counts
+        const avgRating = item.reviews.reduce((acc, r) => acc + r.rating, 0) / item.reviews.length;
+        await prisma.electricianProfile.update({
+          where: { userId: user.id },
+          data: {
+            ratingAverage: avgRating,
+            totalReviews: item.reviews.length,
+            completedJobsCount: item.reviews.length
+          }
+        });
+
+        results.push(`✅ ${item.name} reviews created (${item.reviews.length})`);
+      }
+
+      res.json({ success: true, results });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
     }
+  });
 
-    res.json({ success: true, results });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/debug-ahmet', async (req, res) => {
-  try {
-    const ahmet = await prisma.user.findFirst({
-      where: { email: 'ahmet@gmail.com' },
-      include: { electricianProfile: true }
-    });
-    res.json(ahmet);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  app.get('/api/debug-ahmet', async (req, res) => {
+    try {
+      const ahmet = await prisma.user.findFirst({
+        where: { email: 'ahmet@gmail.com' },
+        include: { electricianProfile: true }
+      });
+      res.json(ahmet);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+}
 
 // 404 handler
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {

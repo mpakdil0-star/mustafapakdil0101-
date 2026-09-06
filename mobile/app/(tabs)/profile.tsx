@@ -149,8 +149,8 @@ export default function ProfileScreen() {
       dispatch(setUser(updatedUser));
       showAlert('Başarılı', 'Profil fotoğrafı kaldırıldı', 'success');
     } catch (error: any) {
-      dispatch(setUser({ ...user, profileImageUrl: undefined } as any));
-      showAlert('Başarılı', 'Profil fotoğrafı kaldırıldı', 'success');
+      console.warn('Avatar removal error:', error);
+      showAlert('Hata', error?.message || 'Profil fotoğrafı kaldırılamadı.', 'error');
     } finally {
       setIsLoading(false);
     }

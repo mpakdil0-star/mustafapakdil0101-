@@ -392,6 +392,7 @@ export default function ElectriciansListScreen() {
                 style={styles.listContainer}
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
             >
                 <Text style={styles.resultsText}>
                     {filteredElectricians.length} uzman usta listeleniyor

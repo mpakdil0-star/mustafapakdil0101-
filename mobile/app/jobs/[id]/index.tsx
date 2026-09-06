@@ -14,6 +14,7 @@ import {
   TextInput,
   Animated,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { PremiumAlert } from '../../../components/common/PremiumAlert';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -826,7 +827,10 @@ export default function JobDetailScreen() {
       </Modal>
 
       <Modal visible={isReviewModalVisible} transparent animationType="slide">
-        <View style={styles.reviewModalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.reviewModalOverlay}
+        >
           <LinearGradient
             colors={['rgba(30, 41, 59, 0.98)', 'rgba(15, 23, 42, 0.95)']}
             style={styles.reviewModalContent}
@@ -898,7 +902,7 @@ export default function JobDetailScreen() {
               </TouchableOpacity>
             </View>
           </LinearGradient>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Bid Acceptance Modal - Glass Glow Theme */}
@@ -1017,7 +1021,10 @@ export default function JobDetailScreen() {
 
       {/* İlan İptal Modalı */}
       <Modal visible={isCancelModalVisible} transparent={true} animationType="fade" onRequestClose={() => setIsCancelModalVisible(false)}>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
           <LinearGradient
             colors={[staticColors.error, '#991B1B']}
             style={styles.cancelModalContainer}
@@ -1065,7 +1072,7 @@ export default function JobDetailScreen() {
               </TouchableOpacity>
             </View>
           </LinearGradient>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Maliyet Kalemleri Modalı */}

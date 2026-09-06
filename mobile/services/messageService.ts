@@ -149,14 +149,31 @@ export const messageService = {
 
   async findConversation(recipientId: string, jobId?: string) {
     const userId = await currentUserId();
-    const { data, error } = await supabase.from('conversations').select('*')
-      .or(`participant_1_id.eq.${userId},participant_2_id.eq.${userId}`);
-    if (error) throw error;
-    const row = (data || []).find((item: any) =>
-      [item.participant_1_id, item.participant_2_id].includes(recipientId)
-      && (item.job_post_id || null) === (jobId || null)
-    );
-    return row ? (await mapConversations([row], userId))[0] : null;
+    let query = supabase.from('conversations').select('*')
+      .or(
+        `and(participant_1_id.eq.${userId},participant_2_id.eq.${recipientId}),` +
+        `and(participant_1_id.eq.${recipientId},participant_2_id.eq.${userId})`
+      );
+
+    if (jobId) {
+      query = query.eq('job_post_id', jobId);
+    } else {
+      query = query.is('job_post_id', null);
+    }
+
+    const { data, error } = await query.limit(1).maybeSingle();
+    if (error) {
+      // Fallback in case syntax error on complex or filter
+      const { data: fallbackData, error: fallbackError } = await supabase.from('conversations').select('*')
+        .or(`participant_1_id.eq.${userId},participant_2_id.eq.${userId}`);
+      if (fallbackError) throw fallbackError;
+      const row = (fallbackData || []).find((item: any) =>
+        [item.participant_1_id, item.participant_2_id].includes(recipientId)
+        && (item.job_post_id || null) === (jobId || null)
+      );
+      return row ? (await mapConversations([row], userId))[0] : null;
+    }
+    return data ? (await mapConversations([data], userId))[0] : null;
   },
 
   async findOrCreateConversation(recipientId: string, jobId?: string): Promise<Conversation> {
@@ -229,5 +246,12 @@ export const messageService = {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, onChange)
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
+  },
+
+  getAttachmentUrl(path: string | null | undefined): string | null {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const { data } = supabase.storage.from('message-attachments').getPublicUrl(path);
+    return data?.publicUrl || null;
   },
 };

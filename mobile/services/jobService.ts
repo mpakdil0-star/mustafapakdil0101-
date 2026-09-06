@@ -165,12 +165,16 @@ const readJobImage = async (uri: string) => {
   if (dataUri) {
     const contentType = dataUri[1] || 'image/jpeg';
     const encoded = dataUri[2].replace(/\s/g, '');
-    const decoded = atob(encoded);
-    const bytes = new Uint8Array(decoded.length);
-    for (let index = 0; index < decoded.length; index += 1) {
-      bytes[index] = decoded.charCodeAt(index);
+    try {
+      const decoded = atob(encoded);
+      const bytes = new Uint8Array(decoded.length);
+      for (let index = 0; index < decoded.length; index += 1) {
+        bytes[index] = decoded.charCodeAt(index);
+      }
+      return { fileData: bytes.buffer, contentType };
+    } catch {
+      throw new Error('Görsel verisi çözümlenemedi (Geçersiz format).');
     }
-    return { fileData: bytes.buffer, contentType };
   }
 
   try {

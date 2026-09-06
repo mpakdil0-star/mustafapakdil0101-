@@ -67,6 +67,7 @@ export default function RoleSelectScreen() {
                     style={{ flex: 1 }} 
                     contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
                     showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
                 >
                     {/* Back Button */}
                     <TouchableOpacity

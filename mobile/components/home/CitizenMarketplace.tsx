@@ -193,8 +193,8 @@ export const CitizenMarketplace: React.FC<CitizenMarketplaceProps> = ({
                 </View>
 
                 <View style={styles.marketCardFooter}>
-                  <View style={[styles.marketPricePill, { backgroundColor: 'rgba(16, 185, 129, 0.08)', borderColor: 'rgba(16, 185, 129, 0.18)' }]}>
-                    <Text style={[styles.marketPriceValue, { color: '#059669' }]}>₺{Number(prod.price || 0).toLocaleString('tr-TR')}</Text>
+                  <View style={[styles.marketPricePill, { backgroundColor: '#F0FDFA', borderColor: '#CCFBF1' }]}>
+                    <Text style={[styles.marketPriceValue, { color: '#0D9488' }]}>₺{Number(prod.price || 0).toLocaleString('tr-TR')}</Text>
                   </View>
                   
                   <View style={{ alignItems: 'flex-end', flex: 1, marginLeft: 8 }}>

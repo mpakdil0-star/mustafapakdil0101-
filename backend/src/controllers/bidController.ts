@@ -736,13 +736,10 @@ export const acceptBidController = async (
     }
   } catch (error: any) {
     console.error('🔥 Critical AcceptBid Error:', error.message);
-
-    // Uygulamanın çökmesini engellemek için her zaman bir yanıt dön
-    return res.status(200).json({
-      success: true,
-      data: {
-        bid: { id: idStr, status: 'ACCEPTED', updatedAt: new Date().toISOString() }
-      }
+    const statusCode = error.statusCode || (error.message?.includes('yetkiniz') ? 403 : error.message?.includes('bulunamadı') ? 404 : 500);
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message || 'Teklif kabul edilirken bir hata oluştu.',
     });
   }
 };

@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { optimizeImage } from '../utils/imageOptimizer';
 
 const actor = async () => {
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -10,14 +11,15 @@ const actor = async () => {
 
 type UploadedCommunityImage = { publicUrl: string; path: string };
 
-const uploadImage = async (uri: string, folder: string): Promise<UploadedCommunityImage> => {
-  if (!uri || (!uri.startsWith('data:') && !uri.startsWith('file:') && !uri.startsWith('content:'))) {
-    return { publicUrl: uri, path: '' };
+const uploadImage = async (rawUri: string, folder: string): Promise<UploadedCommunityImage> => {
+  if (!rawUri || (!rawUri.startsWith('data:') && !rawUri.startsWith('file:') && !rawUri.startsWith('content:'))) {
+    return { publicUrl: rawUri, path: '' };
   }
+  const uri = await optimizeImage(rawUri);
   const user = await actor();
   const response = await fetch(uri);
   const mimeFromDataUri = uri.startsWith('data:') ? uri.match(/^data:([^;,]+)/)?.[1] : null;
-  const mime = mimeFromDataUri || response.headers.get('content-type') || 'image/jpeg';
+  const mime = (mimeFromDataUri || response.headers.get('content-type') || 'image/jpeg').toLowerCase();
   if (!mime.startsWith('image/')) throw new Error('UNSUPPORTED_COMMUNITY_IMAGE');
   const fileData = await response.arrayBuffer();
   if (!fileData.byteLength) throw new Error('EMPTY_COMMUNITY_IMAGE');

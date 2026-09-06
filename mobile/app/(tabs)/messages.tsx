@@ -109,12 +109,14 @@ export default function MessagesScreen() {
         }}
         activeOpacity={0.8}
       >
-        <Card variant="default" style={[styles.messageGlassCard, { shadowColor: isElectrician ? colors.primary : (colors as any).shadowAmethyst || colors.primary }]}>
+        <Card variant="default" style={[styles.messageGlassCard, { shadowColor: isElectrician ? colors.primary : colors.primary }]}>
           <View style={styles.cardInner}>
-            {/* Avatar with Glow */}
+            {/* Avatar */}
             <View style={styles.avatarWrapper}>
-              <View style={[styles.avatarGlow, { backgroundColor: colors.primary + '20' }]} />
-              <View style={[styles.avatarContainer, { backgroundColor: colors.primary + '10', borderColor: staticColors.white }, hasUnread && { borderColor: colors.primary + '30' }]}>
+              <View style={[
+                styles.avatarContainer, 
+                { backgroundColor: colors.primary + '12', borderColor: hasUnread ? colors.primary : '#E2E8F0' }
+              ]}>
                 <Text style={[styles.avatarText, { color: colors.primary }]}>
                   {otherParticipant.fullName.charAt(0).toUpperCase()}
                 </Text>
@@ -128,21 +130,23 @@ export default function MessagesScreen() {
                 <Text style={[styles.userName, { color: colors.text }]} numberOfLines={1}>
                   {otherParticipant.fullName}
                 </Text>
-                <Text style={[styles.timeText, { color: staticColors.textLight }]}>
+                <Text style={[styles.timeText, { color: hasUnread ? colors.primary : '#64748B' }]}>
                   {conversation.lastMessage ? formatRelativeTime(conversation.lastMessage.createdAt) : ''}
                 </Text>
               </View>
 
               <View style={styles.lastMsgRow}>
                 <Text
-                  style={[styles.lastMsgText, { color: staticColors.textSecondary }, hasUnread && [styles.unreadMsgText, { color: colors.text }]]}
+                  style={[styles.lastMsgText, { color: '#64748B' }, hasUnread && [styles.unreadMsgText, { color: colors.text }]]}
                   numberOfLines={1}
                 >
                   {conversation.lastMessage?.content || 'Sohbeti başlatın...'}
                 </Text>
                 {hasUnread && (
                   <LinearGradient
-                    colors={isElectrician ? ['#FF4B2B', '#FF416C'] : (colors as any).primaryGradient || ['#7C3AED', '#8B5CF6']}
+                    colors={isElectrician ? ['#EA580C', '#F97316'] : ['#0D9488', '#2DD4BF']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
                     style={styles.unreadCountBadge}
                   >
                     <Text style={styles.unreadCountText}>{conversation.unreadCount}</Text>
@@ -151,7 +155,7 @@ export default function MessagesScreen() {
               </View>
             </View>
 
-            <Ionicons name="chevron-forward" size={16} color={staticColors.textLight} style={styles.chevron} />
+            <Ionicons name="chevron-forward" size={16} color="#94A3B8" style={styles.chevron} />
           </View>
         </Card>
       </TouchableOpacity>
@@ -303,16 +307,16 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   messageGlassCard: {
-    borderRadius: 20,
-    padding: 12,
+    borderRadius: 16,
+    padding: 13,
     marginBottom: 8,
     backgroundColor: staticColors.white,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 1,
+    borderColor: '#EEF2F6',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
   },
   cardInner: {
     flexDirection: 'row',

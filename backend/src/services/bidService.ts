@@ -53,8 +53,8 @@ export const bidService = {
     }
 
     // Check if job post exists and is open
-    let jobPost;
-    let electrician;
+    let jobPost: any;
+    let electrician: any;
 
     try {
       jobPost = await prisma.jobPost.findUnique({
@@ -135,71 +135,87 @@ export const bidService = {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + days);
 
-      // Create bid
-      const bid = await prisma.bid.create({
-        data: {
-          jobPostId,
-          electricianId,
-          amount: amount.toString(),
-          estimatedDuration: days * 24, // backward compat
-          expiresAt,
-          estimatedStartDate: parsedStartDate,
-          message,
-          costItems: data.costItems || null,
-          status: BidStatus.PENDING,
-        } as any,
-        include: {
-          electrician: {
-            select: {
-              id: true,
-              fullName: true,
-              profileImageUrl: true,
-              phone: true,
-              electricianProfile: {
-                select: {
-                  verificationStatus: true,
-                  licenseVerified: true,
-                  licenseNumber: true,
-                  isAuthorizedEngineer: true,
+      // Execute Bid creation, JobPost status update, and Credit deduction in an atomic transaction
+      const bid = await prisma.$transaction(async (tx) => {
+        // Concurrency guard: verify no concurrent pending or accepted bid was inserted
+        const existingActiveBid = await tx.bid.findFirst({
+          where: {
+            jobPostId,
+            electricianId,
+            status: { in: [BidStatus.PENDING, BidStatus.ACCEPTED] },
+          },
+        });
+        if (existingActiveBid) {
+          throw new ValidationError('You already have a bid on this job post');
+        }
+
+        const createdBid = await tx.bid.create({
+          data: {
+            jobPostId,
+            electricianId,
+            amount: amount.toString(),
+            estimatedDuration: days * 24, // backward compat
+            expiresAt,
+            estimatedStartDate: parsedStartDate,
+            message,
+            costItems: data.costItems || null,
+            status: BidStatus.PENDING,
+          } as any,
+          include: {
+            electrician: {
+              select: {
+                id: true,
+                fullName: true,
+                profileImageUrl: true,
+                phone: true,
+                electricianProfile: {
+                  select: {
+                    verificationStatus: true,
+                    licenseVerified: true,
+                    licenseNumber: true,
+                    isAuthorizedEngineer: true,
+                  },
                 },
               },
             },
-          },
-          jobPost: {
-            select: {
-              id: true,
-              title: true,
-              status: true,
-              citizenId: true,
+            jobPost: {
+              select: {
+                id: true,
+                title: true,
+                status: true,
+                citizenId: true,
+              },
             },
           },
-        },
-      });
+        });
 
-      // Update job post bid count
-      await prisma.jobPost.update({
-        where: { id: jobPostId },
-        data: {
-          bidCount: { increment: 1 },
-          status: JobStatus.BIDDING,
-        },
-      });
+        // Update job post bid count
+        await tx.jobPost.update({
+          where: { id: jobPostId },
+          data: {
+            bidCount: { increment: 1 },
+            status: JobStatus.BIDDING,
+          },
+        });
 
-      // Deduct credit from electrician and record transaction
-      await prisma.electricianProfile.update({
-        where: { userId: electricianId },
-        data: { creditBalance: { decrement: 1 } }
-      });
+        // Deduct credit from electrician and record transaction
+        await tx.electricianProfile.update({
+          where: { userId: electricianId },
+          data: { creditBalance: { decrement: 1 } }
+        });
 
-      await prisma.credit.create({
-        data: {
-          userId: electricianId,
-          amount: -1,
-          transactionType: 'BID_SPENT',
-          relatedId: (bid as any).id,
-          description: `"${jobPost.title}" ilanı için teklif verildi.`,
-          balanceAfter: currentBalance - 1
-        }
+        await tx.credit.create({
+          data: {
+            userId: electricianId,
+            amount: -1,
+            transactionType: 'BID_SPENT',
+            relatedId: (createdBid as any).id,
+            description: `"${jobPost.title}" ilanı için teklif verildi.`,
+            balanceAfter: currentBalance - 1
+          }
+        });
+
+        return createdBid;
       });
 
       // Notify citizen (job owner)

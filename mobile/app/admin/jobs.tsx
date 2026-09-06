@@ -229,6 +229,7 @@ export default function AdminJobsScreen() {
                     renderItem={renderItem}
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.list}
+                    keyboardShouldPersistTaps="handled"
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                     ListEmptyComponent={
                         <View style={styles.center}>

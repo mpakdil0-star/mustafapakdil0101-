@@ -42,9 +42,18 @@ export const marketplaceService = {
     },
 
     /**
-     * Delete a product from the database
+     * Delete a product from the database with ownership check
      */
-    async deleteProduct(id: string) {
+    async deleteProduct(id: string, requesterUserId?: string, isAdmin?: boolean) {
+        const product = await prisma.marketplaceProduct.findUnique({
+            where: { id },
+        });
+        if (!product) {
+            throw new AppError('Ürün bulunamadı', 404);
+        }
+        if (requesterUserId && !isAdmin && product.sellerId !== requesterUserId) {
+            throw new AppError('Bu ilanı silme yetkiniz bulunmamaktadır', 403);
+        }
         await prisma.marketplaceProduct.delete({
             where: { id },
         });

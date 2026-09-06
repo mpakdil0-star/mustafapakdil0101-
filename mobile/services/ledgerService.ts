@@ -97,7 +97,12 @@ export const ledgerService = {
   },
 
   async getSummary() {
-    const rows = await this.getEntries();
+    const userId = await getUserId();
+    const { data, error } = await supabase
+      .from('ledger_entries')
+      .select('amount, type, status')
+      .eq('user_id', userId);
+    if (error) throw error;
     const summary: LedgerSummary = {
       pendingReceivables: 0,
       pendingPayables: 0,
@@ -105,11 +110,12 @@ export const ledgerService = {
       totalPaid: 0,
       netBalance: 0,
     };
-    for (const row of rows) {
-      if (row.type === 'receivable' && row.status === 'pending') summary.pendingReceivables += row.amount;
-      if (row.type === 'payable' && row.status === 'pending') summary.pendingPayables += row.amount;
-      if (row.type === 'receivable' && row.status === 'paid') summary.totalReceived += row.amount;
-      if (row.type === 'payable' && row.status === 'paid') summary.totalPaid += row.amount;
+    for (const row of (data || [])) {
+      const amount = Number(row.amount) || 0;
+      if (row.type === 'receivable' && row.status === 'pending') summary.pendingReceivables += amount;
+      if (row.type === 'payable' && row.status === 'pending') summary.pendingPayables += amount;
+      if (row.type === 'receivable' && row.status === 'paid') summary.totalReceived += amount;
+      if (row.type === 'payable' && row.status === 'paid') summary.totalPaid += amount;
     }
     summary.netBalance = summary.pendingReceivables - summary.pendingPayables;
     return summary;
@@ -136,14 +142,19 @@ export const ledgerService = {
     return mapLedgerEntry(data);
   },
 
-  async togglePaid(id: string) {
-    const { data: current, error: currentError } = await supabase
-      .from('ledger_entries')
-      .select('status')
-      .eq('id', id)
-      .single();
-    if (currentError) throw currentError;
-    const paid = current.status !== 'paid';
+  async togglePaid(id: string, targetStatus?: 'paid' | 'pending') {
+    let paid: boolean;
+    if (targetStatus) {
+      paid = targetStatus === 'paid';
+    } else {
+      const { data: current, error: currentError } = await supabase
+        .from('ledger_entries')
+        .select('status')
+        .eq('id', id)
+        .single();
+      if (currentError) throw currentError;
+      paid = current.status !== 'paid';
+    }
     const { data, error } = await supabase
       .from('ledger_entries')
       .update({ status: paid ? 'paid' : 'pending', paid_at: paid ? new Date().toISOString() : null })

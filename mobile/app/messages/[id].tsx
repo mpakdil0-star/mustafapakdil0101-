@@ -11,6 +11,7 @@ import {
     Platform,
     Alert,
     ImageBackground,
+    Image,
     Modal,
     StatusBar,
     Keyboard,
@@ -18,6 +19,8 @@ import {
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { optimizeImage } from '../../utils/imageOptimizer';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { fetchUnreadCount, markTypeAsRead, markRelatedNotificationsAsRead } from '../../store/slices/notificationSlice';
 import { colors as staticColors } from '../../constants/colors';
@@ -28,6 +31,7 @@ import { messageService } from '../../services/messageService';
 import { supabase } from '../../services/supabase';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
+import { SkeletonChat } from '../../components/common/SkeletonLoader';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface Message {
@@ -36,6 +40,7 @@ interface Message {
     senderId: string;
     content: string;
     messageType: string;
+    mediaUrl?: string | null;
     createdAt: string;
     isRead?: boolean;
     sender?: {
@@ -71,9 +76,10 @@ export default function ChatScreen() {
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
-    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const lastTypingTimeRef = useRef<number>(0);
     const [isActionMenuVisible, setIsActionMenuVisible] = useState(false);
+    const [isAttachmentMenuVisible, setIsAttachmentMenuVisible] = useState(false);
+    const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     const [alertConfig, setAlertConfig] = useState<{
         visible: boolean;
@@ -311,6 +317,96 @@ export default function ChatScreen() {
         }
     };
 
+    // Fotoğraf Seç / Çek ve Yüksek Kalitede Optimize Ederek Gönder
+    const handlePickAndSendImage = async (source: 'camera' | 'gallery') => {
+        setIsAttachmentMenuVisible(false);
+
+        try {
+            const permissionResult = source === 'camera'
+                ? await ImagePicker.requestCameraPermissionsAsync()
+                : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+            if (!permissionResult.granted) {
+                showAlert(
+                    'İzin Gerekli',
+                    `Fotoğraf ${source === 'camera' ? 'çekmek' : 'seçmek'} için kamera/galeri izni vermeniz gerekiyor.`,
+                    'warning'
+                );
+                return;
+            }
+
+            const pickerResult = source === 'camera'
+                ? await ImagePicker.launchCameraAsync({
+                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                    allowsEditing: false,
+                    quality: 0.85,
+                })
+                : await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                    allowsEditing: false,
+                    quality: 0.85,
+                });
+
+            if (pickerResult.canceled || !pickerResult.assets || pickerResult.assets.length === 0) {
+                return;
+            }
+
+            const rawUri = pickerResult.assets[0].uri;
+            if (!rawUri) return;
+
+            setUploadingImage(true);
+
+            // 1. Telefonda kristal netliğinde optimize et (~150-250 KB'a düşür, %95 tasarruf sağla)
+            const optimizedUri = await optimizeImage(rawUri, {
+                maxWidth: 1280,
+                quality: 0.78,
+            });
+
+            // 2. Geçici mesaj oluşturup ekranda hemen göster
+            const tempId = `temp-img-${Date.now()}`;
+            const tempMessage: Message = {
+                id: tempId,
+                conversationId,
+                senderId: user?.id || '',
+                content: '[Fotoğraf]',
+                messageType: 'IMAGE',
+                mediaUrl: optimizedUri,
+                createdAt: new Date().toISOString(),
+                sender: {
+                    id: user?.id || '',
+                    fullName: user?.fullName || '',
+                    profileImageUrl: user?.profileImageUrl || null,
+                },
+            };
+
+            setMessages(prev => [...prev, tempMessage]);
+            setTimeout(() => {
+                flatListRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+
+            // 3. Supabase Storage'a yükle ve mesajı kaydet
+            const sentMessage = await messageService.sendMessageToConversation(
+                conversationId,
+                '',
+                optimizedUri
+            );
+
+            setMessages(prev => [
+                ...prev.filter(item => item.id !== tempId && item.id !== sentMessage.id),
+                sentMessage
+            ]);
+        } catch (error: any) {
+            console.error('Error uploading/sending chat image:', error);
+            showAlert(
+                'Fotoğraf Gönderilemedi',
+                'Fotoğraf yüklenirken bir sorun oluştu. Lütfen tekrar deneyin.',
+                'error'
+            );
+        } finally {
+            setUploadingImage(false);
+        }
+    };
+
     const handleReport = () => {
         setIsActionMenuVisible(false);
         router.push({
@@ -429,12 +525,38 @@ export default function ChatScreen() {
                             !isLastInGroup && (isMyMessage ? { borderBottomRightRadius: 6 } : { borderBottomLeftRadius: 6 })
                         ]}
                     >
-                        <Text style={[
-                            styles.messageText,
-                            isMyMessage ? styles.myMessageText : (isElectrician ? { color: '#0F172A' } : styles.otherMessageText)
-                        ]}>
-                            {item.content}
-                        </Text>
+                        {item.messageType === 'IMAGE' || Boolean(item.mediaUrl) ? (
+                            <TouchableOpacity
+                                activeOpacity={0.9}
+                                onPress={() => {
+                                    const fullUrl = item.mediaUrl ? messageService.getAttachmentUrl(item.mediaUrl) : null;
+                                    if (fullUrl) setPreviewImageUrl(fullUrl);
+                                }}
+                                style={styles.chatImageContainer}
+                            >
+                                <Image
+                                    source={{ uri: messageService.getAttachmentUrl(item.mediaUrl) || item.mediaUrl || '' }}
+                                    style={styles.chatImage}
+                                    resizeMode="cover"
+                                />
+                                {Boolean(item.content && item.content !== '[Fotoğraf]') && (
+                                    <Text style={[
+                                        styles.messageText,
+                                        isMyMessage ? styles.myMessageText : (isElectrician ? { color: '#0F172A' } : styles.otherMessageText),
+                                        { marginTop: 6 }
+                                    ]}>
+                                        {item.content}
+                                    </Text>
+                                )}
+                            </TouchableOpacity>
+                        ) : (
+                            <Text style={[
+                                styles.messageText,
+                                isMyMessage ? styles.myMessageText : (isElectrician ? { color: '#0F172A' } : styles.otherMessageText)
+                            ]}>
+                                {item.content}
+                            </Text>
+                        )}
                         
                         <View style={styles.messageFooter}>
                             <Text style={[
@@ -454,25 +576,18 @@ export default function ChatScreen() {
         );
     };
 
-    if (loading) {
-        return (
-            <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Yüklenüyor...</Text>
-            </View>
-        );
-    }
-
     return (
         <View style={[styles.mainContainer, { backgroundColor: colors.background }]}>
             <Stack.Screen options={{ headerShown: false }} />
             <StatusBar barStyle="light-content" />
 
             <PremiumHeader
-                title={otherUser?.fullName || 'Mesajlaşma'}
-                subtitle={isTyping ? 'yazıyor...' : (
-                    otherUser?.userType === 'ADMIN' ? 'Sistem' : 
-                    otherUser?.userType === 'ELECTRICIAN' ? 'Profesyonel' : 'Müşteri'
+                title={otherUser?.fullName || sellerName || 'Mesajlaşma'}
+                subtitle={loading ? 'Sohbet yükleniyor...' : (
+                    isTyping ? 'yazıyor...' : (
+                        otherUser?.userType === 'ADMIN' ? 'Sistem' : 
+                        otherUser?.userType === 'ELECTRICIAN' ? 'Profesyonel' : 'Müşteri'
+                    )
                 )}
                 showBackButton
                 rightElement={
@@ -492,55 +607,67 @@ export default function ChatScreen() {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
-
-
-                <FlatList
-                    ref={flatListRef}
-                    data={messages}
-                    renderItem={renderMessage}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={[styles.messagesList, { paddingBottom: 20 }]}
-                    showsVerticalScrollIndicator={false}
-                    ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <LinearGradient
-                                colors={['#F8FAFC', '#EEF2FF']}
-                                style={styles.emptyIconCircle}
-                            >
-                                <Ionicons name="chatbubbles-outline" size={36} color={colors.primary} />
-                            </LinearGradient>
-                            <Text style={[styles.emptyText, { color: colors.text }]}>Mesajlaşmaya Başlayın</Text>
-                            <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Selam vererek ilk adımı atabilirsiniz.</Text>
-                        </View>
-                    }
-                />
+                {loading ? (
+                    <SkeletonChat />
+                ) : (
+                    <FlatList
+                        ref={flatListRef}
+                        data={messages}
+                        renderItem={renderMessage}
+                        keyExtractor={(item) => item.id}
+                        contentContainerStyle={[styles.messagesList, { paddingBottom: 20 }]}
+                        showsVerticalScrollIndicator={false}
+                        ListEmptyComponent={
+                            <View style={styles.emptyContainer}>
+                                <LinearGradient
+                                    colors={['#F8FAFC', '#EEF2FF']}
+                                    style={styles.emptyIconCircle}
+                                >
+                                    <Ionicons name="chatbubbles-outline" size={36} color={colors.primary} />
+                                </LinearGradient>
+                                <Text style={[styles.emptyText, { color: colors.text }]}>Mesajlaşmaya Başlayın</Text>
+                                <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Selam vererek ilk adımı atabilirsiniz.</Text>
+                            </View>
+                        }
+                    />
+                )}
 
                 {/* Input Area */}
                 <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 10 }]}>
                     <View style={[styles.inputContainer, { backgroundColor: '#FFF' }]}>
-                        {/* Attach Icon Placeholder */}
-                        <TouchableOpacity style={styles.attachButton} activeOpacity={0.7}>
-                            <Ionicons name="add" size={24} color={colors.textSecondary} />
+                        {/* Attach Button */}
+                        <TouchableOpacity
+                            style={styles.attachButton}
+                            activeOpacity={0.7}
+                            onPress={() => setIsAttachmentMenuVisible(true)}
+                            disabled={loading || uploadingImage}
+                        >
+                            {uploadingImage ? (
+                                <ActivityIndicator size="small" color={colors.primary} />
+                            ) : (
+                                <Ionicons name="add" size={24} color={colors.textSecondary} />
+                            )}
                         </TouchableOpacity>
 
                         <TextInput
                             style={styles.input}
                             value={newMessage}
                             onChangeText={handleTyping}
-                            placeholder="Mesajınızı yazın..."
+                            placeholder={loading ? "Mesajlar yükleniyor..." : "Mesajınızı yazın..."}
                             placeholderTextColor="#94A3B8"
                             multiline
                             maxLength={1000}
+                            editable={!loading}
                         />
 
                         <TouchableOpacity
                             style={[
                                 styles.sendButton,
                                 { backgroundColor: colors.primary },
-                                (!newMessage.trim() || sending) && { backgroundColor: '#E2E8F0' }
+                                (!newMessage.trim() || sending || loading) && { backgroundColor: '#E2E8F0' }
                             ]}
                             onPress={handleSend}
-                            disabled={!newMessage.trim() || sending}
+                            disabled={!newMessage.trim() || sending || loading}
                             activeOpacity={0.8}
                         >
                             {sending ? (
@@ -603,6 +730,84 @@ export default function ChatScreen() {
                         </TouchableOpacity>
                     </View>
                 </TouchableOpacity>
+            </Modal>
+
+            {/* Photo Attachment Action Sheet */}
+            <Modal
+                visible={isAttachmentMenuVisible}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setIsAttachmentMenuVisible(false)}
+            >
+                <TouchableOpacity
+                    style={styles.modalBackdrop}
+                    activeOpacity={1}
+                    onPress={() => setIsAttachmentMenuVisible(false)}
+                >
+                    <View style={[styles.actionSheet, { paddingBottom: insets.bottom + 20 }]}>
+                        <View style={styles.sheetIndicator} />
+                        <Text style={[styles.sheetTitle, { color: colors.text }]}>Fotoğraf Gönder</Text>
+
+                        <TouchableOpacity
+                            style={styles.sheetItem}
+                            onPress={() => handlePickAndSendImage('camera')}
+                        >
+                            <View style={[styles.sheetIconBox, { backgroundColor: colors.primary + '15' }]}>
+                                <Ionicons name="camera" size={22} color={colors.primary} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.sheetItemText, { color: colors.text }]}>Kamera ile Çek</Text>
+                                <Text style={styles.sheetItemSubtext}>Anında fotoğraf çekip gönderin</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.sheetItem}
+                            onPress={() => handlePickAndSendImage('gallery')}
+                        >
+                            <View style={[styles.sheetIconBox, { backgroundColor: '#0EA5E918' }]}>
+                                <Ionicons name="images" size={22} color="#0EA5E9" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.sheetItemText, { color: colors.text }]}>Galeriden Seç</Text>
+                                <Text style={styles.sheetItemSubtext}>Kayıtlı fotoğraflardan seçin</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.sheetCancelBtn}
+                            onPress={() => setIsAttachmentMenuVisible(false)}
+                        >
+                            <Text style={[styles.sheetCancelText, { color: colors.textSecondary }]}>Vazgeç</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+
+            {/* Fullscreen Image Preview Modal */}
+            <Modal
+                visible={Boolean(previewImageUrl)}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setPreviewImageUrl(null)}
+            >
+                <View style={styles.fullScreenImageBackdrop}>
+                    <StatusBar barStyle="light-content" />
+                    <TouchableOpacity
+                        style={[styles.closePreviewBtn, { top: insets.top + 10 }]}
+                        onPress={() => setPreviewImageUrl(null)}
+                    >
+                        <Ionicons name="close" size={28} color="#FFF" />
+                    </TouchableOpacity>
+
+                    {previewImageUrl && (
+                        <Image
+                            source={{ uri: previewImageUrl }}
+                            style={styles.fullScreenImage}
+                            resizeMode="contain"
+                        />
+                    )}
+                </View>
             </Modal>
         </View>
     );
@@ -708,7 +913,7 @@ const styles = StyleSheet.create({
     otherMessageBubble: {
         borderBottomLeftRadius: 4,
         borderWidth: 1,
-        borderColor: '#F1F5F9',
+        borderColor: '#E2E8F0',
     },
     messageText: {
         fontFamily: fonts.medium,
@@ -735,26 +940,28 @@ const styles = StyleSheet.create({
         color: 'rgba(255, 255, 255, 0.7)',
     },
     otherMessageTime: {
-        color: '#94A3B8',
+        color: '#64748B',
     },
 
     // ── Input Section ──
     bottomSection: {
-        paddingHorizontal: 10,
+        paddingHorizontal: 12,
         paddingTop: 6,
         backgroundColor: 'transparent',
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderRadius: 22,
-        paddingHorizontal: 4,
+        borderRadius: 24,
+        paddingHorizontal: 6,
         paddingVertical: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        elevation: 5,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        shadowColor: '#0F172A',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
     },
     attachButton: {
         width: 38,
@@ -879,5 +1086,43 @@ const styles = StyleSheet.create({
     sheetCancelText: {
         fontSize: 15,
         fontFamily: fonts.bold,
+    },
+    sheetItemSubtext: {
+        fontSize: 12,
+        fontFamily: fonts.regular,
+        color: '#94A3B8',
+        marginTop: 1,
+    },
+    chatImageContainer: {
+        borderRadius: 14,
+        overflow: 'hidden',
+        marginBottom: 4,
+    },
+    chatImage: {
+        width: 220,
+        height: 180,
+        borderRadius: 14,
+        backgroundColor: '#0F172A10',
+    },
+    fullScreenImageBackdrop: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.95)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    closePreviewBtn: {
+        position: 'absolute',
+        right: 20,
+        zIndex: 10,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    fullScreenImage: {
+        width: '100%',
+        height: '80%',
     },
 });

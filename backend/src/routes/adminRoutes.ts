@@ -8,7 +8,7 @@ const router = Router();
 // Middleware: Check if user is admin
 const adminMiddleware = (req: Request, res: Response, next: any) => {
     const user = (req as any).user;
-    if (!user || (user.userType !== 'ADMIN' && !user.email.startsWith('admin'))) {
+    if (!user || user.userType !== 'ADMIN') {
         return res.status(403).json({
             success: false,
             message: 'Bu işlem için yönetici yetkisi gereklidir.'

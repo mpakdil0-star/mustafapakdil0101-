@@ -9,7 +9,10 @@ import {
     Alert,
     Modal,
     TextInput,
-    Linking
+    Linking,
+    ScrollView,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -193,100 +196,107 @@ export default function AdminReportsScreen() {
                             </TouchableOpacity>
                         </View>
 
-                        <View style={styles.modalContent}>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Sebep:</Text>
-                                <Text style={styles.detailValue}>{REASON_LABELS[selectedReport.reason] || selectedReport.reason}</Text>
-                            </View>
-
-                            {!!selectedReport.jobId && (
-                                <TouchableOpacity
-                                    style={styles.contextButton}
-                                    onPress={() => {
-                                        const jobId = selectedReport.jobId as string;
-                                        setSelectedReport(null);
-                                        // Keep the report context available to the administrator.
-                                        router.push(`/jobs/${jobId}`);
-                                    }}
-                                >
-                                    <Ionicons name="briefcase-outline" size={18} color="#3B82F6" />
-                                    <Text style={styles.contextButtonText}>İlgili ilanı görüntüle</Text>
-                                </TouchableOpacity>
-                            )}
-
-                            {!!selectedReport.evidence?.length && (
-                                <View style={styles.evidenceSection}>
-                                    <Text style={styles.detailLabel}>Kanıtlar:</Text>
-                                    {selectedReport.evidence.map((url, index) => (
-                                        <TouchableOpacity
-                                            key={`${url}-${index}`}
-                                            style={styles.evidenceButton}
-                                            onPress={() => Linking.openURL(url).catch(() => Alert.alert('Hata', 'Kanıt dosyası açılamadı.'))}
-                                        >
-                                            <Ionicons name="document-attach-outline" size={18} color="#7C3AED" />
-                                            <Text style={styles.evidenceButtonText}>Kanıt {index + 1}</Text>
-                                        </TouchableOpacity>
-                                    ))}
+                        <KeyboardAvoidingView
+                            style={{ flex: 1 }}
+                            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        >
+                            <ScrollView
+                                style={styles.modalContent}
+                                contentContainerStyle={{ paddingBottom: 40 }}
+                                keyboardShouldPersistTaps="handled"
+                            >
+                                <View style={styles.detailRow}>
+                                    <Text style={styles.detailLabel}>Sebep:</Text>
+                                    <Text style={styles.detailValue}>{REASON_LABELS[selectedReport.reason] || selectedReport.reason}</Text>
                                 </View>
-                            )}
 
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Şikayet Eden:</Text>
-                                <Text style={styles.detailValue}>{selectedReport.reporter?.fullName || selectedReport.reporterId.substring(0, 12) + '...'}</Text>
-                            </View>
+                                {!!selectedReport.jobId && (
+                                    <TouchableOpacity
+                                        style={styles.contextButton}
+                                        onPress={() => {
+                                            setSelectedReport(null);
+                                            router.push(`/jobs/${selectedReport.jobId}`);
+                                        }}
+                                    >
+                                        <Ionicons name="briefcase-outline" size={18} color="#3B82F6" />
+                                        <Text style={styles.contextButtonText}>İlgili ilanı görüntüle</Text>
+                                    </TouchableOpacity>
+                                )}
 
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Şikayet Edilen:</Text>
-                                <Text style={styles.detailValue}>{selectedReport.reported?.fullName || selectedReport.reportedId.substring(0, 12) + '...'}</Text>
-                            </View>
+                                {!!selectedReport.evidence?.length && (
+                                    <View style={styles.evidenceSection}>
+                                        <Text style={styles.detailLabel}>Kanıtlar:</Text>
+                                        {selectedReport.evidence.map((url, index) => (
+                                            <TouchableOpacity
+                                                key={`${url}-${index}`}
+                                                style={styles.evidenceButton}
+                                                onPress={() => Linking.openURL(url).catch(() => Alert.alert('Hata', 'Kanıt dosyası açılamadı.'))}
+                                            >
+                                                <Ionicons name="document-attach-outline" size={18} color="#7C3AED" />
+                                                <Text style={styles.evidenceButtonText}>Kanıt {index + 1}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                )}
 
-                            <Text style={styles.detailLabel}>Açıklama:</Text>
-                            <View style={styles.descriptionBox}>
-                                <Text style={styles.descriptionText}>{selectedReport.description}</Text>
-                            </View>
+                                <View style={styles.detailRow}>
+                                    <Text style={styles.detailLabel}>Şikayet Eden:</Text>
+                                    <Text style={styles.detailValue}>{selectedReport.reporter?.fullName || selectedReport.reporterId.substring(0, 12) + '...'}</Text>
+                                </View>
 
-                            <Text style={styles.inputLabel}>Admin Notu (Opsiyonel):</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Not ekleyin..."
-                                value={adminNote}
-                                onChangeText={setAdminNote}
-                                multiline
-                            />
+                                <View style={styles.detailRow}>
+                                    <Text style={styles.detailLabel}>Şikayet Edilen:</Text>
+                                    <Text style={styles.detailValue}>{selectedReport.reported?.fullName || selectedReport.reportedId.substring(0, 12) + '...'}</Text>
+                                </View>
 
-                            <View style={styles.actionButtons}>
-                                <TouchableOpacity
-                                    style={[styles.actionBtn, { backgroundColor: '#10B981' }]}
-                                    onPress={() => handleUpdateStatus('RESOLVED')}
-                                    disabled={processing}
-                                >
-                                    <Text style={styles.btnText}>Çözüldü Olarak İşaretle</Text>
-                                </TouchableOpacity>
+                                <Text style={styles.detailLabel}>Açıklama:</Text>
+                                <View style={styles.descriptionBox}>
+                                    <Text style={styles.descriptionText}>{selectedReport.description}</Text>
+                                </View>
 
-                                <TouchableOpacity
-                                    style={[styles.actionBtn, { backgroundColor: '#EF4444' }]}
-                                    onPress={() => Alert.alert(
-                                        'Kullanıcıyı Yasakla',
-                                        'Bu kullanıcıyı yasaklamak istediğinize emin misiniz?',
-                                        [
-                                            { text: 'İptal', style: 'cancel' },
-                                            { text: 'Evet, Yasakla', style: 'destructive', onPress: () => handleUpdateStatus('RESOLVED', true) }
-                                        ]
-                                    )}
-                                    disabled={processing}
-                                >
-                                    <Text style={styles.btnText}>Çözüldü + Yasakla</Text>
-                                </TouchableOpacity>
+                                <Text style={styles.inputLabel}>Admin Notu (Opsiyonel):</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Not ekleyin..."
+                                    value={adminNote}
+                                    onChangeText={setAdminNote}
+                                    multiline
+                                />
 
-                                <TouchableOpacity
-                                    style={[styles.actionBtn, { backgroundColor: '#6B7280', marginTop: 8 }]}
-                                    onPress={() => handleUpdateStatus('DISMISSED')}
-                                    disabled={processing}
-                                >
-                                    <Text style={styles.btnText}>Reddet (Asılsız)</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
+                                <View style={styles.actionButtons}>
+                                    <TouchableOpacity
+                                        style={[styles.actionBtn, { backgroundColor: '#10B981' }]}
+                                        onPress={() => handleUpdateStatus('RESOLVED')}
+                                        disabled={processing}
+                                    >
+                                        <Text style={styles.btnText}>Çözüldü Olarak İşaretle</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={[styles.actionBtn, { backgroundColor: '#EF4444' }]}
+                                        onPress={() => Alert.alert(
+                                            'Kullanıcıyı Yasakla',
+                                            'Bu kullanıcıyı yasaklamak istediğinize emin misiniz?',
+                                            [
+                                                { text: 'İptal', style: 'cancel' },
+                                                { text: 'Evet, Yasakla', style: 'destructive', onPress: () => handleUpdateStatus('RESOLVED', true) }
+                                            ]
+                                        )}
+                                        disabled={processing}
+                                    >
+                                        <Text style={styles.btnText}>Çözüldü + Yasakla</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={[styles.actionBtn, { backgroundColor: '#6B7280', marginTop: 8 }]}
+                                        onPress={() => handleUpdateStatus('DISMISSED')}
+                                        disabled={processing}
+                                    >
+                                        <Text style={styles.btnText}>Reddet (Asılsız)</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </ScrollView>
+                        </KeyboardAvoidingView>
                     </View>
                 )}
             </Modal>

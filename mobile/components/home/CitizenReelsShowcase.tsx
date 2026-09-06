@@ -91,13 +91,13 @@ export const CitizenReelsShowcase: React.FC<CitizenReelsShowcaseProps> = ({
                     style={styles.vitrinCardBg} 
                     imageStyle={styles.vitrinCardBgImage}
                   >
-                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.85)']} style={styles.vitrinCardGradient}>
+                    <LinearGradient colors={['transparent', 'rgba(15,23,42,0.25)', 'rgba(15,23,42,0.85)']} style={styles.vitrinCardGradient}>
                       <View style={styles.vitrinCardContentRow}>
                         <View style={styles.vitrinIconCircleSm}>
                           {item.ustaAvatar ? (
                             <Image 
                               source={{ uri: getFileUrl(item.ustaAvatar) || '' }} 
-                              style={{ width: 38, height: 38, borderRadius: 19 }} 
+                              style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.8)' }} 
                               resizeMode="cover"
                             />
                           ) : (

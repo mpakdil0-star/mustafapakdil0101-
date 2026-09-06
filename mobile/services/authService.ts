@@ -252,11 +252,30 @@ export const authService = {
     return data.session;
   },
 
-  async uploadAvatar(formData: FormData) {
-    const parts = (formData as any)?._parts || [];
-    const imagePart = parts.find(([key]: [string]) => key === 'image')?.[1];
-    if (!imagePart?.uri) throw new Error('Yüklenecek görsel bulunamadı.');
-    return uploadAvatarUri(imagePart.uri, imagePart.type);
+  async uploadAvatar(formData: FormData | { uri: string; type?: string }) {
+    if ('uri' in (formData as any)) {
+      return uploadAvatarUri((formData as any).uri, (formData as any).type);
+    }
+    const anyFormData = formData as any;
+    let imageUri: string | undefined;
+    let imageType: string | undefined;
+
+    if (typeof anyFormData?.get === 'function') {
+      const img = anyFormData.get('image');
+      if (img && typeof img === 'object') {
+        imageUri = img.uri;
+        imageType = img.type;
+      }
+    }
+    if (!imageUri && Array.isArray(anyFormData?._parts)) {
+      const imagePart = anyFormData._parts.find(([key]: [string]) => key === 'image')?.[1];
+      if (imagePart) {
+        imageUri = imagePart.uri;
+        imageType = imagePart.type;
+      }
+    }
+    if (!imageUri) throw new Error('Yüklenecek görsel bulunamadı.');
+    return uploadAvatarUri(imageUri, imageType);
   },
 
   async uploadAvatarBase64(base64Image: string) {
@@ -457,6 +476,10 @@ export const authService = {
   },
 
   async changePassword(currentPassword: string, newPassword: string) {
+    const backup = await readImpersonationBackup();
+    if (backup) {
+      throw new Error('Yönetici oturumunda şifre değiştirilemez.');
+    }
     const { data: userData, error: userError } = await supabase.auth.getUser();
     const email = userData.user?.email;
     if (userError || !email) throw userError ?? new Error('E-posta hesabı bulunamadı.');

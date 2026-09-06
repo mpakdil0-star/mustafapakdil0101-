@@ -1,10 +1,19 @@
+import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 
 type RealtimeCallback = (value: any) => void;
 type NotificationFilter = (row: any) => boolean;
 
-let channelSequence = 0;
-let activeSubscriptions = 0;
+interface Subscriber {
+  id: number;
+  filter: NotificationFilter;
+  callback: RealtimeCallback;
+}
+
+let nextSubscriberId = 1;
+const subscribers = new Map<number, Subscriber>();
+let activeChannel: RealtimeChannel | null = null;
+let activeUserId: string | null = null;
 
 const bidTypes = new Set([
   'bid_received',
@@ -34,43 +43,57 @@ const mapNotification = (row: any) => ({
   createdAt: row.created_at,
 });
 
+const ensureChannel = async (userId: string) => {
+  if (activeChannel && activeUserId === userId) return;
+
+  if (activeChannel) {
+    void supabase.removeChannel(activeChannel);
+    activeChannel = null;
+  }
+
+  activeUserId = userId;
+  activeChannel = supabase
+    .channel(`ui-notifications:${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`,
+      },
+      (payload) => {
+        const row = payload.new as any;
+        if (!row) return;
+        const mapped = mapNotification(row);
+        subscribers.forEach(({ filter, callback }) => {
+          try {
+            if (filter(row)) callback(mapped);
+          } catch (err) {
+            console.warn('[socketService] subscriber callback error:', err);
+          }
+        });
+      },
+    )
+    .subscribe();
+};
+
 const subscribe = (filter: NotificationFilter, callback: RealtimeCallback) => {
-  let disposed = false;
-  let unsubscribe: (() => void) | null = null;
+  const id = nextSubscriberId++;
+  subscribers.set(id, { id, filter, callback });
 
   void supabase.auth.getUser().then(({ data, error }) => {
-    if (disposed || error || !data.user) return;
-    const channelName = `ui-notifications:${data.user.id}:${channelSequence++}`;
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${data.user.id}`,
-        },
-        (payload) => {
-          const row = payload.new as any;
-          if (row && filter(row)) callback(mapNotification(row));
-        },
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') activeSubscriptions += 1;
-      });
-
-    unsubscribe = () => {
-      activeSubscriptions = Math.max(0, activeSubscriptions - 1);
-      void supabase.removeChannel(channel);
-    };
-    if (disposed) unsubscribe();
+    if (error || !data.user || !subscribers.has(id)) return;
+    void ensureChannel(data.user.id);
   });
 
   return () => {
-    disposed = true;
-    unsubscribe?.();
-    unsubscribe = null;
+    subscribers.delete(id);
+    if (subscribers.size === 0 && activeChannel) {
+      void supabase.removeChannel(activeChannel);
+      activeChannel = null;
+      activeUserId = null;
+    }
   };
 };
 
@@ -91,7 +114,7 @@ export const socketService = {
     (row) => row.type === 'new_review',
     callback,
   ),
-  getConnectionStatus: () => activeSubscriptions > 0,
+  getConnectionStatus: () => activeChannel !== null,
 };
 
 export default socketService;

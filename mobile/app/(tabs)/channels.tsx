@@ -13,6 +13,7 @@ import {
   Dimensions,
   Platform,
   RefreshControl,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -1295,7 +1296,10 @@ export default function ChannelsScreen() {
 
       {/* 1. New Forum Post Modal */}
       <Modal visible={isNewPostModalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
           <View style={styles.modalContent}>
             <View style={styles.modalDragHandle} />
             <View style={styles.modalHeader}>
@@ -1364,12 +1368,15 @@ export default function ChannelsScreen() {
               </LinearGradient>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* 2. Forum Comments Modal */}
       <Modal visible={isCommentsModalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
           <View style={[styles.modalContent, { height: '85%', width: '100%' }]}>
             <View style={styles.modalDragHandle} />
             <View style={styles.modalHeader}>
@@ -1380,7 +1387,7 @@ export default function ChannelsScreen() {
             </View>
 
             {selectedPost && (
-              <ScrollView style={{ flex: 1, marginTop: 4 }}>
+              <ScrollView style={{ flex: 1, marginTop: 4 }} keyboardShouldPersistTaps="handled">
                 <Text style={styles.postBody}>{selectedPost.description}</Text>
                 {selectedPost.imageUrl && (
                   <Image source={{ uri: selectedPost.imageUrl }} style={[styles.forumImage, { height: 200, borderRadius: 12, marginTop: 10 }]} />
@@ -1435,12 +1442,15 @@ export default function ChannelsScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* 3. New Job Offer Modal */}
       <Modal visible={isNewJobModalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
           <View style={styles.modalContent}>
             <View style={styles.modalDragHandle} />
             <View style={styles.modalHeader}>
@@ -1505,7 +1515,7 @@ export default function ChannelsScreen() {
               </LinearGradient>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* 4. City Filter Modal */}
@@ -1588,7 +1598,10 @@ export default function ChannelsScreen() {
 
       {/* 5. New Showcase Gallery Modal */}
       <Modal visible={isNewShowcaseModalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
           <View style={styles.modalContent}>
             <View style={styles.modalDragHandle} />
             <View style={styles.modalHeader}>
@@ -1688,7 +1701,7 @@ export default function ChannelsScreen() {
               </LinearGradient>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
 

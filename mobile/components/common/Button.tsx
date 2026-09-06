@@ -116,6 +116,10 @@ export const Button: React.FC<ButtonProps> = ({
         disabled={disabled || loading}
         activeOpacity={0.9}
         style={{ width: fullWidth ? '100%' : 'auto' }}
+        accessible={true}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ disabled: disabled || loading, busy: loading }}
       >
         {variant === 'primary' && !disabled ? (
           <LinearGradient
