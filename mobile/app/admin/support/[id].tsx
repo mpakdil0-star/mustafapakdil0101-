@@ -8,6 +8,7 @@ import { fonts } from '../../../constants/typography';
 import { useAppColors } from '../../../hooks/useAppColors';
 import { Ionicons } from '@expo/vector-icons';
 import { adminService } from '../../../services/adminService';
+import { formatMessageTime } from '../../../utils/date';
 
 export default function AdminTicketDetailScreen() {
     const { id } = useLocalSearchParams();
@@ -180,7 +181,7 @@ export default function AdminTicketDetailScreen() {
                                     {msg.text}
                                 </Text>
                                 <Text style={[styles.messageTime, msg.isAdmin ? { color: 'rgba(255,255,255,0.8)' } : { color: staticColors.textLight }]}>
-                                    {new Date(msg.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                                    {formatMessageTime(msg.createdAt)}
                                 </Text>
                             </View>
                         ))

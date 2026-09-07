@@ -1,18 +1,16 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { format } from 'date-fns';
-import { tr } from 'date-fns/locale';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { markNotificationAsRead, markAllNotificationsAsRead, fetchNotifications } from '../../store/slices/notificationSlice';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
-import { colors as staticColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
 import { getNotificationTargetPath } from '../../utils/notificationNavigation';
 import { SkeletonListItem } from '../../components/common/SkeletonLoader';
+import { formatRelativeTime } from '../../utils/date';
 
 // --- Filter Tabs ---
 type FilterCategory = 'ALL' | 'MESSAGES' | 'JOBS' | 'SYSTEM';
@@ -35,90 +33,95 @@ const getNotificationCategory = (type: string): 'MESSAGES' | 'JOBS' | 'SYSTEM' =
     return 'SYSTEM';
 };
 
-// --- Timeline Item Component ---
-const TimelineItem = ({ item, index, isLast, onPress, colors }: {
-    item: any; index: number; isLast: boolean; onPress: () => void; colors: any;
-}) => {
-    const getIcon = (type: string) => {
-        switch (type) {
-            case 'JOB_OFFER': return 'briefcase';
-            case 'BID_RECEIVED': return 'pricetag';
-            case 'MESSAGE': return 'chatbubble-ellipses';
-            case 'SYSTEM': return 'information-circle';
-            case 'security': return 'shield-checkmark';
-            default: return 'notifications';
-        }
-    };
+// --- Modern Full-Width Notification Card ---
+interface NotificationCardProps {
+    item: any;
+    onPress: () => void;
+    colors: any;
+}
 
-    const getColor = (type: string) => {
-        switch (type) {
-            case 'JOB_OFFER': return '#3B82F6';
-            case 'BID_RECEIVED': return '#F59E0B';
-            case 'MESSAGE': return '#10B981';
-            case 'security': return '#EF4444';
-            default: return '#8B5CF6';
+const NotificationCard: React.FC<NotificationCardProps> = ({ item, onPress, colors }) => {
+    const iconConfig = useMemo(() => {
+        const t = (item.type || '').toLowerCase();
+        if (t.includes('message') || t === 'new_message' || t === 'message_received') {
+            return { name: 'chatbubbles', color: '#0D9488', bg: '#0D948818' };
         }
-    };
+        if (t === 'job_offer' || t.includes('offer')) {
+            return { name: 'briefcase', color: '#3B82F6', bg: '#3B82F618' };
+        }
+        if (t.includes('bid') || t.includes('teklif') || t === 'bid_received') {
+            return { name: 'pricetag', color: '#F59E0B', bg: '#F59E0B18' };
+        }
+        if (t.includes('review') || t.includes('star')) {
+            return { name: 'star', color: '#EAB308', bg: '#EAB30818' };
+        }
+        if (t.includes('system') || t === 'security') {
+            return { name: 'shield-checkmark', color: '#10B981', bg: '#10B98118' };
+        }
+        return { name: 'notifications', color: '#6366F1', bg: '#6366F118' };
+    }, [item.type]);
 
-    const iconColor = getColor(item.type);
-    const date = new Date(item.createdAt);
-    const timeStr = format(date, 'HH:mm', { locale: tr });
-    const dateStr = format(date, 'd MMMM', { locale: tr });
+    const formattedTime = useMemo(() => {
+        return formatRelativeTime(item.createdAt);
+    }, [item.createdAt]);
 
     return (
-        <View style={styles.timelineRow}>
-            {/* Time Column */}
-            <View style={styles.timeColumn}>
-                <Text style={[styles.timeText, { color: colors.text }]}>{timeStr}</Text>
-                <Text style={[styles.dateText, { color: colors.textSecondary }]}>{dateStr}</Text>
+        <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={onPress}
+            style={[
+                styles.cardContainer,
+                {
+                    backgroundColor: colors.surface || '#FFFFFF',
+                    borderColor: item.isRead ? (colors.border || '#E2E8F0') : (colors.primary + '50'),
+                },
+                !item.isRead && [
+                    styles.unreadCard,
+                    { borderLeftColor: colors.primary, borderLeftWidth: 3.5 },
+                ],
+            ]}
+        >
+            {/* Category / Type Icon Avatar */}
+            <View style={[styles.iconContainer, { backgroundColor: iconConfig.bg }]}>
+                <Ionicons name={iconConfig.name as any} size={20} color={iconConfig.color} />
             </View>
 
-            {/* Timeline Line & Dot */}
-            <View style={styles.timeline}>
-                <View style={[styles.timelineDot, { borderColor: iconColor, backgroundColor: item.isRead ? 'transparent' : iconColor }]} />
-                {!isLast && <View style={[styles.timelineLine, { backgroundColor: colors.border || '#E2E8F0' }]} />}
-            </View>
-
-            {/* Content Card */}
-            <TouchableOpacity
-                activeOpacity={0.9}
-                onPress={onPress}
-                style={[
-                    styles.cardContainer,
-                    {
-                        backgroundColor: item.isRead
-                            ? (colors.surface || '#FFFFFF')
-                            : (colors.primary + '08'),
-                        borderColor: item.isRead
-                            ? (colors.border || '#E2E8F0')
-                            : (colors.primary + '30'),
-                    },
-                    !item.isRead && styles.unreadCard,
-                ]}
-            >
-                <View style={styles.cardInner}>
-                    <View style={styles.cardHeader}>
-                        <View style={[styles.iconContainer, { backgroundColor: iconColor + '15' }]}>
-                            <Ionicons name={getIcon(item.type) as any} size={18} color={iconColor} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
-                                {item.title}
-                            </Text>
-                        </View>
-                        {!item.isRead && (
-                            <View style={[styles.newBadge, { backgroundColor: iconColor }]}>
-                                <Text style={styles.newBadgeText}>YENİ</Text>
-                            </View>
-                        )}
-                    </View>
-
-                    <Text style={[styles.cardMessage, { color: colors.textSecondary }]} numberOfLines={2}>
-                        {item.message}
+            {/* Middle Content */}
+            <View style={styles.cardContent}>
+                <View style={styles.cardHeader}>
+                    <Text
+                        style={[
+                            styles.cardTitle,
+                            {
+                                color: colors.text,
+                                fontFamily: item.isRead ? fonts.semiBold : fonts.bold,
+                            },
+                        ]}
+                        numberOfLines={1}
+                    >
+                        {item.title}
+                    </Text>
+                    <Text style={[styles.timeText, { color: colors.textSecondary }]}>
+                        {formattedTime}
                     </Text>
                 </View>
-            </TouchableOpacity>
-        </View>
+
+                <Text
+                    style={[
+                        styles.cardMessage,
+                        { color: item.isRead ? colors.textSecondary : colors.text },
+                    ]}
+                    numberOfLines={2}
+                >
+                    {item.message}
+                </Text>
+            </View>
+
+            {/* Glowing Unread Indicator Dot */}
+            {!item.isRead && (
+                <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />
+            )}
+        </TouchableOpacity>
     );
 };
 
@@ -186,12 +189,14 @@ export default function NotificationsScreen() {
 
     const renderEmpty = () => (
         <View style={styles.emptyContainer}>
-            <View style={[styles.emptyIconCircle, { backgroundColor: (colors.primary || '#0D9488') + '10' }]}>
-                <Ionicons name="notifications-off-outline" size={48} color={colors.textSecondary} />
+            <View style={[styles.emptyIconCircle, { backgroundColor: (colors.primary || '#0D9488') + '12' }]}>
+                <Ionicons name="notifications-off-outline" size={44} color={colors.primary} />
             </View>
             <Text style={[styles.emptyTitle, { color: colors.text }]}>Bildiriminiz Yok</Text>
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                Şu an için size ulaşan yeni bir bildirim bulunmuyor.
+                {selectedCategory === 'ALL'
+                    ? 'Şu an için size ulaşan yeni bir bildirim bulunmuyor.'
+                    : 'Bu filtreye uygun bildirim bulunamadı.'}
             </Text>
         </View>
     );
@@ -203,63 +208,75 @@ export default function NotificationsScreen() {
                 showBackButton
                 rightElement={
                     unreadCount > 0 ? (
-                        <TouchableOpacity onPress={handleMarkAllRead} style={styles.markAllBtn}>
-                            <Ionicons name="checkmark-done" size={20} color={colors.primary} />
+                        <TouchableOpacity
+                            onPress={handleMarkAllRead}
+                            style={styles.markAllBtn}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="checkmark-done" size={16} color="#FFFFFF" />
+                            <Text style={styles.markAllBtnText}>Tümünü Oku</Text>
                         </TouchableOpacity>
                     ) : undefined
                 }
             />
 
-            {/* Filter Chips */}
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.filterContainer}
-            >
-                {visibleFilterTabs.map((tab) => {
-                    const isActive = selectedCategory === tab.id;
-                    const count = categoryCounts[tab.id];
-                    return (
-                        <TouchableOpacity
-                            key={tab.id}
-                            style={[
-                                styles.filterChip,
-                                {
-                                    backgroundColor: isActive ? colors.primary : (colors.surface || '#F1F5F9'),
-                                    borderColor: isActive ? colors.primary : (colors.border || '#E2E8F0'),
-                                },
-                            ]}
-                            activeOpacity={0.7}
-                            onPress={() => setSelectedCategory(tab.id)}
-                        >
-                            <Ionicons
-                                name={tab.icon}
-                                size={14}
-                                color={isActive ? '#FFF' : colors.textSecondary}
-                            />
-                            <Text style={[
-                                styles.filterChipText,
-                                { color: isActive ? '#FFF' : colors.textSecondary },
-                            ]}>
-                                {tab.label}
-                            </Text>
-                            {count > 0 && (
-                                <View style={[
-                                    styles.filterChipBadge,
-                                    { backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : (colors.primary + '15') },
+            {/* Filter Tabs Horizontal Bar */}
+            <View style={[styles.filterWrapper, { backgroundColor: colors.background, borderBottomColor: (colors.border || '#E2E8F0') + '40' }]}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.filterContainer}
+                    style={{ flexGrow: 0 }}
+                >
+                    {visibleFilterTabs.map((tab) => {
+                        const isActive = selectedCategory === tab.id;
+                        const count = categoryCounts[tab.id];
+                        return (
+                            <TouchableOpacity
+                                key={tab.id}
+                                style={[
+                                    styles.filterChip,
+                                    {
+                                        backgroundColor: isActive ? colors.primary : (colors.surface || '#FFFFFF'),
+                                        borderColor: isActive ? colors.primary : (colors.border || '#E2E8F0'),
+                                    },
+                                ]}
+                                activeOpacity={0.7}
+                                onPress={() => setSelectedCategory(tab.id)}
+                            >
+                                <Ionicons
+                                    name={tab.icon}
+                                    size={15}
+                                    color={isActive ? '#FFFFFF' : colors.textSecondary}
+                                />
+                                <Text style={[
+                                    styles.filterChipText,
+                                    { color: isActive ? '#FFFFFF' : colors.text },
                                 ]}>
-                                    <Text style={[
-                                        styles.filterChipBadgeText,
-                                        { color: isActive ? '#FFF' : colors.primary },
-                                    ]}>{count}</Text>
-                                </View>
-                            )}
-                        </TouchableOpacity>
-                    );
-                })}
-            </ScrollView>
+                                    {tab.label}
+                                </Text>
+                                {count > 0 && (
+                                    <View style={[
+                                        styles.filterChipBadge,
+                                        {
+                                            backgroundColor: isActive ? 'rgba(255,255,255,0.28)' : (colors.primary + '18'),
+                                        },
+                                    ]}>
+                                        <Text style={[
+                                            styles.filterChipBadgeText,
+                                            { color: isActive ? '#FFFFFF' : colors.primary },
+                                        ]}>
+                                            {count}
+                                        </Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
+            </View>
 
-            {/* Content */}
+            {/* Notifications Content */}
             {isLoading && notifications.length === 0 ? (
                 <View style={styles.skeletonContainer}>
                     {[1, 2, 3, 4, 5].map((i) => (
@@ -269,11 +286,9 @@ export default function NotificationsScreen() {
             ) : (
                 <FlatList
                     data={filteredNotifications}
-                    renderItem={({ item, index }) => (
-                        <TimelineItem
+                    renderItem={({ item }) => (
+                        <NotificationCard
                             item={item}
-                            index={index}
-                            isLast={index === filteredNotifications.length - 1}
                             onPress={() => handlePress(item)}
                             colors={colors}
                         />
@@ -295,25 +310,46 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    // Filter Chips
+    // Header Right Button
+    markAllBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        height: 36,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255, 255, 255, 0.18)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.25)',
+        gap: 5,
+    },
+    markAllBtnText: {
+        fontFamily: fonts.semiBold,
+        fontSize: 12,
+        color: '#FFFFFF',
+    },
+    // Filter Chips Horizontal Scroll
+    filterWrapper: {
+        borderBottomWidth: 1,
+        paddingVertical: 10,
+    },
     filterContainer: {
         paddingHorizontal: spacing.md,
-        paddingVertical: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
         gap: 8,
     },
     filterChip: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
+        paddingHorizontal: 14,
+        height: 36,
+        borderRadius: 18,
         borderWidth: 1,
         gap: 6,
-        marginRight: 8,
     },
     filterChipText: {
-        fontFamily: fonts.bold,
-        fontSize: 12,
+        fontFamily: fonts.semiBold,
+        fontSize: 13,
     },
     filterChipBadge: {
         minWidth: 20,
@@ -321,123 +357,77 @@ const styles = StyleSheet.create({
         borderRadius: 9,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 5,
+        paddingHorizontal: 6,
     },
     filterChipBadgeText: {
         fontFamily: fonts.bold,
-        fontSize: 10,
+        fontSize: 11,
     },
-    markAllBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    // List
+    // List & Cards
     listContent: {
-        padding: spacing.lg,
+        padding: spacing.md,
         paddingBottom: spacing.xxxl,
     },
     skeletonContainer: {
         flex: 1,
-        padding: spacing.lg,
+        padding: spacing.md,
     },
-    // Timeline
-    timelineRow: {
-        flexDirection: 'row',
-        marginBottom: 4,
-        minHeight: 100,
-    },
-    timeColumn: {
-        width: 60,
-        alignItems: 'flex-end',
-        paddingRight: 12,
-        paddingTop: 4,
-    },
-    timeText: {
-        fontFamily: fonts.bold,
-        fontSize: 13,
-    },
-    dateText: {
-        fontFamily: fonts.regular,
-        fontSize: 11,
-        marginTop: 2,
-    },
-    timeline: {
-        width: 24,
-        alignItems: 'center',
-        marginRight: 8,
-    },
-    timelineDot: {
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        borderWidth: 2,
-        zIndex: 2,
-        marginTop: 6,
-    },
-    timelineLine: {
-        flex: 1,
-        width: 2,
-        marginTop: 4,
-        marginBottom: -10,
-    },
-    // Card
     cardContainer: {
-        flex: 1,
-        marginBottom: 20,
-        marginLeft: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 14,
         borderRadius: 16,
-        overflow: 'hidden',
         borderWidth: 1,
+        marginBottom: 10,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 6,
-        elevation: 2,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        elevation: 1,
     },
     unreadCard: {
         shadowOpacity: 0.1,
-        elevation: 4,
+        elevation: 2,
     },
-    cardInner: {
-        padding: 16,
+    iconContainer: {
+        width: 42,
+        height: 42,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    cardContent: {
+        flex: 1,
+        marginRight: 6,
     },
     cardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 8,
-    },
-    iconContainer: {
-        width: 32,
-        height: 32,
-        borderRadius: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 10,
+        justifyContent: 'space-between',
+        marginBottom: 4,
+        gap: 8,
     },
     cardTitle: {
-        fontFamily: fonts.bold,
         fontSize: 14,
+        flex: 1,
     },
-    newBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 4,
-        marginLeft: 8,
-    },
-    newBadgeText: {
-        fontFamily: fonts.bold,
-        fontSize: 9,
-        color: '#fff',
+    timeText: {
+        fontFamily: fonts.medium,
+        fontSize: 11,
     },
     cardMessage: {
         fontFamily: fonts.regular,
         fontSize: 13,
         lineHeight: 18,
     },
-    // Empty
+    unreadDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginLeft: 4,
+    },
+    // Empty State
     emptyContainer: {
         alignItems: 'center',
         justifyContent: 'center',
@@ -449,7 +439,7 @@ const styles = StyleSheet.create({
         borderRadius: 40,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 16,
     },
     emptyTitle: {
         fontFamily: fonts.bold,
@@ -460,6 +450,7 @@ const styles = StyleSheet.create({
         fontFamily: fonts.regular,
         fontSize: 14,
         textAlign: 'center',
-        maxWidth: 250,
+        maxWidth: 260,
+        lineHeight: 20,
     },
 });

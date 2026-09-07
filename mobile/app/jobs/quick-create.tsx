@@ -1082,7 +1082,8 @@ export default function QuickCreateScreen() {
                                 )}
                             </View>
                         </Card>
-                    )}                    {/* Section: Konum */}
+                    )}
+                    {/* Section: Konum */}
                     <View style={styles.sectionDivider} />
                     <View style={styles.sectionLabelRow}>
                         <LinearGradient
@@ -1352,7 +1353,8 @@ export default function QuickCreateScreen() {
                 title="Giriş Gerekiyor"
                 message="Acil usta çağırabilmek için giriş yapmanız gerekmektedir."
                 icon="flash-outline"
-            />            <Modal visible={showSuccessModal} transparent animationType="fade">
+            />
+            <Modal visible={showSuccessModal} transparent animationType="fade">
                 <View style={styles.modalOverlay}>
                     <LinearGradient colors={['rgba(30, 41, 59, 0.98)', 'rgba(15, 23, 42, 0.95)']} style={styles.successModal}>
                         {/* Decorative radial circles */}

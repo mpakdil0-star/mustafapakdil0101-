@@ -9,6 +9,7 @@ import { useAppColors } from '../../../hooks/useAppColors';
 import { Ionicons } from '@expo/vector-icons';
 import { supportService } from '../../../services/accountService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { formatMessageTime } from '../../../utils/date';
 
 export default function TicketDetailScreen() {
     const { id } = useLocalSearchParams();
@@ -119,7 +120,7 @@ export default function TicketDetailScreen() {
                             >
                                 <Text style={styles.senderName}>{msg.isAdmin ? 'Destek Ekibi' : 'Siz'}</Text>
                                 <Text style={styles.messageText}>{msg.text}</Text>
-                                <Text style={styles.messageTime}>{new Date(msg.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</Text>
+                                <Text style={styles.messageTime}>{formatMessageTime(msg.createdAt)}</Text>
                             </View>
                         ))
                     )}

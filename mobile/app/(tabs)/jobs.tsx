@@ -22,17 +22,23 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { CITY_NAMES, getDistrictsByCity } from '../../constants/locations';
 import { formatRelativeTime } from '../../utils/date';
 import { CountdownTimer } from '../../components/common/CountdownTimer';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type TabType = 'all' | 'my' | 'bids';
 
 export default function JobsScreen() {
   const router = useRouter();
   const colors = useAppColors();
+  const insets = useSafeAreaInsets();
   const dispatch = useAppDispatch();
   const { jobs, myJobs, isLoading } = useAppSelector((state) => state.jobs);
   const { myBids, isLoading: isLoadingBids } = useAppSelector((state) => state.bids);
   const { user, isAuthenticated, guestRole } = useAppSelector((state) => state.auth);
   const isElectrician = user?.userType === 'ELECTRICIAN' || guestRole === 'ELECTRICIAN';
+
+  // Calculate dynamic bottom position so the FAB is always above the custom floating tab bar
+  const tabTop = (insets.bottom > 0 ? insets.bottom + 4 : 10) + 68;
+  const fabBottom = Math.max(tabTop + 16, 110);
 
   const { tab } = useLocalSearchParams<{ tab: TabType }>();
 
@@ -420,7 +426,7 @@ export default function JobsScreen() {
       <FlatList
         data={activeTab === 'bids' ? visibleMyBids : (filteredJobs as any[])}
         keyExtractor={(item, index) => String(item?.id || `job-row-${index}`)}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: fabBottom + 64 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isLoading || isLoadingBids} onRefresh={() => activeTab === 'all' ? loadJobs() : activeTab === 'bids' ? loadMyBids() : loadMyJobs()} />}
         ListEmptyComponent={renderEmptyState}
@@ -640,9 +646,9 @@ export default function JobsScreen() {
       />
       {/* FAB - Yeni İlan */}
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, { bottom: fabBottom }]}
         activeOpacity={0.85}
-        onPress={() => router.push('/jobs/create')}
+        onPress={() => handleActionWithAuth('/jobs/create')}
       >
         <LinearGradient
           colors={[colors.primary || '#0D9488', '#0F766E']}
@@ -852,13 +858,13 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 90,
     right: 20,
+    zIndex: 999,
     shadowColor: '#0D9488',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.35,
     shadowRadius: 8,
-    elevation: 8,
+    elevation: 10,
   },
   fabGradient: {
     width: 56,

@@ -46,7 +46,6 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// Prevent splash from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {

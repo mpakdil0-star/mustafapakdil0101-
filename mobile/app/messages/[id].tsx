@@ -33,6 +33,7 @@ import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { SkeletonChat } from '../../components/common/SkeletonLoader';
 import { LinearGradient } from 'expo-linear-gradient';
+import { formatMessageTime } from '../../utils/date';
 
 interface Message {
     id: string;
@@ -563,10 +564,7 @@ export default function ChatScreen() {
                                 styles.messageTime,
                                 isMyMessage ? styles.myMessageTime : (isElectrician ? { color: '#64748B' } : styles.otherMessageTime)
                             ]}>
-                                {new Date(item.createdAt).toLocaleTimeString('tr-TR', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                })}
+                                {formatMessageTime(item.createdAt)}
                             </Text>
                             <ReadReceipt message={item} isMyMessage={isMyMessage} />
                         </View>
