@@ -27,7 +27,14 @@ export default function NotificationsScreen() {
     const dispatch = useAppDispatch();
     const colors = useAppColors();
     const { notifications, isLoading, unreadCount } = useAppSelector((state) => state.notifications);
+    const { user } = useAppSelector((state) => state.auth);
+    const isAdmin = user?.userType === 'ADMIN';
     const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('ALL');
+
+    const visibleFilterTabs = useMemo(() => {
+        if (isAdmin) return FILTER_TABS;
+        return FILTER_TABS.filter((tab) => tab.id !== 'SYSTEM');
+    }, [isAdmin]);
 
     const onRefresh = useCallback(() => {
         dispatch(fetchNotifications());
@@ -223,7 +230,7 @@ export default function NotificationsScreen() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.filterScroll}
             >
-                {FILTER_TABS.map((tab) => {
+                {visibleFilterTabs.map((tab) => {
                     const isSelected = selectedCategory === tab.id;
                     const count = categoryCounts[tab.id] || 0;
                     return (

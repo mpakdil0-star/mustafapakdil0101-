@@ -278,8 +278,6 @@ export default function ProfileScreen() {
             style={[styles.profileCard, !isElectrician && { borderColor: (colors.borderAmethyst || 'rgba(167, 139, 250, 0.3)') }]}
           >
             <View style={styles.avatarGlowWrapper}>
-              <View style={[styles.avatarGlow, { backgroundColor: colors.primary + '30' }]} />
-
               <TouchableOpacity
                 onPress={handlePhotoOptions}
                 activeOpacity={0.9}
@@ -379,13 +377,10 @@ export default function ProfileScreen() {
 
 
 
-        <Button
-          title="ÇIKIŞ YAP"
-          onPress={handleLogout}
-          variant="danger"
-          style={styles.exitBtn}
-          icon={<Ionicons name="log-out-outline" size={20} color={staticColors.white} />}
-        />
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutLink} activeOpacity={0.7}>
+          <Ionicons name="log-out-outline" size={18} color="#94A3B8" />
+          <Text style={styles.logoutLinkText}>Çıkış Yap</Text>
+        </TouchableOpacity>
 
         <Text style={[styles.versionText, { color: staticColors.textLight }]}>Versiyon 1.0.65 - Premium</Text>
       </ScrollView>
@@ -490,20 +485,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarGlow: {
-    position: 'absolute',
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    opacity: 0.4,
-    transform: [{ scale: 1.2 }],
-  },
   avatarMainContainer: {
     width: 76,
     height: 76,
     borderRadius: 38,
     backgroundColor: staticColors.white,
     padding: 3,
+    borderWidth: 3,
+    borderColor: staticColors.primary || '#0D9488',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.08,
@@ -619,8 +608,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    paddingVertical: 14,
     paddingHorizontal: 12,
+    minHeight: 48,
   },
   menuItemInner: {
     flexDirection: 'row',
@@ -645,15 +635,18 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
     opacity: 0.5,
   },
-  exitBtn: {
-    marginTop: 12,
-    height: 42,
-    borderRadius: 12,
-    shadowColor: staticColors.error,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+  logoutLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    marginTop: 8,
+  },
+  logoutLinkText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: '#94A3B8',
   },
   versionText: {
     textAlign: 'center',

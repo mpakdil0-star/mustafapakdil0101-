@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, RefreshControl, Alert, Animated, Linking, InteractionManager, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, RefreshControl, Alert, Animated, Linking, InteractionManager, Platform, Modal } from 'react-native';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -114,13 +114,13 @@ export default function JobsScreen() {
 
 
   useEffect(() => {
-    const pulse = () => {
+    Animated.loop(
       Animated.sequence([
         Animated.timing(urgentPulseAnim, { toValue: 0.6, duration: 800, useNativeDriver: true }),
         Animated.timing(urgentPulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-      ]).start(() => pulse());
-    };
-    pulse();
+      ]),
+      { iterations: 2 }
+    ).start();
   }, []);
 
   const loadJobs = useCallback(() => {
@@ -345,66 +345,75 @@ export default function JobsScreen() {
             </LinearGradient>
           </TouchableOpacity>
 
-          {showFilters && (
-            <View style={styles.filterOptionsContainer}>
-              <View style={styles.pickerWrapper}>
-                <Picker
-                  label="Şehir"
-                  value={selectedCity}
-                  onValueChange={(value) => {
-                    setSelectedCity(value);
-                    setSelectedDistricts([]);
-                  }}
-                  options={['Tümü', ...CITY_NAMES]}
-                  placeholder="Şehir Seçin"
-                />
-              </View>
+          <Modal visible={showFilters} animationType="slide" transparent>
+            <TouchableOpacity 
+              style={styles.filterOverlay} 
+              activeOpacity={1} 
+              onPress={() => setShowFilters(false)}
+            >
+              <View style={styles.filterSheet}>
+                <View style={styles.filterHandle} />
+                <Text style={styles.filterSheetTitle}>Filtrele</Text>
 
-              <View style={styles.districtsGrid}>
-                {selectedCity && selectedCity !== 'Tümü' ? (
-                  getDistrictsByCity(selectedCity).map((dist) => (
-                    <TouchableOpacity
-                      key={dist}
-                      style={[
-                        styles.districtChip,
-                        selectedDistricts.includes(dist) && [styles.districtChipSelected, { backgroundColor: colors.primary, borderColor: colors.primary }]
-                      ]}
-                      onPress={() => toggleDistrict(dist)}
-                    >
-                      <Text style={[
-                        styles.districtChipText,
-                        selectedDistricts.includes(dist) && styles.districtChipTextSelected
-                      ]}>{dist}</Text>
-                    </TouchableOpacity>
-                  ))
-                ) : (
-                  <Text style={styles.noCityText}>Lütfen önce şehir seçiniz</Text>
-                )}
-              </View>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    label="Şehir"
+                    value={selectedCity}
+                    onValueChange={(value) => {
+                      setSelectedCity(value);
+                      setSelectedDistricts([]);
+                    }}
+                    options={['Tümü', ...CITY_NAMES]}
+                    placeholder="Şehir Seçin"
+                  />
+                </View>
 
-              <View style={styles.filterActions}>
-                <TouchableOpacity
-                  style={styles.resetBtn}
-                  onPress={() => {
-                    setSelectedCity('');
-                    setSelectedDistricts([]);
-                    setShowFilters(false);
-                  }}
-                >
-                  <Text style={styles.resetBtnText}>Temizle</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.applyBtn, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
-                  onPress={() => {
-                    loadJobs();
-                    setShowFilters(false);
-                  }}
-                >
-                  <Text style={styles.applyBtnText}>Uygula</Text>
-                </TouchableOpacity>
+                <View style={styles.districtsGrid}>
+                  {selectedCity && selectedCity !== 'Tümü' ? (
+                    getDistrictsByCity(selectedCity).map((dist) => (
+                      <TouchableOpacity
+                        key={dist}
+                        style={[
+                          styles.districtChip,
+                          selectedDistricts.includes(dist) && [styles.districtChipSelected, { backgroundColor: colors.primary, borderColor: colors.primary }]
+                        ]}
+                        onPress={() => toggleDistrict(dist)}
+                      >
+                        <Text style={[
+                          styles.districtChipText,
+                          selectedDistricts.includes(dist) && styles.districtChipTextSelected
+                        ]}>{dist}</Text>
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    <Text style={styles.noCityText}>Lütfen önce şehir seçiniz</Text>
+                  )}
+                </View>
+
+                <View style={styles.filterActions}>
+                  <TouchableOpacity
+                    style={styles.resetBtn}
+                    onPress={() => {
+                      setSelectedCity('');
+                      setSelectedDistricts([]);
+                      setShowFilters(false);
+                    }}
+                  >
+                    <Text style={styles.resetBtnText}>Temizle</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.applyBtn, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
+                    onPress={() => {
+                      loadJobs();
+                      setShowFilters(false);
+                    }}
+                  >
+                    <Text style={styles.applyBtnText}>Uygula</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          )}
+            </TouchableOpacity>
+          </Modal>
         </View>
       )}
 
@@ -629,6 +638,19 @@ export default function JobsScreen() {
           }
         }}
       />
+      {/* FAB - Yeni İlan */}
+      <TouchableOpacity
+        style={styles.fab}
+        activeOpacity={0.85}
+        onPress={() => router.push('/jobs/create')}
+      >
+        <LinearGradient
+          colors={[colors.primary || '#0D9488', '#0F766E']}
+          style={styles.fabGradient}
+        >
+          <Ionicons name="add" size={28} color="#FFF" />
+        </LinearGradient>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -827,5 +849,50 @@ const styles = StyleSheet.create({
   categoryBadgeText: {
     fontFamily: fonts.semiBold,
     fontSize: 11,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 90,
+    right: 20,
+    shadowColor: '#0D9488',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  fabGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  filterSheet: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    paddingBottom: 40,
+    maxHeight: '70%',
+  },
+  filterHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#CBD5E1',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  filterSheetTitle: {
+    fontFamily: fonts?.bold || undefined,
+    fontWeight: '700',
+    fontSize: 18,
+    marginBottom: 16,
+    textAlign: 'center',
   },
 });

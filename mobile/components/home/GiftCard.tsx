@@ -18,18 +18,21 @@ export const GiftCard: React.FC<GiftCardProps> = ({ onPress }) => {
     const shimmerAnim = useRef(new Animated.Value(-1)).current;
 
     useEffect(() => {
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
         const runShimmer = () => {
             shimmerAnim.setValue(-1);
             Animated.timing(shimmerAnim, {
                 toValue: 2,
                 duration: 2000,
-                // useNativeDriver: true, // Native driver not supported for some properties in this specific shimmer implementation if complex
                 useNativeDriver: false
             }).start(() => {
-                setTimeout(runShimmer, 3000);
+                timeoutId = setTimeout(runShimmer, 3000);
             });
         };
         runShimmer();
+        return () => {
+            if (timeoutId) clearTimeout(timeoutId);
+        };
     }, []);
 
     const shimmerTranslate = shimmerAnim.interpolate({

@@ -9,6 +9,7 @@ import { userInsightsService } from '../../services/userInsightsService';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
+import { SkeletonListItem } from '../../components/common/SkeletonLoader';
 
 interface HistoryJob {
     id: string;
@@ -151,32 +152,40 @@ export default function HistoryScreen() {
         <View style={styles.container}>
             <PremiumHeader title="Geçmiş İşlerim" showBackButton />
 
-            <FlatList
-                data={jobs}
-                renderItem={renderItem}
-                keyExtractor={item => item.id}
-                contentContainerStyle={styles.content}
-                showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={onRefresh}
-                        colors={[colors.primary]}
-                        tintColor={colors.primary}
-                    />
-                }
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <View style={[styles.emptyIconContainer, { shadowColor: colors.primary }]}>
-                            <Ionicons name="time-outline" size={60} color={colors.primary + '40'} />
+            {loading && !refreshing ? (
+                <View style={{ padding: spacing.md, gap: 8 }}>
+                    {[1, 2, 3, 4].map((i) => (
+                        <SkeletonListItem key={i} style={{ marginBottom: 12 }} />
+                    ))}
+                </View>
+            ) : (
+                <FlatList
+                    data={jobs}
+                    renderItem={renderItem}
+                    keyExtractor={item => item.id}
+                    contentContainerStyle={styles.content}
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            colors={[colors.primary]}
+                            tintColor={colors.primary}
+                        />
+                    }
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <View style={[styles.emptyIconContainer, { shadowColor: colors.primary }]}>
+                                <Ionicons name="time-outline" size={60} color={colors.primary + '40'} />
+                            </View>
+                            <Text style={styles.emptyTitle}>Henüz Geçmiş İş Yok</Text>
+                            <Text style={styles.emptyText}>
+                                Tamamladığınız veya iptal edilen işler burada listelenecektir.
+                            </Text>
                         </View>
-                        <Text style={styles.emptyTitle}>Henüz Geçmiş İş Yok</Text>
-                        <Text style={styles.emptyText}>
-                            Tamamladığınız veya iptal edilen işler burada listelenecektir.
-                        </Text>
-                    </View>
-                }
-            />
+                    }
+                />
+            )}
         </View>
     );
 }

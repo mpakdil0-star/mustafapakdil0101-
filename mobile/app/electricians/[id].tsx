@@ -7,6 +7,7 @@ import { useAppSelector } from '../../hooks/redux';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import { SkeletonCard, SkeletonListItem } from '../../components/common/SkeletonLoader';
 import { VerificationBadge } from '../../components/common/VerificationBadge';
 import { colors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
@@ -225,10 +226,14 @@ export default function ElectricianDetailScreen() {
 
     if (isLoading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={styles.loadingText}>Profil yükleniyor...</Text>
-            </View>
+            <ScrollView style={{ flex: 1, backgroundColor: '#F8FAFC' }} contentContainerStyle={{ padding: spacing.md, gap: spacing.md, paddingTop: 40 }}>
+                <SkeletonCard />
+                <SkeletonCard />
+                <View style={{ gap: 8, marginTop: 12 }}>
+                    <SkeletonListItem />
+                    <SkeletonListItem />
+                </View>
+            </ScrollView>
         );
     }
 

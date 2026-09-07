@@ -1,10 +1,13 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { fonts } from '../../constants/typography';
 import { spacing } from '../../constants/spacing';
 import { CountdownTimer } from '../common/CountdownTimer';
 import { SERVICE_CATEGORIES } from '../../constants/serviceCategories';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_WIDTH = Math.min(SCREEN_WIDTH * 0.82, 320);
 
 interface ElectricianRecentJobsProps {
   recentJobs: any[];
@@ -183,7 +186,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   jobCard: {
-    width: 276,
+    width: CARD_WIDTH,
     minHeight: 184,
     borderRadius: 16,
     padding: 14,

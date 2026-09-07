@@ -148,6 +148,7 @@ const ServiceCategoryItem = ({ cat, index, onPress, styles, colors }: any) => {
 
 // --- Usta Kategori Helper ---
 const getUstaCategory = (elec: any) => {
+  if (!elec) return '';
   const cat = elec.serviceCategory || elec.electricianProfile?.serviceCategory;
   if (cat === 'cilingir') return 'Çilingir';
   if (cat === 'klima') return 'Klima';
@@ -181,7 +182,7 @@ const getUstaCategory = (elec: any) => {
   if (specialtyStr.includes('beyaz eşya')) return 'Beyaz Eşya';
   if (specialtyStr.includes('tesisat')) return 'Tesisat';
 
-  return 'Elektrik';
+  return '';
 };
 
 export default function HomeScreen() {
@@ -1145,7 +1146,7 @@ export default function HomeScreen() {
                 handleActionWithAuth={handleActionWithAuth}
                 colors={colors}
                 stats={stats}
-                ustaCategoryTitle={getUstaCategory(user || { serviceCategory: 'elektrik' })}
+                ustaCategoryTitle={user ? getUstaCategory(user) : ''}
                 isAuthenticated={isAuthenticated}
                 newJobsCount={newJobsCount}
               />
@@ -3303,7 +3304,7 @@ export default function HomeScreen() {
                               style={[
                                 styles.mainCategoryCard,
                                 { borderLeftColor: primaryColor, borderLeftWidth: 4 },
-                                isExpanded && { backgroundColor: primaryColor + '08', borderColor: primaryColor + '30' }
+                                isExpanded && { backgroundColor: '#FFFFFF', borderColor: primaryColor + '60', shadowColor: primaryColor, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 }
                               ]}
                             >
                               {/* Card Header */}
@@ -3344,42 +3345,60 @@ export default function HomeScreen() {
                                 />
                               </TouchableOpacity>
 
-                              {/* Subcategories flex wrapper */}
+                              {/* Subcategories clean list wrapper */}
                               {isExpanded && (
                                 <View style={styles.subCategoriesWrapper}>
                                   {/* Main Category Direct Application Pill */}
                                   <TouchableOpacity
-                                    style={[styles.subCategoryPill, styles.mainCategoryDirectPill, { borderColor: primaryColor + '30', backgroundColor: primaryColor + '18' }]}
-                                    activeOpacity={0.7}
+                                    style={[styles.mainCategoryDirectRow, { borderColor: primaryColor + '40', backgroundColor: '#FFFFFF' }]}
+                                    activeOpacity={0.75}
                                     onPress={() => {
                                       setIsSearchOverlayVisible(false);
                                       setSearchQuery('');
                                       handleActionWithAuth('/jobs/create', { serviceCategory: cat.id });
                                     }}
                                   >
-                                    <Text style={[styles.subCategoryPillText, { color: primaryColor, fontFamily: fonts.bold }]}>
-                                      Bu hizmetle ilan oluştur
-                                    </Text>
-                                    <Ionicons name="arrow-forward" size={11} color={primaryColor} style={{ marginLeft: 3 }} />
+                                    <View style={[styles.subRowIcon, { backgroundColor: primaryColor + '15' }]}>
+                                      <Ionicons name="apps" size={16} color={primaryColor} />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                      <Text style={[styles.mainCategoryDirectTitle, { color: primaryColor }]}>
+                                        Genel {cat.name} İlanı Oluştur
+                                      </Text>
+                                      <Text style={styles.mainCategoryDirectSub}>
+                                        Alt hizmetten emin değilseniz buradan başlayın
+                                      </Text>
+                                    </View>
+                                    <Ionicons name="arrow-forward" size={16} color={primaryColor} />
                                   </TouchableOpacity>
 
-                                  {subCats.map((sub) => (
-                                    <TouchableOpacity
-                                      key={sub.id}
-                                      style={[styles.subCategoryPill, { borderColor: primaryColor + '20', backgroundColor: '#F8FAFC' }]}
-                                      activeOpacity={0.7}
-                                      onPress={() => {
-                                        setIsSearchOverlayVisible(false);
-                                        setSearchQuery('');
-                                        handleActionWithAuth('/jobs/create', {
-                                          serviceCategory: cat.id,
-                                          category: sub.name
-                                        });
-                                      }}
-                                    >
-                                      <Text style={styles.subCategoryPillText}>{sub.name}</Text>
-                                    </TouchableOpacity>
-                                  ))}
+                                  {/* Clean full-width subcategory rows */}
+                                  <View style={styles.subRowsCard}>
+                                    {subCats.map((sub, index) => {
+                                      const isLast = index === subCats.length - 1;
+                                      return (
+                                        <TouchableOpacity
+                                          key={sub.id}
+                                          style={[styles.subRowItem, !isLast && styles.subRowBorder]}
+                                          activeOpacity={0.65}
+                                          onPress={() => {
+                                            setIsSearchOverlayVisible(false);
+                                            setSearchQuery('');
+                                            handleActionWithAuth('/jobs/create', {
+                                              serviceCategory: cat.id,
+                                              category: sub.name
+                                            });
+                                          }}
+                                        >
+                                          <View style={[styles.subRowDot, { backgroundColor: primaryColor + '15' }]}>
+                                            <Ionicons name={cat.icon as any} size={14} color={primaryColor} />
+                                          </View>
+                                          <Text style={styles.subRowText}>{sub.name}</Text>
+                                          <Ionicons name="chevron-forward" size={15} color="#CBD5E1" />
+                                        </TouchableOpacity>
+                                      );
+                                    })}
+                                  </View>
                                 </View>
                               )}
                             </View>
@@ -6152,23 +6171,71 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   subCategoriesWrapper: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 7,
     paddingTop: 10,
+    gap: 8,
   },
-  subCategoryPill: {
-    backgroundColor: '#F8FAFC',
+  mainCategoryDirectRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  subRowIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  mainCategoryDirectTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 13,
+  },
+  mainCategoryDirectSub: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  subRowsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 13,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 9,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
+    overflow: 'hidden',
   },
-  subCategoryPillText: {
-    fontFamily: fonts.medium,
-    fontSize: 10.5,
-    color: '#475569',
+  subRowItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    backgroundColor: '#FFFFFF',
+  },
+  subRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  subRowDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 11,
+  },
+  subRowText: {
+    flex: 1,
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
+    color: '#0F172A',
   },
   subCountBadge: {
     paddingHorizontal: 8,
@@ -6179,9 +6246,5 @@ const styles = StyleSheet.create({
   subCountText: {
     fontFamily: fonts.bold,
     fontSize: 10,
-  },
-  mainCategoryDirectPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
 });

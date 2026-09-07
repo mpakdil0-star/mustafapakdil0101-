@@ -9,6 +9,7 @@ import {
   Animated,
   TouchableOpacity,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -356,8 +357,14 @@ export default function LoginScreen() {
                     end={{ x: 1, y: 0 }}
                     style={styles.loginButtonGradient}
                   >
-                    <Text style={styles.loginButtonText}>Giriş Yap</Text>
-                    <Ionicons name="arrow-forward" size={20} color={colors.white} />
+                    {isLoading ? (
+                      <ActivityIndicator size="small" color={colors.white} />
+                    ) : (
+                      <>
+                        <Text style={styles.loginButtonText}>Giriş Yap</Text>
+                        <Ionicons name="arrow-forward" size={20} color={colors.white} />
+                      </>
+                    )}
                   </LinearGradient>
                 </TouchableOpacity>
 

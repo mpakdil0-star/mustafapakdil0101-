@@ -30,6 +30,8 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { getFileUrl } from '../../constants/api';
 import { CITY_NAMES } from '../../constants/locations';
 import { SAMPLE_SHOWCASE_ITEMS } from '../../constants/sampleContent';
+import { ForumPostCard } from '../../components/channels/ForumPostCard';
+import { JobOfferCard } from '../../components/channels/JobOfferCard';
 
 const { width } = Dimensions.get('window');
 
@@ -871,146 +873,26 @@ export default function ChannelsScreen() {
                   onButtonPress={() => setIsNewPostModalVisible(true)}
                 />
               ) : (
-                forumPosts.map((post) => {
-                  const descText = post.description || '';
-                  const hashtagRegex = /#\w+/g;
-                  const parsedTags = descText.match(hashtagRegex) || [];
-
-                  let cleanedDesc = descText;
-                  if (parsedTags.length > 0) {
-                    cleanedDesc = descText.replace(hashtagRegex, '').trim();
-                  }
-
-                  const relativeTimeStr = getRelativeTime(post.createdAt);
-
-                  return (
-                    <TouchableOpacity
-                      key={post.id}
-                      style={styles.forumCard}
-                      activeOpacity={0.8}
-                      onPress={() => {
-                        setSelectedPost(post);
-                        setIsCommentsModalVisible(true);
-                      }}
-                    >
-                      {/* Header Row */}
-                      <View style={styles.forumHeader}>
-                        <View style={styles.avatarWrapper}>
-                          {post.ustaAvatar ? (
-                            <Image 
-                              source={{ uri: post.ustaAvatar }} 
-                              style={styles.forumAvatar} 
-                            />
-                          ) : (
-                            <View style={[styles.forumAvatar, { backgroundColor: colors.primary + '15', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.primary + '30' }]}>
-                              <Text style={{ color: colors.primary, fontSize: 15, fontFamily: fonts.bold }}>
-                                {post.ustaName ? post.ustaName.charAt(0).toUpperCase() : 'U'}
-                              </Text>
-                            </View>
-                          )}
-                        </View>
-                        <View style={{ flex: 1, marginLeft: 12 }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                            <Text style={styles.forumAuthor}>{post.ustaName}</Text>
-                            {post.ustaVerified && (
-                              <Ionicons name="checkmark-circle" size={14} color="#0284C7" />
-                            )}
-                          </View>
-                          <View style={styles.authorBadgeRow}>
-                            {!!post.ustaCityOnly && (
-                              <TouchableOpacity
-                                onPress={(e) => {
-                                  e.stopPropagation();
-                                  setLocationsModalUstaName(post.ustaName || 'Usta');
-                                  setLocationsModalContent(post.ustaFullLocations ? post.ustaFullLocations.split(' • ') : [post.ustaCityOnly || 'Konum belirtilmedi']);
-                                  setIsLocationsModalVisible(true);
-                                }}
-                                style={styles.authorCityBadge}
-                                activeOpacity={0.6}
-                              >
-                                <Ionicons name="location-outline" size={10} color="#64748B" />
-                                <Text style={styles.authorCityBadgeText} numberOfLines={1}>{post.ustaCityOnly}</Text>
-                              </TouchableOpacity>
-                            )}
-                            {!!post.ustaCityOnly && <Text style={styles.bulletSeparator}>•</Text>}
-                            <Text style={styles.metaTime}>{relativeTimeStr}</Text>
-                          </View>
-                        </View>
-                        {post.ustaId === user?.id && (
-                          <TouchableOpacity
-                            onPress={(e) => {
-                              e.stopPropagation();
-                              handleDeleteForumPost(post.id);
-                            }}
-                            style={styles.deleteButton}
-                            activeOpacity={0.7}
-                            accessibilityRole="button"
-                            accessibilityLabel="Teknik destek sorusunu sil"
-                            hitSlop={8}
-                          >
-                            <Ionicons name="trash-outline" size={13} color="#EF4444" />
-                          </TouchableOpacity>
-                        )}
-                      </View>
-
-                      {/* Title & Description */}
-                      <Text style={styles.forumTitle}>{post.title}</Text>
-                      {!!cleanedDesc && (
-                        <Text style={styles.forumDesc} numberOfLines={3}>{cleanedDesc}</Text>
-                      )}
-
-                      {/* Dynamic image slot - only show if there is actually an image URL - placed below Title & Description */}
-                      {!!post.imageUrl && (
-                        <Image source={{ uri: post.imageUrl }} style={styles.forumImage} />
-                      )}
-                      
-                      {/* Dynamic Hashtags & Structured Capsules */}
-                      <View style={styles.tagCapsulesRow}>
-                        {parsedTags.length > 0 ? (
-                          parsedTags.map((tag: string, idx: number) => (
-                            <View key={idx} style={[styles.tagCapsule, { backgroundColor: colors.primary + '08', borderColor: colors.primary + '18' }]}>
-                              <Text style={[styles.tagCapsuleText, { color: colors.primary }]}>{tag}</Text>
-                            </View>
-                          ))
-                        ) : (
-                          <>
-                            <View style={[styles.tagCapsule, { backgroundColor: colors.primary + '08', borderColor: colors.primary + '18' }]}>
-                              <Ionicons name="construct-outline" size={10} color={colors.primary} />
-                              <Text style={[styles.tagCapsuleText, { color: colors.primary }]}>Teknik Soru</Text>
-                            </View>
-                            {!!post.ustaSpecialty && (
-                              <View style={[styles.tagCapsule, { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' }]}>
-                                <Ionicons name="ribbon-outline" size={10} color="#0284C7" />
-                                <Text style={[styles.tagCapsuleText, { color: '#0284C7' }]}>{post.ustaSpecialty}</Text>
-                              </View>
-                            )}
-                          </>
-                        )}
-                      </View>
-
-                      {/* Footer Row */}
-                      <View style={styles.forumFooter}>
-                        <View style={styles.footerPillsRow}>
-                          <View style={[styles.footerPill, { backgroundColor: colors.primary + '10' }]}>
-                            <Ionicons name="chatbubble-outline" size={12} color={colors.primary} style={{ marginRight: 4 }} />
-                            <Text style={[styles.footerPillText, { color: colors.primary }]}>
-                              {post.comments?.length ? `${post.comments.length} Cevap` : 'Cevap Yaz'}
-                            </Text>
-                          </View>
-                          <TouchableOpacity 
-                            style={styles.footerShareBtn}
-                            onPress={(e) => {
-                              e.stopPropagation();
-                              Alert.alert('Paylaş', 'Soru bağlantısı panoya kopyalandı.');
-                            }}
-                          >
-                            <Ionicons name="share-social-outline" size={12} color="#64748B" />
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })
+                forumPosts.map((post) => (
+                  <ForumPostCard
+                    key={post.id}
+                    post={post}
+                    currentUserId={user?.id}
+                    colors={colors}
+                    relativeTimeStr={getRelativeTime(post.createdAt)}
+                    onPress={() => {
+                      setSelectedPost(post);
+                      setIsCommentsModalVisible(true);
+                    }}
+                    onPressCity={(name, locations) => {
+                      setLocationsModalUstaName(name);
+                      setLocationsModalContent(locations);
+                      setIsLocationsModalVisible(true);
+                    }}
+                    onDelete={(id) => handleDeleteForumPost(id)}
+                    onShare={() => Alert.alert('Paylaş', 'Soru bağlantısı panoya kopyalandı.')}
+                  />
+                ))
               )}
             </View>
           )}
@@ -1042,144 +924,39 @@ export default function ChannelsScreen() {
                   onButtonPress={() => setIsNewJobModalVisible(true)}
                 />
               ) : (
-                filteredJobOffers.map((offer) => {
-                  const isOwnJob = offer.ustaId === user?.id;
-                  return (
-                    <TouchableOpacity
-                      key={offer.id}
-                      style={[styles.jobCard, { borderLeftColor: colors.primary }]}
-                      activeOpacity={isOwnJob ? 1 : 0.85}
-                      onPress={() => {
-                        if (isOwnJob) {
-                          Alert.alert('Bilgi', 'Bu sizin kendi iş ilanınızdır.');
-                        } else {
-                          Alert.alert(
-                            'İletişime Geç',
-                            `${offer.ustaName} ile görüşme başlatılsın mı?`,
-                            [
-                              { text: 'Vazgeç', style: 'cancel' },
-                              {
-                                text: 'Evet, Başlat',
-                                onPress: () => handleContactUsta(offer.ustaId, offer.ustaName)
-                              }
-                            ]
-                          );
-                        }
-                      }}
-                    >
-                      <View style={styles.jobCardHeader}>
-                        <TouchableOpacity
-                          style={[styles.cityBadge, { backgroundColor: colors.primary + '08', borderColor: colors.primary + '20', maxWidth: '70%' }]}
-                          activeOpacity={0.6}
-                          onPress={(e) => {
-                            e.stopPropagation();
-                            setLocationsModalUstaName(offer.ustaName || 'Usta');
-                            setLocationsModalContent(offer.ustaFullLocations ? offer.ustaFullLocations.split(' • ') : [offer.ustaCityOnly || offer.ustaCity || 'Konum belirtilmedi']);
-                            setIsLocationsModalVisible(true);
-                          }}
-                        >
-                          <Ionicons name="location" size={10} color={colors.primary} style={{ marginRight: 4 }} />
-                          <Text 
-                            style={[styles.cityBadgeText, { color: colors.primary, flexShrink: 1 }]} 
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
-                          >
-                            {offer.ustaFullLocations || offer.ustaCity || 'Konum belirtilmedi'}
-                          </Text>
-                        </TouchableOpacity>
-                        <View style={styles.jobCardUrgencyBadge}>
-                          <Ionicons name="time-outline" size={10} color="#F59E0B" style={{ marginRight: 2 }} />
-                          <Text style={styles.jobCardUrgencyText}>{getRelativeTime(offer.createdAt)}</Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.jobCardBody}>
-                        <View style={styles.jobCardTitleRow}>
-                          <Ionicons name="briefcase-outline" size={14} color={colors.primary} style={{ marginRight: 6 }} />
-                          <Text style={styles.jobCardTitle} numberOfLines={2}>{offer.title}</Text>
-                        </View>
-                        <View style={styles.jobCardDescContainer}>
-                          <Text style={styles.jobCardDesc} numberOfLines={3}>{offer.description}</Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.jobCardFooter}>
-                        <View style={styles.jobPublisherRow}>
-                          {offer.ustaAvatar ? (
-                            <Image 
-                              source={{ uri: offer.ustaAvatar }} 
-                              style={styles.jobPublisherAvatar} 
-                            />
-                          ) : (
-                            <LinearGradient
-                              colors={[colors.primary, colors.primaryDark || '#1E40AF']}
-                              style={styles.jobPublisherAvatar}
-                            >
-                              <Text style={styles.jobPublisherAvatarText}>
-                                {offer.ustaName ? offer.ustaName.charAt(0).toUpperCase() : 'U'}
-                              </Text>
-                            </LinearGradient>
-                          )}
-                          <View>
-                            <Text style={styles.jobCardAuthorLabel}>Paslayan Usta</Text>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                              <Text style={styles.jobCardAuthor}>{offer.ustaName}</Text>
-                              {offer.ustaVerified && <Ionicons name="checkmark-circle" size={12} color="#10B981" />}
-                            </View>
-                          </View>
-                        </View>
-
-                        {offer.ustaId !== user?.id && (
-                          <TouchableOpacity
-                            style={styles.jobContactBtnContainer}
-                            onPress={() => {
-                              Alert.alert(
-                                'İletişime Geç',
-                                `${offer.ustaName} ile görüşme başlatılsın mı?`,
-                                [
-                                  { text: 'Vazgeç', style: 'cancel' },
-                                  {
-                                    text: 'Evet, Başlat',
-                                    onPress: () => handleContactUsta(offer.ustaId, offer.ustaName)
-                                  }
-                                ]
-                              );
-                            }}
-                          >
-                            <LinearGradient
-                              colors={['#10B981', '#059669']}
-                              style={styles.jobContactGradient}
-                            >
-                              <Ionicons name="chatbubbles" size={13} color="#FFF" />
-                              <Text style={styles.jobContactText}>İşi Al / Konuş</Text>
-                            </LinearGradient>
-                          </TouchableOpacity>
-                        )}
-                      </View>
-
-                      {offer.ustaId === user?.id && (
-                        <View style={styles.ownerControlRow}>
-                          <View style={styles.ownJobBadge}>
-                            <Ionicons name="checkmark-circle" size={12} color="#059669" />
-                            <Text style={styles.ownJobBadgeText}>İlanınız Yayında</Text>
-                          </View>
-                          <TouchableOpacity
-                            style={styles.jobDeleteBtn}
-                            onPress={(event) => {
-                              event.stopPropagation();
-                              handleDeleteJobOffer(offer.id);
-                            }}
-                            accessibilityRole="button"
-                            accessibilityLabel="İş paylaşımını sil"
-                          >
-                            <Ionicons name="trash" size={12} color="#EF4444" style={{ marginRight: 4 }} />
-                            <Text style={styles.jobDeleteBtnText}>İlanı Sil</Text>
-                          </TouchableOpacity>
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })
+                filteredJobOffers.map((offer) => (
+                  <JobOfferCard
+                    key={offer.id}
+                    offer={offer}
+                    currentUserId={user?.id}
+                    colors={colors}
+                    relativeTimeStr={getRelativeTime(offer.createdAt)}
+                    onPress={() => {
+                      if (offer.ustaId === user?.id) {
+                        Alert.alert('Bilgi', 'Bu sizin kendi iş ilanınızdır.');
+                      } else {
+                        Alert.alert(
+                          'İletişime Geç',
+                          `${offer.ustaName} ile görüşme başlatılsın mı?`,
+                          [
+                            { text: 'Vazgeç', style: 'cancel' },
+                            {
+                              text: 'Evet, Başlat',
+                              onPress: () => handleContactUsta(offer.ustaId, offer.ustaName)
+                            }
+                          ]
+                        );
+                      }
+                    }}
+                    onPressCity={(name, locations) => {
+                      setLocationsModalUstaName(name);
+                      setLocationsModalContent(locations);
+                      setIsLocationsModalVisible(true);
+                    }}
+                    onContact={(ustaId, ustaName) => handleContactUsta(ustaId, ustaName)}
+                    onDelete={(id) => handleDeleteJobOffer(id)}
+                  />
+                ))
               )}
             </View>
           )}

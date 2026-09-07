@@ -27,7 +27,8 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       Animated.sequence([
         Animated.timing(pulseAnim, { toValue: 1.06, duration: 1000, useNativeDriver: true }),
         Animated.timing(pulseAnim, { toValue: 1.0, duration: 1000, useNativeDriver: true }),
-      ])
+      ]),
+      { iterations: 3 }
     );
     pulse.start();
     return () => pulse.stop();
@@ -49,7 +50,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     switch (routeName) {
       case 'index': return 'Anasayfa';
       case 'jobs': return isElectr ? 'İşler' : 'İlanlarım';
-      case 'channels': return 'Kanallar';
+      case 'channels': return 'Topluluk';
       case 'messages': return 'Mesajlar';
       case 'profile': return 'Profil';
       default: return '';
@@ -66,7 +67,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     const icon = getIcon(route.name, focused);
     const label = getLabel(route.name);
     const activeColor = colors.primary;
-    const inactiveColor = isElectrician ? '#475569' : '#94A3B8';
+    const inactiveColor = '#64748B';
     const color = focused ? activeColor : inactiveColor;
     const showBadge = route.name === 'messages' && unreadMessageCount > 0;
 
@@ -243,7 +244,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={{ title: 'Anasayfa' }} />
       <Tabs.Screen name="jobs" options={{ title: 'İlanlar' }} />
-      <Tabs.Screen name="channels" options={{ title: 'Usta Kanalları' }} />
+      <Tabs.Screen name="channels" options={{ title: 'Topluluk' }} />
       <Tabs.Screen name="messages" options={{ title: 'Mesajlar' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
     </Tabs>

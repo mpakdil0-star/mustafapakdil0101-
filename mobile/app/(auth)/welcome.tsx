@@ -57,7 +57,8 @@ export default function WelcomeScreen() {
                     duration: 2000,
                     useNativeDriver: true,
                 }),
-            ])
+            ]),
+            { iterations: 3 }
         ).start();
 
         // Shine Animation Loop

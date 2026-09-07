@@ -863,7 +863,7 @@ function RootLayoutNav() {
     // Never resolve an unknown cold-start payload to the home/welcome route.
     // Authentication may still be restoring at this point; keep a protected
     // inbox fallback queued until the session is ready.
-    const targetPath = getNotificationTargetPath(data) ?? '/profile/notifications';
+    const targetPath = getNotificationTargetPath(data) ?? '/notifications';
     console.log('[DEEP LINK] Notification navigation queued:', targetPath);
     notificationNavigationInFlight.current = null;
     setPendingNotificationPath(targetPath);

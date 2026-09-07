@@ -12,6 +12,7 @@ import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { PremiumAlert } from '../../components/common/PremiumAlert';
 import { fonts } from '../../constants/typography';
 import { useAppColors } from '../../hooks/useAppColors';
+import { SkeletonListItem } from '../../components/common/SkeletonLoader';
 import favoriteService, { FavoriteElectrician } from '../../services/favoriteService';
 
 export default function FavoritesScreen() {
@@ -126,8 +127,15 @@ export default function FavoritesScreen() {
         <View style={styles.container}>
             <PremiumHeader title="Favori Ustalarım" showBackButton />
 
-            <FlatList
-                data={favorites}
+            {loading && !refreshing ? (
+                <View style={{ padding: spacing.md, gap: 8 }}>
+                    {[1, 2, 3, 4].map((i) => (
+                        <SkeletonListItem key={i} style={{ marginBottom: 12 }} />
+                    ))}
+                </View>
+            ) : (
+                <FlatList
+                    data={favorites}
                 renderItem={renderFavoriteItem}
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.listContent}
@@ -158,6 +166,7 @@ export default function FavoritesScreen() {
                     </View>
                 }
             />
+            )}
 
             {/* Confirmation Modal - Glass Glow Theme */}
             <Modal visible={showConfirmModal} transparent animationType="fade">

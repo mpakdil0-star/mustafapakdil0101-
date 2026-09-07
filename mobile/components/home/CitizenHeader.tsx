@@ -60,7 +60,7 @@ export const CitizenHeader: React.FC<CitizenHeaderProps> = ({
         <TouchableOpacity
           style={styles.iconButton}
           activeOpacity={0.75}
-          onPress={() => handleActionWithAuth('/profile/notifications')}
+          onPress={() => handleActionWithAuth('/notifications')}
         >
           <Ionicons name="notifications-outline" size={21} color="#FFFFFF" />
           {isAuthenticated && unreadCount > 0 && (

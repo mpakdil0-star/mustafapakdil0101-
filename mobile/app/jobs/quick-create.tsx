@@ -44,6 +44,7 @@ const EMERGENCY_TYPES = [
     { id: 'elektrik', label: 'Elektrik', color: '#7C3AED', icon: 'flash' },
     { id: 'tesisat', label: 'Su/Tesisat', color: '#0284C7', icon: 'water' },
     { id: 'cilingir', label: 'Çilingir', color: '#D97706', icon: 'key' },
+    { id: 'kombi-servis', label: 'Kombi', color: '#DC2626', icon: 'flame' },
     { id: 'beyaz-esya', label: 'Beyaz Eşya', color: '#16A34A', icon: 'construct' },
     { id: 'klima', label: 'Klima', color: '#2563EB', icon: 'snow' },
     { id: 'temizlik', label: 'Temizlik', color: '#7C3AED', icon: 'sparkles' },
@@ -52,7 +53,6 @@ const EMERGENCY_TYPES = [
     { id: 'koltuk-hali', label: 'Koltuk/Halı', color: '#059669', icon: 'bed' },
     { id: 'mobilya-montaj', label: 'Mobilya', color: '#9333EA', icon: 'cube' },
     { id: 'kucuk-nakliye', label: 'Küçük Nakliye', color: '#CA8A04', icon: 'cube-outline' },
-    { id: 'kombi-servis', label: 'Kombi', color: '#DC2626', icon: 'flame' },
     { id: 'asansor', label: 'Asansör', color: '#475569', icon: 'swap-vertical' },
     { id: 'bocek-ilaclama', label: 'İlaçlama', color: '#0891B2', icon: 'bug' },
     { id: 'guvenlik-kamera', label: 'Kamera', color: '#4F46E5', icon: 'videocam' },
@@ -204,6 +204,8 @@ export default function QuickCreateScreen() {
     const [createdJobId, setCreatedJobId] = useState<string | null>(null);
     const [photoLoading, setPhotoLoading] = useState(false);
     const [selectedSubCategory, setSelectedSubCategory] = useState<JobCategory | null>(null);
+    const [showAllCategories, setShowAllCategories] = useState(false);
+    const [showLocationDetails, setShowLocationDetails] = useState(false);
 
     useEffect(() => {
         if (paramCategory) {
@@ -492,11 +494,31 @@ export default function QuickCreateScreen() {
         }
     };
 
+    const getLocationSubtitle = () => {
+        const trimmedAddress = address?.trim() || '';
+        const cityDistrictDash = `${city} - ${district}`.trim().toLowerCase();
+        const cityDistrictSlash = `${city} / ${district}`.trim().toLowerCase();
+        const cityDistrictComma = `${city}, ${district}`.trim().toLowerCase();
+        const isGenericAddress = !trimmedAddress || 
+            trimmedAddress.toLowerCase() === cityDistrictDash || 
+            trimmedAddress.toLowerCase() === cityDistrictSlash || 
+            trimmedAddress.toLowerCase() === cityDistrictComma || 
+            trimmedAddress.toLowerCase() === city.trim().toLowerCase();
+
+        if (!isGenericAddress) {
+            return trimmedAddress;
+        }
+        if (neighborhood && neighborhood.trim()) {
+            return `${neighborhood.trim()} Mahallesi`;
+        }
+        return city ? 'Detaylı adres için "Değiştir"e dokunun' : 'Ustanın size ulaşabilmesi için konum gereklidir';
+    };
+
     const emergencyGradient = colors.gradientEmergency as [string, string, ...string[]];
 
     return (
         <View style={[styles.container, { backgroundColor: colors.backgroundLight }]}>
-            <PremiumHeader title="Acil Usta Çağır" showBackButton />
+            <PremiumHeader title="Acil Usta Çağır" showBackButton variant="emergency" />
 
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
@@ -604,61 +626,131 @@ export default function QuickCreateScreen() {
                     </View>
 
                     {filteredTypes.length > 0 ? (
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.typeScrollContent}
-                            decelerationRate="fast"
-                        >
-                            {filteredTypes.map((type) => {
-                                const isSelected = selectedType === type.id;
-                                const hasError = !!errors.type && !selectedType;
-                                return (
-                                    <TouchableOpacity
-                                        key={type.id}                                        style={[
-                                            styles.typeBtn,
-                                            { borderColor: colors.border, backgroundColor: colors.surface },
-                                            isSelected && {
-                                                borderColor: type.color,
-                                                backgroundColor: 'transparent',
-                                            },
-                                            hasError && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
-                                        ]}
-                                        activeOpacity={0.85}
-                                        onPress={() => {
-                                            setSelectedType(type.id);
-                                            setSelectedSubCategory(null);
-                                            setErrors(prev => ({ ...prev, type: '' }));
-                                        }}
-                                    >
-                                        <View style={[styles.typeIconBox, { backgroundColor: isSelected ? 'transparent' : type.color + '12' }]}>
-                                            <Image source={getCategoryImage(type.id)} style={styles.type3dImage} resizeMode="contain" />
-                                        </View>
-                                        <Text
+                        searchQuery ? (
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.typeScrollContent}
+                                decelerationRate="fast"
+                            >
+                                {filteredTypes.map((type) => {
+                                    const isSelected = selectedType === type.id;
+                                    const hasError = !!errors.type && !selectedType;
+                                    return (
+                                        <TouchableOpacity
+                                            key={type.id}
                                             style={[
-                                                styles.typeLabel,
-                                                {
-                                                    color: isSelected ? type.color : colors.textSecondary,
-                                                    fontFamily: isSelected ? fonts.bold : undefined,
-                                                    backgroundColor: 'transparent'
-                                                }
+                                                styles.typeBtn,
+                                                { borderColor: colors.border, backgroundColor: colors.surface },
+                                                isSelected && {
+                                                    borderColor: type.color,
+                                                    backgroundColor: 'transparent',
+                                                },
+                                                hasError && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
                                             ]}
-                                            numberOfLines={2}
+                                            activeOpacity={0.85}
+                                            onPress={() => {
+                                                setSelectedType(type.id);
+                                                setSelectedSubCategory(null);
+                                                setErrors(prev => ({ ...prev, type: '' }));
+                                            }}
                                         >
-                                            {type.label}
-                                        </Text>
-                                        {isSelected && (
-                                            <LinearGradient
-                                                colors={[type.color, type.color + 'CC']}
-                                                style={styles.checkIndicator}
+                                            <View style={[styles.typeIconBox, { backgroundColor: isSelected ? 'transparent' : type.color + '12' }]}>
+                                                <Image source={getCategoryImage(type.id)} style={styles.type3dImage} resizeMode="contain" />
+                                            </View>
+                                            <Text
+                                                style={[
+                                                    styles.typeLabel,
+                                                    {
+                                                        color: isSelected ? type.color : colors.textSecondary,
+                                                        fontFamily: isSelected ? fonts.bold : undefined,
+                                                        backgroundColor: 'transparent'
+                                                    }
+                                                ]}
+                                                numberOfLines={2}
                                             >
-                                                <Ionicons name="checkmark" size={10} color="#FFF" />
-                                            </LinearGradient>
-                                        )}
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </ScrollView>
+                                                {type.label}
+                                            </Text>
+                                            {isSelected && (
+                                                <LinearGradient
+                                                    colors={[type.color, type.color + 'CC']}
+                                                    style={styles.checkIndicator}
+                                                >
+                                                    <Ionicons name="checkmark" size={10} color="#FFF" />
+                                                </LinearGradient>
+                                            )}
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+                        ) : (
+                            <View style={styles.categoryGridWrapper}>
+                                <View style={styles.categoryGridContainer}>
+                                    {(showAllCategories ? filteredTypes : filteredTypes.slice(0, 6)).map((type) => {
+                                        const isSelected = selectedType === type.id;
+                                        const hasError = !!errors.type && !selectedType;
+                                        return (
+                                            <TouchableOpacity
+                                                key={type.id}
+                                                style={[
+                                                    styles.gridTypeBtn,
+                                                    { borderColor: isSelected ? type.color : colors.border, backgroundColor: colors.surface },
+                                                    isSelected && {
+                                                        backgroundColor: type.color + '0A',
+                                                        borderWidth: 2,
+                                                    },
+                                                    hasError && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
+                                                ]}
+                                                activeOpacity={0.85}
+                                                onPress={() => {
+                                                    setSelectedType(type.id);
+                                                    setSelectedSubCategory(null);
+                                                    setErrors(prev => ({ ...prev, type: '' }));
+                                                }}
+                                            >
+                                                <View style={[styles.gridIconBox, { backgroundColor: isSelected ? type.color + '20' : type.color + '12' }]}>
+                                                    <Image source={getCategoryImage(type.id)} style={styles.grid3dImage} resizeMode="contain" />
+                                                </View>
+                                                <Text
+                                                    style={[
+                                                        styles.gridTypeLabel,
+                                                        {
+                                                            color: isSelected ? type.color : colors.text,
+                                                            fontFamily: isSelected ? fonts.bold : fonts.semiBold,
+                                                        }
+                                                    ]}
+                                                    numberOfLines={1}
+                                                >
+                                                    {type.label}
+                                                </Text>
+                                                {isSelected && (
+                                                    <LinearGradient
+                                                        colors={[type.color, type.color + 'CC']}
+                                                        style={styles.gridCheckIndicator}
+                                                    >
+                                                        <Ionicons name="checkmark" size={11} color="#FFF" />
+                                                    </LinearGradient>
+                                                )}
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </View>
+                                <TouchableOpacity
+                                    style={[styles.moreCategoriesBtn, { borderColor: colors.border }]}
+                                    onPress={() => setShowAllCategories(!showAllCategories)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={[styles.moreCategoriesBtnText, { color: colors.primary }]}>
+                                        {showAllCategories ? 'Daha Az Göster' : `Diğer Hizmetleri Gör (${filteredTypes.length - 6}+)`}
+                                    </Text>
+                                    <Ionicons
+                                        name={showAllCategories ? 'chevron-up' : 'chevron-down'}
+                                        size={16}
+                                        color={colors.primary}
+                                    />
+                                </TouchableOpacity>
+                            </View>
+                        )
                     ) : (
                         <View style={[
                             styles.emptySearchContainer,
@@ -672,12 +764,12 @@ export default function QuickCreateScreen() {
                             </Text>
                         </View>
                     )}
-                    {!!errors.type && !selectedType && (
+                    {Boolean(errors.type && !selectedType) && (
                         <Text style={styles.errorTextSmall}>{errors.type}</Text>
                     )}
 
                     {/* Sub-category Bubbles */}
-                    {selectedType && (
+                    {selectedType ? (
                         <View style={styles.subCategoryContainer}>
                             <View style={styles.subCategoryHeader}>
                                 <View style={[styles.dot, { backgroundColor: EMERGENCY_TYPES.find(t => t.id === selectedType)?.color }]} />
@@ -725,7 +817,7 @@ export default function QuickCreateScreen() {
                                             ]}
                                             onPress={() => setSelectedSubCategory(isSubSelected ? null : sub)}
                                         >
-                                            {sub.icon && (
+                                            {Boolean(sub.icon) && (
                                                 <Ionicons
                                                     name={sub.icon as any}
                                                     size={14}
@@ -746,11 +838,11 @@ export default function QuickCreateScreen() {
                                     );
                                 })}
                             </ScrollView>
-                            {!!errors.subCategory && !selectedSubCategory && (
+                            {Boolean(errors.subCategory && !selectedSubCategory) && (
                                 <Text style={[styles.errorTextSmall, { marginTop: 8 }]}>{errors.subCategory}</Text>
                             )}
                         </View>
-                    )}
+                    ) : null}
 
                     {/* Conditional Project Form */}
                     {selectedSubCategory?.id === 'elektrik-proje' && (
@@ -1003,88 +1095,159 @@ export default function QuickCreateScreen() {
                     </View>
 
                     <Card variant="default" style={styles.mainCard}>
+                        {/* Compact Selected Location Card */}
+                        <View style={[styles.smartLocationCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
+                            <View style={[styles.smartLocationIconWrap, { backgroundColor: activeColor + '15' }]}>
+                                <Ionicons name="location" size={20} color={activeColor} />
+                            </View>
+                            <View style={styles.smartLocationInfo}>
+                                <Text style={[styles.smartLocationTitle, { color: colors.text }]}>
+                                    {Boolean(city && district) ? `${city}, ${district}` : (city ? city : 'Konum Seçilmedi')}
+                                </Text>
+                                <Text style={[styles.smartLocationSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+                                    {getLocationSubtitle()}
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                style={[styles.smartLocationChangeBtn, { backgroundColor: colors.surface, borderColor: activeColor + '40' }]}
+                                onPress={() => setShowLocationDetails(!showLocationDetails)}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={[styles.smartLocationChangeText, { color: activeColor }]}>
+                                    {showLocationDetails ? 'Kapat' : 'Değiştir'}
+                                </Text>
+                                <Ionicons
+                                    name={showLocationDetails ? 'chevron-up' : 'create-outline'}
+                                    size={13}
+                                    color={activeColor}
+                                    style={{ marginLeft: 3 }}
+                                />
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Quick Saved Addresses Chips */}
                         {savedAddresses.length > 0 && (
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.addressScroll}>
-                                {savedAddresses.map((addr) => (
-                                    <TouchableOpacity
-                                        key={addr.id}
-                                        style={[
-                                            styles.addressChip,
-                                            { borderColor: colors.border, backgroundColor: colors.surfaceElevated },
-                                            coords?.latitude === addr.latitude && { backgroundColor: colors.primary, borderColor: colors.primary },
-                                        ]}
-                                        onPress={() => {
-                                            setCity(addr.city); setDistrict(addr.district || '');
-                                            setNeighborhood(addr.neighborhood || ''); setAddress(addr.address);
-                                            setCoords({ latitude: addr.latitude, longitude: addr.longitude });
-                                        }}
-                                    >
-                                        <Text style={[styles.addressChipText, { color: colors.textSecondary }, coords?.latitude === addr.latitude && { color: colors.textInverse }]}>
-                                            {addr.city} / {addr.district}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
+                            <View style={styles.savedAddressesContainer}>
+                                <View style={styles.savedAddressesHeader}>
+                                    <Ionicons name="bookmark-outline" size={12} color={colors.textSecondary} />
+                                    <Text style={[styles.savedAddressesLabel, { color: colors.textSecondary }]}>
+                                        Kayıtlı Adreslerim
+                                    </Text>
+                                </View>
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.addressScrollContent}>
+                                    {savedAddresses.map((addr) => {
+                                        const isCurrent = (city === addr.city && district === addr.district) || coords?.latitude === addr.latitude;
+                                        return (
+                                            <TouchableOpacity
+                                                key={addr.id}
+                                                style={[
+                                                    styles.addressChip,
+                                                    { 
+                                                        borderColor: isCurrent ? activeColor : colors.border, 
+                                                        backgroundColor: isCurrent ? activeColor + '12' : colors.surfaceElevated 
+                                                    },
+                                                ]}
+                                                onPress={() => {
+                                                    setCity(addr.city); setDistrict(addr.district || '');
+                                                    setNeighborhood(addr.neighborhood || ''); setAddress(addr.address);
+                                                    setCoords({ latitude: addr.latitude, longitude: addr.longitude });
+                                                    setErrors(prev => ({ ...prev, city: '', district: '', neighborhood: '', address: '' }));
+                                                }}
+                                            >
+                                                <Ionicons 
+                                                    name={isCurrent ? "checkmark-circle" : "bookmark"} 
+                                                    size={12} 
+                                                    color={isCurrent ? activeColor : colors.textLight} 
+                                                    style={{ marginRight: 4 }} 
+                                                />
+                                                <Text style={[
+                                                    styles.addressChipText, 
+                                                    { 
+                                                        color: isCurrent ? activeColor : colors.textSecondary, 
+                                                        fontFamily: isCurrent ? fonts.bold : fonts.medium 
+                                                    }
+                                                ]}>
+                                                    {addr.title || `${addr.city} / ${addr.district}`}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </ScrollView>
+                            </View>
                         )}
 
-                        <LocationPicker
-                            onLocationSelected={(loc) => {
-                                setCoords({ latitude: loc.latitude, longitude: loc.longitude });
-                                if (loc.address) setAddress(loc.address);
-                                if (loc.city) {
-                                    const matchedCity = CITY_NAMES.find(c => c.toLowerCase().includes(loc.city!.toLowerCase()));
-                                    if (matchedCity) setCity(matchedCity);
-                                }
-                                if (loc.district) setDistrict(loc.district);
-                            }}
-                            initialLocation={coords || { latitude: 41.0082, longitude: 28.9784 }}
-                        />
+                        {/* Expandable Location Details (Accordion) */}
+                        {showLocationDetails && (
+                            <View style={styles.locationAccordion}>
+                                <LocationPicker
+                                    onLocationSelected={(loc) => {
+                                        setCoords({ latitude: loc.latitude, longitude: loc.longitude });
+                                        if (loc.address) setAddress(loc.address);
+                                        if (loc.city) {
+                                            const matchedCity = CITY_NAMES.find(c => c.toLowerCase().includes(loc.city!.toLowerCase()));
+                                            if (matchedCity) setCity(matchedCity);
+                                        }
+                                        if (loc.district) setDistrict(loc.district);
+                                    }}
+                                    initialLocation={coords || { latitude: 41.0082, longitude: 28.9784 }}
+                                />
 
-                        <View style={styles.row}>
-                            <View style={{ flex: 1 }}>
+                                <View style={styles.row}>
+                                    <View style={{ flex: 1 }}>
+                                        <Picker 
+                                            label="Şehir" 
+                                            value={city} 
+                                            options={CITY_NAMES} 
+                                            onValueChange={(val) => { setCity(val); setErrors(prev => ({ ...prev, city: '' })); }} 
+                                            error={errors.city}
+                                        />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Picker 
+                                            label="İlçe" 
+                                            value={district} 
+                                            options={districtOptions} 
+                                            onValueChange={(val) => { setDistrict(val); setErrors(prev => ({ ...prev, district: '' })); }} 
+                                            disabled={!city} 
+                                            error={errors.district}
+                                        />
+                                    </View>
+                                </View>
                                 <Picker 
-                                    label="Şehir" 
-                                    value={city} 
-                                    options={CITY_NAMES} 
-                                    onValueChange={(val) => { setCity(val); setErrors(prev => ({ ...prev, city: '' })); }} 
-                                    error={errors.city}
+                                    label="Mahalle" 
+                                    value={neighborhood} 
+                                    options={neighborhoodOptions.length > 0 ? neighborhoodOptions : (district ? ['Merkez'] : [])} 
+                                    onValueChange={(val) => { setNeighborhood(val); setErrors(prev => ({ ...prev, neighborhood: '' })); }} 
+                                    disabled={!district} 
+                                    error={errors.neighborhood}
                                 />
+                                <View>
+                                    <TextInput
+                                        style={[
+                                            styles.addressInput, 
+                                            { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceElevated },
+                                            errors.address && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' }
+                                        ]}
+                                        placeholder="Detaylı adres (bina, daire no...)"
+                                        value={address}
+                                        onChangeText={(val) => { setAddress(val); if (val.length >= 10) setErrors(prev => ({ ...prev, address: '' })); }}
+                                        multiline
+                                        placeholderTextColor={colors.textLight}
+                                    />
+                                    {Boolean(errors.address) && <Text style={styles.errorTextSmall}>{errors.address}</Text>}
+                                </View>
                             </View>
-                            <View style={{ flex: 1 }}>
-                                <Picker 
-                                    label="İlçe" 
-                                    value={district} 
-                                    options={districtOptions} 
-                                    onValueChange={(val) => { setDistrict(val); setErrors(prev => ({ ...prev, district: '' })); }} 
-                                    disabled={!city} 
-                                    error={errors.district}
-                                />
-                            </View>
-                        </View>
-                        <Picker 
-                            label="Mahalle" 
-                            value={neighborhood} 
-                            options={neighborhoodOptions.length > 0 ? neighborhoodOptions : (district ? ['Merkez'] : [])} 
-                            onValueChange={(val) => { setNeighborhood(val); setErrors(prev => ({ ...prev, neighborhood: '' })); }} 
-                            disabled={!district} 
-                            error={errors.neighborhood}
-                        />
-                        <View>
-                            <TextInput
-                                style={[
-                                    styles.addressInput, 
-                                    { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceElevated },
-                                    errors.address && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' }
-                                ]}
-                                placeholder="Detaylı adres (bina, daire no...)"
-                                value={address}
-                                onChangeText={(val) => { setAddress(val); if (val.length >= 10) setErrors(prev => ({ ...prev, address: '' })); }}
-                                multiline
-                                placeholderTextColor={colors.textLight}
-                            />
-                            {!!errors.address && <Text style={styles.errorTextSmall}>{errors.address}</Text>}
-                        </View>
-                    </Card>                    {/* Section: Açıklama */}
+                        )}
+                        {Boolean((errors.city || errors.district || errors.neighborhood || errors.address) && !showLocationDetails) && (
+                            <TouchableOpacity onPress={() => setShowLocationDetails(true)} style={{ marginTop: 6 }}>
+                                <Text style={styles.errorTextSmall}>
+                                    {errors.city || errors.district || errors.neighborhood || errors.address} (Düzenlemek için tıklayın)
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+                    </Card>
+
+                    {/* Section: Açıklama */}
                     <View style={styles.sectionDivider} />
                     <View style={styles.sectionLabelRow}>
                         <LinearGradient
@@ -1113,7 +1276,7 @@ export default function QuickCreateScreen() {
                                 textAlignVertical="top"
                                 placeholderTextColor={colors.textLight}
                             />
-                            {!!errors.description && <Text style={styles.errorTextSmall}>{errors.description}</Text>}
+                            {Boolean(errors.description) && <Text style={styles.errorTextSmall}>{errors.description}</Text>}
                         </View>
                         <View style={styles.photoRow}>
                             <TouchableOpacity style={[styles.photoBtn, styles.photoBtnDashed, { borderColor: activeColor + '40' }]} onPress={handleTakePhoto}>
@@ -1145,21 +1308,40 @@ export default function QuickCreateScreen() {
                             />
                             <Text style={[styles.currency, { color: activeColor }]}>₺</Text>
                         </View>
-                    </Card>                    <Button
-                        title="Hemen Usta Çağır"
-                        onPress={handleSubmit}
-                        loading={isLoading}
-                        variant="primary"
-                        style={[styles.submitBtn, {
-                            shadowColor: activeColor,
-                        }]}
-                        icon={<Ionicons name="flash" size={20} color="#FFF" />}
-                    />
-                    <View style={styles.safetyRow}>
-                        <Ionicons name="shield-checkmark" size={14} color="#10B981" />
-                        <Text style={[styles.safetyHint, { color: colors.textSecondary }]}>Güvenliğiniz için ödemeyi uygulama üzerinden yapın.</Text>
-                    </View>
+                    </Card>
                 </ScrollView>
+
+                {/* Sticky Bottom Action Bar */}
+                <View style={[styles.stickyFooter, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 12) }]}>
+                    <TouchableOpacity
+                        activeOpacity={0.88}
+                        disabled={isLoading}
+                        onPress={handleSubmit}
+                        style={[styles.stickySubmitTouchable]}
+                    >
+                        <LinearGradient
+                            colors={emergencyGradient}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.stickySubmitGradient}
+                        >
+                            {isLoading ? (
+                                <ActivityIndicator color="#FFF" size="small" />
+                            ) : (
+                                <>
+                                    <Ionicons name="flash" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                                    <Text style={styles.stickySubmitText}>Hemen Usta Çağır</Text>
+                                </>
+                            )}
+                        </LinearGradient>
+                    </TouchableOpacity>
+                    <View style={styles.stickySafetyRow}>
+                        <Ionicons name="shield-checkmark" size={13} color="#10B981" />
+                        <Text style={[styles.safetyHint, { color: colors.textSecondary, fontSize: 11 }]}>
+                            7/24 Hızlı Müdahale • Güvenli Ödeme
+                        </Text>
+                    </View>
+                </View>
             </KeyboardAvoidingView>
 
             <AuthGuardModal
@@ -1298,9 +1480,12 @@ const styles = StyleSheet.create({    container: { flex: 1 },    scrollView: { f
     accentLine: { width: 20, height: 2.5, borderRadius: 2, marginTop: 3 },
     checkIndicator: { position: 'absolute', top: 5, right: 5, width: 16, height: 16, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },    mainCard: { padding: 14, borderRadius: 18, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, overflow: 'hidden' },
     cardAccentTop: { height: 3, borderRadius: 2, marginBottom: 12, marginHorizontal: -14, marginTop: -14, },
-    addressScroll: { flexDirection: 'row', marginBottom: 10 },
-    addressChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1, marginRight: 8 },
-    addressChipText: { fontFamily: fonts.bold, fontSize: 11 },
+    savedAddressesContainer: { marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)' },
+    savedAddressesHeader: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 8 },
+    savedAddressesLabel: { fontFamily: fonts.semiBold, fontSize: 11 },
+    addressScrollContent: { gap: 8, paddingRight: 4, paddingBottom: 2 },
+    addressChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1.2 },
+    addressChipText: { fontSize: 11 },
     row: { flexDirection: 'row', gap: 8, marginBottom: 4 },
     addressInput: { borderRadius: 12, borderWidth: 1, padding: 12, fontFamily: fonts.medium, fontSize: 13, marginTop: 8, minHeight: 48, textAlignVertical: 'top' },
     textArea: { borderRadius: 12, borderWidth: 1, padding: 12, fontFamily: fonts.medium, fontSize: 13, minHeight: 60, textAlignVertical: 'top' },    photoRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 12 },
@@ -1472,5 +1657,153 @@ const styles = StyleSheet.create({    container: { flex: 1 },    scrollView: { f
         fontSize: 13,
         textAlign: 'center',
         marginTop: 6,
+    },
+    categoryGridWrapper: {
+        marginBottom: 8,
+    },
+    categoryGridContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        justifyContent: 'space-between',
+    },
+    gridTypeBtn: {
+        width: '31.5%',
+        height: 92,
+        borderRadius: 16,
+        borderWidth: 1.5,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 6,
+        paddingHorizontal: 4,
+        position: 'relative',
+    },
+    gridIconBox: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    grid3dImage: {
+        width: '85%',
+        height: '85%',
+    },
+    gridTypeLabel: {
+        fontSize: 11,
+        textAlign: 'center',
+    },
+    gridCheckIndicator: {
+        position: 'absolute',
+        top: 4,
+        right: 4,
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    moreCategoriesBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 9,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderStyle: 'dashed',
+        marginTop: 10,
+        gap: 6,
+    },
+    moreCategoriesBtnText: {
+        fontFamily: fonts.bold,
+        fontSize: 12,
+    },
+    smartLocationCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 14,
+        borderWidth: 1,
+    },
+    smartLocationIconWrap: {
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 10,
+    },
+    smartLocationInfo: {
+        flex: 1,
+        minWidth: 0,
+    },
+    smartLocationTitle: {
+        fontFamily: fonts.bold,
+        fontSize: 13,
+        letterSpacing: -0.2,
+    },
+    smartLocationSubtitle: {
+        fontFamily: fonts.medium,
+        fontSize: 11,
+        marginTop: 2,
+    },
+    smartLocationChangeBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 10,
+        borderWidth: 1,
+        marginLeft: 8,
+    },
+    smartLocationChangeText: {
+        fontFamily: fonts.bold,
+        fontSize: 11,
+    },
+    locationAccordion: {
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(0,0,0,0.05)',
+    },
+    stickyFooter: {
+        paddingHorizontal: 16,
+        paddingTop: 10,
+        borderTopWidth: 1,
+        elevation: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+    },
+    stickySubmitTouchable: {
+        borderRadius: 16,
+        overflow: 'hidden',
+        elevation: 4,
+        shadowColor: '#F43F5E',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+    },
+    stickySubmitGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 50,
+        paddingHorizontal: 16,
+    },
+    stickySubmitText: {
+        color: '#FFF',
+        fontFamily: fonts.bold,
+        fontSize: 15,
+        letterSpacing: 0.2,
+    },
+    stickySafetyRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        marginTop: 8,
     },
 });

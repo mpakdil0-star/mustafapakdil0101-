@@ -49,12 +49,23 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
   { id: 'guvenlik-kamera', title: 'Güvenlik Sistemleri', categories: GUVENLIK_KAMERA_CATEGORIES },
 ];
 
+const POPULAR_CATEGORIES = [
+  { id: 'elektrik', title: 'Elektrik', icon: 'flash' },
+  { id: 'cilingir', title: 'Çilingir', icon: 'key' },
+  { id: 'tesisat', title: 'Su Tesisatı', icon: 'water' },
+  { id: 'klima', title: 'Klima', icon: 'snow' },
+  { id: 'temizlik', title: 'Temizlik', icon: 'sparkles' },
+  { id: 'kombi-servis', title: 'Kombi', icon: 'flame' },
+  { id: 'boya-badana', title: 'Boya', icon: 'color-palette' },
+  { id: 'nakliyat', title: 'Nakliyat', icon: 'cube' },
+];
+
 const normalize = (value: string) => value.toLocaleLowerCase('tr-TR').trim();
 
 export default function CategoriesScreen() {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const [expandedId, setExpandedId] = useState<string | null>('elektrik');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const filteredGroups = useMemo(() => {
     const normalizedQuery = normalize(query);
@@ -85,28 +96,21 @@ export default function CategoriesScreen() {
       <PremiumHeader title="Hizmet Kategorileri" showBackButton onBackPress={() => router.back()} />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scrollContent}>
-        <LinearGradient colors={['#073B39', '#0F766E', '#0D9488']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-          <View style={styles.heroGlow} />
-          <View style={styles.heroBadge}>
-            <Ionicons name="shield-checkmark" size={13} color="#99F6E4" />
-            <Text style={styles.heroBadgeText}>DOĞRU HİZMETE HIZLI ULAŞIN</Text>
-          </View>
-          <Text style={styles.heroTitle}>İhtiyacınız için en uygun hizmeti seçin</Text>
-          <Text style={styles.heroSubtitle}>Uzmanlık alanını seçin, ilanınızı birkaç adımda oluşturun ve bölgenizdeki ustalardan teklif alın.</Text>
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{CATEGORY_GROUPS.length}</Text>
-              <Text style={styles.statLabel}>Ana kategori</Text>
+        {/* Kompakt Modern Hero */}
+        <LinearGradient colors={['#073B39', '#0F766E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.compactHero}>
+          <View style={styles.compactHeroRow}>
+            <View style={{ flex: 1 }}>
+              <View style={styles.heroBadge}>
+                <Ionicons name="shield-checkmark" size={11} color="#99F6E4" />
+                <Text style={styles.heroBadgeText}>DOĞRU HİZMETE HIZLI ULAŞIN</Text>
+              </View>
+              <Text style={styles.compactHeroTitle}>Hangi hizmete ihtiyacınız var?</Text>
+              <Text style={styles.compactHeroSubtitle}>
+                {CATEGORY_GROUPS.length} ana kategori · {totalServices}+ uzmanlık seçeneği
+              </Text>
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{totalServices}+</Text>
-              <Text style={styles.statLabel}>Hizmet seçeneği</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Ionicons name="flash" size={18} color="#FDE68A" />
-              <Text style={styles.statLabel}>Hızlı ilan</Text>
+            <View style={styles.heroSparkleBox}>
+              <Ionicons name="sparkles" size={24} color="#5EEAD4" />
             </View>
           </View>
         </LinearGradient>
@@ -128,6 +132,37 @@ export default function CategoriesScreen() {
             </TouchableOpacity>
           ) : null}
         </View>
+
+        {/* Popüler Hizmet Çipleri (Quick Chips) */}
+        {!query && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipsScroll}
+          >
+            {POPULAR_CATEGORIES.map((cat) => {
+              const isSelected = expandedId === cat.id;
+              return (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={[styles.chip, isSelected && styles.chipActive]}
+                  activeOpacity={0.7}
+                  onPress={() => setExpandedId(isSelected ? null : cat.id)}
+                >
+                  <Ionicons
+                    name={cat.icon as any}
+                    size={13}
+                    color={isSelected ? '#FFFFFF' : '#0F766E'}
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
+                    {cat.title}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
 
         <View style={styles.sectionHeader}>
           <View>
@@ -154,9 +189,15 @@ export default function CategoriesScreen() {
             const secondary = meta?.colors[1] || '#0D9488';
             const isExpanded = Boolean(query) || expandedId === group.id;
             return (
-              <View key={group.id} style={styles.groupCard}>
+              <View
+                key={group.id}
+                style={[
+                  styles.groupCard,
+                  isExpanded && { borderColor: `${primary}80`, shadowColor: primary, shadowOpacity: 0.12, shadowRadius: 10, elevation: 3 },
+                ]}
+              >
                 <TouchableOpacity
-                  style={styles.groupHeader}
+                  style={[styles.groupHeader, isExpanded && { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }]}
                   activeOpacity={0.82}
                   onPress={() => setExpandedId((current) => current === group.id ? null : group.id)}
                 >
@@ -167,40 +208,56 @@ export default function CategoriesScreen() {
                     <Text style={styles.groupTitle}>{group.title}</Text>
                     <Text style={styles.groupDescription} numberOfLines={1}>{meta?.description || `${group.categories.length} farklı hizmet seçeneği`}</Text>
                     <View style={styles.groupMetaRow}>
-                      <View style={[styles.countBadge, { backgroundColor: `${primary}12` }]}>
+                      <View style={[styles.countBadge, { backgroundColor: `${primary}15` }]}>
                         <Text style={[styles.countText, { color: secondary }]}>{group.categories.length} hizmet</Text>
                       </View>
                       <Text style={styles.tapHint}>{isExpanded ? 'Seçenekler açık' : 'Detayları görüntüle'}</Text>
                     </View>
                   </View>
-                  <View style={[styles.expandButton, isExpanded && { backgroundColor: `${primary}12`, borderColor: `${primary}25` }]}>
+                  <View style={[styles.expandButton, isExpanded && { backgroundColor: `${primary}15`, borderColor: `${primary}35` }]}>
                     <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={17} color={isExpanded ? secondary : '#64748B'} />
                   </View>
                 </TouchableOpacity>
 
                 {isExpanded ? (
                   <View style={styles.servicesArea}>
-                    <TouchableOpacity style={styles.generalService} onPress={() => createJob(group)} activeOpacity={0.8}>
-                      <View style={styles.serviceIcon}>
-                        <Ionicons name="apps-outline" size={17} color="#0F766E" />
+                    {/* Genel İlan Seçeneği */}
+                    <TouchableOpacity
+                      style={styles.generalServiceRow}
+                      onPress={() => createJob(group)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.serviceRowIcon, { backgroundColor: `${primary}15` }]}>
+                        <Ionicons name="apps" size={17} color={secondary} />
                       </View>
-                      <View style={styles.serviceCopy}>
-                        <Text style={styles.serviceName}>Genel {group.title} ilanı</Text>
-                        <Text style={styles.serviceHint}>Alt hizmetten emin değilseniz buradan başlayın</Text>
+                      <View style={styles.serviceRowCopy}>
+                        <Text style={styles.generalServiceTitle}>Genel {group.title} İlanı Aç</Text>
+                        <Text style={styles.generalServiceDesc}>Alt hizmetten emin değilseniz buradan hızla talep oluşturun</Text>
                       </View>
-                      <Ionicons name="arrow-forward" size={16} color="#0F766E" />
+                      <View style={[styles.serviceRowArrowBox, { backgroundColor: `${primary}12` }]}>
+                        <Ionicons name="arrow-forward" size={15} color={secondary} />
+                      </View>
                     </TouchableOpacity>
 
-                    <View style={styles.servicesGrid}>
-                      {group.categories.map((category) => (
-                        <TouchableOpacity key={category.id} style={styles.serviceCard} onPress={() => createJob(group, category)} activeOpacity={0.8}>
-                          <View style={styles.smallServiceIcon}>
-                            <Ionicons name={category.icon as any} size={16} color="#0F766E" />
-                          </View>
-                          <Text style={styles.smallServiceName} numberOfLines={2}>{category.name}</Text>
-                          <Ionicons name="chevron-forward" size={13} color="#94A3B8" />
-                        </TouchableOpacity>
-                      ))}
+                    {/* Alt Hizmetler Satır Listesi */}
+                    <View style={styles.serviceRowsContainer}>
+                      {group.categories.map((category, index) => {
+                        const isLast = index === group.categories.length - 1;
+                        return (
+                          <TouchableOpacity
+                            key={category.id}
+                            style={[styles.serviceRow, !isLast && styles.serviceRowBorder]}
+                            onPress={() => createJob(group, category)}
+                            activeOpacity={0.65}
+                          >
+                            <View style={[styles.serviceRowIcon, { backgroundColor: '#F8FAFC' }]}>
+                              <Ionicons name={category.icon as any} size={17} color={secondary} />
+                            </View>
+                            <Text style={styles.serviceRowText}>{category.name}</Text>
+                            <Ionicons name="chevron-forward" size={17} color="#CBD5E1" />
+                          </TouchableOpacity>
+                        );
+                      })}
                     </View>
                   </View>
                 ) : null}
@@ -228,28 +285,29 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F8FA' },
   content: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 36 },
-  hero: { borderRadius: 22, padding: 18, overflow: 'hidden', shadowColor: '#0F766E', shadowOffset: { width: 0, height: 7 }, shadowOpacity: 0.2, shadowRadius: 14, elevation: 5 },
-  heroGlow: { position: 'absolute', width: 170, height: 170, borderRadius: 85, backgroundColor: 'rgba(255,255,255,0.06)', top: -85, right: -35 },
-  heroBadge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 9, backgroundColor: 'rgba(255,255,255,0.09)', borderWidth: 1, borderColor: 'rgba(153,246,228,0.2)', gap: 5 },
-  heroBadgeText: { color: '#CCFBF1', fontFamily: fonts.bold, fontSize: 8.5, letterSpacing: 0.8 },
-  heroTitle: { color: '#FFFFFF', fontFamily: fonts.extraBold, fontSize: 21, lineHeight: 27, letterSpacing: -0.5, marginTop: 13, maxWidth: '90%' },
-  heroSubtitle: { color: 'rgba(255,255,255,0.72)', fontFamily: fonts.regular, fontSize: 12, lineHeight: 18, marginTop: 7 },
-  statsRow: { flexDirection: 'row', alignItems: 'center', marginTop: 17, paddingTop: 13, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.12)' },
-  statItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  statValue: { color: '#FFFFFF', fontFamily: fonts.extraBold, fontSize: 18 },
-  statLabel: { color: 'rgba(255,255,255,0.62)', fontFamily: fonts.medium, fontSize: 9.5, marginTop: 2 },
-  statDivider: { width: 1, height: 28, backgroundColor: 'rgba(255,255,255,0.14)' },
-  searchBox: { height: 54, borderRadius: 17, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0', marginTop: 15, shadowColor: '#0F172A', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  compactHero: { borderRadius: 18, padding: 16, overflow: 'hidden', shadowColor: '#0F766E', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 10, elevation: 4 },
+  compactHeroRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  heroBadge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 7, backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(153,246,228,0.25)', gap: 4, marginBottom: 8 },
+  heroBadgeText: { color: '#CCFBF1', fontFamily: fonts.bold, fontSize: 8.5, letterSpacing: 0.6 },
+  compactHeroTitle: { color: '#FFFFFF', fontFamily: fonts.bold, fontSize: 17, lineHeight: 22, letterSpacing: -0.3 },
+  compactHeroSubtitle: { color: 'rgba(255,255,255,0.78)', fontFamily: fonts.regular, fontSize: 11.5, lineHeight: 16, marginTop: 4 },
+  heroSparkleBox: { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', marginLeft: 10 },
+  searchBox: { height: 50, borderRadius: 15, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0', marginTop: 12, shadowColor: '#0F172A', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
   searchInput: { flex: 1, height: '100%', color: '#0F172A', fontFamily: fonts.medium, fontSize: 13.5, paddingHorizontal: 10 },
   clearButton: { width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F1F5F9' },
-  sectionHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 22, marginBottom: 11, paddingHorizontal: 2 },
+  chipsScroll: { paddingVertical: 10, gap: 8 },
+  chip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#CCFBF1', shadowColor: '#0F172A', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 3, elevation: 1 },
+  chipActive: { backgroundColor: '#0F766E', borderColor: '#0F766E' },
+  chipText: { fontFamily: fonts.bold, fontSize: 11.5, color: '#0F766E' },
+  chipTextActive: { color: '#FFFFFF' },
+  sectionHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 12, marginBottom: 11, paddingHorizontal: 2 },
   sectionEyebrow: { color: '#0D9488', fontFamily: fonts.extraBold, fontSize: 9, letterSpacing: 1 },
   sectionTitle: { color: '#0F172A', fontFamily: fonts.bold, fontSize: 16, marginTop: 3 },
   secureBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 9, backgroundColor: '#ECFDF5' },
   secureBadgeText: { color: '#0F766E', fontFamily: fonts.bold, fontSize: 9.5 },
   groupCard: { backgroundColor: '#FFFFFF', borderRadius: 19, marginBottom: 11, borderWidth: 1, borderColor: '#E5EAF0', overflow: 'hidden', shadowColor: '#0F172A', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.045, shadowRadius: 8, elevation: 1 },
-  groupHeader: { minHeight: 92, flexDirection: 'row', alignItems: 'center', padding: 13 },
-  groupIcon: { width: 52, height: 52, borderRadius: 17, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  groupHeader: { minHeight: 84, flexDirection: 'row', alignItems: 'center', padding: 13 },
+  groupIcon: { width: 50, height: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   groupCopy: { flex: 1, paddingRight: 8 },
   groupTitle: { color: '#0F172A', fontFamily: fonts.bold, fontSize: 15 },
   groupDescription: { color: '#64748B', fontFamily: fonts.regular, fontSize: 10.5, marginTop: 3 },
@@ -258,16 +316,17 @@ const styles = StyleSheet.create({
   countText: { fontFamily: fonts.bold, fontSize: 9.5 },
   tapHint: { color: '#94A3B8', fontFamily: fonts.medium, fontSize: 9, marginLeft: 7 },
   expandButton: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#EEF2F6' },
-  servicesArea: { padding: 12, paddingTop: 0, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
-  generalService: { flexDirection: 'row', alignItems: 'center', minHeight: 57, borderRadius: 14, borderWidth: 1, borderColor: '#CCFBF1', backgroundColor: '#F0FDFA', paddingHorizontal: 11, marginTop: 11, marginBottom: 9 },
-  serviceIcon: { width: 35, height: 35, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginRight: 9, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#CCFBF1' },
-  serviceCopy: { flex: 1 },
-  serviceName: { color: '#0F172A', fontFamily: fonts.bold, fontSize: 11.5 },
-  serviceHint: { color: '#64748B', fontFamily: fonts.regular, fontSize: 9.3, marginTop: 2 },
-  servicesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  serviceCard: { width: '48.7%', minHeight: 58, borderRadius: 13, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0', paddingHorizontal: 9, paddingVertical: 8, flexDirection: 'row', alignItems: 'center' },
-  smallServiceIcon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', marginRight: 7, backgroundColor: '#F0FDFA', borderWidth: 1, borderColor: '#CCFBF1' },
-  smallServiceName: { flex: 1, color: '#334155', fontFamily: fonts.bold, fontSize: 9.7, lineHeight: 12 },
+  servicesArea: { backgroundColor: '#FFFFFF', paddingHorizontal: 12, paddingBottom: 10 },
+  generalServiceRow: { flexDirection: 'row', alignItems: 'center', minHeight: 60, borderRadius: 13, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', paddingHorizontal: 12, paddingVertical: 10, marginTop: 10, marginBottom: 8 },
+  serviceRowIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  serviceRowCopy: { flex: 1, paddingRight: 6 },
+  generalServiceTitle: { color: '#0F172A', fontFamily: fonts.bold, fontSize: 13.5 },
+  generalServiceDesc: { color: '#64748B', fontFamily: fonts.medium, fontSize: 10.5, marginTop: 2 },
+  serviceRowArrowBox: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  serviceRowsContainer: { backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: '#EDF2F7', overflow: 'hidden' },
+  serviceRow: { flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#FFFFFF' },
+  serviceRowBorder: { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  serviceRowText: { flex: 1, color: '#0F172A', fontFamily: fonts.semiBold, fontSize: 13.5, lineHeight: 18 },
   emptyState: { alignItems: 'center', padding: 28, borderRadius: 19, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5EAF0' },
   emptyIcon: { width: 54, height: 54, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ECFDF5' },
   emptyTitle: { color: '#0F172A', fontFamily: fonts.bold, fontSize: 16, marginTop: 12 },

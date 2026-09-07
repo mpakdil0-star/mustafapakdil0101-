@@ -280,6 +280,7 @@ export default function CreateJobScreen() {
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const isProjectCategory = category === 'Elektrik Proje Çizimi';
   const totalSteps = isProjectCategory ? 5 : 3;
@@ -1004,72 +1005,71 @@ export default function CreateJobScreen() {
                 <View style={[styles.divider, { marginVertical: 8 }]} />
 
                 <View style={[styles.inputContainer, { marginBottom: 8 }]}>
-                  <View style={[styles.sectionHeaderNoMargin, { marginBottom: 4 }]}>
+                  <View style={[styles.sectionHeaderNoMargin, { marginBottom: 6 }]}>
                     <View style={[styles.sectionIconWrapper, { backgroundColor: colors.primary + '12', width: 26, height: 26 }]}>
                       <Ionicons name="list-outline" size={14} color={colors.primary} />
                     </View>
-                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14 }]}>Kategori</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14 }]}>Hizmet Kategorisi</Text>
                   </View>
 
-                  <Text style={[styles.label, { marginTop: 8, marginBottom: 4, color: colors.textSecondary }]}>Hizmet grubu</Text>
-                  <View style={[styles.pillContainer, { rowGap: 8 }]}>
-                    {SERVICE_CATEGORIES.map((svc) => {
-                      const selected = serviceCategory === svc.id;
+                  {/* Akıllı Kompakt Kategori Seçici */}
+                  {serviceCategory ? (
+                    (() => {
+                      const selectedMeta = SERVICE_CATEGORIES.find((s) => s.id === serviceCategory);
+                      const primary = selectedMeta?.colors[0] || colors.primary;
                       return (
-                        <TouchableOpacity
-                          key={svc.id}
-                          style={[
-                            styles.pill,
-                            { paddingVertical: 8, borderColor: colors.border, backgroundColor: colors.surfaceElevated },
-                            selected && {
-                              borderColor: svc.colors[0],
-                              backgroundColor: 'transparent',
-                            },
-                          ]}
-                          onPress={() => {
-                            setServiceCategory(svc.id);
-                            setCategory('');
-                            if (errors.category) setErrors({ ...errors, category: '' });
-                          }}
-                        >
-                          {getCategoryImage(svc.id) ? (
-                            <Image
-                              source={getCategoryImage(svc.id)}
-                              style={[styles.pillImage, { backgroundColor: 'transparent' }]}
-                              resizeMode="contain"
-                            />
-                          ) : (
-                            <Ionicons
-                              name={svc.icon as any}
-                              size={18}
-                              color={selected ? svc.colors[0] : colors.textSecondary}
-                            />
-                          )}
-                          <View style={{ flex: 1, backgroundColor: 'transparent', justifyContent: 'center' }}>
-                            <Text
-                              style={[
-                                styles.pillText,
-                                {
-                                  fontSize: 12,
-                                  color: selected ? svc.colors[0] : colors.textSecondary,
-                                  fontFamily: selected ? fonts.bold : undefined,
-                                  backgroundColor: 'transparent',
-                                }
-                              ]}
-                            >
-                              {svc.name}
+                        <View style={[styles.selectedCategoryCard, { borderColor: `${primary}50`, backgroundColor: colors.surfaceElevated }]}>
+                          <View style={[styles.selectedCategoryIconBox, { backgroundColor: `${primary}18` }]}>
+                            {getCategoryImage(serviceCategory) ? (
+                              <Image source={getCategoryImage(serviceCategory)} style={styles.selectedCategoryImg} resizeMode="contain" />
+                            ) : (
+                              <Ionicons name={(selectedMeta?.icon || 'construct') as any} size={20} color={primary} />
+                            )}
+                          </View>
+                          <View style={styles.selectedCategoryInfo}>
+                            <Text style={[styles.selectedCategoryKicker, { color: primary }]}>SEÇİLEN KATEGORİ</Text>
+                            <Text style={[styles.selectedCategoryName, { color: colors.text }]}>{selectedMeta?.name || serviceCategory}</Text>
+                            <Text style={[styles.selectedCategoryDesc, { color: colors.textSecondary }]} numberOfLines={1}>
+                              {selectedMeta?.description || `${getSubCategoriesByParent(serviceCategory).length} alt uzmanlık seçeneği`}
                             </Text>
                           </View>
-                        </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.changeCategoryBtn, { borderColor: `${primary}35`, backgroundColor: `${primary}10` }]}
+                            onPress={() => setIsCategoryModalOpen(true)}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={[styles.changeCategoryBtnText, { color: primary }]}>Değiştir</Text>
+                          </TouchableOpacity>
+                        </View>
                       );
-                    })}
-                  </View>
+                    })()
+                  ) : (
+                    <TouchableOpacity
+                      style={[styles.categoryTriggerBtn, { borderColor: errors.category ? staticColors.error : colors.border, backgroundColor: colors.surfaceElevated }]}
+                      onPress={() => setIsCategoryModalOpen(true)}
+                      activeOpacity={0.75}
+                    >
+                      <View style={[styles.categoryTriggerIconBox, { backgroundColor: colors.primary + '15' }]}>
+                        <Ionicons name="grid-outline" size={20} color={colors.primary} />
+                      </View>
+                      <View style={styles.categoryTriggerCopy}>
+                        <Text style={[styles.categoryTriggerTitle, { color: colors.text }]}>Hizmet Kategorisi Seçiniz</Text>
+                        <Text style={[styles.categoryTriggerSub, { color: colors.textSecondary }]}>Elektrik, Su Tesisatı, Çilingir, Boya vb.</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={18} color={colors.textLight} />
+                    </TouchableOpacity>
+                  )}
 
+                  {errors.category && !serviceCategory && (
+                    <Text style={styles.errorText}>Lütfen bir hizmet kategorisi seçiniz</Text>
+                  )}
+
+                  {/* Alt Branş Dropdown Seçimi */}
                   {serviceCategory && (
-                    <View style={{ marginTop: 8 }}>
-                      <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 4 }]}>Alt branş</Text>
+                    <View style={{ marginTop: 10 }}>
+                      <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 4 }]}>Alt branş / uzmanlık</Text>
                       <Picker
-                        placeholder="Alt branş seçiniz"
+                        placeholder="Alt branş seçiniz (örn: Priz Tamiri)"
                         value={category}
                         options={getSubCategoriesByParent(serviceCategory).map((cat) => cat.name)}
                         onValueChange={(val) => {
@@ -1773,6 +1773,89 @@ export default function CreateJobScreen() {
           onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
         />
 
+        {/* ==================== KATEGORİ SEÇİM MODALI ==================== */}
+        <Modal
+          visible={isCategoryModalOpen}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setIsCategoryModalOpen(false)}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={[styles.modalSheetContainer, { backgroundColor: colors.surfaceElevated }]}>
+              {/* Modal Header */}
+              <View style={styles.modalHeaderRow}>
+                <View>
+                  <Text style={[styles.modalHeaderTitle, { color: colors.text }]}>Hizmet Kategorisi Seçin</Text>
+                  <Text style={[styles.modalHeaderSub, { color: colors.textSecondary }]}>İhtiyacınıza uygun ana hizmeti belirleyin</Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.modalCloseBtn, { backgroundColor: colors.border + '50' }]}
+                  onPress={() => setIsCategoryModalOpen(false)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close" size={20} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Kategori Listesi */}
+              <ScrollView
+                style={styles.modalListScroll}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 24, gap: 8 }}
+              >
+                {SERVICE_CATEGORIES.map((svc) => {
+                  const isSelected = serviceCategory === svc.id;
+                  const primaryColor = svc.colors[0];
+                  return (
+                    <TouchableOpacity
+                      key={svc.id}
+                      style={[
+                        styles.modalCategoryRow,
+                        { borderColor: isSelected ? primaryColor : colors.border, backgroundColor: isSelected ? `${primaryColor}10` : colors.surfaceElevated },
+                      ]}
+                      activeOpacity={0.7}
+                      onPress={() => {
+                        setServiceCategory(svc.id);
+                        setCategory('');
+                        if (errors.category) setErrors({ ...errors, category: '' });
+                        setIsCategoryModalOpen(false);
+                      }}
+                    >
+                      <View style={[styles.modalCategoryIconBox, { backgroundColor: `${primaryColor}18` }]}>
+                        {getCategoryImage(svc.id) ? (
+                          <Image source={getCategoryImage(svc.id)} style={styles.modalCategoryImg} resizeMode="contain" />
+                        ) : (
+                          <Ionicons name={svc.icon as any} size={22} color={primaryColor} />
+                        )}
+                      </View>
+                      <View style={styles.modalCategoryCopy}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Text style={[styles.modalCategoryName, { color: colors.text, fontFamily: isSelected ? fonts.bold : fonts.semiBold }]}>
+                            {svc.name}
+                          </Text>
+                          {isSelected && (
+                            <View style={[styles.modalSelectedCheckBadge, { backgroundColor: primaryColor }]}>
+                              <Ionicons name="checkmark" size={11} color="#FFF" />
+                            </View>
+                          )}
+                        </View>
+                        <Text style={[styles.modalCategoryDesc, { color: colors.textSecondary }]} numberOfLines={1}>
+                          {svc.description}
+                        </Text>
+                      </View>
+                      <Ionicons
+                        name={isSelected ? "checkmark-circle" : "chevron-forward"}
+                        size={20}
+                        color={isSelected ? primaryColor : colors.textLight}
+                      />
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
         <Modal visible={infoModal.visible} transparent animationType="fade">
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
             <View style={{ width: '100%', backgroundColor: staticColors.white, borderRadius: 24, padding: 24, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 10 }}>
@@ -1962,29 +2045,187 @@ const styles = StyleSheet.create({
   pillContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    rowGap: 10,
-    marginTop: 0,
-    marginBottom: 6,
+    gap: 8,
   },
   pill: {
-    width: '48.2%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1.5,
-    gap: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pillText: {
-    fontFamily: fonts.bold,
-    fontSize: 12,
+    fontFamily: fonts.semiBold,
+    fontSize: 12.5,
   },
-  pillImage: {
-    width: 28,
-    height: 28,
-    zIndex: 2,
+  selectedCategoryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 15,
+    borderWidth: 1.5,
+    padding: 12,
+    marginTop: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  selectedCategoryIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  selectedCategoryImg: {
+    width: 32,
+    height: 32,
+  },
+  selectedCategoryInfo: {
+    flex: 1,
+    paddingRight: 8,
+  },
+  selectedCategoryKicker: {
+    fontFamily: fonts.extraBold,
+    fontSize: 9,
+    letterSpacing: 0.6,
+  },
+  selectedCategoryName: {
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    marginTop: 1,
+  },
+  selectedCategoryDesc: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  changeCategoryBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  changeCategoryBtnText: {
+    fontFamily: fonts.bold,
+    fontSize: 11.5,
+  },
+  categoryTriggerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 60,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  categoryTriggerIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  categoryTriggerCopy: {
+    flex: 1,
+  },
+  categoryTriggerTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 14,
+  },
+  categoryTriggerSub: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalSheetContainer: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '82%',
+    paddingTop: 18,
+    paddingHorizontal: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  modalHeaderTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 18,
+    letterSpacing: -0.3,
+  },
+  modalHeaderSub: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  modalCloseBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalListScroll: {
+    maxHeight: 480,
+  },
+  modalCategoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 2,
+  },
+  modalCategoryIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  modalCategoryImg: {
+    width: 32,
+    height: 32,
+  },
+  modalCategoryCopy: {
+    flex: 1,
+    paddingRight: 8,
+  },
+  modalCategoryName: {
+    fontSize: 14.5,
+  },
+  modalSelectedCheckBadge: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCategoryDesc: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    marginTop: 2,
   },
   urgencyGrid: {
     flexDirection: 'row',

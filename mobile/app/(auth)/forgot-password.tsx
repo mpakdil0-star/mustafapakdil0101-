@@ -108,6 +108,14 @@ export default function ForgotPasswordScreen() {
         }
     };
 
+    const handleBack = () => {
+        if (step === 2 && recovery !== '1') {
+            setStep(1);
+        } else {
+            router.back();
+        }
+    };
+
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -126,7 +134,7 @@ export default function ForgotPasswordScreen() {
                 <View style={styles.innerContent}>
                     {/* Header */}
                     <View style={styles.headerTop}>
-                        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
                             <Ionicons name="arrow-back" size={24} color={colors.white} />
                         </TouchableOpacity>
                     </View>

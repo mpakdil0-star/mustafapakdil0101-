@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import { SkeletonCard } from '../../components/common/SkeletonLoader';
 import { VerificationBadge } from '../../components/common/VerificationBadge';
 import { colors as staticColors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
@@ -80,6 +81,7 @@ export default function ElectricianProfileScreen() {
 
     const handleBlock = () => {
         setIsActionMenuVisible(false);
+        // TODO: PremiumAlert ile değiştir
         RNAlert.alert(
             'Kullanıcıyı Engelle',
             'Bu kullanıcıyı engellediğinizde birbirinizin ilanlarını ve mesajlarını görmezsiniz. Devam etmek istiyor musunuz?',
@@ -92,11 +94,13 @@ export default function ElectricianProfileScreen() {
                         try {
                             const isBlocked = await safetyService.toggleBlock(id);
                             if (isBlocked) {
+                                // TODO: PremiumAlert ile değiştir
                                 RNAlert.alert('Başarılı', 'Kullanıcı engellendi.', [
                                     { text: 'Tamam', onPress: () => router.back() }
                                 ]);
                             }
                         } catch (err) {
+                            // TODO: PremiumAlert ile değiştir
                             RNAlert.alert('Hata', 'İşlem gerçekleştirilemedi.');
                         }
                     }
@@ -109,9 +113,9 @@ export default function ElectricianProfileScreen() {
         return (
             <View style={styles.container}>
                 <PremiumHeader title="Profil" showBackButton />
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                    <Text style={[styles.loadingText, { color: staticColors.textSecondary }]}>Yükleniyor...</Text>
+                <View style={{ padding: spacing.md, gap: spacing.md }}>
+                    <SkeletonCard />
+                    <SkeletonCard />
                 </View>
             </View>
         );

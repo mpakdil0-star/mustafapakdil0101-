@@ -13,6 +13,7 @@ import {
   Modal,
   TextInput,
   Linking,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -674,8 +675,14 @@ export default function RegisterScreen() {
                       end={{ x: 1, y: 0 }}
                       style={styles.registerButtonGradient}
                     >
-                      <Text style={styles.registerButtonText}>Kayıt Ol</Text>
-                      <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+                      {isLoading ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <>
+                          <Text style={styles.registerButtonText}>Kayıt Ol</Text>
+                          <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+                        </>
+                      )}
                     </LinearGradient>
                   </TouchableOpacity>
                 </Animated.View>

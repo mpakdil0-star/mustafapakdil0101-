@@ -176,6 +176,7 @@ export default function ReportScreen() {
                         value={description}
                         onChangeText={setDescription}
                         textAlignVertical="top"
+                        maxLength={500}
                     />
                     <Text style={styles.charCount}>{description.length}/500</Text>
 

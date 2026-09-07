@@ -103,7 +103,7 @@ export default function LegalScreen() {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             <PremiumHeader
                 title={content.title}
                 subtitle={`Son Güncelleme: ${content.lastUpdate}`}
@@ -116,8 +116,8 @@ export default function LegalScreen() {
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
             >
-                <View style={[styles.card, { shadowColor: colors.primary }]}>
-                    <Text style={styles.text}>{content.text}</Text>
+                <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.primary }]}>
+                    <Text style={[styles.text, { color: colors.textSecondary }]}>{content.text}</Text>
                 </View>
 
                 <TouchableOpacity

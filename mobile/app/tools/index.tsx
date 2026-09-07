@@ -64,28 +64,26 @@ export default function ToolsScreen() {
                     İşinizi kolaylaştıracak profesyonel araçlar
                 </Text>
 
-                {tools.map((tool) => (
-                    <TouchableOpacity
-                        key={tool.id}
-                        activeOpacity={0.9}
-                        onPress={() => router.push(tool.route as any)}
-                    >
-                        <Card style={styles.toolCard}>
-                            <View style={styles.toolContent}>
-                                <View style={[styles.iconBox, { backgroundColor: tool.color + '15' }]}>
-                                    <Ionicons name={tool.icon as any} size={32} color={tool.color} />
+                <View style={styles.gridContainer}>
+                    {tools.map((tool) => (
+                        <TouchableOpacity
+                            key={tool.id}
+                            style={styles.gridItem}
+                            activeOpacity={0.9}
+                            onPress={() => router.push(tool.route as any)}
+                        >
+                            <Card style={styles.gridCard}>
+                                <View style={[styles.gridIconBox, { backgroundColor: tool.color + '15' }]}>
+                                    <Ionicons name={tool.icon as any} size={28} color={tool.color} />
                                 </View>
-                                <View style={styles.toolInfo}>
-                                    <Text style={[styles.toolTitle, { color: colors.text }]}>{tool.title}</Text>
-                                    <Text style={[styles.toolDesc, { color: staticColors.textSecondary }]}>
-                                        {tool.description}
-                                    </Text>
-                                </View>
-                                <Ionicons name="chevron-forward" size={24} color={staticColors.textLight} />
-                            </View>
-                        </Card>
-                    </TouchableOpacity>
-                ))}
+                                <Text style={[styles.gridTitle, { color: colors.text }]}>{tool.title}</Text>
+                                <Text style={[styles.gridDesc, { color: staticColors.textSecondary }]} numberOfLines={2}>
+                                    {tool.description}
+                                </Text>
+                            </Card>
+                        </TouchableOpacity>
+                    ))}
+                </View>
             </ScrollView>
         </View>
     );
@@ -108,33 +106,37 @@ const styles = StyleSheet.create({
         fontSize: 15,
         marginBottom: spacing.lg,
     },
-    toolCard: {
-        marginBottom: spacing.md,
-        padding: spacing.lg,
-    },
-    toolContent: {
+    gridContainer: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+    },
+    gridItem: {
+        width: '48%',
+        marginBottom: spacing.md,
+    },
+    gridCard: {
+        padding: spacing.md,
         alignItems: 'center',
     },
-    iconBox: {
-        width: 64,
-        height: 64,
+    gridIconBox: {
+        width: 56,
+        height: 56,
         borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: spacing.md,
+        marginBottom: 12,
     },
-    toolInfo: {
-        flex: 1,
-    },
-    toolTitle: {
+    gridTitle: {
         fontFamily: fonts.bold,
-        fontSize: 17,
+        fontSize: 14,
+        textAlign: 'center',
         marginBottom: 4,
     },
-    toolDesc: {
+    gridDesc: {
         fontFamily: fonts.regular,
-        fontSize: 13,
-        lineHeight: 19,
+        fontSize: 11,
+        textAlign: 'center',
+        lineHeight: 16,
     },
 });

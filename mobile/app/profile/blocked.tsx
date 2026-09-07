@@ -19,6 +19,7 @@ import { useAppColors } from '../../hooks/useAppColors';
 import { PremiumHeader } from '../../components/common/PremiumHeader';
 import { safetyService } from '../../services/accountService';
 import { getFileUrl } from '../../constants/api';
+import { SkeletonListItem } from '../../components/common/SkeletonLoader';
 
 interface BlockedUser {
     id: string;
@@ -50,6 +51,7 @@ export default function BlockedUsersScreen() {
     }, []);
 
     const handleToggleBlock = (blockedId: string, userName: string) => {
+        // TODO: PremiumAlert ile değiştir
         Alert.alert(
             'Engeli Kaldır',
             `${userName} isimli kullanıcının engelini kaldırmak istediğinize emin misiniz?`,
@@ -65,6 +67,7 @@ export default function BlockedUsersScreen() {
                                 setBlockedUsers(prev => prev.filter(u => u.id !== blockedId));
                             }
                         } catch (error) {
+                            // TODO: PremiumAlert ile değiştir
                             Alert.alert('Hata', 'İşlem gerçekleştirilemedi.');
                         }
                     }
@@ -106,8 +109,17 @@ export default function BlockedUsersScreen() {
 
     if (isLoading && !isRefreshing) {
         return (
-            <View style={styles.centerContainer}>
-                <ActivityIndicator size="large" color={appColors.primary} />
+            <View style={styles.container}>
+                <PremiumHeader
+                    title="Engellenen Kullanıcılar"
+                    subtitle="Engellediğiniz kişileri yönetin"
+                    showBackButton
+                />
+                <View style={{ padding: spacing.md }}>
+                    {[1, 2, 3, 4].map((i) => (
+                        <SkeletonListItem key={i} style={{ marginBottom: 12 }} />
+                    ))}
+                </View>
             </View>
         );
     }

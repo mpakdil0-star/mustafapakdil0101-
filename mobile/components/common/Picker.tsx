@@ -53,7 +53,7 @@ export const Picker: React.FC<PickerProps> = ({
 
   return (
     <View style={[styles.container, containerStyle]}>
-      {label && (
+      {Boolean(label) && (
         <Text style={styles.label}>
           {label} {required && <Text style={styles.required}>*</Text>}
         </Text>
@@ -75,7 +75,7 @@ export const Picker: React.FC<PickerProps> = ({
         activeOpacity={disabled ? 1 : 0.7}
         disabled={disabled}
       >
-        {icon && <View style={styles.iconContainer}>{icon}</View>}
+        {Boolean(icon) && <View style={styles.iconContainer}>{icon}</View>}
         <Text
           style={[
             styles.pickerText,
@@ -90,7 +90,7 @@ export const Picker: React.FC<PickerProps> = ({
         <Ionicons name="chevron-down" size={16} color={colors.primary} style={styles.arrow} />
       </TouchableOpacity>
 
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {Boolean(error) && <Text style={styles.errorText}>{error}</Text>}
 
       <Modal
         visible={modalVisible}

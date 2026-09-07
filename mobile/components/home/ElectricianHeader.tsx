@@ -77,14 +77,14 @@ export const ElectricianHeader: React.FC<ElectricianHeaderProps> = ({
           <Text style={styles.welcomeLabel} maxFontSizeMultiplier={1.2}>Hoş geldiniz</Text>
           <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.15}>{displayName}</Text>
           <Text style={styles.meta} numberOfLines={1} maxFontSizeMultiplier={1.1}>
-            {ustaCategoryTitle} · {reputationText}
+            {isAuthenticated && ustaCategoryTitle ? `${ustaCategoryTitle} · ` : ''}{reputationText}
           </Text>
         </View>
 
         <TouchableOpacity
           style={styles.iconButton}
           activeOpacity={0.75}
-          onPress={() => handleActionWithAuth('/profile/notifications')}
+          onPress={() => handleActionWithAuth('/notifications')}
         >
           <Ionicons name="notifications-outline" size={21} color="#FFFFFF" />
           {isAuthenticated && unreadCount > 0 && (
