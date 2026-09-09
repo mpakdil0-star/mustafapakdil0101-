@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Download, Menu, X, Zap } from 'lucide-react';
 import { GOOGLE_PLAY_URL } from '@/constants/storeLinks';
@@ -14,6 +14,21 @@ const links = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('isbitir_active_job');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.id) {
+          setActiveJobId(parsed.id);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
       <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -26,6 +41,18 @@ export default function Navbar() {
           <Link href="/#uygulama-indir" className="inline-flex items-center gap-1.5 rounded-lg bg-teal-50 px-3 py-2 font-bold text-teal-800 transition hover:bg-teal-100"><Download className="h-3.5 w-3.5" /> Uygulamayı indir</Link>
         </nav>
         <div className="flex items-center gap-2">
+          {activeJobId && (
+            <Link
+              href={`/ilan/${activeJobId}`}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200 bg-teal-50/80 px-3 py-2 text-xs font-bold text-teal-800 transition hover:bg-teal-100 sm:px-4 sm:py-2.5 sm:text-sm"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-400 opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-teal-600"></span>
+              </span>
+              Talebimi Takip Et
+            </Link>
+          )}
           <Link href="/ilan-ver" className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-teal-600/20 transition hover:bg-teal-700 sm:px-5">Talep oluştur <ArrowRight className="hidden h-4 w-4 sm:block" aria-hidden="true" /></Link>
           <button type="button" onClick={() => setOpen((value) => !value)} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 lg:hidden" aria-expanded={open} aria-controls="mobile-menu" aria-label={open ? 'Menüyü kapat' : 'Menüyü aç'}>{open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
         </div>

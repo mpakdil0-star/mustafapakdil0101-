@@ -157,6 +157,19 @@ function CreateJobForm() {
         },
       });
       setCreatedJob(job);
+      try {
+        localStorage.setItem(
+          'isbitir_active_job',
+          JSON.stringify({
+            id: job.id,
+            title: job.title,
+            category: job.category,
+            createdAt: job.createdAt,
+          })
+        );
+      } catch {
+        // ignore
+      }
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Talep oluşturulamadı. Lütfen yeniden deneyin.');
     } finally {
