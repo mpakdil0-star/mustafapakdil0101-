@@ -33,6 +33,13 @@ export default function Navbar() {
         {/* Aksiyon Butonları */}
         <div className="flex items-center gap-3">
           <Link
+            href="/ilan-ver"
+            className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-slate-600 hover:text-teal-600 hover:bg-slate-50 text-sm font-medium transition-colors"
+          >
+            <span>Hizmet Ara</span>
+          </Link>
+
+          <Link
             href="/usta-kayit"
             className="hidden sm:inline-flex items-center text-sm font-medium text-slate-700 hover:text-teal-600 px-3 py-2 transition-colors"
           >
