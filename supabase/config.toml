@@ -23,6 +23,7 @@ site_url = "isbitir://auth/callback"
 additional_redirect_urls = ["exp://127.0.0.1:8082/--/auth/callback", "exp://**", "isbitir://auth/callback", "isbitir://**"]
 jwt_expiry = 3600
 enable_signup = true
+enable_anonymous_sign_ins = true
 
 [auth.email]
 enable_signup = true

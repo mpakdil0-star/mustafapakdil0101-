@@ -1,95 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ChevronDown, HelpCircle } from 'lucide-react';
 
-interface FaqItem {
-  question: string;
-  answer: string;
-}
-
-const faqs: FaqItem[] = [
-  {
-    question: 'İşBitir üzerinden usta çağırmak ücretli mi?',
-    answer:
-      'Hayır, web sitemiz veya mobil uygulamamız üzerinden ilan vermek ve bölgenizdeki ustalardan fiyat teklifi almak tamamen ücretsizdir. Yalnızca ustanızla karşılıklı anlaştığınız iş bedelini ustanıza ödersiniz.',
-  },
-  {
-    question: 'Ustalar ne kadar sürede teklif verir veya gelir?',
-    answer:
-      'İlan verdiğiniz anda arıza detaylarınız ve konumunuz, o bölgede aktif olan doğrulanmış elektrik ustalarına anlık bildirim olarak iletilir. Genellikle birkaç dakika içinde ilk teklifleri almaya başlarsınız. Ustanın adresinize varış süresi ise trafik ve mesafe durumuna göre karşılıklı olarak teyit edilir.',
-  },
-  {
-    question: 'Sistemdeki ustalar güvenilir mi?',
-    answer:
-      'İşBitir bünyesinde hizmet veren tüm ustalar, mesleki deneyim ve kimlik doğrulaması kontrolünden geçer. Ayrıca her iş bitiminde müşteriler tarafından puanlanır ve yorumlanır. Düşük puan alan veya kurallara uymayan ustalar sistemden elenir.',
-  },
-  {
-    question: 'Fiyat nasıl belirlenir, sonradan sürpriz yaşar mıyım?',
-    answer:
-      'İlan verirken arızanın türünü ve aciliyetini belirtirsiniz. Ustalar bu doğrultuda tahmini veya net fiyat teklifi iletir. Kabul ettiğiniz teklif üzerinden usta ile doğrudan telefonla görüşerek işin kapsamını netleştirebilirsiniz.',
-  },
-  {
-    question: 'Elektrik ustasıyım, sisteme nasıl kayıt olabilirim?',
-    answer:
-      'Web sitemizdeki "Usta mısınız? Kayıt Olun" sayfasına giderek ya da İşBitir Usta mobil uygulamasını indirerek dakikalar içinde profilinizi oluşturabilir, onay sürecinin ardından bölgenizdeki iş fırsatlarına anında ulaşabilirsiniz.',
-  },
+const faqs = [
+  { question: 'Talep oluşturmak ücretli mi?', answer: 'İşBitir web sitesinde hizmet talebi oluşturmak için kullanıcıdan ilan ücreti alınmaz. Ustanın teklif ettiği hizmet bedeli ve olası malzeme giderleri taraflar arasında netleştirilir.' },
+  { question: 'Ne kadar sürede teklif gelir?', answer: 'Sabit bir teklif veya varış süresi verilemez. Usta müsaitliği, hizmet bölgesi, talep türü, cihaz bağlantısı ve bildirim ayarları sonucu etkiler. Gelen teklifler takip ekranında görünür.' },
+  { question: 'Hangi ustalara bildirim gider?', answer: 'Talebin kategori, il ve ilçe bilgileri; aktiflik, hizmet bölgesi ve platformdaki onay durumu gibi eşleştirme ölçütleriyle değerlendirilir. Bildirim teslimi veya teklif verilmesi garanti edilmez.' },
+  { question: 'Telefon numaram ne zaman paylaşılır?', answer: 'Telefon numaranız teklif aşamasında ustalara gösterilmez. Bir teklifi kabul ettiğinizde, hizmet iletişiminin kurulabilmesi için kabul edilen usta iletişim bilginize erişebilir.' },
+  { question: 'Teklif nihai fiyat mıdır?', answer: 'Teklif, ustanın ilan bilgilerine göre yaptığı değerlendirmedir. Yerinde tespit, ek iş veya malzeme ihtiyacı tutarı değiştirebilir. Hizmet başlamadan önce kapsamı ve toplam bedeli ustayla netleştirin.' },
+  { question: 'Usta olarak nasıl katılabilirim?', answer: 'Usta kayıt ve belge süreci mobil uygulama üzerinden yürütülür. Profiliniz gerekli kontroller tamamlandıktan sonra uygun ilan bildirimlerini alabilir.' },
 ];
 
 export default function FaqSection() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
-
-  const toggle = (idx: number) => {
-    setOpenIndex(openIndex === idx ? null : idx);
-  };
-
+  const [open, setOpen] = useState<number | null>(0);
   return (
-    <section className="py-16 sm:py-20 bg-white">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold mb-3">
-            <HelpCircle className="w-3.5 h-3.5 text-teal-600" />
-            Merak Edilenler
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Sıkça Sorulan Sorular
-          </h2>
-          <p className="mt-3 text-sm sm:text-base text-slate-600">
-            Aklınıza takılan tüm soruların yanıtları burada.
-          </p>
-        </div>
-
-        <div className="space-y-3.5">
-          {faqs.map((faq, idx) => {
-            const isOpen = openIndex === idx;
-            return (
-              <div
-                key={idx}
-                className="border border-slate-200/80 rounded-2xl overflow-hidden transition-colors duration-150"
-              >
-                <button
-                  type="button"
-                  onClick={() => toggle(idx)}
-                  className="w-full py-4.5 px-5 sm:px-6 text-left flex items-center justify-between gap-4 hover:bg-slate-50 transition-colors"
-                >
-                  <span className="font-semibold text-slate-900 text-base sm:text-lg">
-                    {faq.question}
-                  </span>
-                  <ChevronDown
-                    className={`w-5 h-5 text-slate-400 shrink-0 transition-transform duration-200 ${
-                      isOpen ? 'rotate-180 text-teal-600' : ''
-                    }`}
-                  />
-                </button>
-                {isOpen && (
-                  <div className="px-5 sm:px-6 pb-5 pt-1 text-slate-600 text-sm sm:text-base leading-relaxed border-t border-slate-100 bg-slate-50/50">
-                    {faq.answer}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+    <section className="bg-white py-20 sm:py-24">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-10 text-center"><span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 text-xs font-bold text-teal-800"><HelpCircle className="h-3.5 w-3.5" /> Sık sorulanlar</span><h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">Karar vermeden önce bilinmesi gerekenler</h2></div>
+        <div className="space-y-3">{faqs.map((faq, index) => { const active = open === index; const panel = `faq-panel-${index}`; return <article key={faq.question} className="overflow-hidden rounded-2xl border border-slate-200"><h3><button type="button" onClick={() => setOpen(active ? null : index)} aria-expanded={active} aria-controls={panel} className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left font-bold text-slate-900 hover:bg-slate-50 sm:px-6">{faq.question}<ChevronDown className={`h-5 w-5 shrink-0 text-slate-400 transition ${active ? 'rotate-180 text-teal-600' : ''}`} /></button></h3>{active && <div id={panel} className="border-t border-slate-100 bg-slate-50/60 px-5 py-5 text-sm leading-7 text-slate-600 sm:px-6">{faq.answer}</div>}</article>; })}</div>
       </div>
     </section>
   );

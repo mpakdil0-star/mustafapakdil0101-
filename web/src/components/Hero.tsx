@@ -1,185 +1,40 @@
-'use client';
-
 import Link from 'next/link';
-import { ShieldCheck, Clock, Award, ArrowRight, Zap, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, BellRing, CheckCircle2, MapPin, ShieldCheck, Zap } from 'lucide-react';
+import { MAIN_CATEGORIES } from '@/constants/categories';
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-teal-50/40 via-white to-slate-50 pt-8 pb-16 lg:pt-12 lg:pb-20">
-      {/* Arka plan dekoratif yumuşak ışıklar */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-tr from-teal-200/20 via-sky-200/20 to-transparent blur-3xl pointer-events-none -z-10" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
-          
-          {/* Sol Kolon - Başlık ve Harekete Geçirici Metin */}
-          <div className="lg:col-span-7 space-y-8 text-center lg:text-left">
-            
-            {/* Üst Güven Rozeti */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-100/70 border border-teal-200 text-teal-800 text-xs sm:text-sm font-semibold tracking-tight shadow-xs">
-              <span className="flex h-2 w-2 rounded-full bg-teal-600 animate-pulse" />
-              <span>Türkiye'nin En Hızlı Usta & Acil Çağrı Platformu</span>
-            </div>
-
-            {/* Ana Başlık */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.15]">
-              Evinizde Acil Usta mı Lazım?{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-sky-600">
-                En Hızlı Şekilde
-              </span>{' '}
-              Kapınızda!
-            </h1>
-
-            {/* Açıklama */}
-            <p className="text-lg sm:text-xl text-slate-600 max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
-              Elektrik sigortanız mı attı, kapıda mı kaldınız veya su mu akıtıyor? İhtiyacınızı saniyeler içinde belirtin, bölgenizdeki en yakın ve puanı yüksek ustalardan anında teklif alın.
-            </p>
-
-            {/* Hızlı Butonlar */}
-            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
-              <Link
-                href="/ilan-ver"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-teal-600 hover:bg-teal-700 active:scale-[0.99] text-white font-bold text-base px-8 py-4 rounded-2xl shadow-xl shadow-teal-600/25 transition-all hover:shadow-teal-600/40 hover:-translate-y-0.5"
-              >
-                <Zap className="w-5 h-5 fill-white text-white" />
-                <span>Hemen Acil Usta Çağır</span>
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-
-              <Link
-                href="/usta-kayit"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-semibold text-base px-7 py-4 rounded-2xl border border-slate-200/90 shadow-2xs transition-colors"
-              >
-                <span>Usta mısınız? İşe Başlayın</span>
-              </Link>
-            </div>
-
-            {/* Güven ve Garanti Maddeleri */}
-            <div className="pt-6 border-t border-slate-200/60 grid grid-cols-3 gap-4 text-left">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 font-bold">
-                  <Clock className="w-4 h-4" />
-                </div>
-                <div className="text-xs sm:text-sm">
-                  <p className="font-bold text-slate-900">Hızlı Yanıt</p>
-                  <p className="text-slate-500 hidden sm:block">En yakın usta teklifi</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 font-bold">
-                  <ShieldCheck className="w-4 h-4" />
-                </div>
-                <div className="text-xs sm:text-sm">
-                  <p className="font-bold text-slate-900">Onaylı Profil</p>
-                  <p className="text-slate-500 hidden sm:block">Kimlik & Oda kayıtlı</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 font-bold">
-                  <Award className="w-4 h-4" />
-                </div>
-                <div className="text-xs sm:text-sm">
-                  <p className="font-bold text-slate-900">Puan & Yorum</p>
-                  <p className="text-slate-500 hidden sm:block">Gerçek müşteri puanı</p>
-                </div>
-              </div>
-            </div>
-
+    <section className="relative overflow-hidden bg-[linear-gradient(145deg,#f0fdfa_0%,#ffffff_48%,#f8fafc_100%)] py-14 sm:py-20 lg:py-24">
+      <div className="pointer-events-none absolute -right-36 -top-36 h-96 w-96 rounded-full bg-teal-200/30 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-44 left-1/3 h-96 w-96 rounded-full bg-sky-100/50 blur-3xl" />
+      <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-12 lg:px-8">
+        <div className="space-y-7 text-center lg:col-span-7 lg:text-left">
+          <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white/80 px-3.5 py-1.5 text-xs font-bold text-teal-800 shadow-sm"><BellRing className="h-3.5 w-3.5" aria-hidden="true" /> Bölgenizdeki ustalara talebinizi iletin</div>
+          <div className="space-y-5">
+            <h1 className="text-balance text-4xl font-black leading-[1.08] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">Usta aramakla vakit kaybetmeyin. <span className="text-teal-600">Talebinizi tek yerde yayınlayın.</span></h1>
+            <p className="mx-auto max-w-2xl text-pretty text-base leading-7 text-slate-600 sm:text-lg lg:mx-0">Elektrik, tesisat, çilingir ve ev hizmetleri için ihtiyacınızı anlatın. Kategori ve hizmet bölgesi eşleşen uygun ustaların tekliflerini karşılaştırın; iletişim bilgileri yalnızca kabul sonrasında paylaşılsın.</p>
           </div>
+          <div className="flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
+            <Link href="/ilan-ver" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-teal-600 px-7 py-4 text-base font-bold text-white shadow-xl shadow-teal-600/25 transition hover:-translate-y-0.5 hover:bg-teal-700">Hizmet talebi oluştur <ArrowRight className="h-5 w-5" /></Link>
+            <Link href="/#nasil-calisir" className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-7 py-4 text-base font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">Süreç nasıl işliyor?</Link>
+          </div>
+          <div id="guvenlik" className="grid grid-cols-1 gap-3 border-t border-slate-200/70 pt-6 sm:grid-cols-3">
+            {[['Profil kontrolü', 'Onay durumu görünür', ShieldCheck], ['Gizli iletişim', 'Kabul öncesi telefon kapalı', CheckCircle2], ['Bölgesel eşleşme', 'İl ve ilçe tercihine göre', MapPin]].map(([title, detail, Icon]) => <div key={String(title)} className="flex items-center gap-3 text-left"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700"><Icon className="h-4 w-4" /></span><span><strong className="block text-xs text-slate-900">{String(title)}</strong><span className="block text-[11px] leading-4 text-slate-500">{String(detail)}</span></span></div>)}
+          </div>
+        </div>
 
-          {/* Sağ Kolon - Hızlı İlan Bırakma & Teklif Alma Widget'ı */}
-          <div className="lg:col-span-5 relative">
-            <div className="relative mx-auto max-w-md rounded-3xl bg-white p-6 shadow-xl shadow-slate-900/10 border border-slate-200/90 space-y-4">
-              
-              {/* Widget Başlığı */}
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
-                    <Zap className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-bold text-slate-900">Hızlı Usta Çağır</h2>
-                    <p className="text-[11px] text-slate-500">1 dakikada teklifler telefonunuzda</p>
-                  </div>
-                </div>
-                <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                  Canlı
-                </span>
-              </div>
-
-              {/* Hızlı Form */}
-              <form action="/ilan-ver" method="GET" className="space-y-3.5">
-                
-                {/* 1. Hizmet Seçimi */}
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Hizmet Alanı
-                  </label>
-                  <select
-                    name="kategori"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 outline-hidden transition-all"
-                  >
-                    <option value="elektrik">⚡ Elektrik & Sigorta Tamiri</option>
-                    <option value="cilingir">🔑 Çilingir & Kilit Değişimi</option>
-                    <option value="tesisat">💧 Su Tesisatı & Kaçak Tespiti</option>
-                    <option value="klima">❄️ Klima Bakım & Montaj</option>
-                    <option value="kombi-servis">🔥 Kombi Servisi & Petek</option>
-                    <option value="beyaz-esya">🛠️ Beyaz Eşya Servisi</option>
-                  </select>
-                </div>
-
-                {/* 2. İlçe / Konum */}
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    İlçe / Bölge
-                  </label>
-                  <input
-                    type="text"
-                    name="ilce"
-                    defaultValue="Çukurova, Adana"
-                    placeholder="Örn: Çukurova / Beyazevler"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 outline-hidden transition-all"
-                  />
-                </div>
-
-                {/* 3. Kısa Sorun / Talep */}
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Sorununuz Nedir?
-                  </label>
-                  <input
-                    type="text"
-                    name="baslik"
-                    placeholder="Örn: Şalter attı, kapıda kaldım vb."
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 outline-hidden transition-all"
-                  />
-                </div>
-
-                {/* Gönder Butonu */}
-                <button
-                  type="submit"
-                  className="w-full py-3.5 rounded-2xl bg-teal-600 hover:bg-teal-700 active:scale-[0.99] text-white font-bold text-sm shadow-xl shadow-teal-600/30 flex items-center justify-center gap-2 transition-all cursor-pointer"
-                >
-                  <Zap className="w-4 h-4 fill-white" />
-                  <span>Teklifleri Gör & Usta Çağır</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+        <div className="lg:col-span-5">
+          <div className="relative mx-auto max-w-md rounded-[2rem] border border-white/80 bg-white/90 p-3 shadow-2xl shadow-slate-900/10 ring-1 ring-slate-200/70 backdrop-blur">
+            <div className="rounded-[1.5rem] bg-slate-950 p-6 text-white">
+              <div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-300">Yeni talep</p><h2 className="mt-1 text-xl font-black">Neye ihtiyacınız var?</h2></div><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/15 text-teal-300"><Zap className="h-5 w-5" /></span></div>
+              <form action="/ilan-ver" method="GET" className="mt-6 space-y-4">
+                <div><label htmlFor="hero-category" className="mb-1.5 block text-xs font-semibold text-slate-300">Hizmet alanı</label><select id="hero-category" name="kategori" className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-hidden focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20">{MAIN_CATEGORIES.map((category) => <option key={category.id} value={category.id} className="text-slate-900">{category.name}</option>)}</select></div>
+                <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-500 py-3.5 text-sm font-bold text-white transition hover:bg-teal-400">Devam et <ArrowRight className="h-4 w-4" /></button>
               </form>
-
-              {/* Alt Güven Rozeti */}
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                <span className="flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-teal-600" /> Ücretsiz İlan
-                </span>
-                <span>Puanı Yüksek Onaylı Ustalar</span>
-              </div>
-
+              <p className="mt-4 text-[11px] leading-5 text-slate-400">Talep yayınlamak, ustanın teklif vereceği veya belirli bir sürede ulaşacağı anlamına gelmez.</p>
             </div>
+            <div className="grid grid-cols-3 gap-2 px-3 py-4 text-center text-[10px] font-semibold text-slate-500"><span>Talebi anlat</span><span>Teklifleri karşılaştır</span><span>Ustayı seç</span></div>
           </div>
-
         </div>
       </div>
     </section>

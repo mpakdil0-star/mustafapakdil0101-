@@ -8,8 +8,18 @@ import AppDownload from '@/components/AppDownload';
 import Footer from '@/components/Footer';
 
 export default function Home() {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://isbitirapp.com';
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'İşBitir',
+    url: baseUrl,
+    inLanguage: 'tr-TR',
+    description: 'Vatandaşların hizmet taleplerini bölgesindeki uygun ustalara ileten elektronik platform.',
+  };
   return (
     <div className="min-h-screen flex flex-col bg-white">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }} />
       <Navbar />
       <main className="flex-1">
         <Hero />
@@ -23,5 +33,4 @@ export default function Home() {
     </div>
   );
 }
-
 

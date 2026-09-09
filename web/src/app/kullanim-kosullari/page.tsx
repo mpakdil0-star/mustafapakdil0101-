@@ -1,0 +1,18 @@
+import LegalPage from '@/components/LegalPage';
+import { legalIdentity } from '@/constants/legal';
+
+export const metadata = { title: 'Kullanım Koşulları', description: 'İşBitir platformunun vatandaş ve usta kullanım esasları.', robots: legalIdentity.ready ? undefined : { index: false, follow: false } };
+
+export default function TermsPage() {
+  return <LegalPage title="Kullanım Koşulları" description="Platformu kullanmadan ve bir teklifi kabul etmeden önce tarafların rol ve sorumluluklarını inceleyin.">
+    <section><h2>1. Taraflar ve platformun rolü</h2><p>Bu koşullar, platform işletmecisi <strong>{legalIdentity.entityName}</strong> ile İşBitir’i kullanan vatandaş ve bağımsız hizmet sağlayıcılar arasındadır. İşBitir, hizmet talepleri ile usta tekliflerini buluşturan elektronik platformdur. Aksi açıkça belirtilmedikçe işçilik hizmetinin sağlayıcısı, ustanın işvereni veya temsilcisi değildir.</p></section>
+    <section><h2>2. Hesap ve bilgi doğruluğu</h2><p>Kullanıcı verdiği iletişim, konum, hizmet ve belge bilgilerinin güncel ve doğru olmasından sorumludur. Başkasına ait bilgi kullanılamaz; hukuka aykırı, yanıltıcı veya güvenliği tehlikeye atan talepler yayımlanamaz.</p></section>
+    <section><h2>3. Talep, bildirim ve teklif</h2><p>Talep oluşturulması; belirli sayıda ustaya ulaşılacağı, bildirimin teslim edileceği, teklif geleceği, belirli sürede varılacağı veya işin tamamlanacağı garantisi değildir. Usta teklifleri ilandaki bilgilere dayalı ön değerlendirme olabilir. Yerinde tespit, kapsam ve malzeme ihtiyacı ücret veya süreyi değiştirebilir.</p></section>
+    <section><h2>4. Kabul ve hizmet ilişkisi</h2><p>Teklif kabul edildiğinde diğer bekleyen teklifler kapanabilir ve tarafların iletişim bilgileri paylaşılır. Taraflar işin kapsamını, nihai bedeli, malzemeyi, zamanı, ödeme ve varsa fatura koşullarını hizmet başlamadan önce netleştirmelidir. Tüketicinin emredici mevzuattan doğan hakları bu metinle sınırlandırılmaz.</p></section>
+    <section><h2>5. Usta yükümlülükleri</h2><p>Usta, gerekli mesleki yetki ve belgeleri korumak, hizmeti mevzuata ve mesleki özen standardına uygun sunmak, yanıltıcı teklif vermemek ve kullanıcı verisini yalnızca kabul edilen hizmet iletişimi için kullanmakla yükümlüdür. Profil onayı belirli bir hizmetin kalitesi veya sonucu için garanti oluşturmaz.</p></section>
+    <section><h2>6. Yasak kullanım</h2><ul><li>Sahte talep, teklif, puan veya belge oluşturmak.</li><li>Güvenlik tedbirlerini aşmak, sistemi otomatik isteklerle kötüye kullanmak.</li><li>Kişisel verileri amaç dışı kullanmak, taciz veya istenmeyen pazarlama yapmak.</li><li>Tehlikeli, yetkisiz ya da hukuka aykırı bir işi talep etmek veya sunmak.</li></ul></section>
+    <section><h2>7. Acil durumlar</h2><p>İşBitir bir acil çağrı, kolluk, sağlık, itfaiye veya dağıtım arıza servisi değildir. Can ve mal güvenliği riski bulunan durumda platform yanıtını beklemeyin; uygun resmî acil yardım ve yetkili arıza kanallarına başvurun.</p></section>
+    <section><h2>8. Sorumluluğun kapsamı</h2><p>Platform, teknik işletim ve kendisine uygulanabilir zorunlu yükümlülüklerden doğan sorumluluğunu sözleşmeyle ortadan kaldırmaz. Bağımsız usta ile vatandaş arasındaki hizmet ilişkisinde tarafların kendi fiil ve taahhütlerinden doğan sorumlulukları saklıdır. Mücbir sebep, bağlantı veya üçüncü taraf altyapısı hizmeti etkileyebilir.</p></section>
+    <section><h2>9. Destek ve uyuşmazlık</h2><p>Destek için <a href={`mailto:${legalIdentity.supportEmail}`}>{legalIdentity.supportEmail}</a> adresine yazabilirsiniz. Tüketicinin tüketici hakem heyeti, tüketici mahkemesi ve diğer yetkili mercilere başvuru hakları saklıdır.</p></section>
+  </LegalPage>;
+}

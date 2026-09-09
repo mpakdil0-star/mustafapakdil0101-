@@ -1,86 +1,20 @@
-'use client';
-
 import Link from 'next/link';
-import { MAIN_CATEGORIES } from '../constants/categories';
-import { 
-  Zap, 
-  KeyRound, 
-  Droplets, 
-  Snowflake, 
-  Flame, 
-  Wrench, 
-  Sparkles, 
-  Paintbrush, 
-  Hammer,
-  ArrowUpRight 
-} from 'lucide-react';
+import { ArrowUpDown, ArrowUpRight, Bug, Cctv, Droplets, Flame, Hammer, KeyRound, PackageOpen, Paintbrush, Snowflake, Sofa, Sparkles, Truck, Wrench, Zap } from 'lucide-react';
+import { MAIN_CATEGORIES } from '@/constants/categories';
 
-const iconMap: Record<string, React.ReactNode> = {
-  Zap: <Zap className="w-6 h-6 text-amber-500" />,
-  KeyRound: <KeyRound className="w-6 h-6 text-teal-600" />,
-  Droplets: <Droplets className="w-6 h-6 text-sky-500" />,
-  Snowflake: <Snowflake className="w-6 h-6 text-cyan-500" />,
-  Flame: <Flame className="w-6 h-6 text-orange-500" />,
-  Wrench: <Wrench className="w-6 h-6 text-indigo-500" />,
-  Sparkles: <Sparkles className="w-6 h-6 text-emerald-500" />,
-  Paintbrush: <Paintbrush className="w-6 h-6 text-pink-500" />,
-  Hammer: <Hammer className="w-6 h-6 text-stone-600" />
-};
+const icons = { Zap, KeyRound, Droplets, Snowflake, Flame, Wrench, Sparkles, Paintbrush, Hammer, Truck, PackageOpen, Sofa, ArrowUpDown, Bug, Cctv } as const;
 
 export default function CategoriesSection() {
   return (
-    <section id="kategoriler" className="py-20 bg-white border-y border-slate-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Başlık Alanı */}
-        <div className="text-center max-w-3xl mx-auto mb-14">
-          <h2 className="text-xs font-extrabold uppercase tracking-widest text-teal-600 mb-2">
-            İhtiyacınıza Özel Hizmetler
-          </h2>
-          <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            Hangi Alanda Ustaya İhtiyacınız Var?
-          </p>
-          <p className="mt-3 text-base sm:text-lg text-slate-600">
-            Kategorinizi seçin, konumunuza en yakın bölge ustaları saniyeler içinde teklifini iletsin.
-          </p>
+    <section id="kategoriler" className="scroll-mt-24 border-y border-slate-100 bg-white py-20 sm:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-12 max-w-3xl"><p className="text-xs font-extrabold uppercase tracking-[0.18em] text-teal-700">Hizmet kategorileri</p><h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">İhtiyacınıza uygun alanı seçin</h2><p className="mt-3 text-base leading-7 text-slate-600">Kategori seçimi, talebin doğru uzmanlık alanındaki ustalara yönlendirilmesine yardımcı olur.</p></div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {MAIN_CATEGORIES.map((category) => {
+            const Icon = icons[category.icon as keyof typeof icons] || Zap;
+            return <Link key={category.id} href={`/ilan-ver?kategori=${category.id}`} className="group flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-lg hover:shadow-teal-900/5"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-teal-700 transition group-hover:bg-teal-600 group-hover:text-white"><Icon className="h-5 w-5" /></span><span className="min-w-0 flex-1"><span className="flex items-center justify-between gap-3"><strong className="text-base text-slate-950">{category.name}</strong><ArrowUpRight className="h-4 w-4 shrink-0 text-slate-300 transition group-hover:text-teal-600" /></span><span className="mt-1 block text-sm leading-6 text-slate-500">{category.description}</span></span></Link>;
+          })}
         </div>
-
-        {/* Kategori Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {MAIN_CATEGORIES.map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/ilan-ver?kategori=${cat.id}`}
-              className="group relative flex flex-col justify-between p-7 rounded-3xl bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-teal-400 shadow-2xs hover:shadow-xl hover:shadow-teal-900/5 transition-all hover:-translate-y-1"
-            >
-              <div>
-                <div className="flex items-start justify-between mb-5">
-                  <div className="w-14 h-14 rounded-2xl bg-slate-50 group-hover:bg-teal-50 flex items-center justify-center shadow-xs border border-slate-200/60 group-hover:border-teal-200 transition-colors">
-                    {iconMap[cat.icon] || <Zap className="w-6 h-6 text-teal-600" />}
-                  </div>
-                  {cat.badge && (
-                    <span className="px-3 py-1 text-xs font-bold tracking-tight rounded-full bg-teal-50 text-teal-700 border border-teal-200/70">
-                      {cat.badge}
-                    </span>
-                  )}
-                </div>
-
-                <h3 className="text-xl font-bold text-slate-900 group-hover:text-teal-700 transition-colors">
-                  {cat.name}
-                </h3>
-                <p className="mt-2 text-sm text-slate-500 line-clamp-2 leading-relaxed font-normal">
-                  {cat.description}
-                </p>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-700 group-hover:text-teal-600">
-                <span>Hemen İlan Bırak</span>
-                <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-              </div>
-            </Link>
-          ))}
-        </div>
-
       </div>
     </section>
   );

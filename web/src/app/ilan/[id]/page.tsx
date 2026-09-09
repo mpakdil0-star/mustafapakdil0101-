@@ -1,282 +1,188 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { AlertCircle, CheckCircle2, Clock, MapPin, PhoneCall, RefreshCw, ShieldCheck, Star, XCircle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { 
-  Zap, 
-  MapPin, 
-  Clock, 
-  PhoneCall, 
-  ShieldCheck, 
-  Star, 
-  CheckCircle2, 
-  AlertCircle,
-  RefreshCw,
-  Share2
-} from 'lucide-react';
+import { webJobService, type WebBid, type WebJob } from '@/services/webJobService';
 
-interface Bid {
-  id: string;
-  price: number;
-  message?: string;
-  estimatedArrival?: string;
-  electrician: {
-    id: string;
-    fullName: string;
-    rating: number;
-    completedJobs: number;
-    phone: string;
-  };
-  createdAt: string;
-}
+const statusLabels: Record<string, string> = {
+  OPEN: 'Tekliflere açık',
+  BIDDING: 'Tekliflere açık',
+  IN_PROGRESS: 'Teklif kabul edildi',
+  PENDING_CONFIRMATION: 'Tamamlanma onayı bekleniyor',
+  COMPLETED: 'Tamamlandı',
+  CANCELLED: 'İptal edildi',
+  EXPIRED: 'Süresi doldu',
+};
+
+const urgencyLabels: Record<string, string> = {
+  HIGH: 'Öncelikli',
+  MEDIUM: 'Esnek',
+  LOW: 'Planlı',
+};
+
+const formatMoney = (amount: number) => new Intl.NumberFormat('tr-TR', {
+  style: 'currency', currency: 'TRY', maximumFractionDigits: 2,
+}).format(amount);
 
 export default function JobTrackingPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const jobId = resolvedParams.id;
-
-  const [job, setJob] = useState<any>(null);
-  const [bids, setBids] = useState<Bid[]>([]);
+  const { id: jobId } = use(params);
+  const [job, setJob] = useState<WebJob | null>(null);
+  const [bids, setBids] = useState<WebBid[]>([]);
+  const [phone, setPhone] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [acceptedBidId, setAcceptedBidId] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [actionId, setActionId] = useState<string | null>(null);
+  const [confirmBid, setConfirmBid] = useState<WebBid | null>(null);
+  const [showCancel, setShowCancel] = useState(false);
+  const [error, setError] = useState('');
 
-  // İlan ve Teklifleri Getir
-  const fetchJobData = async () => {
+  const loadData = useCallback(async (quiet = false) => {
+    if (!quiet) setRefreshing(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      const res = await fetch(`${apiUrl}/api/jobs/${jobId}`);
-      const data = await res.json();
-      if (data.success && data.data?.job) {
-        setJob(data.data.job);
+      const [nextJob, nextBids] = await Promise.all([
+        webJobService.getJob(jobId),
+        webJobService.getBids(jobId),
+      ]);
+      setJob(nextJob);
+      setBids(nextBids);
+      setError('');
+      if (nextJob.acceptedBidId) {
+        try {
+          const contact = await webJobService.getParticipantContact(jobId);
+          setPhone(contact.phone || null);
+        } catch {
+          setPhone(null);
+        }
+      } else {
+        setPhone(null);
       }
-    } catch (err) {
-      console.warn('Error fetching job, using local fallback:', err);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'İlan bilgileri yüklenemedi.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
-
-  useEffect(() => {
-    fetchJobData();
-
-    // Örnek canlı teklif simülasyonu (Gerçekçi deneyim)
-    const timer = setTimeout(() => {
-      setBids([
-        {
-          id: 'bid-1',
-          price: 450,
-          message: 'Malzemelerim aracımdadır, kabul ederseniz hemen yola çıkabilirim.',
-          estimatedArrival: '15-20 dk',
-          electrician: {
-            id: 'elec-1',
-            fullName: 'Mehmet Usta',
-            rating: 4.9,
-            completedJobs: 142,
-            phone: '0532 555 12 34',
-          },
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'bid-2',
-          price: 400,
-          message: 'Bölgedeyim, 25 dakika içinde arızaya müdahale edebilirim.',
-          estimatedArrival: '25-30 dk',
-          electrician: {
-            id: 'elec-2',
-            fullName: 'Ali Demir',
-            rating: 4.8,
-            completedJobs: 89,
-            phone: '0544 333 45 67',
-          },
-          createdAt: new Date().toISOString()
-        }
-      ]);
-    }, 1500);
-
-    return () => clearTimeout(timer);
   }, [jobId]);
 
-  const handleCopyLink = () => {
-    if (typeof window !== 'undefined') {
-      navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  useEffect(() => {
+    const initialLoad = window.setTimeout(() => { void loadData(true); }, 0);
+    let unsubscribe: (() => void) | undefined;
+    try {
+      unsubscribe = webJobService.subscribeToBids(jobId, () => { void loadData(true); });
+    } catch {
+      // Manual refresh remains available when realtime cannot initialize.
+    }
+    return () => { window.clearTimeout(initialLoad); unsubscribe?.(); };
+  }, [jobId, loadData]);
+
+  const acceptBid = async () => {
+    if (!confirmBid) return;
+    setActionId(confirmBid.id);
+    setError('');
+    try {
+      await webJobService.acceptBid(confirmBid.id);
+      setConfirmBid(null);
+      await loadData(true);
+    } catch (actionError) {
+      setError(actionError instanceof Error ? actionError.message : 'Teklif kabul edilemedi.');
+    } finally {
+      setActionId(null);
     }
   };
 
+  const cancelJob = async () => {
+    setActionId('cancel');
+    setError('');
+    try {
+      await webJobService.cancelJob(jobId, 'Vatandaş web takip ekranından iptal etti.');
+      setShowCancel(false);
+      await loadData(true);
+    } catch (actionError) {
+      setError(actionError instanceof Error ? actionError.message : 'Talep iptal edilemedi.');
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  if (loading) {
+    return <div className="flex min-h-screen flex-col bg-slate-50"><Navbar /><main className="flex flex-1 items-center justify-center px-4"><div className="text-center" role="status"><RefreshCw className="mx-auto h-7 w-7 animate-spin text-teal-600" /><p className="mt-3 text-sm text-slate-600">Talep bilgileri yükleniyor…</p></div></main><Footer /></div>;
+  }
+
+  if (!job) {
+    return <div className="flex min-h-screen flex-col bg-slate-50"><Navbar /><main className="flex flex-1 items-center justify-center px-4"><section className="max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-lg"><AlertCircle className="mx-auto h-10 w-10 text-rose-500" /><h1 className="mt-4 text-xl font-bold text-slate-950">Talebe erişilemedi</h1><p className="mt-2 text-sm leading-relaxed text-slate-600">{error || 'Bu takip bağlantısı geçersiz olabilir veya farklı bir tarayıcı oturumunda oluşturulmuş olabilir.'}</p><Link href="/ilan-ver" className="mt-6 inline-flex rounded-xl bg-teal-600 px-5 py-3 text-sm font-bold text-white">Yeni talep oluştur</Link></section></main><Footer /></div>;
+  }
+
+  const canAccept = ['OPEN', 'BIDDING'].includes(job.status);
+  const canCancel = !['COMPLETED', 'CANCELLED'].includes(job.status);
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-slate-50">
       <Navbar />
-
       <main className="flex-1 py-10 sm:py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
-          
-          {/* Üst Bilgi Kartı */}
-          <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/80 shadow-md">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+        <div className="mx-auto max-w-4xl space-y-8 px-4 sm:px-6">
+          <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-md sm:p-8">
+            <div className="flex flex-col justify-between gap-5 border-b border-slate-100 pb-6 sm:flex-row sm:items-start">
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 text-xs font-bold uppercase tracking-wider">
-                    İlan Yayında
-                  </span>
-                  <span className="text-xs text-slate-400">Takip No: #{jobId.substring(0, 8)}</span>
-                </div>
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-900">
-                  {job?.title || 'Acil Elektrik Arıza & Çağrı'}
-                </h1>
+                <div className="mb-2 flex flex-wrap items-center gap-2"><span className="rounded-full bg-teal-100 px-2.5 py-1 text-xs font-bold text-teal-900">{statusLabels[job.status] || job.status}</span><span className="text-xs text-slate-400">Takip no: #{jobId.slice(0, 8)}</span></div>
+                <h1 className="text-2xl font-black text-slate-950 sm:text-3xl">{job.title}</h1>
+                {job.description && <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600">{job.description}</p>}
               </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleCopyLink}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors"
-                >
-                  <Share2 className="w-3.5 h-3.5 text-slate-500" />
-                  <span>{copied ? '✓ Kopyalandı' : 'Takip Linkini Paylaş'}</span>
-                </button>
-
-                <button
-                  onClick={fetchJobData}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Yenile</span>
-                </button>
+              <div className="flex shrink-0 gap-2">
+                {canCancel && <button type="button" onClick={() => setShowCancel(true)} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"><XCircle className="h-3.5 w-3.5" aria-hidden="true" /> İptal et</button>}
+                <button type="button" onClick={() => void loadData()} disabled={refreshing} className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-200 disabled:opacity-60"><RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" /> Yenile</button>
               </div>
             </div>
+            <dl className="grid grid-cols-1 gap-4 pt-6 text-sm sm:grid-cols-3">
+              <div className="flex items-center gap-2 text-slate-600"><MapPin className="h-4 w-4 shrink-0 text-teal-600" aria-hidden="true" /><div><dt className="text-xs text-slate-400">Bölge</dt><dd className="font-semibold text-slate-800">{job.location.district} / {job.location.neighborhood || job.location.city}</dd></div></div>
+              <div className="flex items-center gap-2 text-slate-600"><Clock className="h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" /><div><dt className="text-xs text-slate-400">Zamanlama</dt><dd className="font-semibold text-slate-800">{urgencyLabels[job.urgencyLevel] || job.urgencyLevel}</dd></div></div>
+              <div className="flex items-center gap-2 text-slate-600"><ShieldCheck className="h-4 w-4 shrink-0 text-teal-600" aria-hidden="true" /><div><dt className="text-xs text-slate-400">Bildirim kapsamı</dt><dd className="font-semibold text-slate-800">Eşleşen onaylı ustalar</dd></div></div>
+            </dl>
+          </section>
 
-            {/* Bölge ve Aciliyet Bilgileri */}
-            <div className="pt-6 grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs sm:text-sm">
-              <div className="flex items-center gap-2 text-slate-600">
-                <MapPin className="w-4 h-4 text-teal-600 shrink-0" />
-                <span>{job?.location?.district || 'Çukurova'} / {job?.location?.neighborhood || 'Beyazevler Mah.'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-600">
-                <Clock className="w-4 h-4 text-amber-600 shrink-0" />
-                <span className="font-semibold text-red-600">🚨 Çok Acil Durum</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-600">
-                <ShieldCheck className="w-4 h-4 text-teal-600 shrink-0" />
-                <span>Onaylı Bölge Ustaları</span>
-              </div>
-            </div>
-          </div>
+          {error && <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800" role="alert">{error}</div>}
 
-          {/* Gelen Teklifler Bölümü */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">Gelen Usta Teklifleri</h2>
-                <p className="text-xs text-slate-500">Bölgenizdeki ustalardan gelen teklifleri inceleyin ve dilediğinizi arayın.</p>
-              </div>
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
-                {bids.length} Teklif Geldi
-              </span>
-            </div>
-
+          <section className="space-y-4" aria-live="polite">
+            <div className="flex items-end justify-between gap-4"><div><h2 className="text-xl font-bold text-slate-950">Usta teklifleri</h2><p className="mt-1 text-xs text-slate-500">Tutarı, tahmini süreyi ve usta bilgilerini karşılaştırın.</p></div><span className="shrink-0 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-bold text-teal-800">{bids.length} teklif</span></div>
             {bids.length === 0 ? (
-              <div className="p-12 rounded-3xl bg-white border border-slate-200/80 text-center space-y-4">
-                <div className="w-12 h-12 rounded-full bg-teal-50 text-teal-600 mx-auto flex items-center justify-center animate-spin">
-                  <RefreshCw className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-800">Ustalara Bildirildi, Teklifler Bekleniyor...</h3>
-                  <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                    Yakındaki ustalara acil çağrı bildirimi iletildi. Birkaç dakika içinde gelen teklifler bu ekranda görünecektir.
-                  </p>
-                </div>
-              </div>
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-10 text-center sm:p-12"><Clock className="mx-auto h-10 w-10 text-teal-600" aria-hidden="true" /><h3 className="mt-4 font-bold text-slate-900">Henüz teklif gelmedi</h3><p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-slate-500">Talep, kategori ve hizmet bölgesi eşleşen uygun ustalar için yayında. Usta müsaitliği ve teklif süresi değişebilir.</p></div>
             ) : (
               <div className="space-y-4">
                 {bids.map((bid) => {
-                  const isAccepted = acceptedBidId === bid.id;
-
+                  const accepted = job.acceptedBidId === bid.id;
+                  const rejected = bid.status === 'REJECTED';
                   return (
-                    <div
-                      key={bid.id}
-                      className={`p-6 rounded-3xl bg-white border transition-all ${
-                        isAccepted 
-                          ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-lg' 
-                          : 'border-slate-200/80 hover:border-slate-300 shadow-xs'
-                      }`}
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        
-                        {/* Usta Profil Bilgisi */}
+                    <article key={bid.id} className={`rounded-3xl border bg-white p-6 transition ${accepted ? 'border-emerald-500 ring-2 ring-emerald-500/20' : rejected ? 'border-slate-200 opacity-60' : 'border-slate-200/80 shadow-sm'}`}>
+                      <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
                         <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white font-bold flex items-center justify-center text-base shrink-0">
-                            {bid.electrician.fullName.substring(0, 2).toUpperCase()}
-                          </div>
-
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-sm font-bold text-white">{bid.electrician.fullName.slice(0, 2).toLocaleUpperCase('tr-TR')}</div>
                           <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-bold text-base text-slate-900">{bid.electrician.fullName}</h3>
-                              <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
-                                <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                                {bid.electrician.rating}
-                              </span>
-                            </div>
-
-                            <p className="text-xs text-slate-500 mt-0.5">
-                              {bid.electrician.completedJobs} Tamamlanan İş • {bid.estimatedArrival ? `Tahmini Varış: ~${bid.estimatedArrival}` : 'Hemen Yola Çıkabilir'}
-                            </p>
-
-                            {bid.message && (
-                              <p className="text-xs text-slate-600 mt-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                "{bid.message}"
-                              </p>
-                            )}
+                            <div className="flex flex-wrap items-center gap-2"><h3 className="font-bold text-slate-950">{bid.electrician.fullName}</h3>{bid.electrician.verificationStatus === 'APPROVED' && <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700"><ShieldCheck className="h-3 w-3" /> Onaylı profil</span>}{bid.electrician.ratingAverage > 0 && <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700"><Star className="h-3 w-3 fill-amber-500" />{bid.electrician.ratingAverage.toFixed(1)}</span>}</div>
+                            <p className="mt-1 text-xs text-slate-500">{bid.electrician.completedJobsCount > 0 ? `${bid.electrician.completedJobsCount} tamamlanan iş` : 'Henüz tamamlanan iş bilgisi yok'}{bid.estimatedDuration > 0 ? ` · Ustanın belirttiği tahmini süre: ${bid.estimatedDuration} dk` : ''}</p>
+                            {bid.message && <p className="mt-3 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs leading-relaxed text-slate-600">{bid.message}</p>}
                           </div>
                         </div>
-
-                        {/* Fiyat ve Aksiyon */}
-                        <div className="flex sm:flex-col items-center sm:items-end justify-between gap-3 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                          <div className="text-left sm:text-right">
-                            <span className="text-2xl font-black text-teal-700">{bid.price} ₺</span>
-                            <span className="text-[11px] text-slate-400 block">Teklif Tutarı</span>
-                          </div>
-
-                          {isAccepted ? (
-                            <a
-                              href={`tel:${bid.electrician.phone}`}
-                              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/30 transition-all"
-                            >
-                              <PhoneCall className="w-4 h-4" />
-                              <span>Ustayı Ara ({bid.electrician.phone})</span>
-                            </a>
-                          ) : (
-                            <button
-                              onClick={() => setAcceptedBidId(bid.id)}
-                              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm transition-colors cursor-pointer"
-                            >
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                              <span>Teklifi Kabul Et</span>
-                            </button>
-                          )}
+                        <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-4 sm:flex-col sm:items-end sm:border-0 sm:pt-0">
+                          <div className="sm:text-right"><span className="block text-2xl font-black text-teal-700">{formatMoney(bid.amount)}</span><span className="text-[11px] text-slate-400">Ustanın teklif tutarı</span></div>
+                          {accepted ? (phone ? <a href={`tel:${phone}`} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-700"><PhoneCall className="h-4 w-4" /> Ustayı ara</a> : <span className="rounded-xl bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700">Teklif kabul edildi</span>) : canAccept && bid.status === 'PENDING' ? <button type="button" onClick={() => setConfirmBid(bid)} className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"><CheckCircle2 className="h-4 w-4 text-emerald-400" /> Teklifi incele</button> : <span className="text-xs font-semibold text-slate-500">{rejected ? 'Teklif kapandı' : bid.status}</span>}
                         </div>
-
                       </div>
-                    </div>
+                    </article>
                   );
                 })}
               </div>
             )}
-          </div>
+          </section>
 
-          {/* Yasal Uyarı */}
-          <div className="p-4 rounded-2xl bg-slate-100/70 border border-slate-200/70 text-xs text-slate-500 flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-            <span>
-              *Fiyat ve tahmini varış süresi usta tarafından belirtilmiştir. Platform aracı hizmet sağlayıcıdır. Ödemenizi iş tamamlandıktan sonra doğrudan ustaya yapabilirsiniz.
-            </span>
-          </div>
-
+          <div className="flex items-start gap-2.5 rounded-2xl border border-slate-200/70 bg-slate-100/70 p-4 text-xs leading-relaxed text-slate-600"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" /><span>Teklif tutarı ve süre bilgisi usta tarafından sağlanır; bağlayıcı hizmet kapsamı değildir. İşin kapsamını, ek malzeme ve ücretleri hizmet başlamadan önce ustayla yazılı veya sözlü olarak netleştirin. İşBitir, vatandaş ile bağımsız hizmet sağlayıcıyı buluşturan elektronik platformdur.</span></div>
         </div>
       </main>
-
       <Footer />
+
+      {confirmBid && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target && !actionId) setConfirmBid(null); }}><section role="dialog" aria-modal="true" aria-labelledby="accept-title" className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><h2 id="accept-title" className="text-xl font-black text-slate-950">Teklifi kabul etmek istiyor musunuz?</h2><p className="mt-2 text-sm leading-relaxed text-slate-600"><strong>{confirmBid.electrician.fullName}</strong> tarafından verilen <strong>{formatMoney(confirmBid.amount)}</strong> tutarındaki teklifi kabul ettiğinizde diğer bekleyen teklifler kapanır ve tarafların iletişim bilgileri paylaşılır.</p><div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">İş kapsamı, malzeme ve nihai ücret konusunda usta ile ayrıca mutabık kalın.</div><div className="mt-6 flex gap-3"><button type="button" disabled={Boolean(actionId)} onClick={() => setConfirmBid(null)} className="flex-1 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-700">Vazgeç</button><button type="button" disabled={Boolean(actionId)} onClick={() => void acceptBid()} className="flex-1 rounded-xl bg-teal-600 py-3 text-sm font-bold text-white disabled:opacity-60">{actionId ? 'Kabul ediliyor…' : 'Kabul et'}</button></div></section></div>}
+      {showCancel && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target && !actionId) setShowCancel(false); }}><section role="dialog" aria-modal="true" aria-labelledby="cancel-title" className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><h2 id="cancel-title" className="text-xl font-black text-slate-950">Talebi iptal etmek istiyor musunuz?</h2><p className="mt-2 text-sm leading-relaxed text-slate-600">Bu işlem talebi tekliflere kapatır. Daha sonra yeni bir talep oluşturabilirsiniz.</p><div className="mt-6 flex gap-3"><button type="button" disabled={Boolean(actionId)} onClick={() => setShowCancel(false)} className="flex-1 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-700">Vazgeç</button><button type="button" disabled={Boolean(actionId)} onClick={() => void cancelJob()} className="flex-1 rounded-xl bg-rose-600 py-3 text-sm font-bold text-white disabled:opacity-60">{actionId ? 'İptal ediliyor…' : 'Talebi iptal et'}</button></div></section></div>}
     </div>
   );
 }

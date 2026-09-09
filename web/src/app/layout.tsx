@@ -13,9 +13,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "İşBitir | Bölgenizdeki En Yakın Elektrik & Acil Usta Hizmeti",
-  description: "Evinizde veya iş yerinizde acil elektrikçi, çilingir, tesisatçı mı lazım? İşBitir ile konumunuza en yakın onaylı ustalar bir tıkla kapınızda.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://isbitirapp.com"),
+  title: { default: "İşBitir | Bölgenizdeki Ustalardan Teklif Alın", template: "%s | İşBitir" },
+  description: "Elektrik, çilingir, tesisat ve ev hizmetleri için talebinizi yayınlayın; bölgenizdeki uygun ustaların tekliflerini karşılaştırın.",
   keywords: ["elektrikçi", "acil elektrikçi", "çilingir", "tesisatçı", "klima ustası", "usta çağır", "isbitir"],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "tr_TR",
+    siteName: "İşBitir",
+    title: "İşBitir | Bölgenizdeki Ustalardan Teklif Alın",
+    description: "Hizmet talebinizi yayınlayın, uygun ustaların tekliflerini karşılaştırın.",
+    url: "/",
+  },
+  robots: process.env.NEXT_PUBLIC_LEGAL_READY === "true" ? undefined : { index: false, follow: false },
 };
 
 export default function RootLayout({
@@ -24,7 +35,32 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="tr" className="h-full">
+    <html lang="tr" className={`h-full ${geistSans.variable} ${geistMono.variable}`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Unregister any old service workers running on localhost:3000
+              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                  for (let registration of registrations) {
+                    registration.unregister().then(function(boolean) {
+                      console.log('Old Service Worker unregistered:', boolean);
+                    });
+                  }
+                });
+                if ('caches' in window) {
+                  caches.keys().then(function(names) {
+                    for (let name of names) {
+                      caches.delete(name);
+                    }
+                  });
+                }
+              }
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-sans">
         {children}
       </body>

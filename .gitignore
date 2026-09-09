@@ -8,6 +8,7 @@ data/
 *.md
 !docs/SUPABASE_GECIS_MATRISI.md
 !docs/SUPABASE_KURULUM.md
+!docs/web-launch-checklist.md
 !supabase/README.md
 *.bat
 *.txt
