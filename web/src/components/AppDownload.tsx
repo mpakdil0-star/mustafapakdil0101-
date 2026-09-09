@@ -32,7 +32,7 @@ export default function AppDownload() {
                 <div className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">
                   <Check className="w-3.5 h-3.5" />
                 </div>
-                <span>Acil çağrılarda 15 dakikada en yakın usta eşleşmesi</span>
+                <span>Acil çağrılarda en yakın bölge ustalarıyla anında eşleşme</span>
               </div>
               <div className="flex items-center gap-3 justify-center lg:justify-start">
                 <div className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">
@@ -44,7 +44,7 @@ export default function AppDownload() {
                 <div className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">
                   <Check className="w-3.5 h-3.5" />
                 </div>
-                <span>Konuma dayalı gerçek zamanlı mesafe hesaplama</span>
+                <span>Konuma dayalı yaklaşık mesafe ve teklif bilgilendirmesi</span>
               </div>
             </div>
 
@@ -93,8 +93,8 @@ export default function AppDownload() {
 
               <div className="pt-6 border-t border-white/10 grid grid-cols-2 gap-4 text-center">
                 <div>
-                  <p className="text-2xl font-bold text-teal-400">15 Dk</p>
-                  <p className="text-xs text-slate-400 mt-0.5">Ortalama Usta Varış</p>
+                  <p className="text-2xl font-bold text-teal-400">Anında</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Ustalara Bildirim</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-teal-400">%98</p>

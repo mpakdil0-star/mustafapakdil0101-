@@ -25,14 +25,14 @@ export default function Hero() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.15]">
               Evinizde Acil Usta mı Lazım?{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-sky-600">
-                15 Dakikada
+                En Hızlı Şekilde
               </span>{' '}
               Kapınızda!
             </h1>
 
             {/* Açıklama */}
             <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed">
-              Elektrik sigortanız mı attı, kapıda mı kaldınız, su mu akıtıyor? İhtiyacınızı yazın, bölgenizdeki puanı yüksek ustalardan anında teklif alın ve hemen çağırın.
+              Elektrik sigortanız mı attı, kapıda mı kaldınız, su mu akıtıyor? İhtiyacınızı yazın, bölgenizdeki puanı yüksek ustalardan anında teklif alın ve kolayca iletişime geçin.
             </p>
 
             {/* Ana Aksiyon Butonları */}
@@ -59,8 +59,8 @@ export default function Hero() {
               <div className="flex items-center gap-2.5">
                 <Clock className="w-5 h-5 text-teal-600 shrink-0" />
                 <div className="text-xs sm:text-sm">
-                  <p className="font-bold text-slate-900">15 Dk Ulaşım</p>
-                  <p className="text-slate-500 hidden sm:block">En yakın usta gelir</p>
+                  <p className="font-bold text-slate-900">Hızlı Yanıt</p>
+                  <p className="text-slate-500 hidden sm:block">En yakın usta teklifi</p>
                 </div>
               </div>
 
@@ -136,7 +136,7 @@ export default function Hero() {
 
                 <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl">
                   <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
-                  <span>"Malzemelerim yanımda, 12 dakika içinde oradayım."</span>
+                  <span>"Malzemelerim hazır, teklifinizi kabul ederseniz hemen yola çıkabilirim."</span>
                 </div>
               </div>
 

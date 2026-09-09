@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "İşBitir | 15 Dakikada Kapında Elektrik & Acil Usta Hizmeti",
-  description: "Evinizde veya iş yerinizde acil elektrikçi, çilingir, tesisatçı mı lazım? İşBitir ile konumunuza en yakın onaylı ustalar 15 dakikada kapınızda.",
+  title: "İşBitir | Bölgenizdeki En Yakın Elektrik & Acil Usta Hizmeti",
+  description: "Evinizde veya iş yerinizde acil elektrikçi, çilingir, tesisatçı mı lazım? İşBitir ile konumunuza en yakın onaylı ustalar bir tıkla kapınızda.",
   keywords: ["elektrikçi", "acil elektrikçi", "çilingir", "tesisatçı", "klima ustası", "usta çağır", "isbitir"],
 };
 

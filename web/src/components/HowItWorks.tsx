@@ -37,7 +37,7 @@ export default function HowItWorks() {
             İşBitir Nasıl Çalışır?
           </h2>
           <p className="mt-3 text-base sm:text-lg text-slate-600">
-            Dakikalar içinde ustanız kapınızda olsun. Hiçbir karmaşık işlem yok.
+            Kolayca ihtiyacınızı bildirin, teklifleri inceleyip dilediğiniz ustayı seçin.
           </p>
         </div>
 
