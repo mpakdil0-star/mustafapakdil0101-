@@ -8,6 +8,8 @@ export interface PushNotificationPayload {
     data?: any;
     sound?: 'default' | null;
     badge?: number;
+    channelId?: string;
+    priority?: 'default' | 'normal' | 'high';
 }
 
 type PushRecipient = {
@@ -60,6 +62,8 @@ const enqueueNotification = async (recipient: PushRecipient, payload: PushNotifi
                 message,
                 sound: payload.sound ?? 'default',
                 badge: payload.badge ?? null,
+                channelId: payload.channelId ?? payload.data?.channelId ?? 'default',
+                priority: payload.priority ?? payload.data?.priority ?? 'high',
             })}::jsonb
         )
     `);

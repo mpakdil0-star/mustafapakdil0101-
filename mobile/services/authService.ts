@@ -404,6 +404,13 @@ export const authService = {
         name: 'Genel Bildirimler',
         importance: Notifications.AndroidImportance.MAX,
       });
+      await Notifications.setNotificationChannelAsync('emergency', {
+        name: 'Acil Usta Çağrıları',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 500, 200, 500],
+        lightColor: '#EF4444',
+        sound: 'default',
+      });
     }
 
     const projectId = Constants.easConfig?.projectId

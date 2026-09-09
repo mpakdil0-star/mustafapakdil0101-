@@ -167,16 +167,22 @@ export const jobService = {
         }
       }
 
+      const isUrgentJob = job.urgencyLevel === 'HIGH' || String(job.urgencyLevel).toUpperCase() === 'HIGH';
+      const neighborhood = (job.location as any)?.neighborhood || '';
+      const areaLabel = neighborhood ? `${neighborhood} Mah.` : (district || city || '');
+
       // 'notification' event'i mobile app'te alert tetikler
       notifyUser(targetRooms, 'notification', {
         id: `sock-noti-${Date.now()}-${Math.random().toString(36).substring(7)}`,
         type: 'new_job_available',
         jobId: job.id,
-        title: job.title,
+        title: isUrgentJob ? `🚨 ACİL İLAN: ${areaLabel}` : job.title,
         category: job.category,
         urgencyLevel: job.urgencyLevel,
         locationPreview: `${district || ''}, ${city || ''}`,
-        message: `Bölgenizde yeni bir iş ilanı yayınlandı: ${job.title}`,
+        message: isUrgentJob
+          ? `Bölgenizde acil usta bekleniyor: ${job.title}`
+          : `Bölgenizde yeni bir iş ilanı yayınlandı: ${job.title}`,
         isRead: false,
         createdAt: new Date().toISOString(),
         relatedId: job.id,
@@ -185,8 +191,7 @@ export const jobService = {
 
       // 2. PERSISTENT NOTIFICATIONS (Push & DB)
       if (isDatabaseAvailable) {
-        // Note: Socket room filtering by serviceCategory handles real-time notifications
-        // Database query filters by location only - push notifications go to all category users in area
+        // Query electricians with active locations for distance calculation
         const electricians = await prisma.user.findMany({
           where: {
             userType: 'ELECTRICIAN',
@@ -206,39 +211,111 @@ export const jobService = {
               serviceCategory: serviceCategory
             } as any
           },
-          select: { id: true, pushToken: true }
+          select: {
+            id: true,
+            pushToken: true,
+            locations: {
+              where: { isActive: true },
+              select: {
+                latitude: true,
+                longitude: true,
+                district: true,
+                neighborhood: true,
+                isDefault: true,
+              }
+            }
+          }
         });
 
-        const validPushTokens: string[] = [];
+        const jobLat = Number((job.location as any)?.latitude);
+        const jobLng = Number((job.location as any)?.longitude);
+        const hasJobCoords = Number.isFinite(jobLat) && Number.isFinite(jobLng) && Math.abs(jobLat) > 0.0001 && Math.abs(jobLng) > 0.0001;
+
+        const normalPushTokens: string[] = [];
 
         for (const elec of electricians) {
           if (elec.id === job.citizenId) continue;
+
+          // Find electrician's best matching coordinate
+          let elecLat: number | null = null;
+          let elecLng: number | null = null;
+          if (elec.locations && elec.locations.length > 0) {
+            const loc = elec.locations.find((l: any) => l.isDefault) || elec.locations[0];
+            if (loc && loc.latitude != null && loc.longitude != null) {
+              const parsedLat = Number(loc.latitude);
+              const parsedLng = Number(loc.longitude);
+              if (Number.isFinite(parsedLat) && Number.isFinite(parsedLng) && Math.abs(parsedLat) > 0.0001 && Math.abs(parsedLng) > 0.0001) {
+                elecLat = parsedLat;
+                elecLng = parsedLng;
+              }
+            }
+          }
+
+          let distanceKm: number | null = null;
+          if (hasJobCoords && elecLat !== null && elecLng !== null) {
+            const rawDist = calculateDistance(jobLat, jobLng, elecLat, elecLng);
+            if (Number.isFinite(rawDist) && rawDist >= 0 && rawDist < 200) {
+              distanceKm = Math.round(rawDist * 10) / 10;
+            }
+          }
+
+          let itemTitle = 'Yeni İş İlanı!';
+          let itemMessage = `${district || ''}, ${city || ''} bölgesinde yeni bir ${job.category} ilanı açıldı: "${job.title}"`;
+
+          if (isUrgentJob) {
+            if (distanceKm !== null && distanceKm > 0) {
+              itemTitle = `🚨 ACİL ÇAĞRI: ${areaLabel} (~${distanceKm} km)`;
+            } else {
+              itemTitle = `🚨 ACİL ÇAĞRI: ${district ? `${district} / ` : ''}${areaLabel} (Hizmet Bölgenizde)`;
+            }
+            itemMessage = `Bölgenizde acil usta bekleniyor: "${job.title}". Hemen teklif verin!`;
+          }
 
           // DB Bildirimi kaydet
           prisma.notification.create({
             data: {
               userId: elec.id,
               type: 'new_job_available',
-              title: 'Yeni İş İlanı!',
-              message: `${district || ''}, ${city || ''} bölgesinde yeni bir ${job.category} ilanı açıldı: "${job.title}"`,
+              title: itemTitle,
+              message: itemMessage,
               relatedType: 'JOB',
               relatedId: job.id,
             }
           }).catch(err => console.error('Failed to save notification to DB:', err));
 
           if (elec.pushToken) {
-            validPushTokens.push(elec.pushToken);
+            if (isUrgentJob) {
+              // Acil ilanlarda her ustaya kendi mesafesi ve 'emergency' kanal bilgisiyle gönder
+              pushNotificationService.sendNotification({
+                to: elec.pushToken,
+                title: itemTitle,
+                body: itemMessage,
+                channelId: 'emergency',
+                priority: 'high',
+                data: {
+                  jobId: job.id,
+                  type: 'new_job_available',
+                  urgencyLevel: 'HIGH',
+                  isEmergency: true,
+                  distanceKm: distanceKm ?? null,
+                }
+              }).catch(err => console.error('Push Notification Error (Urgent):', err));
+            } else {
+              normalPushTokens.push(elec.pushToken);
+            }
           }
         }
 
-        // Toplu Push Bildirimi Gönderimi (Queue/Rate limit aşımını önler)
-        if (validPushTokens.length > 0) {
+        // Toplu Push Bildirimi Gönderimi (Normal ilanlar için)
+        if (normalPushTokens.length > 0) {
           pushNotificationService.sendNotification({
-            to: validPushTokens,
+            to: normalPushTokens,
             title: 'Yeni İş İlanı!',
             body: `${district || ''}, ${city || ''} bölgesinde yeni bir ${job.category} ilanı açıldı.`,
+            channelId: 'default',
+            priority: 'normal',
             data: { jobId: job.id, type: 'new_job_available' }
-          }).catch(err => console.error('Push Notification Error:', err));
+          }).catch(err => console.error('Push Notification Error (Normal):', err));
         }
       } else {
         // Mock modda notificationRoutes'taki listenin de güncellenmesi gerekiyorsa controller zaten bunu yapıyor.

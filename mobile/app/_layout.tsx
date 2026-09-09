@@ -504,6 +504,15 @@ function RootLayoutNav() {
             showBadge: true,
             lockscreenVisibility: NotifModule.AndroidNotificationVisibility.PUBLIC,
           });
+          await NotifModule.setNotificationChannelAsync('emergency', {
+            name: 'Acil Usta Çağrıları',
+            importance: NotifModule.AndroidImportance.MAX,
+            vibrationPattern: [0, 500, 200, 500],
+            lightColor: '#EF4444',
+            sound: 'default',
+            showBadge: true,
+            lockscreenVisibility: NotifModule.AndroidNotificationVisibility.PUBLIC,
+          });
         }
 
         const { status } = await NotifModule.getPermissionsAsync();

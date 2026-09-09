@@ -39,6 +39,7 @@ import { PremiumHeader } from '../../../components/common/PremiumHeader';
 import { StatusStepper } from '../../../components/common/StatusStepper';
 import { AuthGuardModal } from '../../../components/common/AuthGuardModal';
 import { CountdownTimer } from '../../../components/common/CountdownTimer';
+import locationService, { calculateDistance } from '../../../services/locationService';
 export default function JobDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -234,6 +235,27 @@ export default function JobDetailScreen() {
   const isGuest = !user;
   const hasBidOnJob = isElectrician && (jobBids.some(b => b.electricianId === user?.id) || myBids.some(b => b.jobPostId === id));
   const isUrgent = jobData?.urgencyLevel === 'HIGH';
+  const [distanceKm, setDistanceKm] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isElectrician || !jobData?.location) return;
+    const jLat = Number(jobData.location.latitude);
+    const jLng = Number(jobData.location.longitude);
+    if (!Number.isFinite(jLat) || !Number.isFinite(jLng) || (Math.abs(jLat) < 0.0001 && Math.abs(jLng) < 0.0001)) return;
+
+    let isMounted = true;
+    locationService.getFastLocation().then((userLoc) => {
+      if (!isMounted) return;
+      if (userLoc && Number.isFinite(userLoc.latitude) && Number.isFinite(userLoc.longitude)) {
+        const d = calculateDistance(userLoc.latitude, userLoc.longitude, jLat, jLng);
+        if (Number.isFinite(d) && d >= 0 && d < 300) {
+          setDistanceKm(Math.round(d * 10) / 10);
+        }
+      }
+    }).catch(() => {});
+
+    return () => { isMounted = false; };
+  }, [isElectrician, jobData?.location]);
 
   const handleCall = async (knownPhone?: string) => {
     try {
@@ -441,6 +463,40 @@ export default function JobDetailScreen() {
               <Text style={[styles.infoText, { color: staticColors.textSecondary }]}>{new Date(jobData.createdAt).toLocaleDateString('tr-TR')}</Text>
             </View>
           </View>
+
+          {/* Acil İlan & Tahmini Mesafe Rozeti */}
+          {isUrgent && (
+            <View style={styles.emergencyDistanceContainer}>
+              <View style={styles.emergencyBannerHeader}>
+                <View style={styles.emergencyTag}>
+                  <Ionicons name="flash" size={13} color="#FFF" />
+                  <Text style={styles.emergencyTagText}>ACİL ÇAĞRI</Text>
+                </View>
+                {isElectrician && (
+                  distanceKm !== null ? (
+                    <View style={styles.distanceBadge}>
+                      <Ionicons name="navigate-circle" size={15} color={colors.primary} />
+                      <Text style={[styles.distanceBadgeText, { color: colors.primary }]}>
+                        Konumunuza ~{distanceKm} km
+                      </Text>
+                    </View>
+                  ) : (
+                    <View style={[styles.distanceBadge, { backgroundColor: '#F1F5F9' }]}>
+                      <Ionicons name="location-outline" size={14} color={staticColors.textSecondary} />
+                      <Text style={[styles.distanceBadgeText, { color: staticColors.textSecondary }]}>
+                        Hizmet Bölgenizde
+                      </Text>
+                    </View>
+                  )
+                )}
+              </View>
+              {isElectrician && (
+                <Text style={styles.distanceDisclaimer}>
+                  *Mesafe cihaz konumuna dayalı kuş uçuşu yaklaşık tahmindir.
+                </Text>
+              )}
+            </View>
+          )}
 
           {jobData.estimatedBudget ? (
             <LinearGradient colors={[colors.primary + '15', colors.primary + '05']} style={styles.budgetBox}>
@@ -1497,5 +1553,56 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontFamily: fonts.bold,
     color: '#2563EB',
+  },
+  emergencyDistanceContainer: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 14,
+    padding: 10,
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  emergencyBannerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  emergencyTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 4,
+  },
+  emergencyTagText: {
+    fontFamily: fonts.bold,
+    fontSize: 10,
+    color: '#FFF',
+    letterSpacing: 0.5,
+  },
+  distanceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 4,
+  },
+  distanceBadgeText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 11,
+  },
+  distanceDisclaimer: {
+    fontFamily: fonts.regular,
+    fontSize: 9,
+    color: '#94A3B8',
+    marginTop: 4,
   },
 });

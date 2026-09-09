@@ -25,8 +25,9 @@ Size güvenli ve kesintisiz hizmet sunabilmek amacıyla aşağıdaki verileri to
 
 ---
 
-## 3. Konum Verilerinin Kullanımı
-İş Bitir, adres ve bölge odaklı bir usta-vatandaş buluşturma platformudur. Konum veriniz yalnızca siz açık rıza verip uygulamayı aktif olarak kullandığınızda işlenir. Arka planda gizli veya izinsiz konum takibi kesinlikle yapılmaz.
+## 3. Konum Verilerinin Kullanımı ve Tahmini Mesafe Sorumluluk Reddi
+- İş Bitir, adres ve bölge odaklı bir usta-vatandaş buluşturma platformudur. Konum veriniz yalnızca siz açık rıza verip uygulamayı aktif olarak kullandığınızda işlenir. Arka planda gizli veya izinsiz konum takibi kesinlikle yapılmaz.
+- **Tahmini Mesafe ve Konum Bilgilendirmesi:** İşBitir platformunda hizmet veren ve hizmet alan kullanıcılar arasında gösterilen veya bildirimlerde iletilen mesafe ve süre bilgileri, cihazların GPS donanımlarından ve açık harita servislerinden elde edilen yaklaşık (kuş uçuşu) tahmini verilerdir. Cihaz konumu kapalı olması, uydu sinyal sapmaları, coğrafi engeller veya anlık yol/trafik koşullarından kaynaklanan mesafe ve varış süresi farklılıklarından platform aracı hizmet sağlayıcı olarak sorumlu tutulamaz. Kullanıcılar sunulan mesafelerin yaklaşık referans değerler olduğunu kabul eder.
 
 ---
 
