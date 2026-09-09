@@ -49,6 +49,19 @@ export default function JobTrackingPage({ params }: { params: Promise<{ id: stri
       setJob(nextJob);
       setBids(nextBids);
       setError('');
+      try {
+        localStorage.setItem(
+          'isbitir_active_job',
+          JSON.stringify({
+            id: nextJob.id,
+            title: nextJob.title,
+            category: nextJob.category,
+            createdAt: nextJob.createdAt,
+          })
+        );
+      } catch {
+        // ignore
+      }
       if (nextJob.acceptedBidId) {
         try {
           const contact = await webJobService.getParticipantContact(jobId);

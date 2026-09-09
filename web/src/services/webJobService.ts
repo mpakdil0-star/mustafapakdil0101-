@@ -237,6 +237,24 @@ export const webJobService = {
     return data as { userId: string; fullName: string; phone?: string | null };
   },
 
+  async lookupByPhone(phone: string) {
+    await ensureWebSession();
+    const client = getSupabaseBrowserClient();
+    const { data, error } = await client.rpc('lookup_web_jobs_by_phone', { p_phone: phone });
+    if (error) throw friendlyError(error);
+    return (data || []) as Array<{
+      job_id: string;
+      title: string;
+      category: string;
+      service_category: string;
+      status: string;
+      city: string;
+      district: string;
+      bid_count: number;
+      created_at: string;
+    }>;
+  },
+
   subscribeToBids(jobId: string, onChange: () => void) {
     const client = getSupabaseBrowserClient();
     const channel = client.channel(`web-job-bids:${jobId}`)
