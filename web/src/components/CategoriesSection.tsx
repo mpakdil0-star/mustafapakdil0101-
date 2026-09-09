@@ -51,29 +51,29 @@ export default function CategoriesSection() {
             <Link
               key={cat.id}
               href={`/ilan-ver?kategori=${cat.id}`}
-              className="group relative flex flex-col justify-between p-6 rounded-2xl bg-slate-50/70 hover:bg-white border border-slate-200/70 hover:border-teal-300 shadow-2xs hover:shadow-xl hover:shadow-teal-900/5 transition-all hover:-translate-y-1"
+              className="group relative flex flex-col justify-between p-7 rounded-3xl bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-teal-400 shadow-2xs hover:shadow-xl hover:shadow-teal-900/5 transition-all hover:-translate-y-1"
             >
               <div>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-14 h-14 rounded-2xl bg-white group-hover:bg-teal-50 flex items-center justify-center shadow-xs border border-slate-200/60 group-hover:border-teal-200 transition-colors">
+                <div className="flex items-start justify-between mb-5">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-50 group-hover:bg-teal-50 flex items-center justify-center shadow-xs border border-slate-200/60 group-hover:border-teal-200 transition-colors">
                     {iconMap[cat.icon] || <Zap className="w-6 h-6 text-teal-600" />}
                   </div>
                   {cat.badge && (
-                    <span className="px-2.5 py-1 text-[11px] font-bold tracking-tight rounded-full bg-red-100 text-red-700 border border-red-200">
+                    <span className="px-3 py-1 text-xs font-bold tracking-tight rounded-full bg-teal-50 text-teal-700 border border-teal-200/70">
                       {cat.badge}
                     </span>
                   )}
                 </div>
 
-                <h3 className="text-lg font-bold text-slate-900 group-hover:text-teal-700 transition-colors">
+                <h3 className="text-xl font-bold text-slate-900 group-hover:text-teal-700 transition-colors">
                   {cat.name}
                 </h3>
-                <p className="mt-1.5 text-sm text-slate-500 line-clamp-2 leading-relaxed">
+                <p className="mt-2 text-sm text-slate-500 line-clamp-2 leading-relaxed font-normal">
                   {cat.description}
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-200/60 flex items-center justify-between text-xs font-bold text-slate-700 group-hover:text-teal-600">
+              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-700 group-hover:text-teal-600">
                 <span>Hemen İlan Bırak</span>
                 <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </div>

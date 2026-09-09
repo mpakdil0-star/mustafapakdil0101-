@@ -22,7 +22,7 @@ export default function Hero() {
             </div>
 
             {/* Ana Başlık */}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-[1.18]">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.15]">
               Evinizde Acil Usta mı Lazım?{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-sky-600">
                 En Hızlı Şekilde
@@ -31,79 +31,35 @@ export default function Hero() {
             </h1>
 
             {/* Açıklama */}
-            <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed">
-              Elektrik sigortanız mı attı, kapıda mı kaldınız, su mu akıtıyor? İhtiyacınızı yazın, bölgenizdeki puanı yüksek ustalardan anında teklif alın.
+            <p className="text-lg sm:text-xl text-slate-600 max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
+              Elektrik sigortanız mı attı, kapıda mı kaldınız veya su mu akıtıyor? İhtiyacınızı saniyeler içinde belirtin, bölgenizdeki en yakın ve puanı yüksek ustalardan anında teklif alın.
             </p>
 
-            {/* Doğrudan Ana Sayfadan Hızlı Arama & İlan Bırakma Kutusu */}
-            <div className="p-3 sm:p-4 rounded-3xl bg-white shadow-xl shadow-slate-900/10 border border-slate-200/90 max-w-2xl mx-auto lg:mx-0">
-              <div className="flex flex-col sm:flex-row gap-2.5">
-                
-                {/* Hizmet Arama Girişi */}
-                <div className="flex-1 relative flex items-center">
-                  <Zap className="w-5 h-5 text-teal-600 absolute left-3.5 pointer-events-none" />
-                  <input
-                    type="text"
-                    placeholder="Ne ustası arıyorsunuz? (Örn: Elektrik, Çilingir, Su)"
-                    className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-medium placeholder:text-slate-400 focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 outline-hidden transition-all"
-                  />
-                </div>
+            {/* Hızlı Butonlar */}
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
+              <Link
+                href="/ilan-ver"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-teal-600 hover:bg-teal-700 active:scale-[0.99] text-white font-bold text-base px-8 py-4 rounded-2xl shadow-xl shadow-teal-600/25 transition-all hover:shadow-teal-600/40 hover:-translate-y-0.5"
+              >
+                <Zap className="w-5 h-5 fill-white text-white" />
+                <span>Hemen Acil Usta Çağır</span>
+                <ArrowRight className="w-5 h-5" />
+              </Link>
 
-                {/* Konum / Şehir */}
-                <div className="sm:w-48 relative flex items-center">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 absolute left-3.5" />
-                  <input
-                    type="text"
-                    defaultValue="Adana / Çukurova"
-                    placeholder="Şehir / İlçe"
-                    className="w-full pl-8 pr-3 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-medium text-slate-700 focus:bg-white focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 outline-hidden transition-all"
-                  />
-                </div>
-
-                {/* Hızlı Usta Bul Butonu */}
-                <Link
-                  href="/ilan-ver"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm shadow-md shadow-teal-600/30 transition-all hover:shadow-teal-600/50 hover:scale-[1.02] shrink-0"
-                >
-                  <span>Usta Bul</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-
-              </div>
-
-              {/* Hızlı Kategori Etiketleri */}
-              <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-slate-400 font-medium">Popüler:</span>
-                <Link href="/ilan-ver?kategori=elektrik" className="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 font-semibold transition-colors">
-                  ⚡ Elektrik Sigortası
-                </Link>
-                <Link href="/ilan-ver?kategori=cilingir" className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold transition-colors">
-                  🔑 Kapıda Kaldım
-                </Link>
-                <Link href="/ilan-ver?kategori=tesisat" className="px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-800 font-semibold transition-colors">
-                  💧 Su Kaçağı
-                </Link>
-                <Link href="/ilan-ver?kategori=klima" className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-semibold transition-colors">
-                  ❄️ Klima Arıza
-                </Link>
-              </div>
-            </div>
-
-            {/* İkincil Usta Ol Butonu */}
-            <div className="flex items-center justify-center lg:justify-start gap-4 pt-1">
               <Link
                 href="/usta-kayit"
-                className="inline-flex items-center gap-2 text-slate-600 hover:text-teal-700 text-sm font-semibold transition-colors group"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-semibold text-base px-7 py-4 rounded-2xl border border-slate-200/90 shadow-2xs transition-colors"
               >
-                <span>Siz de ustanız mısınız? Aramıza katılın ve iş alın</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform text-teal-600" />
+                <span>Usta mısınız? İşe Başlayın</span>
               </Link>
             </div>
 
             {/* Güven ve Garanti Maddeleri */}
             <div className="pt-6 border-t border-slate-200/60 grid grid-cols-3 gap-4 text-left">
               <div className="flex items-center gap-2.5">
-                <Clock className="w-5 h-5 text-teal-600 shrink-0" />
+                <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 font-bold">
+                  <Clock className="w-4 h-4" />
+                </div>
                 <div className="text-xs sm:text-sm">
                   <p className="font-bold text-slate-900">Hızlı Yanıt</p>
                   <p className="text-slate-500 hidden sm:block">En yakın usta teklifi</p>
@@ -111,15 +67,19 @@ export default function Hero() {
               </div>
 
               <div className="flex items-center gap-2.5">
-                <ShieldCheck className="w-5 h-5 text-teal-600 shrink-0" />
+                <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 font-bold">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
                 <div className="text-xs sm:text-sm">
                   <p className="font-bold text-slate-900">Onaylı Profil</p>
-                  <p className="text-slate-500 hidden sm:block">Kimlik ve oda kayıtlı</p>
+                  <p className="text-slate-500 hidden sm:block">Kimlik & Oda kayıtlı</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2.5">
-                <Award className="w-5 h-5 text-teal-600 shrink-0" />
+                <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 font-bold">
+                  <Award className="w-4 h-4" />
+                </div>
                 <div className="text-xs sm:text-sm">
                   <p className="font-bold text-slate-900">Puan & Yorum</p>
                   <p className="text-slate-500 hidden sm:block">Gerçek müşteri puanı</p>
