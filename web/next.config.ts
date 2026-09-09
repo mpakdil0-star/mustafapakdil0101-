@@ -1,10 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: [
+    '192.168.1.58',
+    '192.168.*.*',
+    '10.*.*.*',
+    '172.16.*.*',
+    'localhost',
+    '127.0.0.1',
+  ],
   async headers() {
     return [
       {
-        source: '/:path*',
+        source: '/((?!_next|favicon.ico).*)',
         headers: [
           {
             key: 'Cache-Control',
