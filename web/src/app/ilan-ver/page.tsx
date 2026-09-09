@@ -6,7 +6,9 @@ import { useSearchParams } from 'next/navigation';
 import { AlertTriangle, CheckCircle2, Clock, MapPin, Navigation, Send, ShieldCheck, Zap } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import LocationSelector from '@/components/LocationSelector';
 import { MAIN_CATEGORIES } from '@/constants/categories';
+import { CITY_NAMES, TURKISH_CITIES } from '@/constants/locations';
 import { webJobService, type WebJob } from '@/services/webJobService';
 
 type Urgency = 'HIGH' | 'MEDIUM' | 'LOW';
@@ -22,6 +24,34 @@ const urgencyOptions: Array<{
   { value: 'MEDIUM', title: 'Esnek', description: 'Gün içinde değerlendirilebilir', icon: Clock, activeClass: 'border-amber-500 bg-amber-50 text-amber-800 ring-2 ring-amber-500/20' },
   { value: 'LOW', title: 'Planlı', description: 'Uygun bir tarih için', icon: CheckCircle2, activeClass: 'border-emerald-500 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20' },
 ];
+
+function normalizeLocationName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/ı/g, 'i')
+    .replace(/ş/g, 's')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c');
+}
+
+function matchCity(inputCity: string): string {
+  const exact = CITY_NAMES.find((c) => c.toLowerCase() === inputCity.toLowerCase());
+  if (exact) return exact;
+  const normalized = normalizeLocationName(inputCity);
+  return CITY_NAMES.find((c) => normalizeLocationName(c) === normalized) || '';
+}
+
+function matchDistrict(cityName: string, inputDistrict: string): string {
+  const city = TURKISH_CITIES.find((c) => c.name === cityName);
+  if (!city) return '';
+  const exact = city.districts.find((d) => d.name.toLowerCase() === inputDistrict.toLowerCase());
+  if (exact) return exact.name;
+  const normalized = normalizeLocationName(inputDistrict);
+  const found = city.districts.find((d) => normalizeLocationName(d.name) === normalized);
+  return found ? found.name : '';
+}
 
 function CreateJobForm() {
   const searchParams = useSearchParams();
@@ -51,19 +81,53 @@ function CreateJobForm() {
   const handleGetLocation = () => {
     setLocationMessage('');
     if (!navigator.geolocation) {
-      setLocationMessage('Tarayıcınız konum özelliğini desteklemiyor. İl, ilçe ve mahalleyi elle girin.');
+      setLocationMessage('Tarayıcınız konum özelliğini desteklemiyor. Lütfen il ve ilçenizi listeden seçin.');
       return;
     }
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
-        setIsLocating(false);
-        setLocationMessage('Yaklaşık cihaz konumu alındı. Bildirimin doğru bölgeye gitmesi için adres alanlarını kontrol edin.');
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        setCoords({ lat, lng });
+
+        try {
+          // OpenStreetMap Nominatim reverse geocode for browser
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`,
+            { headers: { 'Accept-Language': 'tr' } }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const addr = data.address || {};
+            const rawProvince = addr.province || addr.city || addr.state || '';
+            const rawDistrict = addr.county || addr.town || addr.borough || addr.district || '';
+
+            const matchedCity = matchCity(rawProvince);
+            if (matchedCity) {
+              setCity(matchedCity);
+              const matchedDist = matchDistrict(matchedCity, rawDistrict);
+              if (matchedDist) {
+                setDistrict(matchedDist);
+                setLocationMessage(`Konumunuz tespit edildi: ${matchedCity}, ${matchedDist}. Lütfen mahallenizi seçin.`);
+              } else {
+                setLocationMessage(`İliniz tespit edildi: ${matchedCity}. Lütfen ilçe ve mahallenizi seçin.`);
+              }
+            } else {
+              setLocationMessage('Konum koordinatları alındı. Lütfen il, ilçe ve mahallenizi listeden seçin.');
+            }
+          } else {
+            setLocationMessage('Konum koordinatları alındı. Lütfen il ve ilçenizi listeden seçin.');
+          }
+        } catch {
+          setLocationMessage('Konum koordinatları alındı. Lütfen il ve ilçenizi listeden seçin.');
+        } finally {
+          setIsLocating(false);
+        }
       },
       () => {
         setIsLocating(false);
-        setLocationMessage('Konum alınamadı. İl, ilçe ve mahalleyi elle girerek devam edebilirsiniz.');
+        setLocationMessage('Konum izni verilmedi. İl, ilçe ve mahallenizi aşağıdaki listeden kolayca seçebilirsiniz.');
       },
       { timeout: 10000, enableHighAccuracy: true, maximumAge: 60_000 },
     );
@@ -167,19 +231,20 @@ function CreateJobForm() {
 
                 {step === 2 && (
                   <div className="space-y-6">
-                    <div className="space-y-4 rounded-2xl border border-slate-200/80 bg-slate-50 p-4 sm:p-5">
-                      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                        <div className="flex items-center gap-2 text-sm font-bold text-slate-950"><MapPin className="h-4 w-4 text-teal-600" aria-hidden="true" /> Hizmet konumu</div>
-                        <button type="button" onClick={handleGetLocation} disabled={isLocating} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-teal-100/70 px-3 py-2 text-xs font-bold text-teal-800 transition hover:bg-teal-100 disabled:opacity-60"><Navigation className="h-3.5 w-3.5" aria-hidden="true" />{isLocating ? 'Konum alınıyor…' : coords ? 'Konumu yenile' : 'Yaklaşık konumumu al'}</button>
-                      </div>
-                      {locationMessage && <p className="text-xs leading-relaxed text-slate-600" role="status">{locationMessage}</p>}
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <div><label htmlFor="city" className="mb-1 block text-xs font-semibold text-slate-700">İl</label><input id="city" required maxLength={60} autoComplete="address-level1" value={city} onChange={(event) => setCity(event.target.value)} placeholder="Örn. Adana" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-hidden focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20" /></div>
-                        <div><label htmlFor="district" className="mb-1 block text-xs font-semibold text-slate-700">İlçe</label><input id="district" required maxLength={60} autoComplete="address-level2" value={district} onChange={(event) => setDistrict(event.target.value)} placeholder="Örn. Çukurova" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-hidden focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20" /></div>
-                      </div>
-                      <div><label htmlFor="neighborhood" className="mb-1 block text-xs font-semibold text-slate-700">Mahalle</label><input id="neighborhood" required maxLength={80} autoComplete="address-level3" value={neighborhood} onChange={(event) => setNeighborhood(event.target.value)} placeholder="Örn. Beyazevler Mahallesi" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-hidden focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20" /></div>
-                      <div><label htmlFor="address" className="mb-1 block text-xs font-semibold text-slate-700">Adres detayı <span className="font-normal text-slate-500">(isteğe bağlı)</span></label><input id="address" maxLength={250} autoComplete="street-address" value={addressDetails} onChange={(event) => setAddressDetails(event.target.value)} placeholder="Sokak, bina veya yön tarifi" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-hidden focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20" /></div>
-                    </div>
+                    <LocationSelector
+                      city={city}
+                      district={district}
+                      neighborhood={neighborhood}
+                      addressDetails={addressDetails}
+                      onCityChange={setCity}
+                      onDistrictChange={setDistrict}
+                      onNeighborhoodChange={setNeighborhood}
+                      onAddressDetailsChange={setAddressDetails}
+                      onGetLocation={handleGetLocation}
+                      isLocating={isLocating}
+                      hasCoords={Boolean(coords)}
+                      locationMessage={locationMessage}
+                    />
                     <div><label htmlFor="job-title" className="mb-1.5 block text-sm font-bold text-slate-950">Kısa başlık</label><input id="job-title" required maxLength={120} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Örn. Sigorta sık sık atıyor" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-hidden focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20" /></div>
                     <div><label htmlFor="description" className="mb-1.5 block text-sm font-bold text-slate-950">Talep detayı <span className="font-normal text-slate-500">(isteğe bağlı)</span></label><textarea id="description" rows={4} maxLength={2000} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Ustanın teklif vermeden önce bilmesi gereken ayrıntıları yazın." className="w-full resize-y rounded-xl border border-slate-200 px-4 py-3 text-sm outline-hidden focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20" /></div>
                     <div className="flex gap-3 pt-2"><button type="button" onClick={() => setStep(1)} className="w-1/3 rounded-xl border border-slate-200 py-3.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Geri</button><button type="button" disabled={!title.trim() || !city.trim() || !district.trim() || !neighborhood.trim()} onClick={() => setStep(3)} className="w-2/3 rounded-2xl bg-teal-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-teal-600/25 transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50">İletişim bilgilerine geç</button></div>
