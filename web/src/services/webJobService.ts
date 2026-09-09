@@ -133,6 +133,7 @@ const friendlyError = (error: unknown): Error => {
     LEGAL_NOTICE_REQUIRED: 'Gerekli bilgilendirme tamamlanamadı.',
     TOO_MANY_REQUESTS: 'Kısa süre içinde çok sayıda talep oluşturdunuz. Lütfen biraz sonra tekrar deneyin.',
     JOB_OWNER_REQUIRED: 'Bu ilana erişim yetkiniz bulunmuyor.',
+    PHONE_MISMATCH: 'Girdiğiniz telefon numarası bu ilanın sahibiyle eşleşmiyor.',
     BID_NOT_PENDING: 'Bu teklif artık kabul edilebilir durumda değil.',
     JOB_NOT_OPEN: 'Bu ilan artık teklif kabul etmiyor.',
   };
@@ -253,6 +254,17 @@ export const webJobService = {
       bid_count: number;
       created_at: string;
     }>;
+  },
+
+  async claimByPhone(jobId: string, phone: string) {
+    await ensureWebSession();
+    const client = getSupabaseBrowserClient();
+    const { data, error } = await client.rpc('claim_web_job_by_phone', {
+      p_job_id: jobId,
+      p_phone: phone,
+    });
+    if (error) throw friendlyError(error);
+    return Boolean(data);
   },
 
   subscribeToBids(jobId: string, onChange: () => void) {

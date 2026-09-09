@@ -52,6 +52,13 @@ export default function JobLookupModal({ isOpen, onClose }: JobLookupModalProps)
       const jobs = await webJobService.lookupByPhone(phone);
       setResults(jobs);
       setSearched(true);
+      if (jobs.length > 0) {
+        try {
+          localStorage.setItem('isbitir_owner_phone', phone.trim());
+        } catch {
+          // ignore
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sorgulama yapılamadı. Telefon numaranızı kontrol edin.');
     } finally {

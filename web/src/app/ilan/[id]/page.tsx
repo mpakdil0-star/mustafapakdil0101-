@@ -37,11 +37,24 @@ export default function JobTrackingPage({ params }: { params: Promise<{ id: stri
   const [actionId, setActionId] = useState<string | null>(null);
   const [confirmBid, setConfirmBid] = useState<WebBid | null>(null);
   const [showCancel, setShowCancel] = useState(false);
+  const [showClaimModal, setShowClaimModal] = useState(false);
+  const [claimPhone, setClaimPhone] = useState('');
+  const [claimLoading, setClaimLoading] = useState(false);
+  const [claimError, setClaimError] = useState('');
   const [error, setError] = useState('');
 
   const loadData = useCallback(async (quiet = false) => {
     if (!quiet) setRefreshing(true);
     try {
+      try {
+        const savedPhone = localStorage.getItem('isbitir_owner_phone');
+        if (savedPhone) {
+          void webJobService.claimByPhone(jobId, savedPhone).catch(() => {});
+        }
+      } catch {
+        // ignore
+      }
+
       const [nextJob, nextBids] = await Promise.all([
         webJobService.getJob(jobId),
         webJobService.getBids(jobId),
@@ -96,13 +109,51 @@ export default function JobTrackingPage({ params }: { params: Promise<{ id: stri
     setActionId(confirmBid.id);
     setError('');
     try {
+      try {
+        const savedPhone = localStorage.getItem('isbitir_owner_phone');
+        if (savedPhone) {
+          await webJobService.claimByPhone(jobId, savedPhone);
+        }
+      } catch {
+        // proceed to acceptBid
+      }
       await webJobService.acceptBid(confirmBid.id);
       setConfirmBid(null);
       await loadData(true);
     } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : 'Teklif kabul edilemedi.');
+      const msg = actionError instanceof Error ? actionError.message : 'Teklif kabul edilemedi.';
+      if (msg.includes('yetkiniz bulunmuyor') || msg.includes('JOB_OWNER_REQUIRED')) {
+        setShowClaimModal(true);
+      } else {
+        setError(msg);
+      }
     } finally {
       setActionId(null);
+    }
+  };
+
+  const handleClaimAndAccept = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!claimPhone.trim()) return;
+    setClaimLoading(true);
+    setClaimError('');
+    try {
+      await webJobService.claimByPhone(jobId, claimPhone.trim());
+      try {
+        localStorage.setItem('isbitir_owner_phone', claimPhone.trim());
+      } catch {
+        // ignore
+      }
+      setShowClaimModal(false);
+      if (confirmBid) {
+        await webJobService.acceptBid(confirmBid.id);
+        setConfirmBid(null);
+      }
+      await loadData(true);
+    } catch (err) {
+      setClaimError(err instanceof Error ? err.message : 'Doğrulama yapılamadı. Telefon numaranızı kontrol edin.');
+    } finally {
+      setClaimLoading(false);
     }
   };
 
@@ -110,11 +161,24 @@ export default function JobTrackingPage({ params }: { params: Promise<{ id: stri
     setActionId('cancel');
     setError('');
     try {
+      try {
+        const savedPhone = localStorage.getItem('isbitir_owner_phone');
+        if (savedPhone) {
+          await webJobService.claimByPhone(jobId, savedPhone);
+        }
+      } catch {
+        // proceed
+      }
       await webJobService.cancelJob(jobId, 'Vatandaş web takip ekranından iptal etti.');
       setShowCancel(false);
       await loadData(true);
     } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : 'Talep iptal edilemedi.');
+      const msg = actionError instanceof Error ? actionError.message : 'Talep iptal edilemedi.';
+      if (msg.includes('yetkiniz bulunmuyor') || msg.includes('JOB_OWNER_REQUIRED')) {
+        setShowClaimModal(true);
+      } else {
+        setError(msg);
+      }
     } finally {
       setActionId(null);
     }
@@ -196,6 +260,68 @@ export default function JobTrackingPage({ params }: { params: Promise<{ id: stri
 
       {confirmBid && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target && !actionId) setConfirmBid(null); }}><section role="dialog" aria-modal="true" aria-labelledby="accept-title" className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><h2 id="accept-title" className="text-xl font-black text-slate-950">Teklifi kabul etmek istiyor musunuz?</h2><p className="mt-2 text-sm leading-relaxed text-slate-600"><strong>{confirmBid.electrician.fullName}</strong> tarafından verilen <strong>{formatMoney(confirmBid.amount)}</strong> tutarındaki teklifi kabul ettiğinizde diğer bekleyen teklifler kapanır ve tarafların iletişim bilgileri paylaşılır.</p><div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">İş kapsamı, malzeme ve nihai ücret konusunda usta ile ayrıca mutabık kalın.</div><div className="mt-6 flex gap-3"><button type="button" disabled={Boolean(actionId)} onClick={() => setConfirmBid(null)} className="flex-1 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-700">Vazgeç</button><button type="button" disabled={Boolean(actionId)} onClick={() => void acceptBid()} className="flex-1 rounded-xl bg-teal-600 py-3 text-sm font-bold text-white disabled:opacity-60">{actionId ? 'Kabul ediliyor…' : 'Kabul et'}</button></div></section></div>}
       {showCancel && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target && !actionId) setShowCancel(false); }}><section role="dialog" aria-modal="true" aria-labelledby="cancel-title" className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><h2 id="cancel-title" className="text-xl font-black text-slate-950">Talebi iptal etmek istiyor musunuz?</h2><p className="mt-2 text-sm leading-relaxed text-slate-600">Bu işlem talebi tekliflere kapatır. Daha sonra yeni bir talep oluşturabilirsiniz.</p><div className="mt-6 flex gap-3"><button type="button" disabled={Boolean(actionId)} onClick={() => setShowCancel(false)} className="flex-1 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-700">Vazgeç</button><button type="button" disabled={Boolean(actionId)} onClick={() => void cancelJob()} className="flex-1 rounded-xl bg-rose-600 py-3 text-sm font-bold text-white disabled:opacity-60">{actionId ? 'İptal ediliyor…' : 'Talebi iptal et'}</button></div></section></div>}
+      {showClaimModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 animate-in fade-in duration-200" role="presentation">
+          <section role="dialog" aria-modal="true" aria-labelledby="claim-modal-title" className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-slate-100">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-teal-600">
+                <ShieldCheck className="h-5 w-5" />
+              </span>
+              <div>
+                <h2 id="claim-modal-title" className="text-lg font-black text-slate-950">İlan Sahibi Doğrulaması</h2>
+                <p className="text-xs text-slate-500">Talebi yönetmek için telefon numaranızı girin</p>
+              </div>
+            </div>
+
+            <p className="mt-3.5 text-xs leading-relaxed text-slate-600">
+              Bu ilanı farklı bir cihaz veya tarayıcıdan açtınız. Teklifi kabul edebilmek için ilanı verirken belirttiğiniz cep telefonu numarasını doğrulayın.
+            </p>
+
+            <form onSubmit={handleClaimAndAccept} className="mt-4 space-y-4">
+              <div>
+                <label htmlFor="claim-phone-input" className="mb-1 block text-xs font-bold text-slate-700">
+                  Telefon Numaranız
+                </label>
+                <input
+                  id="claim-phone-input"
+                  type="tel"
+                  required
+                  autoFocus
+                  inputMode="tel"
+                  placeholder="05XX XXX XX XX"
+                  value={claimPhone}
+                  onChange={(e) => setClaimPhone(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium outline-hidden focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20"
+                />
+              </div>
+
+              {claimError && (
+                <div className="rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-800" role="alert">
+                  {claimError}
+                </div>
+              )}
+
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="button"
+                  disabled={claimLoading}
+                  onClick={() => { setShowClaimModal(false); setClaimError(''); }}
+                  className="flex-1 rounded-xl border border-slate-200 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Vazgeç
+                </button>
+                <button
+                  type="submit"
+                  disabled={claimLoading || !claimPhone.trim()}
+                  className="flex-1 rounded-xl bg-teal-600 py-2.5 text-xs font-bold text-white shadow-md shadow-teal-600/25 hover:bg-teal-700 disabled:opacity-50"
+                >
+                  {claimLoading ? 'Doğrulanıyor…' : 'Doğrula ve Kabul Et'}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
