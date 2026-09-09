@@ -208,8 +208,7 @@ export const webJobService = {
   async getBids(jobId: string) {
     await ensureWebSession();
     const client = getSupabaseBrowserClient();
-    const { data, error } = await client.from('bids').select('*')
-      .eq('job_post_id', jobId).order('created_at', { ascending: false });
+    const { data, error } = await client.rpc('get_web_job_bids', { p_job_id: jobId });
     if (error) throw friendlyError(error);
     return enrichBids(data || []);
   },

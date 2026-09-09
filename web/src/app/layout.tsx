@@ -36,31 +36,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="tr" className={`h-full ${geistSans.variable} ${geistMono.variable}`}>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Unregister any old service workers running on localhost:3000
-              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                  for (let registration of registrations) {
-                    registration.unregister().then(function(boolean) {
-                      console.log('Old Service Worker unregistered:', boolean);
-                    });
-                  }
-                });
-                if ('caches' in window) {
-                  caches.keys().then(function(names) {
-                    for (let name of names) {
-                      caches.delete(name);
-                    }
-                  });
-                }
-              }
-            `,
-          }}
-        />
-      </head>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-sans">
         {children}
       </body>
