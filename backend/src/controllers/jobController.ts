@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { isDatabaseAvailable } from '../config/database';
+import prisma, { isDatabaseAvailable } from '../config/database';
 import { jobService } from '../services/jobService';
 import { AuthRequest } from '../middleware/auth';
 import { ValidationError } from '../utils/errors';
@@ -337,6 +337,104 @@ export const createJobController = async (
 
       throw dbError;
     }
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Web üzerinden kayıt/giriş zorunluluğu olmadan hızlı ilan oluşturma kontrolcüsü
+ * Doğrudan bölgedeki ustalara Acil Bildirim gönderir ve ilan nesnesini döner.
+ */
+export const createWebJobController = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { 
+      title, 
+      description = '', 
+      customerName, 
+      customerPhone, 
+      category, 
+      serviceCategory = 'elektrik', 
+      location, 
+      urgencyLevel = 'HIGH' 
+    } = req.body;
+
+    const webCitizenId = `web-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const jobId = `job-web-${Date.now()}`;
+
+    const newJob: any = {
+      id: jobId,
+      citizenId: webCitizenId,
+      title: title.trim(),
+      description: (description || `${customerName} tarafından web üzerinden oluşturuldu. İletişim: ${customerPhone}`).trim(),
+      category: category || 'Elektrik Tamiri',
+      serviceCategory: serviceCategory || 'elektrik',
+      location: {
+        city: location.city,
+        district: location.district,
+        neighborhood: location.neighborhood || '',
+        address: location.address || `${location.district}, ${location.city}`,
+        latitude: location.latitude ? Number(location.latitude) : 0,
+        longitude: location.longitude ? Number(location.longitude) : 0,
+      },
+      urgencyLevel: urgencyLevel || 'HIGH',
+      status: 'OPEN',
+      images: [],
+      viewCount: 0,
+      bidCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      citizen: {
+        id: webCitizenId,
+        fullName: customerName.trim(),
+        phone: customerPhone.trim(),
+        profileImageUrl: null,
+      },
+    };
+
+    // Belleğe ve JSON depolamasına kaydet
+    jobStoreById.set(jobId, newJob);
+    saveMockJobs();
+
+    // Veritabanı varsa DB'ye de yazmayı dene
+    if (isDatabaseAvailable) {
+      try {
+        await prisma.jobPost.create({
+          data: {
+            citizenId: webCitizenId,
+            title: newJob.title,
+            description: newJob.description,
+            category: newJob.category,
+            serviceCategory: newJob.serviceCategory,
+            location: newJob.location,
+            urgencyLevel: newJob.urgencyLevel,
+            status: 'OPEN',
+          } as any
+        });
+      } catch (prismaErr) {
+        console.warn('⚠️ Web job DB write bypassed, saved in memory:', (prismaErr as any)?.message);
+      }
+    }
+
+    // Ustalara Acil Bildirim & Push Gönder
+    try {
+      const { notifyNearbyElectricians } = require('../services/jobService');
+      if (typeof notifyNearbyElectricians === 'function') {
+        notifyNearbyElectricians(newJob).catch((e: any) => console.error('Error notifying nearby electricians:', e));
+      }
+    } catch (notifErr) {
+      console.error('Error triggering electrician notification:', notifErr);
+    }
+
+    return res.status(201).json({
+      success: true,
+      data: { job: newJob },
+      message: 'İlanınız başarıyla oluşturuldu ve bölgenizdeki ustalara iletildi.'
+    });
   } catch (error) {
     next(error);
   }

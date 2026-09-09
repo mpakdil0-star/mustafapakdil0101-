@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   createJobController,
+  createWebJobController,
   getJobByIdController,
   getJobsController,
   getMyJobsController,
@@ -14,12 +15,14 @@ import {
 } from '../controllers/jobController';
 import { getJobBidsController } from '../controllers/bidController';
 import { authenticate, optionalAuthenticate } from '../middleware/auth';
-import { validate, createJobValidation, updateJobValidation, cancelJobValidation, createReviewValidation } from '../validators';
+import { validate, createJobValidation, createWebJobValidation, updateJobValidation, cancelJobValidation, createReviewValidation } from '../validators';
 
 const router = Router();
 
 // Public routes - authentication optional (herkes açık ilanları görebilir)
 router.get('/', optionalAuthenticate, getJobsController);
+// Web üzerinden hızlı ilan oluşturma endpoint'i (herkese açık)
+router.post('/web', validate(createWebJobValidation), createWebJobController);
 // Bids route'u daha spesifik olduğu için önce tanımlanmalı
 router.get('/:jobId/bids', optionalAuthenticate, getJobBidsController); // Bids listesi public
 // IMPORTANT: /my-jobs must come BEFORE /:id to avoid route conflict

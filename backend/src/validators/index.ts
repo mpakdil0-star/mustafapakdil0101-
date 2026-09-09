@@ -13,6 +13,7 @@ export {
 // Job validator'ları
 export {
     createJobValidation,
+    createWebJobValidation,
     updateJobValidation,
     cancelJobValidation,
     createReviewValidation,

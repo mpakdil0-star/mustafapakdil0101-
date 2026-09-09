@@ -65,6 +65,62 @@ export const createJobValidation = [
 ];
 
 /**
+ * Web üzerinden hızlı ilan oluşturma validasyonu (Kayıt/Giriş şartı olmadan doğrudan talep)
+ */
+export const createWebJobValidation = [
+    body('title')
+        .notEmpty()
+        .withMessage('İlan başlığı gerekli')
+        .isLength({ min: 3, max: 200 })
+        .withMessage('Başlık en az 3 karakter olmalıdır')
+        .trim(),
+
+    body('description')
+        .optional()
+        .trim(),
+
+    body('customerName')
+        .notEmpty()
+        .withMessage('Ad Soyad bilgisi gerekli')
+        .isLength({ min: 2, max: 100 })
+        .withMessage('Geçerli bir Ad Soyad giriniz')
+        .trim(),
+
+    body('customerPhone')
+        .notEmpty()
+        .withMessage('Telefon numarası gerekli')
+        .isLength({ min: 10, max: 20 })
+        .withMessage('Geçerli bir telefon numarası giriniz')
+        .trim(),
+
+    body('category')
+        .notEmpty()
+        .withMessage('Kategori seçimi gerekli'),
+
+    body('serviceCategory')
+        .optional()
+        .isIn(['elektrik', 'cilingir', 'klima', 'beyaz-esya', 'tesisat', 'temizlik', 'nakliyat', 'boya-badana', 'koltuk-hali', 'mobilya-montaj', 'kucuk-nakliye', 'kombi-servis', 'asansor', 'bocek-ilaclama', 'guvenlik-kamera'])
+        .withMessage('Geçersiz hizmet kategorisi'),
+
+    body('location')
+        .notEmpty()
+        .withMessage('Konum bilgisi gerekli'),
+
+    body('location.city')
+        .notEmpty()
+        .withMessage('Şehir seçimi gerekli'),
+
+    body('location.district')
+        .notEmpty()
+        .withMessage('İlçe seçimi gerekli'),
+
+    body('urgencyLevel')
+        .optional()
+        .isIn(['LOW', 'MEDIUM', 'HIGH'])
+        .withMessage('Aciliyet seviyesi LOW, MEDIUM veya HIGH olmalıdır'),
+];
+
+/**
  * İş ilanı güncelleme validasyonu
  */
 export const updateJobValidation = [
